@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Reset password · AEL Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/portal.js"></script>
+</head>
+<body>
+<main class="main" style="display:flex;justify-content:center;padding:48px 20px">
+  <form class="form" id="f" novalidate>
+    <h2>Reset password</h2>
+    <p class="sub">Choose a new password for your portal account.</p>
+    <div class="msg" id="m">Checking your reset link…</div>
+    <div id="fields" hidden>
+      <div class="field"><label for="n1">New password</label>
+        <div class="pw"><input id="n1" type="password" autocomplete="new-password"><button type="button">Show</button></div></div>
+      <ul class="rules" id="rules"></ul>
+      <div class="field"><label for="n2">Confirm new password</label>
+        <div class="pw"><input id="n2" type="password" autocomplete="new-password"><button type="button">Show</button></div></div>
+      <button class="btn block" id="go" type="submit">Save new password</button>
+    </div>
+    <p style="margin-top:16px"><a href="index.html">← Back to sign in</a></p>
+  </form>
+</main>
+<script>
+(async () => {
+  const P = window.Portal, f = document.getElementById('f'), m = document.getElementById('m');
+  const say = (t, cls = '') => { m.className = 'msg ' + cls; m.textContent = t; };
+  P.pwToggle(f);
+  if (!P.configured) { P.notConfigured(m); return; }
+  let email = '';
+  const ready = s => { if (!s) return; email = s.user.email; document.getElementById('fields').hidden = false; say('Link accepted. Enter your new password.', 'good'); };
+  P.sb.auth.onAuthStateChange((ev, s) => { if (ev === 'PASSWORD_RECOVERY' || ev === 'SIGNED_IN') ready(s); });
+  const q = new URLSearchParams(location.search), code = q.get('code');
+  if (code) { const { data } = await P.sb.auth.exchangeCodeForSession(code).catch(() => ({})); ready(data && data.session); }
+  setTimeout(async () => {
+    const { data: { session } } = await P.sb.auth.getSession();
+    if (session) ready(session); else say('This reset link is invalid or has expired. Go back to sign in and request a new one, or ask the portal admin.', 'bad');
+  }, 1500);
+  const rules = document.getElementById('rules');
+  const paint = () => { rules.innerHTML = P.pwChecks(f.n1.value, email).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${t}</li>`).join(''); };
+  f.n1.addEventListener('input', paint); paint();
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    if (P.pwChecks(f.n1.value, email).some(([, ok]) => !ok)) { say('The new password does not meet the rules.', 'bad'); return; }
+    if (f.n1.value !== f.n2.value) { say('The two passwords do not match.', 'bad'); return; }
+    const b = document.getElementById('go'); b.disabled = true;
+    const { error } = await P.sb.auth.updateUser({ password: f.n1.value });
+    if (error) { b.disabled = false; say(error.message, 'bad'); return; }
+    await P.log('password_changed');
+    P._leaving = true; await P.sb.auth.signOut();
+    P.go('index.html?m=changed');
+  };
+})();
+</script>
+</body>
+</html>

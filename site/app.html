@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard · AEL Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/portal.js"></script>
+</head>
+<body>
+<div id="dash-root"><div class="loading">Signing you in…</div></div>
+<template id="dash-src"><style>
+#dash-root{--dash-gutter:0}
+.ael{--navy:#051C2C;--blue:#2251FF;--cyan:#00A9F4;--sky:#AAE6F0;--line:#E2E6EB;--soft:#F4F6F9;--ink:#051C2C;--mut:#5A6670;--bad:#D0312D;--warn:#C98300;--good:#1E8C5A;
+  background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);padding:0 0 32px;position:relative;min-height:100vh}
+.ael *{box-sizing:border-box}
+.ael .hdr{background:var(--navy);color:#fff;padding:16px 24px 0}
+.ael .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.ael h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#fff}
+.ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
+.ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
+.ael .tabs{display:flex;gap:2px;overflow-x:auto;margin-top:12px;scrollbar-width:thin}
+.ael .tab{background:transparent;border:0;color:#C9D3DC;font:inherit;font-size:13px;padding:10px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+.ael .tab:hover{color:#fff}
+.ael .tab[aria-selected=true]{color:#fff;border-bottom-color:var(--cyan);font-weight:600}
+.ael .page{display:none;padding:18px 24px}
+.ael .page.on{display:block}
+.ael .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
+.ael .card{border:1px solid var(--line);background:#fff;padding:12px 14px;min-width:0;position:relative}
+.ael .card.wide{grid-column:1/-1}
+.ael .card h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.ael .csel{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
+.ael .chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.ael .kmini{border-left:3px solid #051C2C;padding:4px 0 4px 12px;min-width:210px;text-align:left}
+.ael .kmini .kl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770}
+.ael .kmini .kv{font-family:var(--font-anthropic-serif);font-size:28px;line-height:1.1;color:#051C2C;margin:2px 0}
+.ael .kmini .ks{font-size:12px;color:#5B6770}
+.ael .kmini .kp{font-weight:600}
+.ael .kmini .kf{font-size:11px;color:#5B6770;margin-top:2px}
+.ael .chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-weight:600}
+.ael .chip.smp{background:#FFF3D6;color:#8A5A00}
+.ael .chip.snap{background:#E3ECFF;color:var(--blue)}
+.ael .chart{position:relative;min-height:200px;width:100%}
+.ael .chart svg{display:block;overflow:visible}
+.ael .chart text{font-family:var(--font-anthropic-sans);fill:var(--mut);font-size:11px}
+.ael .chart .lbl{fill:var(--ink)}
+.ael .chart .grid line{stroke:#EEF1F4}
+.ael .empty{display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--mut);font-size:12.5px}
+.ael .tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);box-shadow:0 4px 14px rgba(5,28,44,.12);padding:6px 9px;font-size:12px;color:var(--ink);border-radius:4px;opacity:0;transition:opacity .12s;z-index:5;max-width:280px}
+.ael .tip .t{color:var(--mut);font-size:11px;margin-bottom:2px}
+.ael .tbox{max-height:420px;overflow:auto;border:1px solid var(--line)}
+.ael table.tb{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ael table.tb th{position:sticky;top:0;background:var(--soft);text-align:left;font-weight:600;color:var(--ink);padding:7px 8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;font-size:12px}
+.ael table.tb td{padding:6px 8px;border-bottom:1px solid #EEF1F4;vertical-align:top}
+.ael table.tb td.n,.ael table.tb th.n{text-align:right}
+.ael table.tb tr:hover td{background:#F8FAFC}
+.ael .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600}
+.ael .pill.bad{background:#FBE3E3;color:var(--bad)} .ael .pill.warn{background:#FFF1D1;color:#8A5A00} .ael .pill.good{background:#DDF2E7;color:var(--good)} .ael .pill.neu{background:var(--soft);color:var(--mut)}
+.ael input.q{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;margin-bottom:8px;min-width:220px}
+.ael .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin-top:4px}
+.ael .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.ael .issue{border-left:3px solid var(--bad);padding:6px 10px;margin-bottom:8px;background:#FCFCFD}
+.ael .issue .h{font-weight:600;font-size:13px} .ael .issue .m{font-size:11.5px;color:var(--mut)} .ael .issue .p{font-size:12.5px;margin-top:2px}
+@media (max-width:640px){.ael .hdr{padding:12px 14px 0}.ael .page{padding:14px}.ael .filters select,.ael .filters input{min-width:100px}}
+.ael .gt{font-size:12px}
+.ael .gt .gtip-t{font-weight:600;font-size:12.5px;margin-bottom:2px}
+.ael .gt .gtip-m{color:var(--mut);font-size:11px;margin-bottom:6px}
+.ael .gt .gr{display:grid;grid-template-columns:minmax(150px,220px) 200px 150px;gap:8px;align-items:center;padding:1px 0;border-top:1px solid #F0F2F5;font-size:11.5px}
+.ael .gt .gr .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael .gt .gr .tr{position:relative;height:9px;background:#F1F4F7;border-radius:2px}
+.ael .gt .gr .tr b{position:absolute;top:0;height:9px;border-radius:2px}
+.ael .gt .gr .tr i{position:absolute;top:-2px;width:1px;height:13px;background:var(--bad)}
+.ael .gt .gr .dt{color:var(--mut);font-size:10.5px;white-space:nowrap}
+.ael .tip.wide{max-width:620px}
+.ael .gt .gk{display:flex;gap:12px;font-size:10.5px;color:var(--mut);margin-top:5px}
+</style>
+
+<div class="ael" id="ael">
+  <div class="hdr">
+    <div class="top">
+      <h1>Operations Dashboard</h1>
+      <div class="filters">
+        <label>Shop<select id="f-shop" aria-label="Shop"></select></label>
+        <label>Model<select id="f-model" aria-label="Model"></select></label>
+        <label>Month<select id="f-month" aria-label="Month"></select></label>
+        <label>As of<input id="f-date" type="date" min="2026-06-01" max="2026-12-31" aria-label="As of date"></label>
+        <label>Shift<select id="f-shift" aria-label="Shift"><option value="All">All</option><option>A</option><option>B</option><option>C</option></select></label>
+        <span id="f-data" style="align-self:flex-end;font-size:12px;color:#5A6670;padding-bottom:6px"></span>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-overview" data-p="overview">Overview</button>
+      <button class="tab" role="tab" id="t-production" data-p="production">Production</button>
+      <button class="tab" role="tab" id="t-product" data-p="product">Products</button>
+      <button class="tab" role="tab" id="t-dispatch" data-p="dispatch">Dispatch</button>
+      <button class="tab" role="tab" id="t-inhouse" data-p="inhouse">In-house</button>
+      <button class="tab" role="tab" id="t-quality" data-p="quality">Quality</button>
+      <button class="tab" role="tab" id="t-maintenance" data-p="maintenance">Maintenance</button>
+      <button class="tab" role="tab" id="t-oee" data-p="oee">OEE</button>
+      <button class="tab" role="tab" id="t-capacity" data-p="capacity">Capacity</button>
+      <button class="tab" role="tab" id="t-efficiency" data-p="efficiency">Efficiency</button>
+      <button class="tab" role="tab" id="t-workforce" data-p="workforce">Workforce</button>
+      <button class="tab" role="tab" id="t-inventory" data-p="inventory">Inventory</button>
+      <button class="tab" role="tab" id="t-cost" data-p="cost">Cost</button>
+      <button class="tab" role="tab" id="t-savings" data-p="savings">Savings</button>
+      <button class="tab" role="tab" id="t-issues" data-p="issues">Issues</button>
+      <button class="tab" role="tab" id="t-projects" data-p="projects">Projects</button>
+    </nav>
+  </div>
+
+  <section class="page" id="overview">
+    <div class="grid">
+      <div class="card wide" id="c-ov-bullets"><h3>Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_pm smp_cost smp_savings"></div></div>
+      <div class="card" id="c-ov-cum"><h3>Cumulative Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-ov-cumd"><h3>Cumulative Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-ov-score"><h3>Shop Scorecard</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_breakdowns atlas_shop_parts"></div></div>
+      <div class="card" id="c-ov-shop"><h3>Production by Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-ov-issues"><h3>Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="production">
+    <div class="grid">
+      <div class="card" id="c-p-shop"><h3>Production Plan Vs Actual - By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-p-model"><h3>Production Plan Vs Actual - By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-daily"><div class="chd"><h3>Daily Production</h3><div class="kmini" id="k-p-daily" data-source="atlas_parts_daily atlas_parts"></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-parts"><h3>Part Compliance - Finished Goods</h3><input class="q" id="q-parts" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-parts"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts</h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" id="c-p-cum"><h3>Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-p-cumd"><h3>Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-comp"><div class="chd"><h3 id="h-p-comp">Finished Part vs Level 2 &amp; 3 Components</h3><select id="s-comp" class="csel" aria-label="Finished part"></select></div><div class="chart" data-source="atlas_parts_daily atlas_parts atlas_bom"></div></div>
+      <div class="card wide" id="c-p-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="product">
+    <div class="grid">
+      <div class="card wide" id="c-pr-matrix"><h3>Product Compliance</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-pr-top"><h3>Best Performers</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-pr-bot"><h3>Lagging Products</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-pr-list"><h3>Products</h3><input class="q" id="q-prod" placeholder="Search product or code" aria-label="Search products"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-prod"><thead><tr><th data-k="part">Product</th><th data-k="code">Code</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" id="c-pr-mon"><h3 id="h-pr-mon">Monthly</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-pr-cum"><h3 id="h-pr-cum">This Month</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-pr-issues"><h3 id="h-pr-issues">Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
+      <div class="card" id="c-pr-vend"><h3>Vendor Supply Trend</h3><div class="chart" data-source="atlas_bom atlas_vendor_rcv atlas_stock_critical"></div></div>
+      <div class="card" id="c-pr-ihs"><h3>In-house Supply Trend</h3><div class="chart" data-source="atlas_bom atlas_parts_daily atlas_stock_critical"></div></div>
+      <div class="card wide" id="c-pr-comp"><h3>Component Status</h3><div class="tbox" data-source="atlas_bom atlas_vendor_rcv atlas_parts_daily atlas_stock_critical"><table class="tb" id="tb-comp"><thead><tr><th data-k="part">Part</th><th data-k="code">Code</th><th data-k="source">Source</th><th data-k="shop">Shop</th><th class="n" data-k="plan">Plan to date</th><th class="n" data-k="act">Received / made</th><th class="n" data-k="comp">Compliance</th><th class="n" data-k="stock">Stock</th><th class="n" data-k="safety_stock">Safety</th><th data-k="status">Status</th><th data-k="link">Link</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" id="c-pr-mix"><h3>Output by Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-pr-shopmix"><h3>Dispatch by Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="inhouse">
+    <div class="grid">
+      <div class="card" id="c-ih-cum"><h3>In-house Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-ih-daily"><h3>Daily Output</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-ih-shop"><h3>By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-ih-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-ih-list"><h3>In-house Parts</h3><input class="q" id="q-ih" placeholder="Search part or code" aria-label="Search in-house parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-ih"><thead><tr><th data-k="part">Part</th><th data-k="code">Code</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="P">Plan</th><th class="n" data-k="A">Produced</th><th class="n" data-k="PC">Compliance</th><th class="n" data-k="GAP">Short</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" id="c-ih-mon"><h3 id="h-ih-mon">Selected Part</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-ih-pcum"><h3 id="h-ih-pcum">This Month</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="dispatch">
+    <div class="grid">
+      <div class="card wide" id="c-dp-cum"><h3>Dispatch to AHL</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-dp-daily"><h3>Daily Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-dp-shop"><h3>By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-dp-model"><h3>By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-dp-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-dp-list"><h3>Dispatch by Part</h3><input class="q" id="q-dp" placeholder="Search part or code" aria-label="Search dispatch parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-dp"><thead><tr><th data-k="part">Part</th><th data-k="code">Code</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="P">Plan</th><th class="n" data-k="A">Dispatched</th><th class="n" data-k="PC">Compliance</th><th class="n" data-k="GAP">Short</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" id="c-dp-mon"><h3 id="h-dp-mon">Selected Part</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-dp-pcum"><h3 id="h-dp-pcum">This Month</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="quality">
+    <div class="grid">
+      <div class="card" id="c-q-month"><h3>Rejection Trend <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
+      <div class="card" id="c-q-day"><h3>Daily Rejection <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
+      <div class="card" id="c-q-shop"><h3>By Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
+      <div class="card" id="c-q-pareto"><h3>Defect Pareto <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_defects"></div></div>
+      <div class="card wide" id="c-q-cc"><h3>Customer Complaints <span class="chip smp">Sample</span></h3><div class="tbox"><table class="tb" id="tb-cc" data-source="smp_complaints" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="date">Date</th><th data-field="shop">Shop</th><th data-field="part">Part</th><th data-field="issue">Issue</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="maintenance">
+    <div class="grid">
+      <div class="card" id="c-m-pm"><h3>PM Plan vs Done <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_pm"></div></div>
+      <div class="card" id="c-m-shop"><h3>Downtime by Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
+      <div class="card" id="c-m-day"><h3>Daily Downtime <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
+      <div class="card" id="c-m-cat"><h3>Causes <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
+      <div class="card wide" id="c-m-log"><h3>Breakdown History <span class="chip smp">Sample</span></h3><input class="q" id="q-bd" placeholder="Search machine or cause" aria-label="Search breakdowns"><div class="tbox"><table class="tb" id="tb-bd" data-source="smp_breakdowns" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="date">Date</th><th data-field="shift">Shift</th><th data-field="shop">Shop</th><th data-field="machine">Machine</th><th data-field="category">Category</th><th data-field="cause">Cause</th><th class="n" data-field="downtime_min">Minutes</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="oee">
+    <div class="grid">
+      <div class="card" id="c-o-shop"><h3>OEE vs Target <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
+      <div class="card" id="c-o-trend"><h3>Daily OEE <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
+      <div class="card wide" id="c-o-heat"><h3>Shop × Day <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
+      <div class="card wide" id="c-o-apq"><h3>Loss Breakdown <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="capacity">
+    <div class="grid">
+      <div class="card" id="c-c-load"><h3>Load vs Capacity <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_capacity"></div></div>
+      <div class="card" id="c-c-outlook"><h3>Utilisation Outlook <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_capacity"></div></div>
+      <div class="card wide" id="c-c-table"><h3>Capacity Plan <span class="chip smp">Sample</span></h3><div class="tbox"><table class="tb" id="tb-cap" data-source="smp_capacity" data-row-key="month,shop"><thead><tr><th data-field="month">Month</th><th data-field="shop">Shop</th><th class="n" data-field="capacity_units">Capacity</th><th class="n" data-field="planned_load_units">Load</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="efficiency">
+    <div class="grid">
+      <div class="card" id="c-e-shop"><h3>Earned vs Available <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_efficiency"></div></div>
+      <div class="card" id="c-e-shift"><h3>Efficiency by Shift <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_efficiency"></div></div>
+      <div class="card wide" id="c-e-abs"><h3>Absenteeism <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_efficiency"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="workforce">
+    <div class="grid">
+      <div class="card" id="c-w-abs"><h3>Absenteeism by Area</h3><div class="chart" data-source="sp_attendance"></div></div>
+      <div class="card" id="c-w-ot"><h3>Overtime by Area</h3><div class="chart" data-source="sp_attendance"></div></div>
+      <div class="card" id="c-w-dabs"><h3>Daily Absenteeism</h3><div class="chart" data-source="sp_attendance"></div></div>
+      <div class="card" id="c-w-dot"><h3>Daily Overtime Hours</h3><div class="chart" data-source="sp_attendance"></div></div>
+      <div class="card wide" id="c-w-list"><h3>By Area &amp; Section</h3><input class="q" id="q-wf" placeholder="Search area or section" aria-label="Search areas"><div class="tbox" data-source="sp_attendance"><table class="tb" id="tb-wf"><thead><tr><th data-k="area">Area</th><th data-k="section">Section</th><th class="n" data-k="hc">Headcount</th><th class="n" data-k="avgp">Avg present</th><th class="n" data-k="abs">Absent days</th><th class="n" data-k="absp">Absent %</th><th class="n" data-k="leave">Leave days</th><th class="n" data-k="ot">OT hours</th><th class="n" data-k="otph">OT h / present day</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="inventory">
+    <div class="grid">
+      <div class="card" id="c-i-safety"><h3>Below Safety Stock <span class="chip snap" data-asof="atlas_shop_parts">14 Oct</span></h3><div class="chart" data-source="atlas_shop_parts"></div></div>
+      <div class="card" id="c-i-vendor"><h3>Vendor Supply <span class="chip snap" data-asof="atlas_vendors">14 Oct</span></h3><div class="chart" data-source="atlas_vendors"></div></div>
+      <div class="card" id="c-i-tools"><h3>Tools &amp; Spares <span class="chip snap">Jul 2026</span></h3><div class="chart" data-source="atlas_tools_by_shop"></div></div>
+      <div class="card" id="c-i-trend"><h3>Inventory Value</h3><div class="chart" data-source="atlas_tools_trend"></div></div>
+      <div class="card wide" id="c-i-crit"><h3>Critical Parts <span class="chip snap" data-asof="atlas_stock_critical">14 Oct</span></h3><input class="q" id="q-crit" placeholder="Search part" aria-label="Search critical parts"><div class="tbox"><table class="tb" id="tb-crit" data-source="atlas_stock_critical" data-row-key="code"><thead><tr><th data-field="code">Code</th><th data-field="part">Part</th><th data-field="shop">Shop</th><th class="n" data-field="safety_stock">Safety</th><th class="n" data-field="stock">Stock</th><th class="n" data-field="vendor_stock">At vendor</th><th class="n" data-field="cover_pct">Cover %</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="cost">
+    <div class="grid">
+      <div class="card" id="c-k-month"><h3>Budget vs Actual <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_cost"></div></div>
+      <div class="card" id="c-k-shop"><h3>By Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_cost"></div></div>
+      <div class="card" id="c-k-unit"><h3>Unit Cost <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_unit_cost"></div></div>
+      <div class="card" id="c-k-margin"><h3>Margin <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_unit_cost"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="savings">
+    <div class="grid">
+      <div class="card" id="c-s-month"><h3>Target vs Realised <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_savings"></div></div>
+      <div class="card" id="c-s-stage"><h3>Pipeline <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_ideas"></div></div>
+      <div class="card wide" id="c-s-table"><h3>Idea Tracker <span class="chip smp">Sample</span></h3><div class="tbox"><table class="tb" id="tb-ideas" data-source="smp_ideas" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="idea">Idea</th><th data-field="shop">Area</th><th data-field="lever">Lever</th><th class="n" data-field="est_saving_pkr_m">Target PKR M</th><th class="n" data-field="realised_pkr_m">Realised PKR M</th><th data-field="stage">Stage</th><th data-field="target_date">Due</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="issues">
+    <div class="grid">
+      <div class="card" id="c-x-shop"><h3>Open by Shop</h3><div class="chart" data-source="atlas_issues"></div></div>
+      <div class="card" id="c-x-age"><h3>Open by Date</h3><div class="chart" data-source="atlas_issues"></div></div>
+      <div class="card wide" id="c-x-table"><h3>Issues Log</h3><input class="q" id="q-iss" placeholder="Search issue" aria-label="Search issues"><div class="tbox"><table class="tb" id="tb-iss" data-source="atlas_issues" data-row-key="id"><thead><tr><th data-field="id">#</th><th data-field="item">Item</th><th data-field="shop">Shop</th><th data-field="priority">Priority</th><th data-field="status">Status</th><th data-field="problem">Problem</th><th data-field="last_meeting">Last meeting</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+  <section class="page" id="projects">
+    <div class="grid">
+      <div class="card" id="c-j-status"><h3>Activity Status by Project <span class="chip snap" data-jasof="1">Jira</span></h3><div class="chart" data-source="jira_issues"></div></div>
+      <div class="card" id="c-j-owner"><h3>Open Activities by Owner</h3><div class="chart" data-source="jira_issues"></div></div>
+      <div class="card wide" id="c-j-late"><h3>Overdue and Due in Next 14 Days</h3><div class="tbox"><table class="tb" id="tb-jlate" data-source="jira_issues" data-row-key="key"><thead><tr><th data-field="key">Key</th><th data-field="summary">Activity</th><th data-field="proj">Project</th><th data-field="assignee">Owner</th><th data-field="due">Due</th><th data-field="late">Days late</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
+      <div id="j-gantts" style="grid-column:1/-1;display:grid;gap:14px" data-source="jira_issues"></div>
+    </div>
+  </section>
+  <div class="tip" id="tip"></div>
+</div>
+
+<script>
+/* ---------- kit ---------- */
+window.AK = (() => {
+  const C = { navy:'#051C2C', blue:'#2251FF', cyan:'#00A9F4', sky:'#AAE6F0', teal:'#1F9E89', plan:'#C9D1D9', grey:'#B9C1C9', bad:'#D0312D', warn:'#E0A100', good:'#1E8C5A' };
+  const nf = d3.format(','), f1 = d3.format(',.1f'), si = d3.format('.3~s');
+  const kf = v => Math.abs(v) >= 1e6 ? d3.format('.2~s')(v).replace('M','M') : Math.abs(v) >= 1e4 ? d3.format('.3~s')(v) : nf(Math.round(v));
+  const tipEl = () => document.getElementById('tip');
+  const tip = {
+    show(ev, lines) { const t = tipEl(), root = document.getElementById('ael'); t.replaceChildren(); lines.forEach((l, i) => { const d = document.createElement('div'); if (i === 0) d.className = 't'; d.textContent = l; t.appendChild(d); });
+      const rb = root.getBoundingClientRect(); let x = ev.clientX - rb.left + 12, y = ev.clientY - rb.top + 12; const w = t.offsetWidth || 180;
+      if (x + w > rb.width - 8) x = ev.clientX - rb.left - w - 12; t.style.left = x + 'px'; t.style.top = y + 'px'; t.style.opacity = 1; },
+    hide() { tipEl().style.opacity = 0; }
+  };
+  const box = (el, h) => { el.replaceChildren(); const w = Math.max(280, el.clientWidth || 600); const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`).attr('height', h); return { svg, w, h }; };
+  const textW = (svg, s) => { const t = svg.append('text').attr('font-size', 11).text(s); const w = t.node().getComputedTextLength(); t.remove(); return w; };
+  const empty = (el, msg) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'empty'; d.textContent = msg; el.appendChild(d); };
+  const status = (el, ...ids) => { for (const id of ids) { const s = dash.data(id).status; if (s === 'error') { empty(el, '● Failed to load'); return true; } if (s !== 'ok') { el.replaceChildren(); return true; } } return false; };
+  const compColor = (c, inv) => c == null ? C.grey : (inv ? (c <= 100 ? C.navy : c <= 110 ? C.warn : C.bad) : (c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad));
+  const legend = (el, items) => { const d = document.createElement('div'); d.className = 'legend'; items.forEach(([n, c, dash]) => { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = dash ? 'transparent' : c; if (dash) i.style.borderTop = `2px dashed ${c}`, i.style.height = '0', i.style.marginBottom = '4px'; s.append(i, document.createTextNode(n)); d.appendChild(s); }); el.appendChild(d); };
+
+  // bullet rows: [{label, plan, actual, fmt, inv, note}]
+  function bullets(el, rows) {
+    const rh = 34, h = rows.length * rh + 8; const { svg, w } = box(el, h);
+    const lw = Math.min(170, d3.max(rows, r => textW(svg, r.label)) + 14), rw = 92;
+    rows.forEach((r, i) => { const g = svg.append('g').attr('transform', `translate(0,${4 + i * rh})`);
+      if (r.go) g.style('cursor', 'pointer').attr('role', 'link').attr('tabindex', 0).on('click', r.go).on('keydown', ev => { if (ev.key === 'Enter') r.go(); });
+      g.append('text').attr('class', 'lbl').attr('x', 0).attr('y', rh / 2 + 4).style('font-weight', 600).style('fill', r.go ? '#2251FF' : null).style('text-decoration', r.go ? 'underline' : null).text(r.label);
+      const max = Math.max(r.plan || 0, r.actual || 0) * 1.12 || 1; const x = d3.scaleLinear([0, max], [lw, w - rw]);
+      g.append('rect').attr('x', lw).attr('y', 6).attr('width', w - rw - lw).attr('height', rh - 12).attr('fill', '#F1F4F7');
+      if (r.plan != null) g.append('rect').attr('x', lw).attr('y', 9).attr('width', x(r.plan) - lw).attr('height', rh - 18).attr('fill', C.plan);
+      const comp = r.plan && r.actual != null ? r.actual / r.plan * 100 : null;
+      if (r.actual != null) g.append('rect').attr('x', lw).attr('y', 13).attr('width', Math.max(0, x(r.actual) - lw)).attr('height', rh - 26).attr('fill', compColor(comp, r.inv));
+      if (r.plan != null) g.append('line').attr('x1', x(r.plan)).attr('x2', x(r.plan)).attr('y1', 4).attr('y2', rh - 4).attr('stroke', C.navy).attr('stroke-width', 2);
+      g.append('rect').attr('x', lw).attr('y', 4).attr('width', w - rw - lw).attr('height', rh - 8).attr('fill', 'transparent')
+        .on('mousemove', ev => tip.show(ev, [r.label, `Plan ${r.plan == null ? '—' : r.fmt(r.plan)}`, `Actual ${r.actual == null ? '—' : r.fmt(r.actual)}`, ...(r.note ? [r.note] : []), ...(r.go ? ['Click for details'] : [])])).on('mouseleave', tip.hide);
+      g.append('text').attr('x', w - rw + 8).attr('y', rh / 2 - 1).style('font-family', 'var(--font-anthropic-serif)').style('font-size', '17px').style('fill', compColor(comp, r.inv)).text(comp == null ? '—' : d3.format('.0f')(comp) + '%');
+      g.append('text').attr('x', w - rw + 8).attr('y', rh / 2 + 12).attr('font-size', 10).text(r.actual == null ? 'no actuals' : `${r.fmt(r.actual)} / ${r.fmt(r.plan)}`);
+    });
+    legend(el, [['Plan', C.plan], ['Actual', C.navy], ['Below 80%', C.bad]]);
+  }
+
+  // grouped horizontal: rows [{label, plan, actual, tip}]
+  function pvaH(el, rows, o = {}) {
+    if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
+    const rh = o.rh || 30, h = rows.length * rh + 26; const { svg, w } = box(el, h);
+    const lw = Math.min(w * 0.38, d3.max(rows, r => textW(svg, r.label)) + 10);
+    const max = d3.max(rows, r => Math.max(r.plan || 0, r.actual || 0)) * 1.08 || 1;
+    const x = d3.scaleLinear([0, max], [lw, w - (o.vals ? 96 : 52)]);
+    svg.append('g').attr('class', 'grid').selectAll('line').data(x.ticks(4)).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', h - 22);
+    svg.append('g').selectAll('text').data(x.ticks(4)).join('text').attr('x', x).attr('y', h - 6).attr('text-anchor', 'middle').text(o.tickFmt || kf);
+    rows.forEach((r, i) => { const y = i * rh; const comp = r.plan && r.actual != null ? r.actual / r.plan * 100 : null;
+      const G = svg.append('g').style('opacity', o.focus && o.focus !== r.label ? 0.3 : 1); const svgR = svg; { const svg = G;
+      svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', y + rh / 2 + 4).attr('text-anchor', 'end').style('font-weight', o.focus === r.label ? 700 : null).text(r.label);
+      svg.append('rect').attr('x', lw).attr('y', y + 4).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.plan || 0) - lw)).attr('fill', C.plan);
+      svg.append('rect').attr('x', lw).attr('y', y + 4 + (rh - 8) / 2).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.actual || 0) - lw)).attr('fill', r.actual == null ? 'none' : compColor(comp, o.inv));
+      svg.append('rect').attr('x', 0).attr('y', y).attr('width', w).attr('height', rh).attr('fill', 'transparent').style('cursor', o.onClick ? 'pointer' : null).on('click', () => o.onClick && o.onClick(r.label))
+        .on('mousemove', ev => tip.show(ev, r.tip || [r.label, `Plan ${(o.fmt || nf)(r.plan || 0)}`, `Actual ${r.actual == null ? '—' : (o.fmt || nf)(r.actual)}`, comp == null ? '' : `${o.inv ? 'Share of plan' : 'Compliance'} ${d3.format('.0f')(comp)}%`])).on('mouseleave', tip.hide);
+      let px = x(Math.max(r.plan || 0, r.actual || 0)) + 5;
+      if (o.vals) { const vf = v => v >= 1000 ? d3.format('.1f')(v / 1000) + ' k' : d3.format(',.0f')(v), bh = (rh - 8) / 2;
+        [[r.plan, y + 4, C.navy], [r.actual, y + 4 + bh, '#fff']].forEach(([v, by, col]) => { if (v == null || !(v > 0)) return; const t = vf(v), tw = t.length * 6.2 + 8, end = x(v);
+          const inside = end - lw >= tw + 2; const tx = inside ? end - 4 : end + 4;
+          svg.append('text').attr('x', tx).attr('y', by + bh / 2 + 3.5).attr('text-anchor', inside ? 'end' : 'start').style('font-size', '10.5px').style('font-weight', 600).style('pointer-events', 'none').style('fill', inside ? col : C.navy).text(t);
+          if (!inside) px = Math.max(px, end + tw + 6); }); }
+      svg.append('text').attr('x', px).attr('y', y + rh / 2 + 4).style('font-weight', 600).style('fill', compColor(comp, o.inv)).text(comp == null || r.actual == null ? '—' : d3.format('.0f')(comp) + '%');
+    } });
+    legend(el, [[o.planName || 'Plan', C.plan], [o.actName || 'Actual', C.navy], ['Below 80%', C.bad]]);
+  }
+
+  // vertical grouped/stacked bars. cats[], series [{key,name,color}], get(c,k)
+  function vbar(el, cats, series, get, o = {}) {
+    if (!cats.length) return empty(el, o.emptyMsg || 'No data for this selection');
+    const h = o.h || 240, m = { t: 14, r: 10, b: o.rot ? 62 : 26, l: 46 }; const { svg, w } = box(el, h);
+    const vals = cats.flatMap(c => o.stack ? [d3.sum(series, s => get(c, s.key) || 0)] : series.map(s => get(c, s.key) || 0));
+    const ymax = d3.max([...vals, ...(o.refs || []).map(r => r.v)]) * (o.vals ? 1.22 : 1.1) || 1;
+    const x = d3.scaleBand(cats, [m.l, w - m.r]).padding(0.25), y = d3.scaleLinear([0, ymax], [h - m.b, m.t]);
+    const x1 = d3.scaleBand(series.map(s => s.key), [0, x.bandwidth()]).padding(0.08);
+    svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y).attr('y2', y);
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d) + 4).attr('text-anchor', 'end').text(o.yFmt || kf);
+    const step = Math.ceil(cats.length / Math.max(1, Math.floor((w - m.l) / (o.rot ? 20 : 40))));
+    const xl = svg.append('g').selectAll('text').data(cats.filter((c, i) => i % step === 0)).join('text').attr('class', 'lbl').text(o.xFmt || (d => d));
+    if (o.rot) xl.attr('transform', d => `translate(${x(d) + x.bandwidth() / 2},${h - m.b + 10}) rotate(-35)`).attr('text-anchor', 'end');
+    else xl.attr('x', d => x(d) + x.bandwidth() / 2).attr('y', h - 8).attr('text-anchor', 'middle');
+    cats.forEach(c => { let acc = 0; series.forEach(s => { const v = get(c, s.key); if (v == null || v === 0) return;
+      const bx = o.stack ? x(c) : x(c) + x1(s.key), bw = o.stack ? x.bandwidth() : x1.bandwidth(); const y0 = o.stack ? acc : 0;
+      svg.append('rect').attr('x', bx).attr('width', bw).attr('y', y(y0 + v)).attr('height', y(y0) - y(y0 + v)).attr('fill', typeof s.color === 'function' ? s.color(c) : s.color)
+        .on('mousemove', ev => tip.show(ev, [(o.xFmt || (d => d))(c), ...series.map(ss => `${ss.name}: ${get(c, ss.key) == null ? '—' : (o.fmt || nf)(get(c, ss.key))}`), ...(o.extra ? [o.extra(c)] : [])])).on('mouseleave', tip.hide);
+      if (o.vals && !o.stack) { const t = (o.valFmt || (q => q >= 1e6 ? d3.format('.2f')(q / 1e6) + 'M' : q >= 1000 ? d3.format('.1f')(q / 1000) + 'k' : d3.format(',.0f')(q)))(v), tl = t.length * 5.6 + 4, bh = y(0) - y(v), cx = bx + bw / 2;
+        if (bw >= 6) { const inside = bh >= tl + 4, ty = inside ? y(v) + 4 : y(v) - 3;
+          const fill = typeof s.color === 'function' ? s.color(c) : s.color, dark = fill !== C.plan && fill !== '#DCE3EA' && fill !== C.sky;
+          svg.append('text').attr('transform', `translate(${cx + (bw >= 9 ? 3.2 : 2.6)},${ty}) rotate(-90)`).attr('text-anchor', inside ? 'end' : 'start').style('font-size', bw >= 12 ? '9.5px' : bw >= 9 ? '8.5px' : '7.5px').style('font-weight', 600).style('pointer-events', 'none').style('fill', inside && dark ? '#fff' : C.navy).text(t); } }
+      if (o.stack) acc += v; }); });
+    (o.refs || []).forEach(rf => { svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(rf.v)).attr('y2', y(rf.v)).attr('stroke', rf.color || C.bad).attr('stroke-dasharray', '4 3');
+      svg.append('text').attr('x', w - m.r).attr('y', y(rf.v) - 4).attr('text-anchor', 'end').attr('font-size', 10).style('fill', rf.color || C.bad).text(rf.label); });
+    if (o.marker != null && cats.includes(o.marker)) svg.append('line').attr('x1', x(o.marker) + x.bandwidth() + 2).attr('x2', x(o.marker) + x.bandwidth() + 2).attr('y1', m.t).attr('y2', h - m.b).attr('stroke', C.navy).attr('stroke-dasharray', '2 3');
+    if (o.line) { const y2 = d3.scaleLinear([0, 1], [h - m.b, m.t]); const pts = cats.map(c => [x(c) + x.bandwidth() / 2, y2(o.line(c))]);
+      svg.append('path').attr('d', d3.line()(pts)).attr('fill', 'none').attr('stroke', C.navy).attr('stroke-width', 2);
+      svg.selectAll('circle.p').data(pts).join('circle').attr('cx', d => d[0]).attr('cy', d => d[1]).attr('r', 3).attr('fill', C.navy); }
+    if (!o.noLegend) legend(el, series.map(s => [s.name, typeof s.color === 'function' ? C.navy : s.color]));
+  }
+
+  // lines: xs (strings), series [{name,color,values,dash}]
+  function lines(el, xs, series, o = {}) {
+    const all = series.flatMap(s => s.values).filter(v => v != null);
+    if (!all.length) return empty(el, o.emptyMsg || 'No data for this selection');
+    const h = o.h || 230, m = { t: 14, r: 86, b: 26, l: 46 }; const { svg, w } = box(el, h);
+    const lo = o.min != null ? o.min : Math.min(0, d3.min([...all, ...(o.refs || []).map(r => r.v)])), hi = d3.max([...all, ...(o.refs || []).map(r => r.v)]) * 1.06;
+    const x = d3.scalePoint(xs, [m.l + 6, w - m.r]), y = d3.scaleLinear([lo, hi], [h - m.b, m.t]).nice();
+    svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y).attr('y2', y);
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d) + 4).attr('text-anchor', 'end').text(o.yFmt || kf);
+    const step = Math.ceil(xs.length / Math.max(1, Math.floor((w - m.l - m.r) / 46)));
+    svg.append('g').selectAll('text').data(xs.filter((c, i) => i % step === 0)).join('text').attr('x', x).attr('y', h - 8).attr('text-anchor', 'middle').text(o.xFmt || (d => d));
+    (o.refs || []).forEach(rf => { svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(rf.v)).attr('y2', y(rf.v)).attr('stroke', rf.color || C.bad).attr('stroke-dasharray', '4 3');
+      svg.append('text').attr('x', m.l + 4).attr('y', y(rf.v) - 4).attr('font-size', 10).style('fill', rf.color || C.bad).text(rf.label); });
+    if (o.marker && xs.includes(o.marker)) svg.append('line').attr('x1', x(o.marker)).attr('x2', x(o.marker)).attr('y1', m.t).attr('y2', h - m.b).attr('stroke', '#8C96A0').attr('stroke-dasharray', '2 3');
+    const ends = [];
+    series.forEach(s => { const pts = xs.map((c, i) => [x(c), s.values[i], c]).filter(p => p[1] != null);
+      if (!pts.length) return;
+      svg.append('path').attr('d', d3.line().x(p => p[0]).y(p => y(p[1]))(pts)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.w || 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash || null);
+      if (!o.noDots) svg.selectAll(null).data(pts).join('circle').attr('cx', p => p[0]).attr('cy', p => y(p[1])).attr('r', 2.5).attr('fill', s.color);
+      const lp = pts[pts.length - 1]; ends.push({ y: y(lp[1]), x: lp[0], t: `${s.name} ${(o.fmt || kf)(lp[1])}`, c: s.color }); });
+    ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 12) ends[i].y = ends[i - 1].y + 12;
+    ends.forEach(e => svg.append('text').attr('x', e.x + 6).attr('y', e.y + 4).attr('font-size', 10.5).style('fill', e.c).style('font-weight', 600).text(e.t));
+    const ov = svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', w - m.l - m.r).attr('height', h - m.t - m.b).attr('fill', 'transparent');
+    ov.on('mousemove', ev => { const [mx] = d3.pointer(ev); const i = d3.minIndex(xs, c => Math.abs(x(c) - mx)); tip.show(ev, [(o.xFmt || (d => d))(xs[i]), ...series.flatMap(s => [`${s.name}: ${s.values[i] == null ? '—' : (o.fmt || kf)(s.values[i])}${s.sub ? ' (sub-total)' : ''}`, ...(s.sub || []).map(u => `   · ${u.name}: ${u.values[i] == null ? '—' : (o.fmt || kf)(u.values[i])}`)])]); }).on('mouseleave', tip.hide);
+  }
+
+  function donut(el, rows, o = {}) {
+    if (!rows.length) return empty(el, 'No data for this selection');
+    const h = o.h || 220; const { svg, w } = box(el, h); const r = Math.min(h / 2 - 10, w / 4), cx = r + 16, cy = h / 2;
+    const tot = d3.sum(rows, x => x.value); const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+    g.selectAll('path').data(d3.pie().value(d => d.value).sort(null)(rows)).join('path').attr('d', d3.arc().innerRadius(r * .58).outerRadius(r)).attr('fill', d => d.data.color).attr('stroke', '#fff')
+      .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || nf)(d.data.value)} · ${d3.format('.0%')(d.data.value / tot)}`])).on('mouseleave', tip.hide);
+    g.append('text').attr('text-anchor', 'middle').attr('y', 2).style('font-family', 'var(--font-anthropic-serif)').style('font-size', '20px').style('fill', C.navy).text((o.fmt || nf)(tot));
+    g.append('text').attr('text-anchor', 'middle').attr('y', 18).attr('font-size', 10).text(o.center || '');
+    rows.forEach((d, i) => { const gg = svg.append('g').attr('transform', `translate(${cx + r + 22},${cy - rows.length * 11 + i * 22 + 6})`); gg.append('rect').attr('width', 10).attr('height', 10).attr('y', -9).attr('fill', d.color); gg.append('text').attr('x', 16).attr('class', 'lbl').text(`${d.label}  ${d3.format('.0%')(d.value / tot)}`); });
+  }
+
+  function heat(el, rk, ck, get, o = {}) {
+    if (!rk.length || !ck.length) return empty(el, 'No data for this selection');
+    const ch = 22, mt = 22; const tmp = box(el, 10); const lw = Math.min(d3.max(rk, k => textW(tmp.svg, (o.yFmt || (d => d))(k))) + 12, (el.clientWidth || 600) * 0.4); const h = rk.length * ch + mt + 6; const { svg, w } = box(el, h);
+    const cw = (w - lw) / ck.length; const col = d3.scaleLinear(o.dom || [0.45, 0.6, 0.75, 0.9], ['#D0312D', '#F3C7C2', '#BFD3FF', '#0B2E8A']).clamp(true); const dark = o.dark || .68;
+    ck.forEach((c, j) => { if (j % Math.max(1, Math.ceil(30 / cw)) === 0) svg.append('text').attr('x', lw + j * cw + cw / 2).attr('y', 14).attr('text-anchor', 'middle').text((o.xFmt || (d => d))(c)); });
+    rk.forEach((r, i) => { svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', mt + i * ch + ch / 2 + 4).attr('text-anchor', 'end').text((o.yFmt || (d => d))(r)).style('cursor', o.onRow ? 'pointer' : null).on('click', o.onRow ? () => o.onRow(r) : null);
+      ck.forEach((c, j) => { const v = get(r, c); svg.append('rect').attr('x', lw + j * cw + 1).attr('y', mt + i * ch + 1).attr('width', Math.max(1, cw - 2)).attr('height', ch - 2).attr('rx', 2).attr('fill', v == null ? '#F4F6F9' : col(v))
+        .on('mousemove', ev => tip.show(ev, [`${(o.yFmt || (d => d))(r)} · ${(o.xFmt || (d => d))(c)}`, `${o.name || 'Value'} ${v == null ? '—' : d3.format('.1%')(v)}`])).on('mouseleave', tip.hide);
+        if (cw > 30 && v != null) svg.append('text').attr('x', lw + j * cw + cw / 2).attr('y', mt + i * ch + ch / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', v > dark ? '#fff' : '#051C2C').style('pointer-events', 'none').text(d3.format('.0f')(v * 100)); }); });
+  }
+
+  // sortable table; cols [{k, n, fmt, pill, color}], key column first
+  const ts = {};
+  function table(tbl, rows, cols, o = {}) {
+    const st = ts[tbl.id] || (ts[tbl.id] = { k: o.sort, dir: o.dir || -1 }); const q = o.q ? (o.q.value || '').toLowerCase() : '';
+    let rs = rows.filter(r => !q || cols.some(c => String(r[c.k] ?? '').toLowerCase().includes(q)));
+    if (st.k) rs = rs.slice().sort((a, b) => { const x = a[st.k], y = b[st.k]; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * st.dir; });
+    const tb = tbl.tBodies[0]; tb.replaceChildren();
+    if (!rs.length) { const tr = document.createElement('tr'), td = document.createElement('td'); td.colSpan = cols.length; td.textContent = 'No rows for this selection'; td.style.color = '#5A6670'; tr.appendChild(td); tb.appendChild(tr); }
+    rs.forEach(r => { const tr = document.createElement('tr'); if (o.dim && o.dim(r)) tr.style.opacity = 0.3; if (o.onRow) { tr.style.cursor = 'pointer'; tr.tabIndex = 0; tr.addEventListener('click', () => o.onRow(r)); tr.addEventListener('keydown', ev => { if (ev.key === 'Enter') o.onRow(r); }); if (o.sel && o.sel(r)) tr.style.background = '#EEF4FF'; } cols.forEach(c => { const td = document.createElement('td'); if (c.n) td.className = 'n'; const v = r[c.k];
+      if (c.pill) { const sp = document.createElement('span'); sp.className = 'pill ' + c.pill(v); sp.textContent = v ?? '—'; td.appendChild(sp); }
+      else td.textContent = v == null ? '—' : (c.fmt ? c.fmt(v, r) : (c.n ? nf(v) : v));
+      if (c.color) { const cc = c.color(v, r); if (cc) { td.style.color = cc; td.style.fontWeight = 600; } }
+      if (c.click) { td.style.cursor = 'pointer'; td.style.textDecoration = 'underline dotted'; td.title = 'Click to focus on this ' + c.k; td.addEventListener('click', ev => { ev.stopPropagation(); c.click(v, r); }); if (c.bold && c.bold(v, r)) td.style.fontWeight = 700; }
+      tr.appendChild(td); }); tb.appendChild(tr); });
+    tbl.querySelectorAll('th').forEach((th, i) => { const k = cols[i] && cols[i].k; th.setAttribute('aria-sort', st.k === k ? (st.dir > 0 ? 'ascending' : 'descending') : 'none');
+      th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field; st.dir = st.k === kk ? -st.dir : -1; st.k = kk; window.__draw(); }); } });
+  }
+  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table };
+})();
+</script>
+
+<script>
+/* ---------- filters & tabs ---------- */
+(() => {
+  const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Fuel Cock','Cushion','Hubs','Carb Child Parts'];
+  const MONTHS = ['2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+  const MODELS = ['CD70','CD-Dream','CG125','CG125S','Pridor','CB125F','CB150F','K4AA'];
+  window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; window.__TODAY = window.__PORTAL.today;
+  const mEnd = m => { const [y, mm] = m.split('-').map(Number); return `${m}-${String(new Date(Date.UTC(y, mm, 0)).getUTCDate()).padStart(2, '0')}`; };
+  window.__mEnd = mEnd;
+  const sShop = document.getElementById('f-shop'), sMonth = document.getElementById('f-month'), iDate = document.getElementById('f-date'), sShift = document.getElementById('f-shift'), sModel = document.getElementById('f-model');
+  sShop.replaceChildren(new Option('All shops', 'All'), ...SHOPS.map(s => new Option(s, s)));
+  sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new Option(s, s)));
+  sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
+  const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: window.__TODAY.slice(0, 7), asof: window.__TODAY, shift: 'All' }); };
+  setDefaults();
+  sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
+  sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0 }));
+  sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }));
+  sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
+  iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });
+  iDate.addEventListener('blur', () => { iDate.value = dash.params().asof || ''; });
+  let _dt = { src: null, v: null };
+  window.__dataTo = () => { const d = dash.data('atlas_parts_daily'); if (!d || d.status !== 'ok') return window.__TODAY; if (d.data !== _dt.src) { let mx = ''; for (const r of d.data) if ((r.prod_actual != null || r.disp_actual != null) && r.date > mx) mx = r.date; _dt = { src: d.data, v: mx && mx < window.__TODAY ? mx : window.__TODAY }; } return _dt.v; };
+  window.__P = () => { const p = dash.params(); const month = p.month || window.__TODAY.slice(0, 7), e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
+    return { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf && ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop || 'All') ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY }; };
+  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
+  const pages = ['overview','production','product','dispatch','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects'];
+  window.__page = 'overview';
+  const show = (p, link) => { if (!pages.includes(p) || !window.__PORTAL.canTab(p)) p = window.__PORTAL.firstTab; window.__page = p;
+    document.querySelectorAll('#ael .page').forEach(s => s.classList.toggle('on', s.id === p));
+    document.querySelectorAll('#tabs .tab').forEach(b => b.setAttribute('aria-selected', b.dataset.p === p ? 'true' : 'false'));
+    if (link) dash.setLink(p); window.__draw && window.__draw(); };
+  window.__show = p => show(p, true);
+  document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b) show(b.dataset.p, true); });
+  show(location.hash.slice(1) || 'overview', false);
+  [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
+  ['q-parts','q-parts2','q-prod','q-ih','q-dp','q-wf','q-bd','q-crit','q-iss'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
+})();
+</script>
+
+<script>
+/* ---------- drawing ---------- */
+(() => {
+  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table } = window.AK;
+  const D = id => dash.data(id).data || [];
+  const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
+  const day = s => d3.utcFormat('%-d %b')(new Date(s + 'T00:00:00Z')); const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
+  const pct = v => v == null ? '—' : d3.format('.0f')(v) + '%';
+  const inShop = (r, p) => (p.shop === 'All' ? !r.sec : (r.shop === p.shop || (r.shops || []).includes(p.shop))) && (!p.pf || !r.code || r.code === p.pf);
+  const inShift = (r, p) => p.shift === 'All' || r.shift === p.shift;
+  const datesOf = p => { const out = []; for (let d = new Date(p.start + 'T00:00:00Z'); d3.utcFormat('%Y-%m-%d')(d) <= p.end; d = d3.utcDay.offset(d, 1)) out.push(d3.utcFormat('%Y-%m-%d')(d)); return out; };
+
+  // ---- Atlas per-part data, filtered by shop & model ----
+  const ATL = ['atlas_parts_daily', 'atlas_parts'];
+  const sA = el => status(el, ...ATL);
+  let _dm = {};
+  const DIMS = () => { const src = D('atlas_parts'); if (_dm.src !== src) _dm = { src, map: new Map(src.map(r => [r.code, { ...r, shops: (() => { const v = r.shops; if (Array.isArray(v)) return v; try { const j = JSON.parse(v); return Array.isArray(j) ? j : []; } catch (e) { return v ? String(v).split('/').map(x => x.trim()).filter(Boolean) : []; } })(), mods: (r.models || '').split('/').filter(Boolean) }])) }; return _dm.map; };
+  const inModel = (dm, p) => p.model === 'All' || (dm && dm.mods.includes(p.model));
+  const partOk = (dm, p) => dm && inShop(dm, p) && inModel(dm, p);
+  let _sr = {};
+  // shop-level stream rows {date, shop, stream, plan, actual, code} for the chosen model
+  const SR = p => { const src = D('atlas_parts_daily'), dims = DIMS();
+    if (_sr.src === src && _sr.dims === dims && _sr.model === p.model) return _sr.rows;
+    const rows = [];
+    src.forEach(r => { const dm = dims.get(r.code); if (!dm || !inModel(dm, p)) return;
+      if (dm.type === 'Finished') { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'Production', plan: r.prod_plan || 0, actual: r.prod_actual });
+        if (r.disp_plan || r.disp_actual) rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'Dispatch', plan: r.disp_plan || 0, actual: r.disp_actual }); }
+      else { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual }); (dm.shops || []).filter(s => s !== dm.shop).forEach(s => rows.push({ date: r.date, shop: s, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual, sec: 1 })); } });
+    _sr = { src, dims, model: p.model, rows }; return rows; };
+  // per-part totals between two dates (plan to `to`, actuals to min(to, today))
+  const partAgg = (p, from, to, type) => { const dims = DIMS(), aEnd = [to, window.__TODAY, window.__dataTo()].sort()[0], out = new Map();
+    D('atlas_parts_daily').forEach(r => { if (r.date < from || r.date > to) return; const dm = dims.get(r.code); if (!partOk(dm, p) || (type && dm.type !== type)) return;
+      let o = out.get(r.code); if (!o) out.set(r.code, o = { ...dm, pp: 0, pa: 0, dp: 0, da: 0 });
+      o.pp += r.prod_plan || 0; o.dp += r.disp_plan || 0; if (r.date <= aEnd) { o.pa += r.prod_actual || 0; o.da += r.disp_actual || 0; } });
+    return [...out.values()].map(o => ({ ...o, pc: o.pp ? o.pa / o.pp * 100 : null, gap: Math.max(0, o.pp - o.pa), dc: o.dp ? o.da / o.dp * 100 : null, dp: o.type === 'In-house' ? null : o.dp, da: o.type === 'In-house' ? null : o.da })); };
+
+  // flow: plan/actual by day for a stream at shop level
+  function flow(stream, p) {
+    const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.end && inShop(r, p));
+    const ds = datesOf(p); const pl = new Map(), ac = new Map();
+    rows.forEach(r => { pl.set(r.date, (pl.get(r.date) || 0) + r.plan); if (r.actual != null) ac.set(r.date, (ac.get(r.date) || 0) + r.actual); });
+    let cp = 0, ca = 0; const cumP = [], cumA = [];
+    ds.forEach(d => { cp += pl.get(d) || 0; ca += ac.get(d) || 0; cumP.push(cp); cumA.push(d <= p.actEnd ? ca : null); });
+    const i = ds.indexOf(p.asof); const planTD = cumP[i], actTD = p.future ? null : cumA[ds.indexOf(p.actEnd)];
+    return { ds, pl, ac, cumP, cumA, planTD, actTD, planM: cp };
+  }
+  function cumChart(el, stream, p) {
+    if (sA(el)) return; const f = flow(stream, p);
+    if (!f.planM && !f.actTD) return empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No plan for this selection');
+    lines(el, f.ds, [{ name: 'Plan', color: C.grey, dash: '5 4', values: f.cumP }, { name: 'Actual', color: compColor(f.planTD ? f.actTD / f.planTD * 100 : null), values: f.cumA }], { xFmt: day, marker: p.asof, noDots: 1, h: 220 });
+  }
+  const byKey = (rows, key, val) => d3.rollup(rows, v => d3.sum(v, val), r => r[key]);
+
+  const draw = {
+    overview(p) {
+      const el = ch('c-ov-bullets');
+      if (!status(el, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_pm')) {
+        const rng = r => r.date >= p.start && r.date <= p.actEnd && inShop(r, p);
+        const fp = flow('Production', p), fd = flow('Dispatch', p), fi = flow('In-house', p);
+        const oe = D('smp_oee').filter(r => rng(r) && inShift(r, p)); const oee = oe.length ? d3.mean(oe, r => r.availability * r.performance * r.quality) * 100 : null;
+        const ql = D('smp_quality').filter(rng); const good = ql.length ? (1 - d3.sum(ql, r => r.rejected) / d3.sum(ql, r => r.inspected)) * 100 : null;
+        const ef = D('smp_efficiency').filter(r => rng(r) && inShift(r, p)); const eff = ef.length ? d3.sum(ef, r => r.earned_hours) / d3.sum(ef, r => r.available_hours) * 100 : null;
+        const pm = D('smp_pm').filter(r => r.month === p.month && inShop(r, p));
+        const cs = D('smp_cost').filter(r => r.month === p.month && inShop(r, p)); const csA = cs.some(r => r.actual_pkr_m != null) ? d3.sum(cs, r => r.actual_pkr_m) : null;
+        const sv = D('smp_savings').filter(r => r.month <= p.month); const svA = sv.some(r => r.realised_pkr_m != null) ? d3.sum(sv, r => r.realised_pkr_m || 0) : null;
+        const pc = v => f1(v) + '%';
+        bullets(el, [
+          { label: 'Production', plan: fp.planTD, actual: fp.actTD, fmt: kf, go: () => window.__show('production') },
+          { label: 'Dispatch', plan: fd.planTD, actual: fd.actTD, fmt: kf, go: () => window.__show('dispatch') },
+          { label: 'In-house parts', plan: fi.planTD, actual: fi.actTD, fmt: kf, go: () => window.__show('inhouse') },
+          { label: 'OEE', plan: 75, actual: oee, fmt: pc, note: 'Target 75% · sample' },
+          { label: 'First-pass yield', plan: 99, actual: good, fmt: pc, note: 'Target 99% · sample' },
+          { label: 'Labour efficiency', plan: 85, actual: eff, fmt: pc, note: 'Target 85% · sample' },
+          { label: 'PM compliance', plan: d3.sum(pm, r => r.pm_planned), actual: pm.some(r => r.pm_done != null) ? d3.sum(pm, r => r.pm_done || 0) : null, fmt: nf, note: 'Preventive jobs · sample' },
+          { label: 'Cost (PKR M)', plan: d3.sum(cs, r => r.budget_pkr_m), actual: csA, fmt: f1, inv: 1, note: 'Budget vs actual, lower is better · sample', lock: 'smp_cost' },
+          { label: 'Savings YTD (PKR M)', plan: d3.sum(sv, r => r.target_pkr_m), actual: svA, fmt: f1, note: 'Since Jun · sample', lock: 'smp_savings' }].filter(b => !b.lock || dash.data(b.lock).status === 'ok'));
+      }
+      cumChart(ch('c-ov-cum'), 'Production', p); cumChart(ch('c-ov-cumd'), 'Dispatch', p);
+      draw._shopPva(ch('c-ov-shop'), 'Production', p);
+      // scorecard
+      const sc = ch('c-ov-score');
+      if (!status(sc, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_breakdowns', 'atlas_shop_parts')) {
+        const rng = r => r.date >= p.start && r.date <= p.actEnd;
+        const prod = SR(p).filter(r => r.stream !== 'Dispatch' && r.date >= p.start && r.date <= p.asof);
+        const shops = window.__SHOPS.filter(s => p.shop === 'All' || s === p.shop);
+        const cols = ['Production %', 'OEE %', 'Yield %', 'Efficiency %', 'Downtime h', 'Below safety'];
+        const val = (s, c) => {
+          if (c === 'Production %') { const r = prod.filter(x => x.shop === s); const pl = d3.sum(r, x => x.plan), ac = d3.sum(r.filter(x => x.date <= p.actEnd), x => x.actual || 0); return pl ? ac / pl * 100 : null; }
+          if (c === 'OEE %') { const r = D('smp_oee').filter(x => x.shop === s && rng(x) && inShift(x, p)); return r.length ? d3.mean(r, x => x.availability * x.performance * x.quality) * 100 : null; }
+          if (c === 'Yield %') { const r = D('smp_quality').filter(x => x.shop === s && rng(x)); return r.length ? (1 - d3.sum(r, x => x.rejected) / d3.sum(r, x => x.inspected)) * 100 : null; }
+          if (c === 'Efficiency %') { const r = D('smp_efficiency').filter(x => x.shop === s && rng(x) && inShift(x, p)); return r.length ? d3.sum(r, x => x.earned_hours) / d3.sum(r, x => x.available_hours) * 100 : null; }
+          if (c === 'Downtime h') { const r = D('smp_breakdowns').filter(x => x.shop === s && rng(x) && inShift(x, p)); return d3.sum(r, x => x.downtime_min) / 60; }
+          const r = D('atlas_shop_parts').find(x => x.shop === s); return r ? r.below_safety : null; };
+        const bad = (c, v) => v == null ? false : c === 'Production %' ? v < 95 : c === 'OEE %' ? v < 65 : c === 'Yield %' ? v < 99 : c === 'Efficiency %' ? v < 80 : c === 'Downtime h' ? v > 24 : v > 5;
+        const warn = (c, v) => v == null ? false : c === 'Production %' ? v < 100 : c === 'OEE %' ? v < 75 : c === 'Yield %' ? v < 99.3 : c === 'Efficiency %' ? v < 85 : c === 'Downtime h' ? v > 8 : v > 0;
+        const { svg, w } = AK.box(sc, shops.length * 26 + 30); const lw = 130, cw = (w - lw) / cols.length;
+        cols.forEach((c, j) => svg.append('text').attr('x', lw + j * cw + cw / 2).attr('y', 16).attr('text-anchor', 'middle').style('font-weight', 600).style('fill', '#051C2C').text(c));
+        shops.forEach((s, i) => { const y = 24 + i * 26; svg.append('text').attr('class', 'lbl').attr('x', 0).attr('y', y + 17).text(s);
+          cols.forEach((c, j) => { const v = val(s, c); const fill = bad(c, v) ? '#FBE3E3' : warn(c, v) ? '#FFF4DB' : '#EEF4FF';
+            svg.append('rect').attr('x', lw + j * cw + 2).attr('y', y + 2).attr('width', cw - 4).attr('height', 22).attr('rx', 2).attr('fill', v == null ? '#F7F8FA' : fill);
+            svg.append('text').attr('x', lw + j * cw + cw / 2).attr('y', y + 17).attr('text-anchor', 'middle').style('fill', bad(c, v) ? C.bad : '#051C2C').style('font-weight', 600).text(v == null ? '—' : c.endsWith('%') ? f1(v) : c === 'Downtime h' ? f1(v) : nf(v)); }); });
+      }
+      const lst = q('#c-ov-issues .list');
+      if (dash.data('atlas_issues').status === 'ok') { lst.replaceChildren(); const rs = D('atlas_issues').filter(r => r.status === 'open' && r.priority === 'Critical' && (p.shop === 'All' || (r.shops || [r.shop]).includes(p.shop)) && r.last_meeting <= p.asof);
+        if (!rs.length) { const d = document.createElement('div'); d.className = 'empty'; d.style.minHeight = '80px'; d.textContent = 'No open critical issues'; lst.appendChild(d); }
+        rs.forEach(r => { const d = document.createElement('div'); d.className = 'issue'; const h = document.createElement('div'); h.className = 'h'; h.textContent = r.item; const m = document.createElement('div'); m.className = 'm'; m.textContent = `${(r.shops || [r.shop]).join(', ')} · ${r.owner ? 'Owner: ' + r.owner + ' · ' : ''}${day(r.last_meeting)}`; const pp = document.createElement('div'); pp.className = 'p'; pp.textContent = r.problem; d.append(h, m, pp); lst.appendChild(d); }); }
+    },
+    _shopPva(el, stream, p) {
+      if (sA(el)) return;
+      const pq = p.sf ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
+      const pl = byKey(rows, 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
+      pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
+    },
+    production(p) {
+      cumChart(ch('c-p-cum'), 'Production', p); cumChart(ch('c-p-cumd'), 'Dispatch', p); if (ch('c-p-cumi')) cumChart(ch('c-p-cumi'), 'In-house', p);
+      { const ec = ch('c-p-comp'), sel = q('#s-comp');
+        if (!status(ec, ...ATL, 'atlas_bom')) {
+          const dims = DIMS(), bom = D('atlas_bom'), kids = new Map();
+          bom.forEach(b => { if (b.source !== 'In-house') return; String(b.fg || '').split(';').forEach(t => { const [fc, qt] = t.split(':'); if (!fc) return; if (!kids.has(fc)) kids.set(fc, []); kids.get(fc).push({ code: String(b.code), qty: +qt || 1, name: (dims.get(String(b.code)) || {}).part || b.part }); }); });
+          const fgs = partAgg({ ...p, pf: null }, p.start, p.asof, 'Finished').filter(r => kids.has(r.code)).sort((a, b) => b.pp - a.pp);
+          sel.replaceChildren(...fgs.map(r => new Option(r.part || r.code, r.code)));
+          const main = [p.cp, p.pf].find(c => c && fgs.some(r => r.code === c)) || (fgs[0] || {}).code;
+          if (!main) { sel.style.display = 'none'; empty(ec, 'No finished part with in-house components for this selection'); }
+          else { sel.style.display = ''; sel.value = main; sel.onchange = () => dash.setParams({ cp: sel.value });
+            const ds = datesOf(p), byC = new Map(); D('atlas_parts_daily').forEach(r => { if (r.date >= p.start && r.date <= p.actEnd) { const m = byC.get(r.code) || new Map(); m.set(r.date, (m.get(r.date) || 0) + (r.prod_actual || 0)); byC.set(r.code, m); } });
+            const cum = c => { const m = byC.get(c) || new Map(); let t = 0; return ds.map(d => d <= p.actEnd ? (t += m.get(d) || 0) : null); };
+            const lvl = k => /CAST/i.test(k.name) && !/MACH/i.test(k.name) ? 'L3' : 'L2', PAL = [C.navy, C.blue, C.teal, C.warn, C.cyan, '#8E44AD', '#7A8B99', '#B5651D'];
+            const ks = (kids.get(main) || []).filter((k, i, a) => a.findIndex(z => z.code === k.code) === i).sort((a, b) => lvl(a).localeCompare(lvl(b)) || a.name.localeCompare(b.name));
+            const sh = t => t.length > 26 ? t.slice(0, 25) + '…' : t, base = n => String(n).toUpperCase().split('(')[0].replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+            const grp = []; ks.forEach(k => { const key = lvl(k) + '|' + (lvl(k) === 'L2' ? base(k.name) : k.code); let g = grp.find(x => x.key === key); if (!g) grp.push(g = { key, lv: lvl(k), name: lvl(k) === 'L2' ? base(k.name) : k.name, qty: k.qty, codes: [] }); g.codes.push(k.code); });
+            const cumG = cs => { const arrs = cs.map(c => cum(c)); return ds.map((d, i) => arrs[0][i] == null ? null : d3.sum(arrs, a => a[i] || 0)); };
+            lines(ec, ds, [{ name: sh((dims.get(main) || {}).part || main), color: C.bad, w: 2.8, values: cum(main) }, ...grp.map((g, i) => ({ name: g.lv + ' ' + sh(g.name) + (g.codes.length > 1 ? ' (' + g.codes.length + ' alt.)' : '') + (g.qty > 1 ? ' ×' + g.qty : ''), color: PAL[i % PAL.length], dash: g.lv === 'L3' ? '5 4' : null, w: g.lv === 'L3' ? 1.4 : 1.6, values: cumG(g.codes), sub: g.codes.length > 1 ? g.codes.map(c => ({ name: (dims.get(c) || {}).part || c, values: cum(c) })) : null }))],
+              { xFmt: day, marker: p.asof, noDots: 1, h: 300 }); } } }
+      const el = ch('c-p-daily'), kd = q('#k-p-daily');
+      if (kd) { kd.replaceChildren(); if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') { const f0 = flow('Production', p), lim = p.actEnd >= window.__TODAY ? window.__TODAY : '9999';
+        const ld = f0.ds.filter(d => d <= p.actEnd && (f0.ac.get(d) || 0) > 0).slice(-1)[0], add = (cls, t) => { const e = document.createElement('div'); e.className = cls; e.textContent = t; kd.appendChild(e); return e; };
+        if (ld) { const av = f0.ac.get(ld) || 0, pv = f0.pl.get(ld) || 0, pc = pv ? av / pv * 100 : null, dt = new Date(ld + 'T00:00:00');
+          add('kl', 'Last day produced · ' + dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }));
+          add('kv', d3.format(',')(Math.round(av)));
+          const sub = add('ks', 'vs plan ' + d3.format(',')(Math.round(pv)) + (pc == null ? '' : ' · ')); if (pc != null) { const sp = document.createElement('span'); sp.className = 'kp'; sp.textContent = Math.round(pc) + '%'; sp.style.color = pc >= 100 ? C.navy : pc >= 80 ? C.warn : C.bad; sub.appendChild(sp); }
+          add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model) + (p.pf && DIMS().get(p.pf) ? ' · ' + (DIMS().get(p.pf).part || p.pf) : '')); }
+        else { add('kl', 'Last day produced'); add('kv', '—'); add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model)); } } }
+      if (!sA(el)) { const f = flow('Production', p); if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
+        else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const pv = f.pl.get(c) || 0, av = f.ac.get(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : (c <= p.actEnd ? f.ac.get(c) || 0 : null), { xFmt: d => +d.slice(8), marker: p.asof, vals: 1, h: 300 }); }
+      draw._shopPva(ch('c-p-shop'), 'Production', p);
+      const em = ch('c-p-model'), hubP = ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop), emH = q('#c-p-model h3'); if (emH) emH.textContent = hubP ? 'Production Plan Vs Actual - By Part' : 'Production Plan Vs Actual - By Model';
+      if (!sA(em) && hubP) { const pl = new Map(), ac = new Map(), md = new Map(), kc = new Map(), pq = { ...p, pf: null };
+        const allIH = p.shop === 'HPDC / Die Cast', fin = new Map(); partAgg(pq, p.start, p.asof).filter(r => allIH || r.type === 'Finished' || /MACH/i.test(r.part || '')).forEach(r => { const k = r.part || r.code; kc.set(k, r.code); md.set(k, r.model); fin.set(k, r.type === 'Finished' ? 0 : 1); pl.set(k, (pl.get(k) || 0) + r.pp); ac.set(k, (ac.get(k) || 0) + r.pa); });
+        const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = k => { const i = MSQ.indexOf(md.get(k)); return i < 0 ? MSQ.length : i; };
+        pvaH(em, [...pl.keys()].map(k => ({ label: k, plan: pl.get(k), actual: p.future ? null : ac.get(k) || 0 })).filter(r => r.plan > 0 || (allIH && r.actual > 0)).sort((x, y) => (allIH ? fin.get(x.label) - fin.get(y.label) : 0) || mi(x.label) - mi(y.label) || y.plan - x.plan), { vals: 1, rh: 38, focus: p.pf ? [...kc.keys()].find(k => kc.get(k) === p.pf) || null : null, onClick: k => dash.setParams({ pf: p.pf && kc.get(k) === p.pf ? 0 : kc.get(k) }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
+      else if (!sA(em)) { const pl = new Map(), ac = new Map();
+        const pM = p.mf ? { ...p, model: 'All' } : p; partAgg(pM, p.start, p.asof, 'Finished').forEach(r => (pM.model === 'All' ? [r.model || r.mods[0]].filter(Boolean) : r.mods.filter(m => m === pM.model)).forEach(m => { pl.set(m, (pl.get(m) || 0) + r.pp); ac.set(m, (ac.get(m) || 0) + r.pa); }));
+        const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = m => { const i = MSQ.indexOf(m); return i < 0 ? MSQ.length : i; };
+        pvaH(em, [...pl.keys()].map(m => ({ label: m, plan: pl.get(m), actual: p.future ? null : ac.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => mi(a.label) - mi(b.label)), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
+      const et = ch('c-p-trend');
+      if (!sA(et)) { const months = window.__MONTHS.filter(m => m <= '2026-10'); const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY);
+        const g = d3.rollup(rows, v => ({ p: d3.sum(v, r => r.plan), a: d3.sum(v, r => r.actual || 0) }), r => r.date.slice(0, 7), r => r.stream);
+        const cats = months.flatMap(m => ['Production', 'Dispatch', 'In-house'].map(s => m + '|' + s)).filter(c => { const [m, s] = c.split('|'); return (g.get(m) || new Map()).get(s); });
+        vbar(et, cats, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return compColor(v.a / v.p * 100); } }],
+          (c, k) => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return v[k]; }, { xFmt: c => { const [m, s] = c.split('|'); return `${mon(m)} ${s === 'In-house' ? 'IH' : s.slice(0, 4)}`; }, rot: 1, h: 260, extra: c => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return `Compliance ${pct(v.a / v.p * 100)}${m === window.__TODAY.slice(0, 7) ? ` (actuals to ${+window.__dataTo().slice(8)} ${mon(m)})` : ''}`; } }); }
+      // parts
+      const box = q('#c-p-parts .tbox'), tbl = q('#tb-parts');
+      if (ATL.every(id => dash.data(id).status === 'ok')) {
+        const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
+        const MSEQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'];
+        const mr = r => { const ms = String(r.models || '').split(/[\/,]\s*/).map(m => MSEQ.indexOf(m.trim())).filter(i => i >= 0); return ms.length ? Math.min(...ms) : MSEQ.length; };
+        const so = r => { const i = SEQ.indexOf(r.shop); return (i < 0 ? SEQ.length : i) * 1e8 + mr(r) * 1e6 + (r.pc == null ? 99999 : Math.min(r.pc, 99998)); };
+        const pq = { ...p, shop: p.sf ? 'All' : p.shop, model: p.mf ? 'All' : p.model };
+        const rows = partAgg(pq, p.start, p.asof).filter(r => r.pp || r.dp).map(r => ({ ...r, ord: so(r) }));
+        const dim = r => (p.sf && r.shop !== p.shop && !(r.shops || []).includes(p.shop)) || (p.mf && !String(r.models || '').split(/[\/,]\s*/).map(x => x.trim()).includes(p.model));
+        const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
+        const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops && r.shops.length > 1) ? r.shops.join(' / ') : v, click: v => dash.setParams(p.sf && p.shop === v ? { shop: 'All', sf: 0, pf: 0 } : { shop: v, sf: 1, pf: 0 }), bold: v => p.sf && p.shop === v }, { k: 'models' }, { k: 'pp', n: 1 }, { k: 'pa', n: 1 }, { k: 'pc', n: 1, fmt: pct, color: cc }, { k: 'dp', n: 1 }, { k: 'da', n: 1 }, { k: 'dc', n: 1, fmt: pct, color: cc }];
+        const fg = r => String(r.code).startsWith('90');
+        table(tbl, rows.filter(fg), cols, { q: q('#q-parts'), sort: 'ord', dir: 1, dim });
+        table(q('#tb-parts2'), rows.filter(r => !fg(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1, dim });
+      }
+    },
+    product(p) {
+      const emx = ch('c-pr-matrix'), etop = ch('c-pr-top'), ebot = ch('c-pr-bot'), emon = ch('c-pr-mon'), ecum = ch('c-pr-cum'), emix = ch('c-pr-mix'), esh = ch('c-pr-shopmix'), tbl = q('#tb-prod');
+      if ([emx, etop, ebot, emon, ecum, emix, esh].map(e => sA(e)).some(Boolean)) return;
+      const nod = p.future ? 'No plan uploaded in Atlas for this month yet' : 'No products for this selection';
+      const cur = partAgg(p, p.start, p.asof, 'Finished').filter(r => r.pp || r.dp);
+      const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
+      // selected product
+      let sel = p.product && DIMS().get(p.product); if (!sel || !partOk(sel, p) || sel.type !== 'Finished') sel = null;
+      if (!sel && cur.length) sel = cur.slice().sort((a, b) => b.pp - a.pp)[0];
+      const pick = r => dash.setParams({ product: r.code });
+      // matrix: production compliance by month
+      const months = window.__MONTHS.filter(m => m <= window.__TODAY.slice(0, 7));
+      const byM = new Map(months.map(m => [m, new Map(partAgg(p, m + '-01', m === window.__TODAY.slice(0, 7) ? window.__TODAY : window.__mEnd(m), 'Finished').map(r => [r.code, r]))]));
+      const codes = [...new Set([...byM.values()].flatMap(mm => [...mm.values()].filter(r => r.pp > 0).map(r => r.code)))];
+      const dims = DIMS(); const lab = c => dims.get(c).part;
+      const tot = c => d3.sum(months, m => (byM.get(m).get(c) || {}).pp || 0);
+      codes.sort((a, b) => dims.get(a).shop.localeCompare(dims.get(b).shop) || tot(b) - tot(a));
+      heat(emx, codes, months, (c, m) => { const r = byM.get(m).get(c); return r && r.pp ? r.pa / r.pp : null; },
+        { xFmt: m => mon(m) + (m === window.__TODAY.slice(0, 7) ? ' (MTD)' : ''), yFmt: lab, name: 'Production vs plan', dom: [0.6, 0.85, 0.97, 1.1], dark: 1.0, onRow: c => dash.setParams({ product: c }) });
+      // best / lagging (this month to date, products with a meaningful plan)
+      const minP = Math.min(1000, (d3.median(cur.filter(r => r.pp > 0), r => r.pp) || 0) / 2); const ranked = cur.filter(r => r.pp >= minP && r.pp > 0 && !p.future).sort((a, b) => b.pc - a.pc);
+      const toRow = r => ({ label: r.part, plan: r.pp, actual: r.pa });
+      pvaH(etop, ranked.slice(0, 8).map(toRow), { vals: 1, rh: 38, emptyMsg: nod });
+      pvaH(ebot, ranked.slice(-8).reverse().map(toRow), { vals: 1, rh: 38, emptyMsg: nod });
+      // list
+      table(tbl, cur, [{ k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'models' }, { k: 'pp', n: 1 }, { k: 'pa', n: 1 }, { k: 'pc', n: 1, fmt: pct, color: cc }, { k: 'dp', n: 1 }, { k: 'da', n: 1 }, { k: 'dc', n: 1, fmt: pct, color: cc }],
+        { q: q('#q-prod'), sort: 'pp', dir: -1, onRow: pick, sel: r => sel && r.code === sel.code });
+      // selected product: monthly + cumulative
+      q('#h-pr-mon').textContent = sel ? sel.part : 'Monthly';
+      q('#h-pr-cum').textContent = sel ? `${sel.part} · ${mon(p.month)}` : 'This Month';
+      if (!sel) { empty(emon, 'Pick a product in the table'); empty(ecum, 'Pick a product in the table'); }
+      else {
+        const rs = D('atlas_parts_daily').filter(r => r.code === sel.code);
+        const T = window.__TODAY, cm = T.slice(0, 7), inPl = r => r.date.slice(0, 7) !== cm || r.date <= T;
+        const g = d3.rollup(rs, v => ({ pp: d3.sum(v.filter(inPl), r => r.prod_plan || 0), pa: d3.sum(v.filter(r => r.date <= window.__TODAY), r => r.prod_actual || 0), dp: d3.sum(v.filter(inPl), r => r.disp_plan || 0), da: d3.sum(v.filter(r => r.date <= window.__TODAY), r => r.disp_actual || 0) }), r => r.date.slice(0, 7));
+        const ms = window.__MONTHS.filter(m => g.has(m));
+        vbar(emon, ms, [{ key: 'pp', name: 'Prod plan', color: C.plan }, { key: 'pa', name: 'Produced', color: c => compColor(g.get(c).pp ? g.get(c).pa / g.get(c).pp * 100 : null) }, { key: 'dp', name: 'Disp plan', color: '#DCE3EA' }, { key: 'da', name: 'Dispatched', color: C.cyan }],
+          (c, k) => g.get(c)[k], { vals: 1, xFmt: m => mon(m) + (m === window.__TODAY.slice(0, 7) ? '*' : ''), marker: p.month, extra: c => { const v = g.get(c); return `Prod ${pct(v.pp ? v.pa / v.pp * 100 : null)} · Disp ${pct(v.dp ? v.da / v.dp * 100 : null)}${c === window.__TODAY.slice(0, 7) ? ' · month to date' : ''}`; } });
+        const ds = datesOf(p), byD = new Map(rs.filter(r => r.date >= p.start && r.date <= p.end).map(r => [r.date, r]));
+        let a = 0, b = 0, c2 = 0, d = 0; const cp = [], ca = [], cdp = [], cda = [];
+        ds.forEach(x => { const r = byD.get(x) || {}; a += r.prod_plan || 0; c2 += r.disp_plan || 0; b += r.prod_actual || 0; d += r.disp_actual || 0; cp.push(a); cdp.push(c2); ca.push(x <= p.actEnd && !p.future ? b : null); cda.push(x <= p.actEnd && !p.future ? d : null); });
+        lines(ecum, ds, [{ name: 'Prod plan', color: C.grey, dash: '5 4', values: cp }, { name: 'Produced', color: C.navy, values: ca }, { name: 'Disp plan', color: C.sky, dash: '5 4', values: cdp }, { name: 'Dispatched', color: C.cyan, values: cda }], { xFmt: day, marker: p.asof, noDots: 1, emptyMsg: nod });
+      }
+      draw._supply(p, sel);
+      // output by model (primary model, to avoid double counting shared parts)
+      const pal = [C.navy, C.blue, C.cyan, C.teal, '#7C8A97', '#8C6BD8', C.warn, C.sky];
+      const mm = d3.rollups(cur, v => d3.sum(v, r => r.pa), r => r.model).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+      if (p.future || !mm.length) empty(emix, p.future ? 'No actuals yet for this month' : 'No data'); else donut(emix, mm.map(([k, v], i) => ({ label: k, value: v, color: pal[i % pal.length] })), { center: 'produced', fmt: kf });
+      const sh = d3.rollups(cur.filter(r => r.dp), v => ({ plan: d3.sum(v, r => r.dp), actual: d3.sum(v, r => r.da) }), r => r.shop);
+      pvaH(esh, sh.map(([k, v]) => ({ label: k, plan: v.plan, actual: p.future ? null : v.actual })).sort((a, b) => b.plan - a.plan), { vals: 1, rh: 38, emptyMsg: nod });
+    },
+    _supply(p, sel) {
+      const eiss = q('#c-pr-issues .list'), ev = ch('c-pr-vend'), ei = ch('c-pr-ihs'), tbl = q('#tb-comp');
+      q('#h-pr-issues').textContent = sel ? `Critical Issues · ${sel.shop}` : 'Critical Issues';
+      const SRC = ['atlas_bom', 'atlas_vendor_rcv', 'atlas_stock_critical', ...ATL];
+      // issues
+      if (dash.data('atlas_issues').status === 'ok') { eiss.replaceChildren();
+        const MT = [['CDDREAM', 'CD-Dream'], ['DREAM', 'CD-Dream'], ['CD70', 'CD70'], ['CG125S', 'CG125S'], ['CG125', 'CG125'], ['PRIDOR', 'Pridor'], ['CB125', 'CB125F'], ['CB150', 'CB150F'], ['K4AA', 'K4AA']];
+        const im = t => { const n = (t || '').toUpperCase().replace(/[-\s]/g, ''); return MT.filter(([k]) => n.includes(k)).map(x => x[1]); };
+        const rs = !sel ? [] : D('atlas_issues').filter(r => r.status === 'open' && (r.shops || [r.shop]).includes(sel.shop) && r.last_meeting >= p.start && r.last_meeting <= p.asof && (() => { const m = im(r.item + ' ' + r.problem); return !m.length || m.some(x => sel.mods.includes(x)); })())
+          .sort((a, b) => (a.priority === 'Critical' ? 0 : 1) - (b.priority === 'Critical' ? 0 : 1) || b.last_meeting.localeCompare(a.last_meeting));
+        if (!rs.length) { const d = document.createElement('div'); d.className = 'empty'; d.style.minHeight = '60px'; d.textContent = sel ? `No open issues logged for ${sel.shop} in ${mon(p.month)}` : 'Pick a product'; eiss.appendChild(d); }
+        rs.forEach(r => { const d = document.createElement('div'); d.className = 'issue'; if (r.priority !== 'Critical') d.style.borderLeftColor = '#E0A100';
+          const h = document.createElement('div'); h.className = 'h'; h.textContent = r.item; const m = document.createElement('div'); m.className = 'm'; m.textContent = `${r.priority} · ${r.owner ? 'Owner: ' + r.owner + ' · ' : ''}${r.source ? r.source + ' · ' : ''}last discussed ${day(r.last_meeting)}`; const pp = document.createElement('div'); pp.className = 'p'; pp.textContent = r.problem; d.append(h, m, pp); eiss.appendChild(d); }); }
+      if (SRC.some(id => dash.data(id).status !== 'ok')) { [ev, ei].forEach(e => status(e, ...SRC)); return; }
+      if (!sel) { empty(ev, 'Pick a product'); empty(ei, 'Pick a product'); table(tbl, [], [{ k: 'part' }]); return; }
+      const comps = D('atlas_bom').filter(b => b.fg.split(';').some(x => x.split(':')[0] === sel.code));
+      const stock = new Map(D('atlas_stock_critical').map(r => [r.code, r]));
+      const ds = datesOf(p).filter(d => d <= p.asof), end = p.actEnd;
+      const wd = d => d3.utcDay.count(new Date(p.start + 'T00:00:00Z'), d3.utcDay.offset(new Date(d + 'T00:00:00Z'), 1)) - d3.utcSunday.count(new Date(p.start + 'T00:00:00Z'), d3.utcDay.offset(new Date(d + 'T00:00:00Z'), 1));
+      const vendMonth = p.month === '2026-10', rcvDays = wd('2026-10-27');
+      const rcv = d3.rollup(D('atlas_vendor_rcv'), v => d3.sum(v, r => r.received), r => r.code, r => r.date);
+      const pdly = d3.group(D('atlas_parts_daily').filter(r => r.date >= p.start && r.date <= p.asof), r => r.code);
+      const rows = comps.map(b => { let plan = null, act = null, trend = null;
+        if (b.source === 'Vendor') { if (vendMonth && b.sched_oct) { const m = rcv.get(b.code) || new Map(); let c = 0; trend = ds.map(d => { c += m.get(d) || 0; const pl = b.sched_oct * Math.min(wd(d), rcvDays) / rcvDays; return d <= end && pl ? c / pl * 100 : null; }); plan = Math.round(b.sched_oct * Math.min(wd(end), rcvDays) / rcvDays); act = d3.sum([...(m.entries())].filter(([d]) => d <= end), x => x[1]); } }
+        else { const rs = pdly.get(b.code) || []; const byD = new Map(rs.map(r => [r.date, r])); let cp = 0, ca = 0; trend = ds.map(d => { const r = byD.get(d) || {}; cp += r.prod_plan || 0; ca += r.prod_actual || 0; return d <= end && cp ? ca / cp * 100 : null; }); plan = d3.sum(rs.filter(r => r.date <= p.asof), r => r.prod_plan || 0); act = d3.sum(rs.filter(r => r.date <= end), r => r.prod_actual || 0); if (!plan && !act) { plan = null; act = null; trend = null; } }
+        const st = stock.get(b.code); const comp = plan ? act / plan * 100 : null;
+        const shortStock = st && st.stock < st.safety_stock; const short = (comp != null && comp < 95) || shortStock;
+        return { ...b, plan, act, comp, stock: st ? st.stock : null, safety_stock: st ? st.safety_stock : (b.safety || null), short, status: short ? (comp != null && comp < 95 ? 'Behind plan' : 'Below safety') : (comp == null ? 'No data' : 'On track'), trend }; });
+      const pal = [C.bad, C.blue, C.warn, C.teal, C.navy, '#8C6BD8', C.cyan, '#7C8A97'];
+      const plot = (el, rs, emptyMsg) => { const sh = rs.filter(r => r.short && r.trend && r.trend.some(v => v != null)).sort((a, b) => (a.comp ?? 999) - (b.comp ?? 999)).slice(0, 8);
+        if (!sh.length) return empty(el, emptyMsg);
+        lines(el, ds, sh.map((r, i) => ({ name: r.part.length > 15 ? r.part.slice(0, 14) + '…' : r.part, color: pal[i % pal.length], values: r.trend })), { xFmt: day, yFmt: v => v + '%', fmt: v => d3.format('.0f')(v) + '%', refs: [{ v: 100, label: 'Plan', color: '#8C96A0' }], min: 0, noDots: 1, h: 260 }); };
+      const vr = rows.filter(r => r.source === 'Vendor'), ir = rows.filter(r => r.source === 'In-house');
+      if (!vr.length) empty(ev, 'No vendor parts linked to this product in Atlas');
+      else if (!vendMonth) empty(ev, 'Vendor receipts are loaded for Oct 2026 only');
+      else plot(ev, vr, 'No vendor shortages for this product');
+      if (!ir.length) empty(ei, 'No in-house parts linked to this product in Atlas'); else plot(ei, ir, 'No in-house supply shortages for this product');
+      const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
+      table(tbl, rows, [{ k: 'part' }, { k: 'code' }, { k: 'source' }, { k: 'shop' }, { k: 'plan', n: 1 }, { k: 'act', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }, { k: 'stock', n: 1 }, { k: 'safety_stock', n: 1 }, { k: 'status', pill: v => v === 'On track' ? 'good' : v === 'No data' ? 'neu' : v === 'Below safety' ? 'warn' : 'bad' }, { k: 'link' }], { sort: 'comp', dir: 1 });
+    },
+    _detail(p, c) {
+      const ids = ['cum', 'daily', 'shop', 'model', 'trend', 'mon', 'pcum'].map(k => ch(`c-${c.pre}-${k}`)); const live = ids.filter(Boolean); const tbl = q(`#tb-${c.pre}`);
+      if (live.map(e => sA(e)).some(Boolean)) return;
+      const [ecum, eday, esh, emod, etr, emon, epc] = ids; const nod = p.future ? 'No plan uploaded in Atlas for this month yet' : `No ${c.noun} for this selection`;
+      const [dP, dA] = c.dk;
+      cumChart(ecum, c.stream, p);
+      const f = flow(c.stream, p);
+      if (!f.planM) empty(eday, nod);
+      else vbar(eday, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: C.navy }], (x, k) => k === 'p' ? f.pl.get(x) || 0 : (x <= p.actEnd ? f.ac.get(x) || 0 : null), { vals: 1, xFmt: d => +d.slice(8), marker: p.asof });
+      draw._shopPva(esh, c.stream, p);
+      const fix = r => ({ ...r, P: r[c.pk] || 0, A: r[c.ak] || 0, PC: r[c.pk] ? (r[c.ak] || 0) / r[c.pk] * 100 : null, GAP: Math.max(0, (r[c.pk] || 0) - (r[c.ak] || 0)) });
+      const cur = partAgg(p, p.start, p.asof, c.type).map(fix).filter(r => r.P || r.A);
+      const pm = new Map(), am = new Map();
+      const pM = p.mf ? { ...p, model: 'All' } : p; (p.mf ? partAgg(pM, p.start, p.asof, c.type).map(fix).filter(r => r.P || r.A) : cur).forEach(r => (pM.model === 'All' ? [r.model || r.mods[0] || 'Untagged'] : r.mods.filter(m => m === pM.model)).forEach(m => { pm.set(m, (pm.get(m) || 0) + r.P); am.set(m, (am.get(m) || 0) + r.A); }));
+      if (emod) pvaH(emod, [...pm.keys()].map(m => ({ label: m, plan: pm.get(m), actual: p.future ? null : am.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => b.plan - a.plan), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: nod });
+      const cm = window.__TODAY.slice(0, 7), months = window.__MONTHS.filter(m => m <= cm);
+      const tr = months.map(m => { const rs = partAgg(p, m + '-01', m === cm ? window.__TODAY : window.__mEnd(m), c.type).map(fix); return [m, { p: d3.sum(rs, r => r.P), a: d3.sum(rs, r => r.A) }]; }).filter(x => x[1].p > 0);
+      const tg = new Map(tr);
+      vbar(etr, tr.map(x => x[0]), [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: x => compColor(tg.get(x).a / tg.get(x).p * 100) }], (x, k) => tg.get(x)[k],
+        { vals: 1, xFmt: m => mon(m) + (m === cm ? '*' : ''), marker: p.month, extra: x => `Compliance ${pct(tg.get(x).a / tg.get(x).p * 100)}${x === cm ? ' · month to date' : ''}`, emptyMsg: nod });
+      const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
+      let sel = p[c.param] && DIMS().get(p[c.param]); if (!sel || !partOk(sel, p) || sel.type !== c.type) sel = null;
+      if (!sel && cur.length) sel = cur.slice().sort((a, b) => (a.PC ?? 1e9) - (b.PC ?? 1e9))[0];
+      table(tbl, cur, [{ k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'models' }, { k: 'P', n: 1 }, { k: 'A', n: 1 }, { k: 'PC', n: 1, fmt: pct, color: cc }, { k: 'GAP', n: 1 }],
+        { q: q(`#q-${c.pre}`), sort: 'PC', dir: 1, onRow: r => dash.setParams({ [c.param]: r.code }), sel: r => sel && r.code === sel.code });
+      q(`#h-${c.pre}-mon`).textContent = sel ? sel.part : 'Selected Part';
+      q(`#h-${c.pre}-pcum`).textContent = sel ? `${sel.part} · ${mon(p.month)}` : 'This Month';
+      if (!sel) { empty(emon, 'Pick a part in the table'); empty(epc, 'Pick a part in the table'); return; }
+      const T = window.__TODAY, inPl = r => r.date.slice(0, 7) !== cm || r.date <= T;
+      const rs = D('atlas_parts_daily').filter(r => r.code === sel.code);
+      const g = d3.rollup(rs, v => ({ pp: d3.sum(v.filter(inPl), r => r[dP] || 0), pa: d3.sum(v.filter(r => r.date <= T), r => r[dA] || 0) }), r => r.date.slice(0, 7));
+      const ms = window.__MONTHS.filter(m => g.has(m) && (g.get(m).pp || g.get(m).pa));
+      vbar(emon, ms, [{ key: 'pp', name: 'Plan', color: C.plan }, { key: 'pa', name: c.actName, color: x => compColor(g.get(x).pp ? g.get(x).pa / g.get(x).pp * 100 : null) }], (x, k) => g.get(x)[k],
+        { vals: 1, xFmt: m => mon(m) + (m === cm ? '*' : ''), marker: p.month, extra: x => `Compliance ${pct(g.get(x).pp ? g.get(x).pa / g.get(x).pp * 100 : null)}${x === cm ? ' · month to date' : ''}` });
+      const ds = datesOf(p), byD = new Map(rs.filter(r => r.date >= p.start && r.date <= p.end).map(r => [r.date, r]));
+      let a = 0, b = 0; const cp = [], ca = [];
+      ds.forEach(x => { const r = byD.get(x) || {}; a += r[dP] || 0; b += r[dA] || 0; cp.push(a); ca.push(x <= p.actEnd && !p.future ? b : null); });
+      lines(epc, ds, [{ name: 'Plan', color: C.grey, dash: '5 4', values: cp }, { name: c.actName, color: C.navy, values: ca }], { xFmt: day, marker: p.asof, noDots: 1, emptyMsg: nod });
+    },
+    inhouse(p) { draw._detail(p, { pre: 'ih', stream: 'In-house', type: 'In-house', pk: 'pp', ak: 'pa', dk: ['prod_plan', 'prod_actual'], param: 'ihpart', noun: 'in-house parts', actName: 'Produced' }); },
+    dispatch(p) { draw._detail(p, { pre: 'dp', stream: 'Dispatch', type: 'Finished', pk: 'dp', ak: 'da', dk: ['disp_plan', 'disp_actual'], param: 'dpart', noun: 'dispatches', actName: 'Dispatched' }); },
+    quality(p) {
+      const el = ch('c-q-month'), ed = ch('c-q-day'), es = ch('c-q-shop');
+      if (!status(el, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date <= p.actEnd); const g = d3.rollups(rows, v => d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6, r => r.date.slice(0, 7)).sort((a, b) => d3.ascending(a[0], b[0]));
+        vbar(el, g.map(d => d[0]), [{ key: 'v', name: 'Rejection ppm', color: c => c === p.month ? C.navy : '#7C8A97' }], c => Math.round(g.find(d => d[0] === c)[1]), { xFmt: mon, refs: [{ v: 10000, label: 'Limit 10,000' }], noLegend: 1 }); }
+      if (!status(ed, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd); const g = d3.rollups(rows, v => Math.round(d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6), r => r.date).sort((a, b) => d3.ascending(a[0], b[0]));
+        lines(ed, g.map(d => d[0]), [{ name: 'ppm', color: C.blue, values: g.map(d => d[1]) }], { xFmt: day, refs: [{ v: 10000, label: 'Limit' }], emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
+      if (!status(es, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd);
+        const g = d3.rollups(rows, v => d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6, r => r.shop);
+        pvaH(es, g.map(([s, v]) => ({ label: s, plan: 10000, actual: Math.round(v) })).sort((a, b) => b.actual - a.actual), { inv: 1, planName: 'Limit', actName: 'Actual ppm', emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
+      const ep = ch('c-q-pareto');
+      if (!status(ep, 'smp_defects')) { const g = d3.rollups(D('smp_defects').filter(r => r.month === p.month && inShop(r, p)), v => d3.sum(v, r => r.rejected_qty), r => r.defect).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const tot = d3.sum(g, d => d[1]); let acc = 0; const cum = new Map(g.map(d => [d[0], (acc += d[1]) / tot]));
+        vbar(ep, g.map(d => d[0]), [{ key: 'q', name: 'Rejected', color: C.blue }], c => g.find(d => d[0] === c)[1], { rot: 1, h: 270, line: c => cum.get(c), noLegend: 1, emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
+      if (dash.data('smp_complaints').status === 'ok') table(q('#tb-cc'), D('smp_complaints').filter(r => inShop(r, p) && r.date <= p.asof && r.date.slice(0, 7) <= p.month), [{ k: 'ref' }, { k: 'date', fmt: day }, { k: 'shop' }, { k: 'part' }, { k: 'issue' }, { k: 'status', pill: v => v === 'Open' ? 'bad' : 'good' }], { sort: 'date', dir: -1 });
+    },
+    maintenance(p) {
+      const epm = ch('c-m-pm');
+      if (!status(epm, 'smp_pm')) { const rs = D('smp_pm').filter(r => r.month === p.month && inShop(r, p));
+        pvaH(epm, rs.map(r => ({ label: r.shop, plan: r.pm_planned, actual: r.pm_done })).sort((a, b) => (a.actual || 0) / a.plan - (b.actual || 0) / b.plan), { planName: 'PM planned', actName: 'PM done', rh: 26 }); }
+      const bd = D('smp_breakdowns').filter(r => inShop(r, p) && inShift(r, p) && r.date >= p.start && r.date <= p.actEnd);
+      const es = ch('c-m-shop'), ed = ch('c-m-day'), ec = ch('c-m-cat');
+      if (!status(es, 'smp_breakdowns')) { const g = d3.rollups(bd, v => d3.sum(v, r => r.downtime_min) / 60, r => r.shop).sort((a, b) => b[1] - a[1]);
+        vbar(es, g.map(d => d[0]), [{ key: 'h', name: 'Hours', color: c => g.find(d => d[0] === c)[1] > 24 ? C.bad : C.navy }], c => g.find(d => d[0] === c)[1], { rot: 1, h: 250, fmt: v => f1(v) + ' h', noLegend: 1, emptyMsg: p.future ? 'No actuals yet for this month' : 'No breakdowns' }); }
+      if (!status(ed, 'smp_breakdowns')) { const ds = [...new Set(bd.map(r => r.date))].sort(); const m = d3.rollup(bd, v => d3.sum(v, r => r.downtime_min) / 60, r => r.date, r => r.shift);
+        vbar(ed, ds, [{ key: 'A', name: 'Shift A', color: C.navy }, { key: 'B', name: 'Shift B', color: C.blue }, { key: 'C', name: 'Shift C', color: C.cyan }], (c, k) => (m.get(c) || new Map()).get(k), { stack: 1, xFmt: d => +d.slice(8), fmt: v => f1(v) + ' h', emptyMsg: p.future ? 'No actuals yet for this month' : 'No breakdowns' }); }
+      if (!status(ec, 'smp_breakdowns')) { const col = { Electrical: C.navy, Tooling: C.blue, Mechanical: C.cyan, Hydraulic: C.teal, Utility: C.sky };
+        donut(ec, d3.rollups(bd, v => Math.round(d3.sum(v, r => r.downtime_min) / 60), r => r.category).map(([k, v]) => ({ label: k, value: v, color: col[k] })).sort((a, b) => b.value - a.value), { center: 'hours' }); }
+      if (dash.data('smp_breakdowns').status === 'ok') table(q('#tb-bd'), bd, [{ k: 'ref' }, { k: 'date', fmt: day }, { k: 'shift' }, { k: 'shop' }, { k: 'machine' }, { k: 'category' }, { k: 'cause' }, { k: 'downtime_min', n: 1 }, { k: 'status', pill: v => v === 'Open' ? 'bad' : 'good' }], { q: q('#q-bd'), sort: 'date', dir: -1 });
+    },
+    oee(p) {
+      const els = ['c-o-shop', 'c-o-trend', 'c-o-heat', 'c-o-apq'].map(ch); if (els.map(e => status(e, 'smp_oee')).some(Boolean)) return;
+      const rs = D('smp_oee').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd); const ss = rs.filter(r => inShift(r, p));
+      const o = r => r.availability * r.performance * r.quality; const nod = p.future ? 'No actuals yet for this month' : 'No data';
+      pvaH(els[0], d3.rollups(ss, v => d3.mean(v, o) * 100, r => r.shop).map(([s, v]) => ({ label: s, plan: 75, actual: v })).sort((a, b) => a.actual - b.actual), { planName: 'Target 75%', actName: 'OEE', fmt: v => f1(v) + '%', tickFmt: v => v + '%', rh: 26, emptyMsg: nod });
+      const ds = [...new Set(rs.map(r => r.date))].sort();
+      lines(els[1], ds, ['A', 'B', 'C'].filter(s => p.shift === 'All' || s === p.shift).map((s, i) => ({ name: 'Shift ' + s, color: [C.navy, C.blue, C.cyan][i], values: ds.map(d => { const v = rs.filter(r => r.date === d && r.shift === s); return v.length ? Math.round(d3.mean(v, o) * 1000) / 10 : null; }) })), { xFmt: day, fmt: v => v + '%', yFmt: v => v + '%', refs: [{ v: 75, label: 'Target 75%', color: C.navy }], min: 30, emptyMsg: nod });
+      const shops = window.__SHOPS.filter(s => p.shop === 'All' || s === p.shop); const hm = d3.rollup(ss, v => d3.mean(v, o), r => r.shop, r => r.date);
+      heat(els[2], shops, ds, (s, d) => (hm.get(s) || new Map()).get(d), { xFmt: d => +d.slice(8), name: 'OEE' });
+      const apq = d3.rollups(ss, v => ({ a: d3.mean(v, r => r.availability) * 100, p: d3.mean(v, r => r.performance) * 100, q: d3.mean(v, r => r.quality) * 100 }), r => r.shop); const mm = new Map(apq);
+      vbar(els[3], apq.map(d => d[0]), [{ key: 'a', name: 'Availability', color: C.navy }, { key: 'p', name: 'Performance', color: C.blue }, { key: 'q', name: 'Quality', color: C.cyan }], (c, k) => mm.get(c)[k], { rot: 1, h: 270, fmt: v => f1(v) + '%', yFmt: v => v + '%', emptyMsg: nod });
+    },
+    capacity(p) {
+      const el = ch('c-c-load'), eo = ch('c-c-outlook'); if (status(el, 'smp_capacity') | status(eo, 'smp_capacity')) return;
+      const rs = D('smp_capacity').filter(r => r.month === p.month && inShop(r, p));
+      pvaH(el, rs.map(r => ({ label: r.shop, plan: r.capacity_units, actual: r.planned_load_units, tip: [r.shop, `Capacity ${nf(r.capacity_units)}`, `Load ${nf(r.planned_load_units)}`, `Utilisation ${pct(r.planned_load_units / r.capacity_units * 100)}`] })).sort((a, b) => b.actual / b.plan - a.actual / a.plan), { inv: 1, planName: 'Capacity', actName: 'Planned load', rh: 26 });
+      const all = D('smp_capacity').filter(r => inShop(r, p)); const top = p.shop !== 'All' ? [p.shop] : d3.rollups(all.filter(r => r.month === p.month), v => v[0].planned_load_units / v[0].capacity_units, r => r.shop).sort((a, b) => b[1] - a[1]).slice(0, 5).map(d => d[0]);
+      const mm = new Map(all.map(r => [r.month + '|' + r.shop, Math.round(r.planned_load_units / r.capacity_units * 1000) / 10]));
+      lines(eo, window.__MONTHS, top.map((s, i) => ({ name: s, color: [C.bad, C.navy, C.blue, C.cyan, C.teal][i], values: window.__MONTHS.map(m => mm.get(m + '|' + s)) })), { xFmt: mon, fmt: v => v + '%', yFmt: v => v + '%', refs: [{ v: 100, label: '100%' }], marker: p.month, min: 0 });
+      table(q('#tb-cap'), rs, [{ k: 'month', fmt: m => d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')) }, { k: 'shop' }, { k: 'capacity_units', n: 1 }, { k: 'planned_load_units', n: 1, color: (v, r) => v > r.capacity_units ? C.bad : null }], { sort: 'planned_load_units', dir: -1 });
+    },
+    efficiency(p) {
+      const els = ['c-e-shop', 'c-e-shift', 'c-e-abs'].map(ch); if (els.map(e => status(e, 'smp_efficiency')).some(Boolean)) return;
+      const rs = D('smp_efficiency').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd); const ss = rs.filter(r => inShift(r, p)); const nod = p.future ? 'No actuals yet for this month' : 'No data';
+      pvaH(els[0], d3.rollups(ss, v => [d3.sum(v, r => r.available_hours) * .85, d3.sum(v, r => r.earned_hours)], r => r.shop).map(([s, [a, e]]) => ({ label: s, plan: a, actual: e, tip: [s, `Target hours (85%) ${nf(Math.round(a))}`, `Earned hours ${nf(Math.round(e))}`, `Efficiency ${pct(e / a * 85)}`] })).sort((a, b) => a.actual / a.plan - b.actual / b.plan), { planName: 'Target hours (85%)', actName: 'Earned hours', rh: 26, emptyMsg: nod });
+      const ds = [...new Set(rs.map(r => r.date))].sort();
+      lines(els[1], ds, ['A', 'B', 'C'].filter(s => p.shift === 'All' || s === p.shift).map((s, i) => ({ name: 'Shift ' + s, color: [C.navy, C.blue, C.cyan][i], values: ds.map(d => { const v = rs.filter(r => r.date === d && r.shift === s); return v.length ? Math.round(d3.sum(v, r => r.earned_hours) / d3.sum(v, r => r.available_hours) * 1000) / 10 : null; }) })), { xFmt: day, fmt: v => v + '%', yFmt: v => v + '%', refs: [{ v: 85, label: 'Target 85%', color: C.navy }], min: 50, emptyMsg: nod });
+      const g = d3.rollups(ss, v => d3.sum(v, r => r.absent) / d3.sum(v, r => r.headcount) * 100, r => r.shop).sort((a, b) => b[1] - a[1]);
+      vbar(els[2], g.map(d => d[0]), [{ key: 'a', name: 'Absenteeism', color: c => g.find(d => d[0] === c)[1] > 7 ? C.bad : C.navy }], c => g.find(d => d[0] === c)[1], { rot: 1, h: 250, fmt: v => f1(v) + '%', yFmt: v => v + '%', refs: [{ v: 5, label: 'Norm 5%', color: C.navy }], noLegend: 1, emptyMsg: nod });
+    },
+    workforce(p) {
+      const ids = ['c-w-abs', 'c-w-ot', 'c-w-dabs', 'c-w-dot'].map(ch); const tbl = q('#tb-wf');
+      if (ids.map(e => status(e, 'sp_attendance')).some(Boolean)) return;
+      const [eabs, eot, edabs, edot] = ids;
+      const wfShops = r => /KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop];
+      const all = D('sp_attendance').filter(r => p.shop === 'All' || wfShops(r).includes(p.shop));
+      const rs = all.filter(r => r.date >= p.start && r.date <= p.actEnd);
+      const nod = p.future ? 'No attendance yet for this month' : (all.some(r => r.date.slice(0, 7) === p.month) ? 'No data for this selection' : 'The attendance file covers ' + [...new Set(D('sp_attendance').map(r => mon(r.date) + ' ' + r.date.slice(0, 4)))].join(', ') + ' only');
+      if (!rs.length) { ids.forEach(e => empty(e, nod)); table(tbl, [], [{ k: 'area' }]); return; }
+      const work = r => new Date(r.date + 'T00:00:00Z').getUTCDay() !== 0;
+      const absPct = v => { const pa = d3.sum(v.filter(work), r => r.present + r.absent); return pa ? d3.sum(v.filter(work), r => r.absent) / pa * 100 : null; };
+      const pctf = v => d3.format('.1f')(v) + '%';
+      const byArea = d3.rollups(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours) }), r => r.area);
+      const ga = new Map(byArea), areas = byArea.map(d => d[0]);
+      const aSort = areas.slice().sort((a, b) => (ga.get(b).abs ?? -1) - (ga.get(a).abs ?? -1));
+      vbar(eabs, aSort, [{ key: 'a', name: 'Absenteeism %', color: c => ga.get(c).abs > 10 ? C.bad : ga.get(c).abs > 5 ? C.warn : C.navy }], c => ga.get(c).abs == null ? null : Math.round(ga.get(c).abs * 10) / 10,
+        { rot: 1, h: 270, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%' }], noLegend: 1 });
+      const oSort = areas.slice().sort((a, b) => ga.get(b).ot - ga.get(a).ot);
+      vbar(eot, oSort, [{ key: 'o', name: 'Overtime hours', color: C.blue }], c => Math.round(ga.get(c).ot), { rot: 1, h: 270, noLegend: 1 });
+      const days = [...new Set(rs.map(r => r.date))].sort();
+      const byDay = d3.rollup(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours), otp: d3.sum(v, r => r.ot_people) }), r => r.date);
+      const wdays = days.filter(d => new Date(d + 'T00:00:00Z').getUTCDay() !== 0);
+      lines(edabs, wdays, [{ name: 'Absenteeism', color: C.bad, values: wdays.map(d => byDay.get(d).abs == null ? null : Math.round(byDay.get(d).abs * 10) / 10) }], { xFmt: day, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%', color: '#8C96A0' }], min: 0 });
+      vbar(edot, days, [{ key: 'o', name: 'Overtime hours', color: c => new Date(c + 'T00:00:00Z').getUTCDay() === 0 ? C.warn : C.blue }], c => Math.round(byDay.get(c).ot),
+        { xFmt: d => +d.slice(8), extra: c => `${byDay.get(c).otp} people on overtime${new Date(c + 'T00:00:00Z').getUTCDay() === 0 ? ' · Sunday' : ''}`, noLegend: 1 });
+      const rows = d3.rollups(rs, v => { const w = v.filter(work); const nd = new Set(w.map(r => r.date)).size || 1; const pres = d3.sum(w, r => r.present);
+        return { area: v[0].area, section: v[0].section, shop: v[0].shop, hc: d3.max(v, r => r.headcount), avgp: pres / nd, abs: d3.sum(w, r => r.absent), absp: absPct(v), leave: d3.sum(w, r => r.leave), ot: d3.sum(v, r => r.ot_hours), otph: pres ? d3.sum(v, r => r.ot_hours) / pres : null }; },
+        r => r.area + '|' + r.section).map(d => ({ key: d[0], ...d[1] }));
+      const cc = v => v == null ? null : v > 10 ? C.bad : v > 5 ? C.warn : null;
+      table(tbl, rows, [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }], { q: q('#q-wf'), sort: 'absp', dir: -1 });
+    },
+    inventory(p) {
+      const es = ch('c-i-safety');
+      if (!status(es, 'atlas_shop_parts')) { const rs = D('atlas_shop_parts').filter(r => inShop(r, p)).sort((a, b) => b.below_safety - a.below_safety); const m = new Map(rs.map(r => [r.shop, r]));
+        vbar(es, rs.map(r => r.shop), [{ key: 'h', name: 'Below 50%', color: C.bad }, { key: 's', name: '50–100%', color: C.warn }, { key: 'o', name: 'At or above', color: C.sky }], (c, k) => { const r = m.get(c); return k === 'h' ? r.below_half_safety : k === 's' ? r.below_safety - r.below_half_safety : r.with_safety_level - r.below_safety; }, { stack: 1, rot: 1, h: 260 }); }
+      const ev = ch('c-i-vendor');
+      if (!status(ev, 'atlas_vendors')) pvaH(ev, D('atlas_vendors').filter(r => r.month_schedule > 150000).map(r => ({ label: r.vendor.length > 24 ? r.vendor.slice(0, 23) + '…' : r.vendor, plan: r.month_schedule, actual: r.received_mtd })).sort((a, b) => a.actual / a.plan - b.actual / b.plan).slice(0, 12), { planName: 'Monthly schedule', actName: 'Received to date', rh: 26 });
+      const et = ch('c-i-tools');
+      if (!status(et, 'atlas_tools_by_shop')) { const rs = D('atlas_tools_by_shop').filter(r => r.stock_value_pkr_m > 0 && (p.shop === 'All' || r.shop === p.shop || (p.shop === 'HPDC / Die Cast' && r.shop === 'HPDC') || (p.shop === 'Hubs' && r.shop === 'Hub'))).sort((a, b) => b.stock_value_pkr_m - a.stock_value_pkr_m).slice(0, 12); const m = new Map(rs.map(r => [r.shop, r]));
+        vbar(et, rs.map(r => r.shop), [{ key: 'tools_pkr_m', name: 'Tools', color: C.navy }, { key: 'spares_pkr_m', name: 'Spares', color: C.blue }, { key: 'consumables_pkr_m', name: 'Consumables', color: C.cyan }], (c, k) => m.get(c)[k], { stack: 1, rot: 1, h: 260, fmt: v => f1(v) + ' M', yFmt: v => v + 'M', emptyMsg: 'No tools inventory mapped to this shop' }); }
+      const etr = ch('c-i-trend');
+      if (!status(etr, 'atlas_tools_trend')) lines(etr, D('atlas_tools_trend').map(r => r.month), [{ name: 'PKR M', color: C.blue, values: D('atlas_tools_trend').map(r => r.stock_value_pkr_m) }], { xFmt: mon, fmt: f1, yFmt: v => v + 'M', min: 340 });
+      document.querySelectorAll('[data-asof]').forEach(el => { try { const r = D(el.dataset.asof) || [], a = (r.find(x => x.asof) || {}).asof; if (a) el.textContent = `${+a.slice(8)} ${new Date(a + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } catch (e) {} });
+      if (dash.data('atlas_stock_critical').status === 'ok') table(q('#tb-crit'), D('atlas_stock_critical').filter(r => inShop(r, p)), [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover_pct', n: 1, fmt: v => v + '%', color: v => v < 25 ? C.bad : C.warn }], { q: q('#q-crit'), sort: 'cover_pct', dir: 1 });
+    },
+    cost(p) {
+      const em = ch('c-k-month'), es = ch('c-k-shop'), eu = ch('c-k-unit'), eg = ch('c-k-margin');
+      if (!status(em, 'smp_cost')) { const g = d3.rollup(D('smp_cost').filter(r => inShop(r, p)), v => ({ b: d3.sum(v, r => r.budget_pkr_m), a: v.some(r => r.actual_pkr_m != null) ? d3.sum(v, r => r.actual_pkr_m || 0) : null }), r => r.month);
+        vbar(em, window.__MONTHS, [{ key: 'b', name: 'Budget', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const v = g.get(c); return v.a == null ? C.plan : v.a > v.b * 1.02 ? C.bad : C.navy; } }], (c, k) => (g.get(c) || {})[k], { xFmt: mon, fmt: v => f1(v) + ' M', yFmt: v => v, marker: p.month, extra: c => c === '2026-10' ? 'October to 14 Oct' : '' }); }
+      if (!status(es, 'smp_cost')) pvaH(es, D('smp_cost').filter(r => r.month === p.month && inShop(r, p)).map(r => ({ label: r.shop, plan: r.budget_pkr_m, actual: r.actual_pkr_m })).sort((a, b) => b.plan - a.plan), { inv: 1, planName: 'Budget', actName: 'Actual', fmt: v => f1(v) + ' M', rh: 26 });
+      if (!status(eu, 'smp_unit_cost')) { const rs = D('smp_unit_cost').filter(r => inShop(r, p)); const m = new Map(rs.map(r => [r.product, r]));
+        vbar(eu, rs.map(r => r.product), [['material_pkr', 'Material', C.navy], ['labour_pkr', 'Labour', C.blue], ['overhead_pkr', 'Overhead', C.cyan], ['power_gas_pkr', 'Power & gas', C.teal], ['tooling_pkr', 'Tooling', C.sky]].map(([k, n, c]) => ({ key: k, name: n, color: c })), (c, k) => m.get(c)[k], { stack: 1, rot: 1, h: 290, fmt: v => 'PKR ' + nf(v), emptyMsg: 'No products mapped to this shop' }); }
+      if (!status(eg, 'smp_unit_cost')) { const rs = D('smp_unit_cost').filter(r => inShop(r, p)).map(r => { const c = r.material_pkr + r.labour_pkr + r.overhead_pkr + r.power_gas_pkr + r.tooling_pkr; return { label: r.product, plan: r.price_pkr, actual: c, tip: [r.product, `Price PKR ${nf(r.price_pkr)}`, `Cost PKR ${nf(c)}`, `Margin ${pct((r.price_pkr - c) / r.price_pkr * 100)}`] }; });
+        pvaH(eg, rs.sort((a, b) => b.actual / b.plan - a.actual / a.plan), { inv: 1, planName: 'Price', actName: 'Unit cost', rh: 24, emptyMsg: 'No products mapped to this shop' }); }
+    },
+    savings(p) {
+      const em = ch('c-s-month'), es = ch('c-s-stage');
+      if (!status(em, 'smp_savings')) { const rs = D('smp_savings'); let ct = 0, ca = 0; const cumT = rs.map(r => (ct += r.target_pkr_m)), cumA = rs.map(r => r.realised_pkr_m == null ? null : (ca += r.realised_pkr_m));
+        lines(em, rs.map(r => r.month), [{ name: 'Target', color: C.grey, dash: '5 4', values: cumT }, { name: 'Realised', color: C.navy, values: cumA }], { xFmt: mon, fmt: v => f1(v) + ' M', yFmt: v => v + 'M', marker: p.month, min: 0 }); }
+      const ideas = D('smp_ideas').filter(r => p.shop === 'All' || r.shop === p.shop);
+      if (!status(es, 'smp_ideas')) { const st = ['Idea', 'Evaluate', 'Approved', 'Implementing', 'Done']; const g = d3.rollup(ideas, v => ({ e: d3.sum(v, r => r.est_saving_pkr_m), r: d3.sum(v, r => r.realised_pkr_m) }), r => r.stage);
+        vbar(es, st.filter(s => g.get(s)), [{ key: 'e', name: 'Target', color: C.plan }, { key: 'r', name: 'Realised', color: C.navy }], (c, k) => g.get(c)[k], { fmt: v => f1(v) + ' M', yFmt: v => v + 'M', emptyMsg: 'No ideas for this shop' }); }
+      if (dash.data('smp_ideas').status === 'ok') table(q('#tb-ideas'), ideas, [{ k: 'ref' }, { k: 'idea' }, { k: 'shop' }, { k: 'lever' }, { k: 'est_saving_pkr_m', n: 1, fmt: f1 }, { k: 'realised_pkr_m', n: 1, fmt: f1 }, { k: 'stage', pill: v => ({ Done: 'good', Implementing: 'warn', Approved: 'warn' })[v] || 'neu' }, { k: 'target_date', fmt: day }], { sort: 'est_saving_pkr_m', dir: -1 });
+    },
+    projects(p) {
+      const es = ch('c-j-status'), eo = ch('c-j-owner'), host = q('#j-gantts'); if (status(es, 'jira_issues') | status(eo, 'jira_issues')) return;
+      const all = D('jira_issues'), T = window.__TODAY, site = 'https://maaniii2001.atlassian.net/browse/';
+      const kids = d3.group(all.filter(r => r.parent), r => r.parent); const leaves = all.filter(r => !kids.has(r.key));
+      const late = r => r.cat !== 'done' && r.due && r.due < T; const st = r => r.cat === 'done' ? 'Done' : late(r) ? 'Overdue' : r.cat === 'indeterminate' ? 'In Progress' : 'To Do';
+      const PN = { DGSRLFMT: 'Machining Projects', ALCIC: 'Auto Line CG Ign Coil', KAN: 'Mech + Elec Tasks' }; const pn = k => PN[k] || k;
+      const SC = { 'Done': C.good, 'In Progress': C.blue, 'To Do': C.plan, 'Overdue': C.bad };
+      const projs = [...new Set(all.map(r => r.project))];
+      const g1 = d3.rollup(leaves, v => v.length, r => r.project, st);
+      vbar(es, projs, ['Done', 'In Progress', 'To Do', 'Overdue'].map(k => ({ key: k, name: k, color: SC[k] })), (c, k) => (g1.get(c) || new Map()).get(k), { stack: 1, h: 250, xFmt: pn, yFmt: d3.format('d'), emptyMsg: 'No Jira activities' });
+      const open = leaves.filter(r => r.cat !== 'done'); const g2 = d3.rollup(open, v => v.length, r => r.assignee || 'Unassigned', st);
+      const owners = d3.rollups(open, v => v.length, r => r.assignee || 'Unassigned').sort((a, b) => b[1] - a[1]).map(d => d[0]);
+      vbar(eo, owners, ['Overdue', 'In Progress', 'To Do'].map(k => ({ key: k, name: k, color: SC[k] })), (c, k) => (g2.get(c) || new Map()).get(k), { stack: 1, h: 250, rot: 1, yFmt: d3.format('d'), emptyMsg: 'No open activities' });
+      const in14 = d3.timeFormat('%Y-%m-%d')(new Date(new Date(T + 'T00:00:00Z').getTime() + 14 * 864e5));
+      const lr = leaves.filter(r => r.cat !== 'done' && r.due && r.due <= in14).map(r => ({ ...r, proj: pn(r.project), late: r.due < T ? Math.round((new Date(T) - new Date(r.due)) / 864e5) : 0, status: st(r) }));
+      table(q('#tb-jlate'), lr, [{ k: 'key' }, { k: 'summary' }, { k: 'proj' }, { k: 'assignee' }, { k: 'due', fmt: day }, { k: 'late', n: 1, fmt: v => v ? v : '—', color: v => v > 0 ? C.bad : null }, { k: 'status', pill: v => v === 'Overdue' ? 'bad' : v === 'In Progress' ? 'warn' : 'neu' }], { sort: 'due', dir: 1 });
+      // ---- gantt per project
+      host.replaceChildren(); const P = s => new Date(s + 'T00:00:00Z');
+      const span = r => { const ks = kids.get(r.key) || []; const ss = [r.start, ...ks.map(k => k.start)].filter(Boolean), ds = [r.due, ...ks.map(k => k.due)].filter(Boolean); return [r.start || d3.min(ss), r.due || d3.max(ds)]; };
+      const gt = document.getElementById('tip'), root = document.getElementById('ael');
+      const showTip = (ev, node) => { gt.replaceChildren(node); gt.classList.add('wide'); const rb = root.getBoundingClientRect(); const w = gt.offsetWidth, h = gt.offsetHeight;
+        let x = ev.clientX - rb.left + 14, y = ev.clientY - rb.top + 14; if (x + w > rb.width - 8) x = Math.max(4, ev.clientX - rb.left - w - 14);
+        const vb = window.innerHeight - rb.top; if (y + h > vb - 8) y = Math.max(4, vb - h - 8); gt.style.left = x + 'px'; gt.style.top = y + 'px'; gt.style.opacity = 1; };
+      const hideTip = () => { gt.style.opacity = 0; gt.classList.remove('wide'); };
+      projs.forEach(pk => {
+        const rs = all.filter(r => r.project === pk && !r.parent); if (!rs.length) return;
+        const card = document.createElement('div'); card.className = 'card wide'; const h3 = document.createElement('h3');
+        const lv = leaves.filter(r => r.project === pk), dn = lv.filter(r => r.cat === 'done').length, od = lv.filter(late).length;
+        h3.textContent = `${all.find(r => r.project === pk).project_name} (${pk})`; const c1 = document.createElement('span'); c1.className = 'chip snap'; c1.textContent = `${dn}/${lv.length} done`; h3.appendChild(c1);
+        if (od) { const c2 = document.createElement('span'); c2.className = 'chip'; c2.style.cssText = 'background:#FBE3E3;color:var(--bad)'; c2.textContent = `${od} overdue`; h3.appendChild(c2); }
+        const el = document.createElement('div'); el.className = 'chart'; el.style.minHeight = '60px'; card.append(h3, el); host.appendChild(card);
+        const rows = rs.map(r => { const [a, b] = span(r); const ks = (kids.get(r.key) || []).slice().sort((x, y) => (x.start || '9') < (y.start || '9') ? -1 : 1); const lv2 = ks.length ? ks : [r];
+          return { r, a, b, ks, done: lv2.filter(k => k.cat === 'done').length, n: lv2.length, od: lv2.filter(late).length }; }).sort((x, y) => (x.a || '9') < (y.a || '9') ? -1 : 1);
+        const dated = rows.filter(x => x.a && x.b); const lo = d3.min([...dated.map(x => x.a), T]), hi = d3.max([...dated.map(x => x.b), T]);
+        const rh = 34, top = 24, h = rows.length * rh + top + 8; const { svg, w } = AK.box(el, h);
+        const lw = Math.min(w * 0.34, 300); const x = d3.scaleUtc([d3.utcDay.offset(P(lo), -3), d3.utcDay.offset(P(hi), 4)], [lw, w - 8]);
+        const months = d3.utcMonth.range(d3.utcMonth.floor(x.domain()[0]), x.domain()[1]); const step = Math.ceil(months.length / Math.max(1, Math.floor((w - lw) / 70)));
+        svg.append('g').attr('class', 'grid').selectAll('line').data(months).join('line').attr('x1', d => x(d)).attr('x2', d => x(d)).attr('y1', 14).attr('y2', h - 4);
+        svg.append('g').selectAll('text').data(months.filter((d, i) => i % step === 0)).join('text').attr('x', d => x(d) + 3).attr('y', 11).text(d => d3.utcFormat(months.length > 10 ? "%b '%y" : '%b %Y')(d));
+        rows.forEach((o, i) => { const y = top + i * rh, r = o.r, stt = o.ks.length ? (o.done === o.n ? 'Done' : o.od ? 'Overdue' : r.cat === 'indeterminate' || o.done ? 'In Progress' : st(r)) : st(r);
+          const g = svg.append('g').style('cursor', 'pointer');
+          g.append('rect').attr('x', 0).attr('y', y).attr('width', w).attr('height', rh).attr('fill', i % 2 ? '#FAFBFC' : 'transparent');
+          const nm = r.summary.length > 44 ? r.summary.slice(0, 43) + '…' : r.summary;
+          g.append('text').attr('class', 'lbl').attr('x', 4).attr('y', y + 14).style('font-weight', 600).text(nm);
+          g.append('text').attr('x', 4).attr('y', y + 27).style('font-size', '10.5px').text(`${r.key} · ${r.assignee || 'Unassigned'} · ${o.ks.length ? o.done + '/' + o.n + ' sub-tasks done' : r.status}`);
+          if (o.a && o.b) { const x0 = x(P(o.a)), x1 = Math.max(x0 + 4, x(d3.utcDay.offset(P(o.b), 1))), bh = 14, by = y + (rh - bh) / 2;
+            const pLate = late(r) || (!r.due && o.b && o.b < T && o.done < o.n);
+            g.append('rect').attr('x', x0).attr('y', by).attr('width', x1 - x0).attr('height', bh).attr('rx', 2).attr('fill', pLate ? '#F6CFCF' : '#DCE3EA');
+            const pr = o.n ? o.done / o.n : 0; if (pr > 0) g.append('rect').attr('x', x0).attr('y', by).attr('width', (x1 - x0) * pr).attr('height', bh).attr('rx', 2).attr('fill', pr >= 1 ? C.good : C.blue);
+            o.ks.filter(k => k.due).forEach(k => g.append('rect').attr('x', x(P(k.due))).attr('y', by + bh + 1).attr('width', 2).attr('height', 3).attr('fill', late(k) ? C.bad : k.cat === 'done' ? C.good : '#7C8A97'));
+            const dl = d => Math.round((P(T) - P(d)) / 864e5); const lab = o.ks.length ? d3.format('.0%')(pr) + ' done' : r.status, lab2 = o.ks.length ? (o.od ? ` · ${o.od} late` : '') : (late(r) ? ` · ${dl(r.due)} days late` : ''), lwid = (lab + lab2).length * 6 + 6, right = x1 + 6 + lwid < w;
+            const tt = g.append('text').attr('x', right ? x1 + 6 : x1 - 6).attr('y', by + 11).attr('text-anchor', right ? 'start' : 'end').style('font-size', '10.5px').style('font-weight', 600);
+            tt.append('tspan').style('fill', C.navy).text(lab); if (lab2) tt.append('tspan').style('fill', C.bad).text(lab2);
+          } else g.append('text').attr('x', lw + 4).attr('y', y + rh / 2 + 4).style('font-size', '11px').text('No dates set in Jira');
+          const tipNode = () => { const d = document.createElement('div'); d.className = 'gt';
+            const t = document.createElement('div'); t.className = 'gtip-t'; t.textContent = `${r.key} · ${r.summary}`;
+            const m = document.createElement('div'); m.className = 'gtip-m'; m.textContent = `${r.assignee || 'Unassigned'} · ${o.a ? day(o.a) : '?'} – ${o.b ? day(o.b) : '?'} · ${r.status}${o.ks.length ? ` · ${o.done}/${o.n} done` : ''}`; d.append(t, m);
+            const items = o.ks.length ? o.ks : [r]; const ka = d3.min(items.map(k => k.start).filter(Boolean).concat(o.a || [])), kb = d3.max(items.map(k => k.due).filter(Boolean).concat(o.b || []));
+            const sx = ka && kb ? d3.scaleUtc([P(ka), d3.utcDay.offset(P(kb), 1)], [0, 100]) : null;
+            items.forEach(k => { const row = document.createElement('div'); row.className = 'gr'; const n = document.createElement('div'); n.className = 'nm'; n.textContent = k.summary; n.title = k.summary;
+              const tr = document.createElement('div'); tr.className = 'tr';
+              if (sx && k.start && k.due) { const b = document.createElement('b'); const l = Math.max(0, sx(P(k.start))), rr = Math.min(100, sx(d3.utcDay.offset(P(k.due), 1))); b.style.left = l + '%'; b.style.width = Math.max(1.5, rr - l) + '%'; b.style.background = SC[st(k)] === C.plan ? '#9AA6B2' : SC[st(k)]; tr.appendChild(b); }
+              if (sx && T >= ka && T <= kb) { const ti = document.createElement('i'); ti.style.left = sx(P(T)) + '%'; tr.appendChild(ti); }
+              const dt = document.createElement('div'); dt.className = 'dt'; dt.textContent = `${k.start && k.due ? `${day(k.start)} – ${day(k.due)}` : 'no dates'} · ${(k.assignee || 'Unassigned').split(' ')[0]}`; n.textContent = `${k.summary}`; if (late(k)) n.style.color = C.bad; else if (k.cat === 'done') n.style.color = C.good;
+              const s2 = document.createElement('div'); s2.className = 'dt'; s2.style.gridColumn = '1/-1'; s2.style.marginTop = '-3px'; s2.textContent = `${k.key} · ${k.assignee || 'Unassigned'} · ${st(k)}`;
+              row.append(n, tr, dt); d.appendChild(row); });
+            const kk = document.createElement('div'); kk.className = 'gk'; kk.textContent = 'Name in red = overdue · green = done · red line = today'; d.appendChild(kk); return d; };
+          g.on('mousemove', ev => showTip(ev, tipNode())).on('mouseleave', hideTip).on('click', ev => { if (ev.metaKey || ev.ctrlKey) window.open(site + r.key, '_blank'); else showTip(ev, tipNode()); });
+        });
+        const tx = x(P(T)); svg.append('line').attr('x1', tx).attr('x2', tx).attr('y1', 14).attr('y2', h - 4).attr('stroke', C.bad).attr('stroke-dasharray', '4 3');
+        svg.append('text').attr('x', tx + 3).attr('y', h - 6).style('fill', C.bad).style('font-size', '10px').text('Today');
+        legend(el, [['Planned span', '#DCE3EA'], ['Progress (sub-tasks done)', C.blue], ['Complete', C.good], ['Past due date', '#F6CFCF'], ['Sub-task due: late / done / open', C.bad], ['Today', C.bad, 1]]);
+      });
+    },
+    issues(p) {
+      const es = ch('c-x-shop'), ea = ch('c-x-age'); if (status(es, 'atlas_issues') | status(ea, 'atlas_issues')) return;
+      const all = D('atlas_issues').filter(r => (p.shop === 'All' || (r.shops || [r.shop]).includes(p.shop)) && r.last_meeting <= p.asof); const open = all.filter(r => r.status === 'open');
+      const openX = open.flatMap(r => (r.shops || [r.shop]).filter(s => p.shop === 'All' || s === p.shop).map(s => ({ ...r, shop: s })));
+      const shops = d3.rollups(openX, v => v.length, r => r.shop).sort((a, b) => b[1] - a[1]).map(d => d[0]); const mm = d3.rollup(openX, v => v.length, r => r.shop, r => r.priority);
+      vbar(es, shops, [{ key: 'Critical', name: 'Critical', color: C.bad }, { key: 'Non-critical', name: 'Non-critical', color: C.blue }, { key: 'Not set', name: 'Not set', color: C.sky }], (c, k) => (mm.get(c) || new Map()).get(k), { stack: 1, rot: 1, h: 260, yFmt: d3.format('d'), emptyMsg: 'No open issues' });
+      const md = d3.rollups(open, v => v.length, r => r.last_meeting).sort((a, b) => d3.ascending(a[0], b[0]));
+      vbar(ea, md.map(d => d[0]), [{ key: 'n', name: 'Open', color: C.navy }], c => md.find(d => d[0] === c)[1], { xFmt: day, rot: 1, h: 260, yFmt: d3.format('d'), noLegend: 1, emptyMsg: 'No open issues' });
+      table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop' }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good' }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1 });
+    }
+  };
+  window.__draw = () => { window.__syncFilters(); const f = draw[window.__page]; if (f) f(window.__P()); };
+  dash.onData(() => window.__draw());
+  window.addEventListener('resize', () => window.__draw());
+})();
+</script>
+</template>
+<script src="assets/dash-shim.js"></script>
+</body>
+</html>

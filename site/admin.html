@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Users · AEL Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/portal.js"></script>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Loading…</div></div>
+
+<dialog id="dlg"><form method="dialog" id="df"></form></dialog>
+
+<script>
+(async () => {
+  const P = window.Portal, esc = P.esc, app = document.getElementById('app');
+  if (!P.configured) { app.innerHTML = '<div class="msg"></div>'; P.notConfigured(app.firstChild); return; }
+  const me = await P.guard({ admin: true }); if (!me) return;
+  P.topbar(me, 'admin');
+  const TN = Object.fromEntries(P.TABS.map(t => [t.id, t.name]));
+  let users = [], logs = [], view = 'users';
+
+  const call = async body => {
+    const { data, error } = await P.sb.functions.invoke('admin-users', { body });
+    if (error) { let msg = error.message; try { msg = (await error.context.json()).error || msg; } catch (e) {} throw new Error(msg); }
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  };
+  const toast = (t, ms = 3500) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); };
+  const load = async () => {
+    const [u, l] = await Promise.all([
+      P.sb.from('profiles').select('*').order('role').order('full_name'),
+      P.sb.from('login_log').select('*').order('at', { ascending: false }).limit(1000)]);
+    if (u.error) throw u.error;
+    users = u.data || []; logs = l.data || [];
+  };
+  const device = ua => !ua ? '' : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows PC' : /Mac OS/.test(ua) ? 'Mac' : 'Other';
+  const tabsOf = u => u.role === 'viewer' ? (u.tabs || []) : P.TABS.map(t => t.id);
+  const chips = u => u.role !== 'viewer' ? '<span class="muted small">All 16 tabs</span>'
+    : `<div class="tabchips">${tabsOf(u).map(t => `<span class="${P.RESTRICTED.includes(t) ? 'r' : ''}">${esc(TN[t] || t)}</span>`).join('')}</div>`;
+  const csvCell = v => /[",\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? '');
+  const download = (name, rows) => {
+    const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+
+  /* ---------------- page ---------------- */
+  const render = () => {
+    const wk = Date.now() - 7 * 864e5;
+    const active = users.filter(u => u.active), pending = users.filter(u => u.active && u.must_change_password);
+    const logins7 = logs.filter(l => l.event === 'login' && new Date(l.at) > wk);
+    app.innerHTML = `
+      <div class="ph"><div><h1>Users &amp; access</h1><p>Add team members, choose what they can see, reset passwords and review sign-ins.</p></div>
+        <div class="acts"><button class="btn" id="b-add">Add user</button><button class="btn ghost" id="b-bulk">Add several users</button></div></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Active users</div><div class="v">${active.length}</div></div>
+        <div class="kpi"><div class="l">Admin · Manager · Viewer</div><div class="v">${['admin', 'manager', 'viewer'].map(r => active.filter(u => u.role === r).length).join(' · ')}</div></div>
+        <div class="kpi"><div class="l">Yet to set own password</div><div class="v">${pending.length}</div></div>
+        <div class="kpi"><div class="l">Sign-ins, last 7 days</div><div class="v">${logins7.length}</div></div>
+        <div class="kpi"><div class="l">Disabled</div><div class="v">${users.length - active.length}</div></div>
+      </div>
+      <div class="seg"><button data-v="users" class="${view === 'users' ? 'on' : ''}">Users</button><button data-v="log" class="${view === 'log' ? 'on' : ''}">Activity log</button><button data-v="matrix" class="${view === 'matrix' ? 'on' : ''}">Authority matrix</button></div>
+      <div id="body"></div>`;
+    app.querySelector('#b-add').onclick = () => editDlg(null);
+    app.querySelector('#b-bulk').onclick = bulkDlg;
+    app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
+    ({ users: renderUsers, log: renderLog, matrix: renderMatrix })[view](app.querySelector('#body'));
+  };
+
+  const renderUsers = el => {
+    el.innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>Name</th><th>Role</th><th>Can see</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead><tbody>
+      ${users.map(u => `<tr class="${u.active ? '' : 'off'}" data-id="${u.id}">
+        <td><b>${esc(u.full_name || '—')}</b><div class="small muted">${esc(u.email)}</div>${u.designation ? `<div class="small muted">${esc(u.designation)}</div>` : ''}</td>
+        <td><span class="pill ${u.role}">${u.role}</span></td>
+        <td>${chips(u)}</td>
+        <td>${!u.active ? '<span class="pill bad">Disabled</span>' : u.must_change_password ? '<span class="pill warn">Awaiting first sign-in</span>' : '<span class="pill good">Active</span>'}</td>
+        <td class="small">${P.pkt(u.last_login_at)}</td>
+        <td><div class="acts">
+          <button class="btn sm ghost" data-a="edit">Edit</button>
+          <button class="btn sm ghost" data-a="reset">Reset password</button>
+          ${u.id === me.id ? '' : `<button class="btn sm ghost" data-a="toggle">${u.active ? 'Disable' : 'Enable'}</button><button class="btn sm danger" data-a="del">Delete</button>`}
+        </div></td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="small muted">Yellow tabs (Cost, Savings, Workforce) are restricted: viewers see them only if you tick them. Managers and admins see everything.</p>`;
+    el.querySelectorAll('button[data-a]').forEach(b => b.onclick = () => {
+      const u = users.find(x => x.id === b.closest('tr').dataset.id);
+      ({ edit: () => editDlg(u), reset: () => resetDlg(u), toggle: () => toggle(u), del: () => delDlg(u) })[b.dataset.a]();
+    });
+  };
+
+  const renderLog = el => {
+    const label = { login: 'Signed in', logout: 'Signed out', auto_logout: 'Auto sign-out (idle)', password_changed: 'Changed password', open_dashboard: 'Opened dashboard',
+      admin_create_user: 'Admin: added user', admin_update_user: 'Admin: changed access', admin_disable_user: 'Admin: disabled user', admin_enable_user: 'Admin: enabled user',
+      admin_reset_password: 'Admin: reset password', admin_delete_user: 'Admin: deleted user' };
+    el.innerHTML = `<div class="acts" style="margin-bottom:10px"><div class="field" style="margin:0;flex:1;min-width:200px"><input id="lq" placeholder="Filter by email or event"></div>
+      <button class="btn ghost" id="ldl">Download CSV</button></div><div id="lt"></div>`;
+    const paint = () => {
+      const q = el.querySelector('#lq').value.trim().toLowerCase();
+      const rs = logs.filter(l => !q || (l.email || '').toLowerCase().includes(q) || (label[l.event] || l.event).toLowerCase().includes(q) || (l.detail || '').toLowerCase().includes(q));
+      el.querySelector('#lt').innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>When (PKT)</th><th>User</th><th>Event</th><th>Detail</th><th>Device</th></tr></thead><tbody>
+        ${rs.slice(0, 500).map(l => `<tr><td class="small">${P.pkt(l.at)}</td><td>${esc(l.email || '')}</td><td>${esc(label[l.event] || l.event)}</td><td class="small">${esc(l.detail || '')}</td><td class="small">${device(l.user_agent)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No activity yet</td></tr>'}
+        </tbody></table></div><p class="small muted">Showing the latest ${Math.min(rs.length, 500)} of ${rs.length} events. Failed sign-in attempts are in Supabase → Authentication → Logs.</p>`;
+    };
+    el.querySelector('#lq').oninput = paint; paint();
+    el.querySelector('#ldl').onclick = () => download('portal-activity.csv', [['When (PKT)', 'User', 'Event', 'Detail', 'Device'], ...logs.map(l => [P.pkt(l.at), l.email, label[l.event] || l.event, l.detail, device(l.user_agent)])]);
+  };
+
+  const renderMatrix = el => {
+    const rows = [
+      ['Open the dashboard (all shops and models)', 1, 1, 1],
+      ['Standard tabs: Overview, Production, Products, Dispatch, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects', 1, 1, 'Ticked tabs'],
+      ['Restricted tabs: Cost, Savings, Workforce', 1, 1, 'Only if ticked'],
+      ['Change own password', 1, 1, 1],
+      ['Reset own forgotten password by email', 1, 1, 1],
+      ['Add, edit, disable or delete users', 1, 0, 0],
+      ['Reset other users\' passwords', 1, 0, 0],
+      ['See the activity log', 1, 0, 0],
+      ['Change dashboard data', 'No one — data comes only from the scheduled Atlas sync', '', '']];
+    const c = v => v === 1 ? '<span class="pill good">Yes</span>' : v === 0 ? '<span class="pill viewer">No</span>' : `<span class="small">${esc(v)}</span>`;
+    el.innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>Permission</th><th>Admin</th><th>Manager</th><th>Viewer</th></tr></thead><tbody>
+      ${rows.map(r => r[2] === '' ? `<tr><td>${esc(r[0])}</td><td colspan="3" class="small muted">${esc(r[1])}</td></tr>` : `<tr><td>${esc(r[0])}</td><td>${c(r[1])}</td><td>${c(r[2])}</td><td>${c(r[3])}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="small muted">Rules are enforced by the database, not just hidden on screen: a viewer's browser never receives data for tabs they are not allowed to see. New users see no data until they replace their temporary password.</p>`;
+  };
+
+  /* ---------------- dialogs ---------------- */
+  const dlg = document.getElementById('dlg'), df = document.getElementById('df');
+  const open = (title, body, foot) => {
+    df.innerHTML = `<div class="dh"><h3>${title}</h3><button class="link" value="x" formnovalidate>Close</button></div><div class="db"><div class="msg" id="dm"></div>${body}</div><div class="df">${foot}</div>`;
+    dlg.showModal(); return df;
+  };
+  const dsay = (t, cls = 'bad') => { const m = df.querySelector('#dm'); m.className = 'msg ' + cls; m.textContent = t; };
+  const tabBoxes = (sel, role) => `<div class="checks" id="tabs">${P.TABS.map(t => `<label class="${P.RESTRICTED.includes(t.id) ? 'r' : ''}"><input type="checkbox" value="${t.id}" ${role !== 'viewer' || sel.includes(t.id) ? 'checked' : ''} ${role !== 'viewer' ? 'disabled' : ''}>${esc(t.name)}${P.RESTRICTED.includes(t.id) ? ' ·&nbsp;restricted' : ''}</label>`).join('')}</div>`;
+  const wireRole = () => {
+    const rs = df.querySelector('#role'), box = () => df.querySelectorAll('#tabs input');
+    let saved = null;
+    rs.onchange = () => {
+      const v = rs.value !== 'viewer';
+      if (v) { saved = [...box()].filter(i => i.checked).map(i => i.value); box().forEach(i => { i.checked = true; i.disabled = true; }); }
+      else box().forEach(i => { i.disabled = false; i.checked = (saved || P.DEFAULT_TABS).includes(i.value); });
+    };
+  };
+  const pickedTabs = () => [...df.querySelectorAll('#tabs input')].filter(i => i.checked).map(i => i.value);
+
+  const credsDlg = (list, title = 'Sign-in details') => {
+    const text = list.map(c => `${c.name ? c.name + ' — ' : ''}${c.email}  /  ${c.password}`).join('\n');
+    open(title, `<p>Give each person their email and temporary password. They will be asked to set their own password the first time they sign in.</p>
+      <div class="msg warn">These passwords are shown <b>only now</b>. Copy or download them before closing.</div>
+      <div class="tbl-wrap"><table class="t creds"><thead><tr><th>Name</th><th>Email (login ID)</th><th>Temporary password</th></tr></thead><tbody>
+      ${list.map(c => `<tr><td>${esc(c.name || '')}</td><td>${esc(c.email)}</td><td><b>${esc(c.password)}</b></td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted">Portal address: <b>${esc(new URL('index.html', location.href).href)}</b></p>`,
+      `<button type="button" class="btn ghost" id="cc">Copy all</button><button type="button" class="btn ghost" id="cd">Download CSV</button><button class="btn" value="x">Done</button>`);
+    df.querySelector('#cc').onclick = async () => { try { await navigator.clipboard.writeText(text + '\n\nPortal: ' + new URL('index.html', location.href).href); dsay('Copied.', 'good'); } catch (e) { dsay('Copy was blocked by the browser. Use Download CSV instead.'); } };
+    df.querySelector('#cd').onclick = () => download('portal-logins.csv', [['Name', 'Email (login ID)', 'Temporary password', 'Portal'], ...list.map(c => [c.name, c.email, c.password, new URL('index.html', location.href).href])]);
+  };
+
+  const editDlg = u => {
+    const isNew = !u; u = u || { role: 'viewer', tabs: P.DEFAULT_TABS, full_name: '', designation: '', email: '' };
+    open(isNew ? 'Add user' : 'Edit user', `
+      <div class="row2">
+        <div class="field"><label>Full name</label><input id="fn" value="${esc(u.full_name)}" maxlength="80"></div>
+        <div class="field"><label>Company email (login ID)</label><input id="em" type="email" value="${esc(u.email)}" ${isNew ? '' : 'disabled'}></div>
+        <div class="field"><label>Designation</label><input id="dg" value="${esc(u.designation)}" maxlength="80" placeholder="e.g. Manager PPC"></div>
+        <div class="field"><label>Role</label><select id="role">${['viewer', 'manager', 'admin'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r[0].toUpperCase() + r.slice(1)}</option>`).join('')}</select></div>
+      </div>
+      <div class="field" style="margin-bottom:0"><label>Tabs this person can open</label></div>
+      ${tabBoxes(u.tabs || P.DEFAULT_TABS, u.role)}
+      ${isNew ? `<div class="field"><label>Temporary password</label><div class="acts" style="flex-wrap:nowrap"><input id="pw" class="creds" value="${P.genPassword()}" style="flex:1"><button type="button" class="btn ghost sm" id="gen">New</button></div></div>` : ''}
+      <p class="small muted">Viewer: sees only ticked tabs. Manager: sees every tab. Admin: every tab plus this Users page.</p>`,
+      `<button class="btn ghost" value="x" formnovalidate>Cancel</button><button type="button" class="btn" id="save">${isNew ? 'Create user' : 'Save changes'}</button>`);
+    wireRole();
+    if (isNew) df.querySelector('#gen').onclick = () => { df.querySelector('#pw').value = P.genPassword(); };
+    df.querySelector('#save').onclick = async ev => {
+      const b = ev.target, role = df.querySelector('#role').value, tabs = pickedTabs();
+      if (role === 'viewer' && !tabs.length) { dsay('Tick at least one tab.'); return; }
+      b.disabled = true;
+      try {
+        const base = { full_name: df.querySelector('#fn').value.trim(), designation: df.querySelector('#dg').value.trim(), role, tabs: role === 'viewer' ? tabs : P.TABS.map(t => t.id) };
+        if (isNew) {
+          const email = df.querySelector('#em').value.trim().toLowerCase(), password = df.querySelector('#pw').value.trim();
+          await call({ action: 'create', email, password, ...base });
+          await load(); render(); credsDlg([{ name: base.full_name, email, password }], 'User created');
+        } else {
+          await call({ action: 'update', id: u.id, ...base });
+          dlg.close(); await load(); render(); toast('Saved.');
+        }
+      } catch (e) { b.disabled = false; dsay(e.message); }
+    };
+  };
+
+  const resetDlg = u => {
+    open('Reset password', `<p>Give <b>${esc(u.full_name || u.email)}</b> a new temporary password. ${u.id === me.id ? 'This is your own account.' : 'They will have to choose their own password when they next sign in.'}</p>
+      <div class="field"><label>New temporary password</label><div class="acts" style="flex-wrap:nowrap"><input id="pw" class="creds" value="${P.genPassword()}" style="flex:1"><button type="button" class="btn ghost sm" id="gen">New</button></div></div>`,
+      `<button class="btn ghost" value="x" formnovalidate>Cancel</button><button type="button" class="btn" id="save">Reset password</button>`);
+    df.querySelector('#gen').onclick = () => { df.querySelector('#pw').value = P.genPassword(); };
+    df.querySelector('#save').onclick = async ev => {
+      ev.target.disabled = true; const password = df.querySelector('#pw').value.trim();
+      try { await call({ action: 'reset_password', id: u.id, password }); await load(); render(); credsDlg([{ name: u.full_name, email: u.email, password }], 'Password reset'); }
+      catch (e) { ev.target.disabled = false; dsay(e.message); }
+    };
+  };
+
+  const toggle = async u => {
+    try { await call({ action: 'set_active', id: u.id, active: !u.active }); await load(); render(); toast(u.active ? `${u.email} disabled. They can no longer sign in.` : `${u.email} enabled.`); }
+    catch (e) { toast(e.message, 6000); }
+  };
+
+  const delDlg = u => {
+    open('Delete user', `<p>Permanently delete <b>${esc(u.email)}</b>? Their activity log stays. If you might need this account again, use <b>Disable</b> instead.</p>
+      <div class="field"><label>Type DELETE to confirm</label><input id="cf" autocomplete="off"></div>`,
+      `<button class="btn ghost" value="x" formnovalidate>Cancel</button><button type="button" class="btn danger" id="save">Delete user</button>`);
+    df.querySelector('#save').onclick = async ev => {
+      if (df.querySelector('#cf').value.trim() !== 'DELETE') { dsay('Type DELETE in capitals to confirm.'); return; }
+      ev.target.disabled = true;
+      try { await call({ action: 'delete', id: u.id }); dlg.close(); await load(); render(); toast('User deleted.'); }
+      catch (e) { ev.target.disabled = false; dsay(e.message); }
+    };
+  };
+
+  const bulkDlg = () => {
+    open('Add several users', `<p>One person per line: <b>Full name, email, designation, role</b>. Role is <i>viewer</i> (default), <i>manager</i> or <i>admin</i>. You can paste straight from Excel (tab-separated works too).</p>
+      <div class="field"><textarea id="tx" rows="9" placeholder="Ali Raza, ali.raza@company.com, Manager PPC, manager&#10;Sara Khan, sara.khan@company.com, Shop In-charge Clutch, viewer"></textarea></div>
+      <div class="field" style="margin-bottom:0"><label>Tabs for the viewers in this list</label></div>${tabBoxes(P.DEFAULT_TABS, 'viewer')}
+      <p class="small muted">Each person gets a random temporary password. You'll see all of them on the next screen.</p>`,
+      `<button class="btn ghost" value="x" formnovalidate>Cancel</button><button type="button" class="btn" id="save">Create users</button>`);
+    df.querySelector('#save').onclick = async ev => {
+      const lines = df.querySelector('#tx').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const rows = lines.map(l => l.split(/\t|,/).map(x => x.trim())).filter(r => !/^e-?mail$/i.test(r[1] || '') && !/^full ?name$/i.test(r[0] || ''));
+      const bad = rows.filter(r => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r[1] || ''));
+      if (!rows.length) { dsay('Paste at least one line.'); return; }
+      if (bad.length) { dsay(`Check the email on: ${bad.map(r => r[0] || r.join(' ')).join('; ')}`); return; }
+      const tabs = pickedTabs(); if (!tabs.length) { dsay('Tick at least one tab.'); return; }
+      ev.target.disabled = true; const made = [], failed = [];
+      for (const [i, r] of rows.entries()) {
+        dsay(`Creating ${i + 1} of ${rows.length}…`, '');
+        const role = ['admin', 'manager', 'viewer'].includes((r[3] || '').toLowerCase()) ? r[3].toLowerCase() : 'viewer';
+        const password = P.genPassword(), email = r[1].toLowerCase();
+        try { await call({ action: 'create', email, password, full_name: r[0] || '', designation: r[2] || '', role, tabs: role === 'viewer' ? tabs : P.TABS.map(t => t.id) }); made.push({ name: r[0], email, password }); }
+        catch (e) { failed.push(`${email}: ${e.message}`); }
+      }
+      await load(); render();
+      if (made.length) credsDlg(made, `${made.length} user${made.length > 1 ? 's' : ''} created`);
+      else open('No users created', '', '<button class="btn" value="x">Close</button>');
+      if (failed.length) dsay('Not created — ' + failed.join(' · '), 'bad');
+    };
+  };
+
+  try { await load(); render(); }
+  catch (e) { app.innerHTML = `<div class="msg bad">Could not load users: ${esc(e.message)}. Check that the database setup script has been run.</div>`; }
+})();
+</script>
+</body>
+</html>

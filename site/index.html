@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sign in · AEL Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/portal.js"></script>
+</head>
+<body>
+<div class="auth">
+  <aside class="side">
+    <div>
+      <div class="kick">Atlas Engineering · AEL</div>
+      <h1>Operations Portal</h1>
+      <p>Production and dispatch compliance, quality, maintenance, OEE, capacity, inventory and cost, refreshed from Atlas through the day.</p>
+      <p class="more">Access is by invitation. Ask the portal admin if you need an account or a new password.</p>
+    </div>
+    <div class="foot">Authorised users only. Sign-ins are recorded.</div>
+  </aside>
+  <main class="main">
+    <form class="form" id="f" autocomplete="on" novalidate>
+      <h2>Sign in</h2>
+      <p class="sub">Use your company email and portal password.</p>
+      <div class="msg" id="m"></div>
+      <div class="field"><label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" inputmode="email" required></div>
+      <div class="field"><label for="pw">Password</label>
+        <div class="pw"><input id="pw" name="password" type="password" autocomplete="current-password" required><button type="button">Show</button></div></div>
+      <button class="btn block" id="go" type="submit">Sign in</button>
+      <p style="margin-top:16px"><button class="link" type="button" id="forgot">Forgot password?</button></p>
+    </form>
+  </main>
+</div>
+<script>
+(async () => {
+  const P = window.Portal, f = document.getElementById('f'), m = document.getElementById('m');
+  const say = (t, cls = '') => { m.className = 'msg ' + cls; m.innerHTML = t; };
+  P.pwToggle(f);
+  if (!P.configured) { P.notConfigured(m); return; }
+  const q = new URLSearchParams(location.search).get('m');
+  if (q === 'idle') say('You were signed out after a period of inactivity.', 'warn');
+  if (q === 'disabled') say('Your account is disabled. Please contact the portal admin.', 'bad');
+  if (q === 'changed') say('Password changed. Please sign in with your new password.', 'good');
+
+  // already signed in?
+  const prof = await P.profile();
+  if (prof && prof.active) { P.go(prof.must_change_password ? 'change-password.html?first=1' : 'app.html'); return; }
+
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const email = f.email.value.trim().toLowerCase(), password = f.password.value;
+    if (!email || !password) { say('Enter your email and password.', 'bad'); return; }
+    const b = document.getElementById('go'); b.disabled = true; b.textContent = 'Signing in…';
+    const { error } = await P.sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      b.disabled = false; b.textContent = 'Sign in';
+      say(/banned/i.test(error.message) ? 'Your account is disabled. Please contact the portal admin.'
+        : /rate|many/i.test(error.message) ? 'Too many attempts. Please wait a few minutes and try again.'
+        : 'Email or password is incorrect.', 'bad');
+      return;
+    }
+    const p = await P.profile();
+    if (!p || !p.active) { await P.sb.auth.signOut(); b.disabled = false; b.textContent = 'Sign in'; say('Your account is not set up or is disabled. Please contact the portal admin.', 'bad'); return; }
+    await P.log('login');
+    P.go(p.must_change_password ? 'change-password.html?first=1' : 'app.html');
+  };
+
+  document.getElementById('forgot').onclick = async () => {
+    const email = f.email.value.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { say('Type your email above first, then press "Forgot password?" again.', 'warn'); f.email.focus(); return; }
+    const { error } = await P.sb.auth.resetPasswordForEmail(email, { redirectTo: new URL('reset.html', location.href).href });
+    say(error && /rate/i.test(error.message) ? 'Too many reset emails were requested. Please try again later, or ask the portal admin to reset your password.'
+      : 'If that email has an account, a reset link is on its way. Check your inbox (and spam). If nothing arrives, ask the portal admin to reset your password.', error && /rate/i.test(error.message) ? 'warn' : 'good');
+  };
+})();
+</script>
+</body>
+</html>
