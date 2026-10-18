@@ -92,5 +92,12 @@
  ],
  "sp_attendance": [
   "workforce"
+ ],
+ "atlas_part_stock": [
+  "dispatch",
+  "inhouse",
+  "overview",
+  "product",
+  "production"
  ]
 }
