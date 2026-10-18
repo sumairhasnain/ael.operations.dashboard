@@ -4,8 +4,8 @@
 // database rules allow (sign in, then read what that user is permitted to see).
 // NEVER put the "secret" / "service_role" key here.
 window.PORTAL_CONFIG = {
-  supabaseUrl: 'https://YOUR-PROJECT-REF.supabase.co',
-  supabaseKey: 'PASTE-PUBLISHABLE-OR-ANON-KEY-HERE',
+  supabaseUrl: 'https://kiiqngvqgngnoavjfaon.supabase.co',
+  supabaseKey: 'sb_publishable_kL0fLdVEzCxkrKg-eulXWw_MONpZagJ',
   idleMinutes: 60,          // sign out after this many minutes with no activity
   orgName: 'AEL Operations Portal'
 };
