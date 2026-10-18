@@ -26,6 +26,8 @@
 .ael .kmini .kv{font-family:var(--font-anthropic-serif);font-size:28px;line-height:1.1;color:#051C2C;margin:2px 0}
 .ael .kmini .ks{font-size:12px;color:#5B6770}
 .ael .kmini .kp{font-weight:600}
+.ael .kpis{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:6px}
+.ael .kpis .kmini{min-width:150px}
 .ael .kmini .kf{font-size:11px;color:#5B6770;margin-top:2px}
 .ael .chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-weight:600}
 .ael .chip.smp{background:#FFF3D6;color:#8A5A00}
@@ -82,7 +84,7 @@
       <button class="tab" role="tab" id="t-overview" data-p="overview">Overview</button>
       <button class="tab" role="tab" id="t-production" data-p="production">Production</button>
       <button class="tab" role="tab" id="t-product" data-p="product">Products</button>
-      <button class="tab" role="tab" id="t-dispatch" data-p="dispatch">Dispatch</button>
+      <button class="tab" role="tab" id="t-vendor" data-p="vendor">Vendor Supply</button>
       <button class="tab" role="tab" id="t-inhouse" data-p="inhouse">In-house</button>
       <button class="tab" role="tab" id="t-quality" data-p="quality">Quality</button>
       <button class="tab" role="tab" id="t-maintenance" data-p="maintenance">Maintenance</button>
@@ -95,6 +97,7 @@
       <button class="tab" role="tab" id="t-savings" data-p="savings">Savings</button>
       <button class="tab" role="tab" id="t-issues" data-p="issues">Issues</button>
       <button class="tab" role="tab" id="t-projects" data-p="projects">Projects</button>
+      <button class="tab" role="tab" id="t-bom" data-p="bom">B.O.M</button>
     </nav>
   </div>
 
@@ -151,16 +154,16 @@
     </div>
   </section>
 
-  <section class="page" id="dispatch">
+  <section class="page" id="vendor">
     <div class="grid">
-      <div class="card wide" id="c-dp-cum"><h3>Dispatch to AHL</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card wide" id="c-dp-daily"><h3>Daily Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-dp-shop"><h3>By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-dp-model"><h3>By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card wide" id="c-dp-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card wide" id="c-dp-list"><h3>Dispatch by Part</h3><input class="q" id="q-dp" placeholder="Search part or code" aria-label="Search dispatch parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts"><table class="tb" id="tb-dp"><thead><tr><th data-k="part">Part</th><th data-k="code">Code</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="P">Plan</th><th class="n" data-k="A">Dispatched</th><th class="n" data-k="PC">Compliance</th><th class="n" data-k="GAP">Short</th></tr></thead><tbody></tbody></table></div></div>
-      <div class="card" id="c-dp-mon"><h3 id="h-dp-mon">Selected Part</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-dp-pcum"><h3 id="h-dp-pcum">This Month</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-v-kpi"><div class="chd"><h3>Vendor Supply - Month to Date</h3><label style="font-size:12px;color:#5A6670">Vendor <select id="s-vend" class="csel" aria-label="Vendor"></select></label></div><div class="kpis" id="k-v" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
+      <div class="card wide" id="c-v-cum"><h3>Cumulative Supply vs Schedule</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
+      <div class="card wide" id="c-v-daily"><h3>Daily Receipts vs Schedule</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
+      <div class="card" id="c-v-vend"><h3>By Vendor (schedule vs received to date)</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
+      <div class="card" id="c-v-shop"><h3>By Shop</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
+      <div class="card wide" id="c-v-vtab"><h3>Vendor Compliance</h3><input class="q" id="q-vt" placeholder="Search vendor" aria-label="Search vendors"><div class="tbox" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"><table class="tb" id="tb-vt"><thead><tr><th data-k="vendor">Vendor</th><th class="n" data-k="parts">Parts</th><th class="n" data-k="month">Month schedule</th><th class="n" data-k="sch">Schedule to date</th><th class="n" data-k="rcv">Received</th><th class="n" data-k="comp">Compliance</th><th class="n" data-k="short">Short</th><th class="n" data-k="last">Last receipt</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide" id="c-v-stock"><h3>Vendor Parts Stock <span class="chip snap" id="v-asof"></span></h3><input class="q" id="q-vs" placeholder="Search part, code or vendor" aria-label="Search vendor parts"><div class="tbox" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"><table class="tb" id="tb-vs"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="vendors">Vendor</th><th class="n" data-k="safety_stock">Safety</th><th class="n" data-k="stock">Stock at AEL</th><th class="n" data-k="vendor_stock">At vendor</th><th class="n" data-k="cover">Cover %</th><th class="n" data-k="sch">Schedule to date</th><th class="n" data-k="rcv">Received</th><th class="n" data-k="comp">Supply %</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide" id="c-v-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
     </div>
   </section>
 
@@ -259,6 +262,13 @@
       <div class="card" id="c-j-owner"><h3>Open Activities by Owner</h3><div class="chart" data-source="jira_issues"></div></div>
       <div class="card wide" id="c-j-late"><h3>Overdue and Due in Next 14 Days</h3><div class="tbox"><table class="tb" id="tb-jlate" data-source="jira_issues" data-row-key="key"><thead><tr><th data-field="key">Key</th><th data-field="summary">Activity</th><th data-field="proj">Project</th><th data-field="assignee">Owner</th><th data-field="due">Due</th><th data-field="late">Days late</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
       <div id="j-gantts" style="grid-column:1/-1;display:grid;gap:14px" data-source="jira_issues"></div>
+    </div>
+  </section>
+  <section class="page" id="bom">
+    <div class="grid">
+      <div class="card wide" id="c-b-kpi"><div class="chd"><h3>Bill of Material - Check Sheet <span class="chip smp">Temporary</span></h3><label style="font-size:12px;color:#5A6670">Show <select id="s-bomv" class="csel" aria-label="BOM view"><option value="all">All links</option><option value="check">Needs check only</option><option value="none">Finished parts with no components</option></select></label></div>
+        <p style="font-size:12px;color:#5A6670;margin:0 0 8px">Level 1 is the finished part; level 2 its machined, assembled or bought-in components; level 3 castings and raw parts. "Shop + model" links were matched by shop and model name because Atlas has no BOM link for them, so check those first.</p><div class="kpis" id="k-b" data-source="atlas_bom atlas_parts"></div></div>
+      <div class="card wide" id="c-b-tab"><input class="q" id="q-bom" placeholder="Search part, code or shop" aria-label="Search BOM"><div class="tbox" style="max-height:900px" data-source="atlas_bom atlas_parts"><table class="tb" id="tb-bom"><thead><tr><th data-k="lvl">Level</th><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="model">Model</th><th data-k="shop">Shop</th><th data-k="source">Source</th><th class="n" data-k="qpu">Qty / unit</th><th data-k="link">Link</th><th class="n" data-k="safety">Safety</th><th class="n" data-k="sched">Month schedule</th><th data-k="note">Check</th></tr></thead><tbody></tbody></table></div></div>
     </div>
   </section>
   <div class="tip" id="tip"></div>
@@ -459,7 +469,7 @@ window.AK = (() => {
   window.__P = () => { const p = dash.params(); const month = p.month || '2026-10', e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
     return { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf && ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop || 'All') ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY }; };
   window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
-  const pages = ['overview','production','product','dispatch','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects'];
+  const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
   window.__page = 'overview';
   const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
     document.querySelectorAll('#ael .page').forEach(s => s.classList.toggle('on', s.id === p));
@@ -469,7 +479,7 @@ window.AK = (() => {
   document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b) show(b.dataset.p, true); });
   show(location.hash.slice(1) || 'overview', false);
   [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
-  ['q-parts','q-parts2','q-prod','q-ih','q-dp','q-wf','q-bd','q-crit','q-iss'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
+  ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
 })();
 </script>
 
@@ -551,7 +561,7 @@ window.AK = (() => {
         const pc = v => f1(v) + '%';
         bullets(el, [
           { label: 'Production', plan: fp.planTD, actual: fp.actTD, fmt: kf, go: () => window.__show('production') },
-          { label: 'Dispatch', plan: fd.planTD, actual: fd.actTD, fmt: kf, go: () => window.__show('dispatch') },
+          { label: 'Dispatch', plan: fd.planTD, actual: fd.actTD, fmt: kf, go: () => window.__show('production') },
           { label: 'In-house parts', plan: fi.planTD, actual: fi.actTD, fmt: kf, go: () => window.__show('inhouse') },
           { label: 'OEE', plan: 75, actual: oee, fmt: pc, note: 'Target 75% · sample' },
           { label: 'First-pass yield', plan: 99, actual: good, fmt: pc, note: 'Target 99% · sample' },
@@ -792,7 +802,85 @@ window.AK = (() => {
       lines(epc, ds, [{ name: 'Plan', color: C.grey, dash: '5 4', values: cp }, { name: c.actName, color: C.navy, values: ca }], { xFmt: day, marker: p.asof, noDots: 1, emptyMsg: nod });
     },
     inhouse(p) { draw._detail(p, { pre: 'ih', stream: 'In-house', type: 'In-house', pk: 'pp', ak: 'pa', dk: ['prod_plan', 'prod_actual'], param: 'ihpart', noun: 'in-house parts', actName: 'Produced' }); },
-    dispatch(p) { draw._detail(p, { pre: 'dp', stream: 'Dispatch', type: 'Finished', pk: 'dp', ak: 'da', dk: ['disp_plan', 'disp_actual'], param: 'dpart', noun: 'dispatches', actName: 'Dispatched' }); },
+    vendor(p) {
+      const VS = ['atlas_vendor_supply', 'atlas_child_stock', 'atlas_bom', 'atlas_parts'];
+      const ids = ['c-v-cum', 'c-v-daily', 'c-v-vend', 'c-v-shop', 'c-v-trend'], els = ids.map(ch);
+      const kv = q('#k-v'), sel = q('#s-vend');
+      if (els.map(e => status(e, ...VS)).some(Boolean)) { kv.replaceChildren(); return; }
+      const sup = D('atlas_vendor_supply'), stk = D('atlas_child_stock'), dims = DIMS();
+      // models of each child part through its finished parts in the BOM
+      const mods = new Map(); D('atlas_bom').forEach(b => { const set = mods.get(String(b.code)) || new Set(); String(b.fg || '').split(/[;,]/).forEach(x => { const dm = dims.get(x.split(':')[0]); if (dm) dm.mods.forEach(m => set.add(m)); }); mods.set(String(b.code), set); });
+      const info = new Map(stk.map(r => [String(r.code), r])); D('atlas_bom').forEach(b => { if (!info.has(String(b.code))) info.set(String(b.code), { code: b.code, part: b.part, shop: b.shop }); });
+      const rcvTo = sup.reduce((m, r) => r.received > 0 && r.date > m ? r.date : m, '');
+      const aEnd = [p.asof, rcvTo || p.asof].sort()[0];
+      const okSM = r => (p.shop === 'All' || r.shop === p.shop) && (p.model === 'All' || (mods.get(String(r.code)) || new Set()).has(p.model));
+      const inMonth = sup.filter(r => r.date >= p.start && r.date <= p.end && okSM(r));
+      const vlist = [...new Set(inMonth.map(r => r.vendor))].sort((a, b) => a.localeCompare(b));
+      let vend = dash.params().vend || ''; if (vend && !vlist.includes(vend)) vend = '';
+      sel.replaceChildren(...[['', 'All vendors'], ...vlist.map(v => [v, v])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
+      sel.value = vend; sel.onchange = () => dash.setParams({ vend: sel.value || 0 });
+      const okV = r => !vend || r.vendor === vend;
+      const rows = inMonth.filter(okV);
+      const sch = r => r.date <= p.asof ? r.scheduled || 0 : 0, rcv = r => r.date <= aEnd ? r.received || 0 : 0;
+      const T = { m: d3.sum(rows, r => r.scheduled || 0), s: d3.sum(rows, sch), r: d3.sum(rows, rcv) };
+      const stkRows = stk.filter(r => r.source === 'Vendor' && okSM(r) && (!vend || String(r.vendors || '').split(' / ').includes(vend)));
+      const below = stkRows.filter(r => r.safety_stock > 0 && r.stock + r.vendor_stock < r.safety_stock).length;
+      kv.replaceChildren(); const kadd = (l, v, sub, col) => { const d = document.createElement('div'); d.className = 'kmini'; [['kl', l], ['kv', v], ['ks', sub]].forEach(([c, t]) => { const e = document.createElement('div'); e.className = c; e.textContent = t; if (c === 'kv' && col) e.style.color = col; d.appendChild(e); }); kv.appendChild(d); };
+      const cmp = T.s ? T.r / T.s * 100 : null;
+      kadd('Month schedule', nf(T.m), (vend || 'All vendors') + ' · ' + mon(p.month));
+      kadd('Schedule to date', nf(T.s), 'to ' + day(p.asof));
+      kadd('Received', nf(T.r), rcvTo ? 'receipts to ' + day(aEnd) : 'no receipts yet');
+      kadd('Supply compliance', pct(cmp), 'received ÷ schedule to date', cmp == null ? null : compColor(cmp));
+      kadd('Parts below safety', nf(below) + ' / ' + nf(stkRows.filter(r => r.safety_stock > 0).length), 'stock at AEL + at vendor');
+      // cumulative & daily
+      const ds = datesOf(p), bD = d3.rollup(rows, v => ({ s: d3.sum(v, r => r.scheduled || 0), r: d3.sum(v, r => r.received || 0) }), r => r.date);
+      let a = 0, b = 0; const cs = [], cr = []; ds.forEach(x => { const o = bD.get(x) || { s: 0, r: 0 }; a += o.s; b += o.r; cs.push(a); cr.push(x <= aEnd ? b : null); });
+      lines(els[0], ds, [{ name: 'Schedule', color: '#8A949E', dash: '2 4', w: 2.2, values: cs }, { name: 'Received', color: C.blue, w: 3, values: cr }], { xFmt: day, marker: p.asof, noDots: 1, h: 260, emptyMsg: 'No vendor schedule or receipts for this selection' });
+      vbar(els[1], ds, [{ key: 's', name: 'Scheduled', color: C.plan }, { key: 'r', name: 'Received', color: C.blue }], (c, k) => { const o = bD.get(c); if (!o) return null; return k === 'r' && c > aEnd ? null : o[k]; }, { xFmt: d => +d.slice(8), marker: p.asof, h: 240 });
+      // by vendor & by shop
+      const agg = (key) => d3.rollups(rows, v => ({ s: d3.sum(v, sch), r: d3.sum(v, rcv) }), key).filter(([, o]) => o.s > 0 || o.r > 0);
+      const sh = t => t.length > 30 ? t.slice(0, 29) + '…' : t;
+      const byV = agg(r => r.vendor).sort((x, y) => y[1].s - x[1].s).slice(0, 20);
+      pvaH(els[2], byV.map(([v, o]) => ({ label: sh(v), plan: o.s, actual: o.r, full: v })), { planName: 'Schedule to date', actName: 'Received', rh: 26, focus: vend ? sh(vend) : null, onClick: l => { const f = byV.find(([v]) => sh(v) === l); dash.setParams({ vend: f && f[0] !== vend ? f[0] : 0 }); }, emptyMsg: 'No vendor schedule for this selection' });
+      pvaH(els[3], agg(r => r.shop).sort((x, y) => y[1].s - x[1].s).map(([v, o]) => ({ label: v, plan: o.s, actual: o.r })), { planName: 'Schedule to date', actName: 'Received', rh: 30, focus: p.shop !== 'All' ? p.shop : null, onClick: s => dash.setParams(p.shop === s ? { shop: 'All', sf: 0 } : { shop: s, sf: 0 }), emptyMsg: 'No vendor schedule for this selection' });
+      // vendor table
+      const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
+      const vt = d3.rollups(inMonth, v => { const s = d3.sum(v, sch), r = d3.sum(v, rcv), last = v.filter(x => x.received > 0 && x.date <= aEnd).map(x => x.date).sort().pop();
+        return { parts: new Set(v.map(x => x.code)).size, month: d3.sum(v, x => x.scheduled || 0), sch: s, rcv: r, comp: s ? r / s * 100 : null, short: Math.max(0, s - r), last: last ? day(last) : '—' }; }, r => r.vendor).map(([vendor, o]) => ({ vendor, ...o }));
+      table(q('#tb-vt'), vt, [{ k: 'vendor', click: v => dash.setParams({ vend: v === vend ? 0 : v }), bold: v => v === vend }, { k: 'parts', n: 1 }, { k: 'month', n: 1 }, { k: 'sch', n: 1 }, { k: 'rcv', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }, { k: 'short', n: 1 }, { k: 'last' }], { q: q('#q-vt'), sort: 'short', dir: -1, dim: r => vend && r.vendor !== vend });
+      // stock table
+      const byC = d3.rollup(rows, v => ({ s: d3.sum(v, sch), r: d3.sum(v, rcv) }), r => String(r.code));
+      const asofS = (stk[0] || {}).asof; const ce = q('#v-asof'); if (ce) ce.textContent = asofS ? 'Stock ' + day(asofS) : '';
+      const st = stkRows.map(r => { const o = byC.get(String(r.code)) || { s: 0, r: 0 }; return { ...r, cover: r.safety_stock ? Math.round((r.stock + r.vendor_stock) / r.safety_stock * 100) : null, sch: o.s, rcv: o.r, comp: o.s ? o.r / o.s * 100 : null }; });
+      table(q('#tb-vs'), st, [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'vendors' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover', n: 1, fmt: v => v + '%', color: v => v == null ? null : v < 50 ? C.bad : v < 100 ? C.warn : null }, { k: 'sch', n: 1 }, { k: 'rcv', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }], { q: q('#q-vs'), sort: 'cover', dir: 1 });
+      // monthly trend
+      const tm = d3.rollups(sup.filter(r => okSM(r) && okV(r)), v => ({ s: d3.sum(v, r => r.date <= p.asof ? r.scheduled || 0 : 0), r: d3.sum(v, r => r.date <= aEnd ? r.received || 0 : 0) }), r => r.date.slice(0, 7)).sort((x, y) => d3.ascending(x[0], y[0]));
+      const tmm = new Map(tm);
+      vbar(els[4], tm.map(d => d[0]), [{ key: 's', name: 'Scheduled', color: C.plan }, { key: 'r', name: 'Received', color: c => compColor(tmm.get(c).s ? tmm.get(c).r / tmm.get(c).s * 100 : null) }], (c, k) => tmm.get(c)[k], { xFmt: mon, vals: 1, h: 240, extra: c => `Compliance ${pct(tmm.get(c).s ? tmm.get(c).r / tmm.get(c).s * 100 : null)}` });
+    },
+    bom(p) {
+      const kb = q('#k-b'), tb = q('#tb-bom'), view = q('#s-bomv');
+      if (!view._b) { view._b = 1; view.addEventListener('change', () => window.__draw()); }
+      const st = ['atlas_bom', 'atlas_parts'].map(id => dash.data(id).status);
+      if (st.some(x => x !== 'ok')) { kb.replaceChildren(); tb.tBodies[0].replaceChildren(); return; }
+      const dims = DIMS(), bom = D('atlas_bom');
+      const lvl = n => /CAST/i.test(n) && !/MACH/i.test(n) ? 'L3' : 'L2';
+      const kids = new Map(); bom.forEach(b => String(b.fg || '').split(/[;,]/).filter(Boolean).forEach(x => { const [fg, qp] = x.split(':'); const a = kids.get(fg) || []; a.push({ ...b, qpu: +qp || 1 }); kids.set(fg, a); }));
+      const use = new Map(); bom.forEach(b => use.set(String(b.code), String(b.fg || '').split(/[;,]/).filter(Boolean).length));
+      const fgs = D('atlas_parts').filter(r => r.type === 'Finished' && partOk(dims.get(r.code), p));
+      const MSEQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
+      const ix = (a, v) => { const i = a.indexOf(v); return i < 0 ? a.length : i; };
+      fgs.sort((a, b) => ix(SEQ, a.shop) - ix(SEQ, b.shop) || ix(MSEQ, a.model) - ix(MSEQ, b.model) || String(a.part).localeCompare(String(b.part)));
+      const v = view.value, out = []; let nNo = 0, nChk = 0, nB = 0, nS = 0;
+      fgs.forEach(f => { const ks = (kids.get(f.code) || []).filter((k, i, a) => a.findIndex(z => z.code === k.code) === i).sort((a, b) => lvl(a.part).localeCompare(lvl(b.part)) || String(a.part).localeCompare(String(b.part)));
+        const inf = ks.filter(k => k.link !== 'BOM').length; if (!ks.length) nNo++; if (inf) nChk++; nB += ks.length - inf; nS += inf;
+        if (v === 'none' && ks.length) return; if (v === 'check' && ks.length && !inf) return;
+        out.push({ lvl: 'L1', code: f.code, part: f.part, model: f.models || f.model || '', shop: f.shop, source: 'Finished', qpu: null, link: '', safety: null, sched: null, note: ks.length ? `${ks.length} components` : 'No components linked' });
+        ks.forEach(k => { if (v === 'check' && k.link === 'BOM') return; const notes = []; if (k.link !== 'BOM') notes.push('Confirm link'); if (!k.safety && k.source === 'Vendor') notes.push('No safety level'); if ((use.get(String(k.code)) || 0) > 3) notes.push(`Used in ${use.get(String(k.code))} parts`);
+          out.push({ lvl: lvl(k.part), code: k.code, part: (lvl(k.part) === 'L3' ? '      ' : '   ') + k.part, model: '', shop: k.shop, source: k.source, qpu: k.qpu, link: k.link, safety: k.safety || null, sched: k.sched_oct || null, note: notes.join(' · ') }); }); });
+      kb.replaceChildren(); [['Finished parts', fgs.length, 'in this selection'], ['With components', fgs.length - nNo, `${nNo} with none linked`], ['Atlas BOM links', nB, 'from Atlas'], ['Shop + model links', nS, `${nChk} finished parts to check`]].forEach(([l, val, sub]) => { const d = document.createElement('div'); d.className = 'kmini'; [['kl', l], ['kv', nf(val)], ['ks', sub]].forEach(([c, t]) => { const e = document.createElement('div'); e.className = c; e.textContent = t; d.appendChild(e); }); kb.appendChild(d); });
+      table(tb, out, [{ k: 'lvl', color: (x) => x === 'L1' ? C.navy : null }, { k: 'code' }, { k: 'part', color: (x, r) => r.lvl === 'L1' ? C.navy : null }, { k: 'model' }, { k: 'shop' }, { k: 'source' }, { k: 'qpu', n: 1 }, { k: 'link', color: x => x && x !== 'BOM' ? C.warn : null }, { k: 'safety', n: 1 }, { k: 'sched', n: 1 }, { k: 'note', color: x => /No components|Confirm/.test(x || '') ? C.bad : null }], { q: q('#q-bom') });
+    },
     quality(p) {
       const el = ch('c-q-month'), ed = ch('c-q-day'), es = ch('c-q-shop');
       if (!status(el, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date <= p.actEnd); const g = d3.rollups(rows, v => d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6, r => r.date.slice(0, 7)).sort((a, b) => d3.ascending(a[0], b[0]));

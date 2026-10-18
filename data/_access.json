@@ -1,103 +1,112 @@
 {
- "_note": "Which dashboard tabs need each dataset. A viewer can read a dataset only if they may open one of these tabs. Cost, Savings and Workforce data are deliberately NOT linked to Overview.",
- "_default": [
-  "overview"
- ],
- "atlas_bom": [
-  "product",
-  "production"
- ],
- "atlas_issues": [
-  "issues",
-  "overview",
-  "product"
- ],
- "atlas_parts": [
-  "dispatch",
-  "inhouse",
-  "overview",
-  "product",
-  "production"
- ],
- "atlas_parts_daily": [
-  "dispatch",
-  "inhouse",
-  "overview",
-  "product",
-  "production"
- ],
- "atlas_shop_parts": [
-  "inventory",
-  "overview"
- ],
- "atlas_stock_critical": [
-  "inventory",
-  "product"
- ],
- "atlas_tools_by_shop": [
-  "inventory"
- ],
- "atlas_tools_trend": [
-  "inventory"
- ],
- "atlas_vendor_rcv": [
-  "product"
- ],
- "atlas_vendors": [
-  "inventory"
- ],
- "jira_issues": [
-  "projects"
- ],
- "smp_breakdowns": [
-  "maintenance",
-  "overview"
- ],
- "smp_capacity": [
-  "capacity"
- ],
- "smp_complaints": [
-  "quality"
- ],
- "smp_defects": [
-  "quality"
- ],
- "smp_efficiency": [
-  "efficiency",
-  "overview"
- ],
- "smp_oee": [
-  "oee",
-  "overview"
- ],
- "smp_pm": [
-  "maintenance",
-  "overview"
- ],
- "smp_quality": [
-  "overview",
-  "quality"
- ],
- "smp_cost": [
-  "cost"
- ],
- "smp_unit_cost": [
-  "cost"
- ],
- "smp_savings": [
-  "savings"
- ],
- "smp_ideas": [
-  "savings"
- ],
- "sp_attendance": [
-  "workforce"
- ],
- "atlas_part_stock": [
-  "dispatch",
-  "inhouse",
-  "overview",
-  "product",
-  "production"
- ]
+  "_note": "Which dashboard tabs need each dataset. A viewer can read a dataset only if they may open one of these tabs. Cost, Savings and Workforce data are deliberately NOT linked to Overview.",
+  "_default": [
+    "overview"
+  ],
+  "atlas_bom": [
+    "bom",
+    "product",
+    "production",
+    "vendor"
+  ],
+  "atlas_issues": [
+    "issues",
+    "overview",
+    "product"
+  ],
+  "atlas_parts": [
+    "bom",
+    "inhouse",
+    "overview",
+    "product",
+    "production",
+    "vendor"
+  ],
+  "atlas_parts_daily": [
+    "inhouse",
+    "overview",
+    "product",
+    "production",
+    "vendor"
+  ],
+  "atlas_shop_parts": [
+    "inventory",
+    "overview"
+  ],
+  "atlas_stock_critical": [
+    "inventory",
+    "product"
+  ],
+  "atlas_tools_by_shop": [
+    "inventory"
+  ],
+  "atlas_tools_trend": [
+    "inventory"
+  ],
+  "atlas_vendor_rcv": [
+    "product"
+  ],
+  "atlas_vendors": [
+    "inventory"
+  ],
+  "jira_issues": [
+    "projects"
+  ],
+  "smp_breakdowns": [
+    "maintenance",
+    "overview"
+  ],
+  "smp_capacity": [
+    "capacity"
+  ],
+  "smp_complaints": [
+    "quality"
+  ],
+  "smp_defects": [
+    "quality"
+  ],
+  "smp_efficiency": [
+    "efficiency",
+    "overview"
+  ],
+  "smp_oee": [
+    "oee",
+    "overview"
+  ],
+  "smp_pm": [
+    "maintenance",
+    "overview"
+  ],
+  "smp_quality": [
+    "overview",
+    "quality"
+  ],
+  "smp_cost": [
+    "cost"
+  ],
+  "smp_unit_cost": [
+    "cost"
+  ],
+  "smp_savings": [
+    "savings"
+  ],
+  "smp_ideas": [
+    "savings"
+  ],
+  "sp_attendance": [
+    "workforce"
+  ],
+  "atlas_part_stock": [
+    "inhouse",
+    "overview",
+    "product",
+    "production",
+    "vendor"
+  ],
+  "atlas_vendor_supply": [
+    "vendor"
+  ],
+  "atlas_child_stock": [
+    "vendor"
+  ]
 }

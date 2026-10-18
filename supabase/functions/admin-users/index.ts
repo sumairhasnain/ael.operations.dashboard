@@ -4,8 +4,8 @@
 // Only an ACTIVE ADMIN can call it. The service key never leaves Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
-const TABS = ["overview", "production", "product", "dispatch", "inhouse", "quality", "maintenance", "oee",
-  "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects"];
+const TABS = ["overview", "production", "product", "vendor", "inhouse", "quality", "maintenance", "oee",
+  "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects", "bom"];
 const ROLES = ["admin", "manager", "viewer"];
 const cors = {
   "Access-Control-Allow-Origin": "*",

@@ -19,7 +19,7 @@
 | Permission | Admin (you) | Manager | Viewer |
 |---|---|---|---|
 | Open the dashboard: all shops and models | Yes | Yes | Yes |
-| Standard tabs: Overview, Production, Products, Dispatch, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects | Yes | Yes | Only the tabs you tick (all 13 by default) |
+| Standard tabs: Overview, Production, Products, Vendor Supply, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects, B.O.M | Yes | Yes | Only the tabs you tick (all 14 by default) |
 | Restricted tabs: **Cost, Savings, Workforce** | Yes | Yes | Only if you tick them for that person |
 | Change own password | Yes | Yes | Yes |
 | Add, edit, disable or delete users | Yes | No | No |

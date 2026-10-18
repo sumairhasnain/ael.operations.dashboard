@@ -17,8 +17,8 @@ create table if not exists public.profiles (
   -- Tabs a VIEWER may open. Admin and Manager always see every tab.
   -- Default = everything except Cost, Savings and Workforce.
   tabs                 text[] not null default array[
-                         'overview','production','product','dispatch','inhouse','quality',
-                         'maintenance','oee','capacity','efficiency','inventory','issues','projects'],
+                         'overview','production','product','vendor','inhouse','quality',
+                         'maintenance','oee','capacity','efficiency','inventory','issues','projects','bom'],
   active               boolean not null default true,
   must_change_password boolean not null default true,
   created_at           timestamptz not null default now(),

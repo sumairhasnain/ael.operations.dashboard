@@ -42,7 +42,7 @@
   };
   const device = ua => !ua ? '' : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows PC' : /Mac OS/.test(ua) ? 'Mac' : 'Other';
   const tabsOf = u => u.role === 'viewer' ? (u.tabs || []) : P.TABS.map(t => t.id);
-  const chips = u => u.role !== 'viewer' ? '<span class="muted small">All 16 tabs</span>'
+  const chips = u => u.role !== 'viewer' ? '<span class="muted small">All 17 tabs</span>'
     : `<div class="tabchips">${tabsOf(u).map(t => `<span class="${P.RESTRICTED.includes(t) ? 'r' : ''}">${esc(TN[t] || t)}</span>`).join('')}</div>`;
   const csvCell = v => /[",\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? '');
   const download = (name, rows) => {
@@ -115,7 +115,7 @@
   const renderMatrix = el => {
     const rows = [
       ['Open the dashboard (all shops and models)', 1, 1, 1],
-      ['Standard tabs: Overview, Production, Products, Dispatch, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects', 1, 1, 'Ticked tabs'],
+      ['Standard tabs: Overview, Production, Products, Vendor Supply, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects, B.O.M', 1, 1, 'Ticked tabs'],
       ['Restricted tabs: Cost, Savings, Workforce', 1, 1, 'Only if ticked'],
       ['Change own password', 1, 1, 1],
       ['Reset own forgotten password by email', 1, 1, 1],

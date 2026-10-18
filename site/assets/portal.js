@@ -2,10 +2,10 @@
 (() => {
   const C = window.PORTAL_CONFIG || {};
   const TABS = [
-    ['overview', 'Overview'], ['production', 'Production'], ['product', 'Products'], ['dispatch', 'Dispatch'],
+    ['overview', 'Overview'], ['production', 'Production'], ['product', 'Products'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
     ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Workforce'], ['inventory', 'Inventory'],
-    ['cost', 'Cost'], ['savings', 'Savings'], ['issues', 'Issues'], ['projects', 'Projects']
+    ['cost', 'Cost'], ['savings', 'Savings'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M']
   ].map(([id, name]) => ({ id, name }));
   const RESTRICTED = ['cost', 'savings', 'workforce'];
   const DEFAULT_TABS = TABS.map(t => t.id).filter(t => !RESTRICTED.includes(t));
