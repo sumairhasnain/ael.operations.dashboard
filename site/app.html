@@ -545,10 +545,10 @@ window.AK = (() => {
     if (sA(el)) return; const fp = flow('Production', p), fd = flow('Dispatch', p);
     if (!fp.planM && !fp.actTD && !fd.planM && !fd.actTD) return empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No plan for this selection');
     lines(el, fp.ds, [
-      { name: 'Prod plan', color: C.navy, dash: '2 4', w: 2.4, values: fp.cumP },
-      { name: 'Produced', color: C.navy, w: 3.2, values: fp.cumA },
-      { name: 'Disp plan', color: C.teal, dash: '2 4', w: 1.6, values: fd.cumP },
-      { name: 'Dispatched', color: C.teal, w: 2, values: fd.cumA }
+      { name: 'Prod plan', color: C.blue, dash: '2 4', w: 2.4, values: fp.cumP },
+      { name: 'Produced', color: C.blue, w: 3.2, values: fp.cumA },
+      { name: 'Disp plan', color: '#8A949E', dash: '2 4', w: 1.6, values: fd.cumP },
+      { name: 'Dispatched', color: '#8A949E', w: 2, values: fd.cumA }
     ], { xFmt: day, marker: p.asof, noDots: 1, h: 280 });
   }
   const byKey = (rows, key, val) => d3.rollup(rows, v => d3.sum(v, val), r => r[key]);
