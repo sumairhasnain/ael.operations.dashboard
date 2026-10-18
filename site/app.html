@@ -24,6 +24,8 @@
 .ael .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .ael h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#fff}
 .ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ael .filters button.fclr{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;align-self:flex-end}
+.ael .filters button.fclr:hover{background:#163B57}
 .ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
 .ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
 .ael .tabs{display:flex;gap:2px;overflow-x:auto;margin-top:12px;scrollbar-width:thin}
@@ -94,6 +96,7 @@
         <label>Month<select id="f-month" aria-label="Month"></select></label>
         <label>As of<input id="f-date" type="date" min="2026-06-01" max="2026-12-31" aria-label="As of date"></label>
         <label>Shift<select id="f-shift" aria-label="Shift"><option value="All">All</option><option>A</option><option>B</option><option>C</option></select></label>
+        <button type="button" class="fclr" id="f-clear" title="Reset shop, model, shift, vendor and part selections (keeps month and date)">Clear filters</button>
         <span id="f-data" style="align-self:flex-end;font-size:12px;color:#5A6670;padding-bottom:6px"></span>
       </div>
     </div>
@@ -478,6 +481,11 @@ window.AK = (() => {
   sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
   sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0 }));
   sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }));
+  document.getElementById('f-clear').addEventListener('click', () => {
+    document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
+    const bv = document.getElementById('s-bomv'); if (bv) bv.value = 'all';
+    dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0 });
+    window.__draw && window.__draw(); });
   sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
   iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });
   iDate.addEventListener('blur', () => { iDate.value = dash.params().asof || ''; });
@@ -830,7 +838,10 @@ window.AK = (() => {
       const info = new Map(stk.map(r => [String(r.code), r])); D('atlas_bom').forEach(b => { if (!info.has(String(b.code))) info.set(String(b.code), { code: b.code, part: b.part, shop: b.shop }); });
       const rcvTo = sup.reduce((m, r) => r.received > 0 && r.date > m ? r.date : m, '');
       const aEnd = [p.asof, rcvTo || p.asof].sort()[0];
-      const okSM = r => (p.shop === 'All' || r.shop === p.shop) && (p.model === 'All' || (mods.get(String(r.code)) || new Set()).has(p.model));
+      const okSM0 = r => (p.shop === 'All' || r.shop === p.shop) && (p.model === 'All' || (mods.get(String(r.code)) || new Set()).has(p.model));
+      let vpart = String(dash.params().vpart || ''); if (vpart && !info.has(vpart)) vpart = '';
+      const okSM = r => okSM0(r) && (!vpart || String(r.code) === vpart);
+      const pkH = q('#c-v-kpi h3'); if (pkH) pkH.textContent = 'Vendor Supply - Month to Date' + (vpart ? ' · ' + ((info.get(vpart) || {}).part || vpart) : '');
       const inMonth = sup.filter(r => r.date >= p.start && r.date <= p.end && okSM(r));
       const vlist = [...new Set(inMonth.map(r => r.vendor))].sort((a, b) => a.localeCompare(b));
       let vend = dash.params().vend || ''; if (vend && !vlist.includes(vend)) vend = '';
@@ -840,7 +851,8 @@ window.AK = (() => {
       const rows = inMonth.filter(okV);
       const sch = r => r.date <= p.asof ? r.scheduled || 0 : 0, rcv = r => r.date <= aEnd ? r.received || 0 : 0;
       const T = { m: d3.sum(rows, r => r.scheduled || 0), s: d3.sum(rows, sch), r: d3.sum(rows, rcv) };
-      const stkRows = stk.filter(r => r.source === 'Vendor' && okSM(r) && (!vend || String(r.vendors || '').split(' / ').includes(vend)));
+      const stkAll = stk.filter(r => r.source === 'Vendor' && okSM0(r) && (!vend || String(r.vendors || '').split(' / ').includes(vend)));
+      const stkRows = stkAll.filter(r => !vpart || String(r.code) === vpart);
       const below = stkRows.filter(r => r.safety_stock > 0 && r.stock + r.vendor_stock < r.safety_stock).length;
       kv.replaceChildren(); const kadd = (l, v, sub, col) => { const d = document.createElement('div'); d.className = 'kmini'; [['kl', l], ['kv', v], ['ks', sub]].forEach(([c, t]) => { const e = document.createElement('div'); e.className = c; e.textContent = t; if (c === 'kv' && col) e.style.color = col; d.appendChild(e); }); kv.appendChild(d); };
       const cmp = T.s ? T.r / T.s * 100 : null;
@@ -868,8 +880,10 @@ window.AK = (() => {
       // stock table
       const byC = d3.rollup(rows, v => ({ s: d3.sum(v, sch), r: d3.sum(v, rcv) }), r => String(r.code));
       const asofS = (stk[0] || {}).asof; const ce = q('#v-asof'); if (ce) ce.textContent = asofS ? 'Stock ' + day(asofS) : '';
-      const st = stkRows.map(r => { const o = byC.get(String(r.code)) || { s: 0, r: 0 }; return { ...r, cover: r.safety_stock ? Math.round((r.stock + r.vendor_stock) / r.safety_stock * 100) : null, sch: o.s, rcv: o.r, comp: o.s ? o.r / o.s * 100 : null }; });
-      table(q('#tb-vs'), st, [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'vendors' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover', n: 1, fmt: v => v + '%', color: v => v == null ? null : v < 50 ? C.bad : v < 100 ? C.warn : null }, { k: 'sch', n: 1 }, { k: 'rcv', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }], { q: q('#q-vs'), sort: 'cover', dir: 1 });
+      const byCA = d3.rollup(inMonth.filter(okV).concat(vpart ? sup.filter(r => r.date >= p.start && r.date <= p.end && okSM0(r) && okV(r) && String(r.code) !== vpart) : []), v => ({ s: d3.sum(v, sch), r: d3.sum(v, rcv) }), r => String(r.code));
+      const st = stkAll.map(r => { const o = byCA.get(String(r.code)) || { s: 0, r: 0 }; return { ...r, cover: r.safety_stock ? Math.round((r.stock + r.vendor_stock) / r.safety_stock * 100) : null, sch: o.s, rcv: o.r, comp: o.s ? o.r / o.s * 100 : null }; });
+      const pick = (v, r) => dash.setParams({ vpart: String(r.code) === vpart ? 0 : String(r.code) }), isP = (v, r) => String(r.code) === vpart;
+      table(q('#tb-vs'), st, [{ k: 'code', click: pick, bold: isP }, { k: 'part', click: pick, bold: isP }, { k: 'shop' }, { k: 'vendors' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover', n: 1, fmt: v => v + '%', color: v => v == null ? null : v < 50 ? C.bad : v < 100 ? C.warn : null }, { k: 'sch', n: 1 }, { k: 'rcv', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }], { q: q('#q-vs'), sort: 'cover', dir: 1, dim: r => vpart && String(r.code) !== vpart });
       // monthly trend
       const tm = d3.rollups(sup.filter(r => okSM(r) && okV(r)), v => ({ s: d3.sum(v, r => r.date <= p.asof ? r.scheduled || 0 : 0), r: d3.sum(v, r => r.date <= aEnd ? r.received || 0 : 0) }), r => r.date.slice(0, 7)).sort((x, y) => d3.ascending(x[0], y[0]));
       const tmm = new Map(tm);
