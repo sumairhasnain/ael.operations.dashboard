@@ -116,8 +116,7 @@
       <div class="card wide" id="c-p-daily"><div class="chd"><h3>Daily Production</h3><div class="kmini" id="k-p-daily" data-source="atlas_parts_daily atlas_parts"></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-p-parts"><h3>Part Compliance - Finished Goods</h3><input class="q" id="q-parts" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="stk">Current stock</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts</h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="stk">Current stock</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
-      <div class="card" id="c-p-cum"><h3>Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-p-cumd"><h3>Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-cum"><h3>Production &amp; Dispatch - Cumulative Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-p-comp"><div class="chd"><h3 id="h-p-comp">Finished Part vs Level 2 &amp; 3 Components</h3><select id="s-comp" class="csel" aria-label="Finished part"></select></div><div class="chart" data-source="atlas_parts_daily atlas_parts atlas_bom"></div></div>
       <div class="card wide" id="c-p-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
     </div>
@@ -525,6 +524,16 @@ window.AK = (() => {
     if (!f.planM && !f.actTD) return empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No plan for this selection');
     lines(el, f.ds, [{ name: 'Plan', color: C.grey, dash: '5 4', values: f.cumP }, { name: 'Actual', color: compColor(f.planTD ? f.actTD / f.planTD * 100 : null), values: f.cumA }], { xFmt: day, marker: p.asof, noDots: 1, h: 220 });
   }
+  function comboChart(el, p) {
+    if (sA(el)) return; const fp = flow('Production', p), fd = flow('Dispatch', p);
+    if (!fp.planM && !fp.actTD && !fd.planM && !fd.actTD) return empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No plan for this selection');
+    lines(el, fp.ds, [
+      { name: 'Prod plan', color: C.navy, dash: '2 4', w: 2.4, values: fp.cumP },
+      { name: 'Produced', color: C.navy, w: 3.2, values: fp.cumA },
+      { name: 'Disp plan', color: C.teal, dash: '2 4', w: 1.6, values: fd.cumP },
+      { name: 'Dispatched', color: C.teal, w: 2, values: fd.cumA }
+    ], { xFmt: day, marker: p.asof, noDots: 1, h: 280 });
+  }
   const byKey = (rows, key, val) => d3.rollup(rows, v => d3.sum(v, val), r => r[key]);
 
   const draw = {
@@ -588,7 +597,7 @@ window.AK = (() => {
       pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
     },
     production(p) {
-      cumChart(ch('c-p-cum'), 'Production', p); cumChart(ch('c-p-cumd'), 'Dispatch', p); if (ch('c-p-cumi')) cumChart(ch('c-p-cumi'), 'In-house', p);
+      comboChart(ch('c-p-cum'), p); if (ch('c-p-cumi')) cumChart(ch('c-p-cumi'), 'In-house', p);
       { const ec = ch('c-p-comp'), sel = q('#s-comp');
         if (!status(ec, ...ATL, 'atlas_bom')) {
           const dims = DIMS(), bom = D('atlas_bom'), kids = new Map();
