@@ -124,7 +124,7 @@
   <section class="page" id="overview">
     <div class="grid">
       <div class="card wide" id="c-ov-bullets"><h3>Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_pm smp_cost smp_savings"></div></div>
-      <div class="card wide" id="c-ov-issues"><h3 id="h-ov-issues">Critical Issues - Last 5 Days</h3><div class="list" data-source="atlas_issues"></div></div>
+      <div class="card wide" id="c-ov-issues"><h3 id="h-ov-issues">Meeting Minutes - Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
       <div class="card" id="c-ov-cum"><h3>Cumulative Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-ov-cumd"><h3>Cumulative Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-ov-score"><h3>Shop Scorecard</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_breakdowns atlas_shop_parts"></div></div>
@@ -626,15 +626,19 @@ window.AK = (() => {
       }
       const lst = q('#c-ov-issues .list');
       if (dash.data('atlas_issues').status === 'ok') { lst.replaceChildren();
-        const from = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(p.asof + 'T00:00:00Z'), -4));
         const shopsOf = r => { const s = r.shops || [r.shop]; return s.length > 10 ? 'All shops' : s.filter(x => x !== 'General' || s.length === 1).join(', '); };
-        const rs = D('atlas_issues').filter(r => r.status === 'open' && r.priority === 'Critical' && (p.shop === 'All' || (r.shops || [r.shop]).includes(p.shop)) && r.last_meeting >= from && r.last_meeting <= p.asof)
-          .sort((a, b) => String(b.last_meeting).localeCompare(String(a.last_meeting)) || (+b.id || 0) - (+a.id || 0));
-        const hh = q('#h-ov-issues'); if (hh) hh.textContent = `Critical Issues - Last 5 Days (${day(from)} to ${day(p.asof)}) · ${rs.length} open`;
-        if (!rs.length) { const d = document.createElement('div'); d.className = 'empty'; d.style.minHeight = '80px'; d.textContent = 'No open critical issues in the last 5 days'; lst.appendChild(d); }
+        // meeting days up to the as-of date: today plus the 2 previous meeting days always; more (up to 5 meeting days) while space allows
+        const pool = D('atlas_issues').filter(r => r.last_meeting && r.last_meeting <= p.asof && (p.shop === 'All' || (r.shops || [r.shop]).includes(p.shop)));
+        const days = [...new Set(pool.map(r => r.last_meeting))].sort().reverse();
+        const MAX = 14; let keep = days.slice(0, 3); for (const d0 of days.slice(3, 5)) { const n = pool.filter(r => keep.includes(r.last_meeting) || r.last_meeting === d0).length; if (n <= MAX) keep.push(d0); else break; }
+        const rk = r => (r.priority === 'Critical' ? 0 : 1) + (r.status === 'open' ? 0 : 2);
+        const rs = pool.filter(r => keep.includes(r.last_meeting)).sort((a, b) => String(b.last_meeting).localeCompare(String(a.last_meeting)) || rk(a) - rk(b) || (+a.id || 0) - (+b.id || 0));
+        const nC = rs.filter(r => r.priority === 'Critical' && r.status === 'open').length;
+        const hh = q('#h-ov-issues'); if (hh) hh.textContent = `Meeting Minutes - Critical Issues · last ${keep.length} meeting day${keep.length === 1 ? '' : 's'} · ${nC} critical open`;
+        if (!rs.length) { const d = document.createElement('div'); d.className = 'empty'; d.style.minHeight = '80px'; d.textContent = 'No meeting minutes recorded yet'; lst.appendChild(d); }
         let lastD = null;
-        rs.forEach(r => { if (r.last_meeting !== lastD) { lastD = r.last_meeting; const g = document.createElement('div'); g.className = 'm'; g.style.cssText = 'font-weight:600;color:#051C2C;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.06em;font-size:11px'; g.textContent = new Date(lastD + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); lst.appendChild(g); }
-          const d = document.createElement('div'); d.className = 'issue'; const h = document.createElement('div'); h.className = 'h'; h.textContent = r.item; const m = document.createElement('div'); m.className = 'm'; m.textContent = `${shopsOf(r)}${r.owner ? ' · Owner: ' + r.owner : ''}`; const pp = document.createElement('div'); pp.className = 'p'; pp.textContent = r.problem; d.append(h, m, pp); lst.appendChild(d); }); }
+        rs.forEach(r => { if (r.last_meeting !== lastD) { lastD = r.last_meeting; const g = document.createElement('div'); g.className = 'm'; g.style.cssText = 'font-weight:600;color:#051C2C;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.06em;font-size:11px'; g.textContent = new Date(lastD + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + (lastD === p.asof ? ' · today' : '') + ` · ${pool.filter(x => x.last_meeting === lastD).length} points`; lst.appendChild(g); }
+          const d = document.createElement('div'); d.className = 'issue'; if (r.priority !== 'Critical') d.style.borderLeftColor = '#E0A100'; if (r.status !== 'open') { d.style.borderLeftColor = '#9AA5AF'; d.style.opacity = 0.6; } const h = document.createElement('div'); h.className = 'h'; h.textContent = r.item; const m = document.createElement('div'); m.className = 'm'; m.textContent = `${r.priority || ''}${r.status !== 'open' ? ' (' + r.status + ')' : ''} · ${shopsOf(r)}${r.owner ? ' · Owner: ' + r.owner : ''}`; const pp = document.createElement('div'); pp.className = 'p'; pp.textContent = r.problem; d.append(h, m, pp); lst.appendChild(d); }); }
     },
     _shopPva(el, stream, p) {
       if (sA(el)) return;
