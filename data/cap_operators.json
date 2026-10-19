@@ -1,0 +1,142 @@
+[
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 1",
+  "element": "Facing, boring & turning (CC1)",
+  "handling": 6,
+  "machine_handling": 8,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 1",
+  "element": "Facing & dia turning (CC2)",
+  "handling": 11,
+  "machine_handling": 8,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 1",
+  "element": "Broaching (CC3)",
+  "handling": 7,
+  "machine_handling": 7,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 2",
+  "element": "Facing, boring & turning (CC1)",
+  "handling": 6,
+  "machine_handling": 8,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 2",
+  "element": "Facing & dia turning (CC2)",
+  "handling": 11,
+  "machine_handling": 8,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Clutch Center CG125",
+  "operator": "Operator 2",
+  "element": "Broaching (CC3)",
+  "handling": 7,
+  "machine_handling": 7,
+  "takt": 48.4,
+  "demand": 72000,
+  "operators": 2
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 1",
+  "element": "Facing, grooving & boring (DP1)",
+  "handling": 14,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 1",
+  "element": "Facing & dia turning (DP2)",
+  "handling": 17,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 1",
+  "element": "Facing, grooving & boring (DP1 #3)",
+  "handling": 14,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 2",
+  "element": "Facing, grooving & boring (DP1)",
+  "handling": 14,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 2",
+  "element": "Facing & dia turning (DP2)",
+  "handling": 17,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 2",
+  "element": "Facing & dia turning (DP2 #3)",
+  "handling": 17,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 3",
+  "element": "Facing, grooving & boring (DP1)",
+  "handling": 14,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ },
+ {
+  "line": "Drive Plate CD70",
+  "operator": "Operator 3",
+  "element": "Facing & dia turning (DP2)",
+  "handling": 17,
+  "machine_handling": 8,
+  "takt": 72.0,
+  "demand": 83100,
+  "operators": 3
+ }
+]

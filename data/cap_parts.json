@@ -1,0 +1,69 @@
+[
+ {
+  "part": "Drive Plate CD70",
+  "model": "CD70",
+  "actual_codes": [
+   "6510213002"
+  ],
+  "plan_codes": [
+   "6510213002"
+  ],
+  "basis": "Atlas plan \u00b7 in-house machined code",
+  "note": "Vendor (VEN DP) and outsourced (OSP) drive plates are not machined on these lines"
+ },
+ {
+  "part": "Clutch Outer CD70",
+  "model": "CD70",
+  "actual_codes": [
+   "6530010063"
+  ],
+  "plan_codes": [
+   "6530010063"
+  ],
+  "basis": "Atlas plan \u00b7 machined code"
+ },
+ {
+  "part": "Clutch Outer CG125",
+  "model": "CG125",
+  "actual_codes": [
+   "6520213002"
+  ],
+  "plan_codes": [
+   "6520213002"
+  ],
+  "basis": "Atlas plan \u00b7 machined code"
+ },
+ {
+  "part": "Clutch Center CG125",
+  "model": "CG125",
+  "actual_codes": [
+   "9020113004"
+  ],
+  "plan_codes": [
+   "9020113004"
+  ],
+  "basis": "CG125 clutch assembly (1 per assembly)"
+ },
+ {
+  "part": "Pressure Plate CG125",
+  "model": "CG125",
+  "actual_codes": [
+   "9020113004"
+  ],
+  "plan_codes": [
+   "9020113004"
+  ],
+  "basis": "CG125 clutch assembly (1 per assembly)"
+ },
+ {
+  "part": "Clutch Lifter CG125",
+  "model": "CG125",
+  "actual_codes": [
+   "9020113004"
+  ],
+  "plan_codes": [
+   "9020113004"
+  ],
+  "basis": "CG125 clutch assembly (1 per assembly)"
+ }
+]

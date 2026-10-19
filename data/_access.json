@@ -20,14 +20,16 @@
     "overview",
     "product",
     "production",
-    "vendor"
+    "vendor",
+    "capacity"
   ],
   "atlas_parts_daily": [
     "inhouse",
     "overview",
     "product",
     "production",
-    "vendor"
+    "vendor",
+    "capacity"
   ],
   "atlas_shop_parts": [
     "inventory",
@@ -108,5 +110,14 @@
   ],
   "atlas_child_stock": [
     "vendor"
+  ],
+  "cap_machines": [
+    "capacity"
+  ],
+  "cap_parts": [
+    "capacity"
+  ],
+  "cap_operators": [
+    "capacity"
   ]
 }
