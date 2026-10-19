@@ -525,10 +525,13 @@ window.AK = (() => {
       else { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual }); (dm.shops || []).filter(s => s !== dm.shop).forEach(s => rows.push({ date: r.date, shop: s, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual, sec: 1 })); } });
     _sr = { src, dims, model: p.model, rows }; return rows; };
   // per-part totals between two dates (plan to `to`, actuals to min(to, today))
-  const partAgg = (p, from, to, type) => { const dims = DIMS(), aEnd = [to, window.__TODAY, window.__dataTo()].sort()[0], out = new Map();
+  // Plan counts to yesterday when the period runs to today: today's plan is not due yet, while production posted this morning is counted.
+  const planTo = (p, to) => (!p.day && to >= window.__TODAY) ? d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(window.__TODAY + 'T00:00:00Z'), -1)) : to;
+  window.__planTo = planTo;
+  const partAgg = (p, from, to, type) => { const dims = DIMS(), aEnd = [to, window.__TODAY, window.__dataTo()].sort()[0], pEnd = planTo(p, to), out = new Map();
     D('atlas_parts_daily').forEach(r => { if (r.date < from || r.date > to) return; const dm = dims.get(r.code); if (!partOk(dm, p) || (type && dm.type !== type)) return;
       let o = out.get(r.code); if (!o) out.set(r.code, o = { ...dm, pp: 0, pa: 0, dp: 0, da: 0 });
-      o.pp += r.prod_plan || 0; o.dp += r.disp_plan || 0; if (r.date <= aEnd) { o.pa += r.prod_actual || 0; o.da += r.disp_actual || 0; } });
+      if (r.date <= pEnd) { o.pp += r.prod_plan || 0; o.dp += r.disp_plan || 0; } if (r.date <= aEnd) { o.pa += r.prod_actual || 0; o.da += r.disp_actual || 0; } });
     return [...out.values()].map(o => ({ ...o, pc: o.pp ? o.pa / o.pp * 100 : null, gap: Math.max(0, o.pp - o.pa), dc: o.dp ? o.da / o.dp * 100 : null, dp: o.type === 'In-house' ? null : o.dp, da: o.type === 'In-house' ? null : o.da })); };
 
   // flow: plan/actual by day for a stream at shop level
@@ -626,7 +629,7 @@ window.AK = (() => {
     _shopPva(el, stream, p) {
       if (sA(el)) return;
       const pq = p.sf ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
-      const pl = byKey(rows, 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
+      const pEnd = planTo(p, p.asof), pl = byKey(rows.filter(r => r.date <= pEnd), 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
       pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
     },
     production(p) {
