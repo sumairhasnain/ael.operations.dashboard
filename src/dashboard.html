@@ -497,7 +497,8 @@ window.AK = (() => {
     document.querySelectorAll('#tabs .tab').forEach(b => b.setAttribute('aria-selected', b.dataset.p === p ? 'true' : 'false'));
     if (link) dash.setLink(p); window.__draw && window.__draw(); };
   window.__show = p => show(p, true);
-  document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b) show(b.dataset.p, true); });
+  document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; show(b.dataset.p, true);
+    /* Products tab opens on the Clutch shop when no shop is picked yet */ if (b.dataset.p === 'product' && window.__P().shop === 'All' && (window.__SHOPS || []).includes('Clutch')) dash.setParams({ shop: 'Clutch', sf: 0, pf: 0 }); });
   show(location.hash.slice(1) || 'overview', false);
   [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
   ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
