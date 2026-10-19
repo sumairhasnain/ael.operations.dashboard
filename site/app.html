@@ -212,6 +212,7 @@
     <div class="grid">
       <div class="card" id="c-m-pm"><h3>PM Plan vs Done <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_pm"></div></div>
       <div class="card" id="c-m-shop"><h3>Downtime by Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
+      <div class="card" id="c-m-top"><h3>Top 5 Downtime Equipment <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
       <div class="card" id="c-m-day"><h3>Daily Downtime <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
       <div class="card" id="c-m-cat"><h3>Causes <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_breakdowns"></div></div>
       <div class="card wide" id="c-m-log"><h3>Breakdown History <span class="chip smp">Sample</span></h3><input class="q" id="q-bd" placeholder="Search machine or cause" aria-label="Search breakdowns"><div class="tbox"><table class="tb" id="tb-bd" data-source="smp_breakdowns" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="date">Date</th><th data-field="shift">Shift</th><th data-field="shop">Shop</th><th data-field="machine">Machine</th><th data-field="category">Category</th><th data-field="cause">Cause</th><th class="n" data-field="downtime_min">Minutes</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
@@ -456,6 +457,21 @@ window.AK = (() => {
         .on('mousemove', (ev, d) => { const v = vals[months.indexOf(d)]; tip.show(ev, [`${pn.name} · ${d3.utcFormat('%B')(new Date(d + '-01T00:00:00Z'))}${d === cur ? ' (to date)' : ''}`, `Actual ${nf(Math.round(v.a))}`, `Plan ${nf(Math.round(v.p))}`, v.p ? `Compliance ${Math.round(v.a / v.p * 100)}%` : '']); }).on('mouseleave', tip.hide); });
   }
 
+  // ranked horizontal bars: one colour, value at the end of each bar
+  function hrank(el, rows, o = {}) {
+    if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
+    const rh = o.rh || 40, m = { t: 6, r: 64, b: 6, l: 0 }, h = rows.length * rh + m.t + m.b; const tmp = box(el, 10);
+    const lw = Math.min(d3.max(rows, r => Math.max(textW(tmp.svg, r.label), r.sub ? textW(tmp.svg, r.sub) * .9 : 0)) + 14, (el.clientWidth || 600) * .42);
+    const { svg, w } = box(el, h); const x = d3.scaleLinear([0, d3.max(rows, r => r.value) || 1], [lw, w - m.r]);
+    rows.forEach((r, i) => { const y0 = m.t + i * rh, g = svg.append('g');
+      g.append('text').attr('x', 0).attr('y', y0 + (r.sub ? rh / 2 - 2 : rh / 2 + 4)).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(r.label);
+      if (r.sub) g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(r.sub);
+      g.append('rect').attr('x', lw).attr('y', y0 + rh * .2).attr('width', Math.max(1, x(r.value) - lw)).attr('height', rh * .6).attr('fill', C.navy);
+      g.append('text').attr('x', x(r.value) + 6).attr('y', y0 + rh / 2 + 4).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text((o.fmt || nf)(r.value));
+      g.append('rect').attr('x', 0).attr('y', y0).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, r.tip || [r.label, (o.fmt || nf)(r.value)])).on('mouseleave', tip.hide); });
+    svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h).attr('stroke', C.navy);
+  }
+
   function donut(el, rows, o = {}) {
     if (!rows.length) return empty(el, 'No data for this selection');
     const h = o.h || 220; const { svg, w } = box(el, h); const r = Math.min(h / 2 - 10, w / 4), cx = r + 16, cy = h / 2;
@@ -495,7 +511,7 @@ window.AK = (() => {
     tbl.querySelectorAll('th').forEach((th, i) => { const k = cols[i] && cols[i].k; th.setAttribute('aria-sort', st.k === k ? (st.dir > 0 ? 'ascending' : 'descending') : 'none');
       th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field; st.dir = st.k === kk ? -st.dir : -1; st.k = kk; window.__draw(); }); } });
   }
-  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo };
+  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank };
 })();
 </script>
 
@@ -551,7 +567,7 @@ window.AK = (() => {
 <script>
 /* ---------- drawing ---------- */
 (() => {
-  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo } = window.AK;
+  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank } = window.AK;
   const D = id => dash.data(id).data || [];
   const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
   const day = s => d3.utcFormat('%-d %b')(new Date(s + 'T00:00:00Z')); const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
@@ -989,6 +1005,9 @@ window.AK = (() => {
         pvaH(epm, rs.map(r => ({ label: r.shop, plan: r.pm_planned, actual: r.pm_done })).sort((a, b) => (a.actual || 0) / a.plan - (b.actual || 0) / b.plan), { planName: 'PM planned', actName: 'PM done', rh: 26 }); }
       const bd = D('smp_breakdowns').filter(r => inShop(r, p) && inShift(r, p) && r.date >= p.start && r.date <= p.actEnd);
       const es = ch('c-m-shop'), ed = ch('c-m-day'), ec = ch('c-m-cat');
+      const et5 = ch('c-m-top'); /* five machines with the most breakdown hours in the selection */
+      if (!status(et5, 'smp_breakdowns')) { const g5 = d3.rollups(bd, v => ({ h: d3.sum(v, r => r.downtime_min) / 60, n: v.length, shop: v[0].shop, top: d3.rollups(v, u => d3.sum(u, r => r.downtime_min), r => r.cause).sort((a, b) => b[1] - a[1])[0][0] }), r => r.shop + '|' + r.machine).sort((a, b) => b[1].h - a[1].h).slice(0, 5);
+        hrank(et5, g5.map(([k, v]) => ({ label: k.split('|')[1], sub: `${v.shop} · ${v.n} stop${v.n > 1 ? 's' : ''}`, value: v.h, tip: [k.split('|')[1] + ' · ' + v.shop, `Downtime ${f1(v.h)} h`, `${v.n} breakdown${v.n > 1 ? 's' : ''}`, `Main cause: ${v.top}`] })), { fmt: v => f1(v) + ' h', rh: 42, emptyMsg: p.future ? 'No actuals yet for this month' : 'No breakdowns' }); }
       if (!status(es, 'smp_breakdowns')) { const g = d3.rollups(bd, v => d3.sum(v, r => r.downtime_min) / 60, r => r.shop).sort((a, b) => b[1] - a[1]);
         vbar(es, g.map(d => d[0]), [{ key: 'h', name: 'Hours', color: c => g.find(d => d[0] === c)[1] > 24 ? C.bad : C.navy }], c => g.find(d => d[0] === c)[1], { rot: 1, h: 250, fmt: v => f1(v) + ' h', noLegend: 1, emptyMsg: p.future ? 'No actuals yet for this month' : 'No breakdowns' }); }
       if (!status(ed, 'smp_breakdowns')) { const ds = [...new Set(bd.map(r => r.date))].sort(); const m = d3.rollup(bd, v => d3.sum(v, r => r.downtime_min) / 60, r => r.date, r => r.shift);
