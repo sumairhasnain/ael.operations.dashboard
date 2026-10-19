@@ -40,6 +40,12 @@
 .ael .mclg{display:flex;gap:16px;font-size:11.5px;color:var(--mut);margin:0 0 6px} .ael .mclg i{display:inline-block;vertical-align:middle;margin-right:5px}
 .ael .mclg i.b{width:10px;height:10px;background:var(--navy)} .ael .mclg i.b.cur{background:var(--blue)} .ael .mclg i.l{width:16px;border-top:2px dashed #8A949E}
 .ael .mcrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px} .ael .mct{font-size:12px;font-weight:600;color:var(--ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.ael .kpicard{padding-top:14px;padding-bottom:14px} .ael .ktiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.ael .ktile{padding:2px 18px;border-left:1px solid var(--line);min-width:0} .ael .ktile:first-child{border-left:0;padding-left:4px}
+.ael .ktile .tl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael .ktile .tv{font-family:var(--font-anthropic-serif);font-size:30px;line-height:1.15;color:var(--navy);margin-top:4px}
+.ael .ktile .ts{font-size:11.5px;color:var(--mut)} .ael .ktile .td{font-size:11.5px;margin-top:6px;color:var(--mut)} .ael .ktile .td b{font-weight:600}
+.ael .ktile .td b.up{color:var(--good)} .ael .ktile .td b.dn{color:var(--bad)} .ael .ktile svg{display:block;width:100%;height:34px;margin-top:6px}
 .ael .gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .ael .gauge{text-align:center;padding:4px 6px 8px;border-right:1px solid var(--line)} .ael .gauge:last-child{border-right:0}
 .ael .gauge h4{margin:0 0 2px;font-size:13px;font-weight:600;color:var(--ink)} .ael .gauge svg{display:block;width:100%;max-width:220px;margin:0 auto}
@@ -117,6 +123,7 @@
 
   <section class="page" id="overview">
     <div class="grid">
+      <div class="card wide kpicard" id="c-ov-kpi"><div class="ktiles" data-source="atlas_parts_daily atlas_parts atlas_vendor_supply atlas_issues"></div></div>
       <div class="card wide" id="c-ov-issues"><h3 id="h-ov-issues">Meeting Minutes - Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
       <div class="card wide" id="c-ov-bullets"><h3>Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_pm smp_cost smp_savings"></div></div>
       <div class="card" id="c-ov-cum"><h3>Cumulative Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
@@ -615,6 +622,35 @@ window.AK = (() => {
 
   const draw = {
     overview(p) {
+      { /* KPI tiles: month to date vs the same point last month, with a 30-day trend */
+        const kt = q('#c-ov-kpi .ktiles'); kt.replaceChildren(); const fm = d3.utcFormat('%Y-%m-%d'), dd = x => new Date(x + 'T00:00:00Z'), off = (x, n) => fm(d3.utcDay.offset(dd(x), n));
+        const end = p.actEnd, ms = end.slice(0, 8) + '01', dn = +end.slice(8); const pm = fm(d3.utcMonth.offset(dd(ms), -1)), pmLen = new Date(Date.UTC(+pm.slice(0, 4), +pm.slice(5, 7), 0)).getUTCDate(), pmEnd = pm.slice(0, 8) + String(Math.min(dn, pmLen)).padStart(2, '0');
+        const tile = (o) => { const t = document.createElement('div'); t.className = 'ktile'; const add = (c, x) => { const e = document.createElement('div'); e.className = c; e.textContent = x; t.appendChild(e); return e; };
+          add('tl', o.label); const v = add('tv', o.value); if (o.col) v.style.color = o.col; add('ts', o.sub);
+          if (o.spark && o.spark.some(x => x != null)) { const W = 200, H = 34, sv = d3.select(t).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'none'); const vals = o.spark.filter(x => x != null);
+            const lo = Math.min(d3.min(vals), o.ref ?? Infinity), hi = Math.max(d3.max(vals), o.ref ?? -Infinity), y = d3.scaleLinear([lo, hi === lo ? lo + 1 : hi], [H - 4, 4]), x = d3.scaleLinear([0, o.spark.length - 1], [2, W - 4]);
+            if (o.ref != null) sv.append('line').attr('x1', 0).attr('x2', W).attr('y1', y(o.ref)).attr('y2', y(o.ref)).attr('stroke', '#C9D1D9').attr('stroke-dasharray', '3 3').attr('vector-effect', 'non-scaling-stroke');
+            sv.append('path').attr('d', d3.line().defined(z => z != null).x((z, i) => x(i)).y(z => y(z))(o.spark)).attr('fill', 'none').attr('stroke', C.navy).attr('stroke-width', 1.6).attr('vector-effect', 'non-scaling-stroke');
+            const li = o.spark.length - 1 - [...o.spark].reverse().findIndex(z => z != null); sv.append('circle').attr('cx', x(li)).attr('cy', y(o.spark[li])).attr('r', 2.6).attr('fill', C.navy); }
+          if (o.bar) { const sv = d3.select(t).append('svg').attr('viewBox', '0 0 200 34').attr('preserveAspectRatio', 'none'); const tot = o.bar.reduce((a, b) => a + b.v, 0) || 1; let x0 = 0; o.bar.forEach(b => { const w = b.v / tot * 200; sv.append('rect').attr('x', x0).attr('y', 12).attr('width', w).attr('height', 10).attr('fill', b.c); x0 += w; }); }
+          const d = add('td', ''); if (o.delta != null) { const b = document.createElement('b'), good = o.lowerBetter ? o.delta <= 0 : o.delta >= 0; b.className = Math.abs(o.delta) < (o.unit === 'pts' ? .05 : .5) ? '' : good ? 'up' : 'dn'; b.textContent = `${o.delta > 0 ? '▲' : o.delta < 0 ? '▼' : '■'} ${o.unit === 'pts' ? f1(Math.abs(o.delta)) + ' pts' : Math.abs(o.delta)}`; d.append(b, ' ' + o.vsTxt); } else d.textContent = o.vsTxt || '';
+          kt.appendChild(t); };
+        const comp = (rows, s0, e0, pk, ak) => { const pl = d3.sum(rows.filter(r => r.date >= s0 && r.date <= planTo({ day: e0 < window.__TODAY ? 1 : 0 }, e0)), pk), ac = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), ak); return { pl, ac, c: pl ? ac / pl * 100 : null }; };
+        const roll = (rows, pk, ak) => d3.range(29, -1, -1).map(k => { const d0 = off(end, -k); const pl = d3.sum(rows.filter(r => r.date >= off(d0, -7) && r.date <= off(d0, -1)), pk), ac = d3.sum(rows.filter(r => r.date >= off(d0, -6) && r.date <= d0), ak); return pl ? Math.round(ac / pl * 1000) / 10 : null; });
+        const vsTxt = 'vs same point ' + d3.utcFormat('%b')(dd(pm));
+        if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') {
+          const sr = SR(p).filter(r => inShop(r, p) && r.date >= off(end, -70) && r.date <= end);
+          [['Production', 'Production'], ['Dispatch', 'Dispatch'], ['In-house', 'In-house parts']].forEach(([st, lb]) => { const rows = sr.filter(r => r.stream === st); if (!rows.length) return;
+            const cu = comp(rows, ms, end, r => r.plan, r => r.actual || 0), pv = comp(rows, pm, pmEnd, r => r.plan, r => r.actual || 0);
+            tile({ label: lb + ' · MTD', value: cu.c == null ? '—' : Math.round(cu.c) + '%', col: cu.c != null && cu.c < 80 ? C.bad : null, sub: `Compliance · ${kf(cu.ac)} of ${kf(cu.pl)} plan`, spark: roll(rows, r => r.plan, r => r.actual || 0), ref: 100, delta: cu.c != null && pv.c != null ? cu.c - pv.c : null, unit: 'pts', vsTxt }); }); }
+        if (dash.data('atlas_vendor_supply').status === 'ok') { const rows = D('atlas_vendor_supply').filter(r => (p.shop === 'All' || r.shop === p.shop) && r.date >= off(end, -70) && r.date <= end);
+          const vc = (s0, e0) => { const sc = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), r => r.scheduled || 0), rc = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), r => r.received || 0); return { sc, rc, c: sc ? rc / sc * 100 : null }; };
+          const cu = vc(ms, end), pv = vc(pm, pmEnd), sp = d3.range(29, -1, -1).map(k => { const d0 = off(end, -k), o = vc(off(d0, -6), d0); return o.c == null ? null : Math.round(o.c * 10) / 10; });
+          tile({ label: 'Vendor supply · MTD', value: cu.c == null ? '—' : Math.round(cu.c) + '%', col: cu.c != null && cu.c < 80 ? C.bad : null, sub: `Compliance · ${kf(cu.rc)} of ${kf(cu.sc)} scheduled`, spark: sp, ref: 100, delta: cu.c != null && pv.c != null ? cu.c - pv.c : null, unit: 'pts', vsTxt }); }
+        if (dash.data('atlas_issues').status === 'ok') { const iss = D('atlas_issues').filter(r => r.priority === 'Critical' && (p.shop === 'All' || String(r.shop || '').includes(p.shop)));
+          const open = iss.filter(r => String(r.status).toLowerCase() !== 'closed').length, cl30 = iss.filter(r => r.closed_on && r.closed_on >= off(window.__TODAY, -29)).length;
+          tile({ label: 'Open critical issues', value: String(open), col: open ? C.bad : null, sub: `of ${iss.length} critical logged`, bar: [{ v: open, c: C.bad }, { v: iss.length - open, c: '#C9D1D9' }], vsTxt: `${cl30} closed in the last 30 days` }); }
+      }
       const el = ch('c-ov-bullets');
       if (!status(el, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_pm', 'smp_cost', 'smp_savings')) {
         const rng = r => r.date >= p.start && r.date <= p.actEnd && inShop(r, p);
