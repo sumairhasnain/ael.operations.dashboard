@@ -148,6 +148,7 @@
       <div class="card wide" id="c-p-parts"><h3>Part Compliance - Finished Goods</h3><input class="q" id="q-parts" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Closing stock</th><th class="n" data-k="pt">Month plan</th><th class="n" data-k="pp">Plan MTD</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts</h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Closing stock</th><th class="n" data-k="pt">Month plan</th><th class="n" data-k="pp">Plan MTD</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card wide" id="c-p-cum"><h3>Production &amp; Dispatch - Cumulative Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-ctrend"><h3>Production &amp; Dispatch - Monthly Compliance Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-p-comp"><div class="chd"><h3 id="h-p-comp">Finished Part vs Level 2 &amp; 3 Components</h3><select id="s-comp" class="csel" aria-label="Finished part"></select></div><div class="chart" data-source="atlas_parts_daily atlas_parts atlas_bom"></div></div>
       <div class="card wide" id="c-p-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
     </div>
@@ -416,14 +417,15 @@ window.AK = (() => {
     const step = Math.ceil(xs.length / Math.max(1, Math.floor((w - m.l - m.r) / 46)));
     svg.append('g').selectAll('text').data(xs.filter((c, i) => i % step === 0)).join('text').attr('x', x).attr('y', h - 8).attr('text-anchor', 'middle').text(o.xFmt || (d => d));
     (o.refs || []).forEach(rf => { svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(rf.v)).attr('y2', y(rf.v)).attr('stroke', rf.color || C.bad).attr('stroke-dasharray', '4 3');
-      svg.append('text').attr('x', m.l + 4).attr('y', y(rf.v) - 4).attr('font-size', 10).style('fill', rf.color || C.bad).text(rf.label); });
+      svg.append('text').attr('x', rf.right ? w - m.r - 4 : m.l + 4).attr('text-anchor', rf.right ? 'end' : null).attr('y', y(rf.v) - 4).attr('font-size', 10).style('fill', rf.color || C.bad).text(rf.label); });
     if (o.marker && xs.includes(o.marker)) svg.append('line').attr('x1', x(o.marker)).attr('x2', x(o.marker)).attr('y1', m.t).attr('y2', h - m.b).attr('stroke', '#8C96A0').attr('stroke-dasharray', '2 3');
     const ends = [];
     series.forEach(s => { const pts = xs.map((c, i) => [x(c), s.values[i], c]).filter(p => p[1] != null);
       if (!pts.length) return;
       svg.append('path').attr('d', d3.line().x(p => p[0]).y(p => y(p[1]))(pts)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.w || 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash || null);
-      if (!o.noDots) svg.selectAll(null).data(pts).join('circle').attr('cx', p => p[0]).attr('cy', p => y(p[1])).attr('r', 2.5).attr('fill', s.color);
-      const lp = pts[pts.length - 1]; ends.push({ y: y(lp[1]), x: lp[0], t: `${s.name} ${(o.fmt || kf)(lp[1])}`, c: s.color }); });
+      if (!o.noDots) svg.selectAll(null).data(pts).join('circle').attr('cx', p => p[0]).attr('cy', p => y(p[1])).attr('r', s.r || 2.5).attr('fill', s.color);
+      if (s.lab) svg.selectAll(null).data(pts).join('text').attr('x', p => p[0]).attr('y', p => { const i = xs.indexOf(p[2]), oth = series.filter(t => t !== s && t.lab).map(t => t.values[i]).filter(v => v != null); const up = !oth.length ? s.lab !== 'below' : p[1] >= d3.max(oth); return y(p[1]) + (up ? -8 : 15); }).attr('text-anchor', 'middle').attr('font-size', 10.5).style('font-weight', 600).style('fill', s.color).text(p => (o.fmt || kf)(p[1]));
+      const lp = pts[pts.length - 1]; ends.push({ y: y(lp[1]), x: lp[0], t: s.lab ? s.name : `${s.name} ${(o.fmt || kf)(lp[1])}`, c: s.color }); });
     ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 12) ends[i].y = ends[i - 1].y + 12;
     ends.forEach(e => svg.append('text').attr('x', e.x + 6).attr('y', e.y + 4).attr('font-size', 10.5).style('fill', e.c).style('font-weight', 600).text(e.t));
     const ov = svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', w - m.l - m.r).attr('height', h - m.t - m.b).attr('fill', 'transparent');
@@ -702,6 +704,14 @@ window.AK = (() => {
         const pM = p.mf ? { ...p, model: 'All' } : p; partAgg(pM, p.start, p.asof, 'Finished').forEach(r => (pM.model === 'All' ? [r.model || r.mods[0]].filter(Boolean) : r.mods.filter(m => m === pM.model)).forEach(m => { pl.set(m, (pl.get(m) || 0) + r.pp); ac.set(m, (ac.get(m) || 0) + r.pa); }));
         const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = m => { const i = MSQ.indexOf(m); return i < 0 ? MSQ.length : i; };
         pvaH(em, [...pl.keys()].map(m => ({ label: m, plan: pl.get(m), actual: p.future ? null : ac.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => mi(a.label) - mi(b.label)), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
+      const ect = ch('c-p-ctrend');
+      if (!sA(ect)) { /* compliance % by month for production and dispatch; current month: plan to yesterday, actuals to today */
+        const months = window.__MONTHS.filter(m => m <= window.__TODAY.slice(0, 7)), pY = planTo({}, window.__TODAY);
+        const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY && (r.stream === 'Production' || r.stream === 'Dispatch'));
+        const g = d3.rollup(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pY), r => r.plan), a: d3.sum(v, r => r.actual || 0) }), r => r.stream, r => r.date.slice(0, 7));
+        const val = (s, m) => { const o = (g.get(s) || new Map()).get(m); return o && o.p ? Math.round(o.a / o.p * 1000) / 10 : null; };
+        lines(ect, months, [{ name: 'Production', color: C.blue, w: 3, r: 4, lab: 'above', values: months.map(m => val('Production', m)) }, { name: 'Dispatch', color: '#8A949E', w: 2, r: 3.5, lab: 'below', values: months.map(m => val('Dispatch', m)) }],
+          { xFmt: mon, fmt: v => f1(v) + '%', yFmt: v => v + '%', refs: [{ v: 100, label: 'Target 100%', color: C.navy, right: 1 }], min: Math.max(0, Math.floor((d3.min([...months.map(m => val('Production', m)), ...months.map(m => val('Dispatch', m))].filter(v => v != null)) || 100) / 10) * 10 - 10), h: 280, emptyMsg: 'No data' }); }
       const et = ch('c-p-trend');
       if (!sA(et)) { const months = window.__MONTHS.filter(m => m <= '2026-10'); const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY);
         const g = d3.rollup(rows, v => ({ p: d3.sum(v, r => r.plan), a: d3.sum(v, r => r.actual || 0) }), r => r.date.slice(0, 7), r => r.stream);
