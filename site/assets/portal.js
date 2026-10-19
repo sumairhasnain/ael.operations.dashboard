@@ -2,7 +2,7 @@
 (() => {
   const C = window.PORTAL_CONFIG || {};
   const TABS = [
-    ['overview', 'Overview'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
+    ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
     ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Workforce'], ['inventory', 'Inventory'],
     ['cost', 'Cost'], ['savings', 'Savings'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M']
