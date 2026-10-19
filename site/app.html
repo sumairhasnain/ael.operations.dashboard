@@ -48,6 +48,10 @@
 .ael .kpis{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:6px}
 .ael .kpis .kmini{min-width:150px}
 .ael .kmini .kf{font-size:11px;color:#5B6770;margin-top:2px}
+.ael .kwrap{display:flex;align-items:stretch;gap:0}
+.ael .ksel{display:flex;flex-direction:column;justify-content:center;text-align:right;padding:4px 14px 4px 0;max-width:280px}
+.ael .ksel .sn{font-family:var(--font-anthropic-serif);font-size:28px;line-height:1.1;color:#051C2C}
+.ael .ksel .mn{font-size:13px;color:#5B6770;margin-top:3px}
 .ael .chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-weight:600}
 .ael .chip.smp{background:#FFF3D6;color:#8A5A00}
 .ael .gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
@@ -140,7 +144,7 @@
     <div class="grid">
       <div class="card" id="c-p-shop"><h3>Production Plan Vs Actual - By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-p-model"><h3>Production Plan Vs Actual - By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-      <div class="card wide" id="c-p-daily"><div class="chd"><h3>Daily Production</h3><div class="kmini" id="k-p-daily" data-source="atlas_parts_daily atlas_parts"></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-p-daily"><div class="chd"><h3>Daily Production</h3><div class="kwrap"><div class="ksel" id="k-p-sel" hidden></div><div class="kmini" id="k-p-daily" data-source="atlas_parts_daily atlas_parts"></div></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-p-parts"><h3>Part Compliance - Finished Goods</h3><input class="q" id="q-parts" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Closing stock</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts</h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Closing stock</th><th class="n" data-k="pp">Prod plan</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card wide" id="c-p-cum"><h3>Production &amp; Dispatch - Cumulative Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
@@ -675,6 +679,8 @@ window.AK = (() => {
             lines(ec, ds, [{ name: sh((dims.get(main) || {}).part || main), color: C.bad, w: 2.8, values: cum(main) }, ...grp.map((g, i) => ({ name: g.lv + ' ' + sh(g.name) + (g.codes.length > 1 ? ' (' + g.codes.length + ' alt.)' : '') + (g.qty > 1 ? ' ×' + g.qty : ''), color: PAL[i % PAL.length], dash: g.lv === 'L3' ? '5 4' : null, w: g.lv === 'L3' ? 1.4 : 1.6, values: cumG(g.codes), sub: g.codes.length > 1 ? g.codes.map(c => ({ name: (dims.get(c) || {}).part || c, values: cum(c) })) : null }))],
               { xFmt: day, marker: p.asof, noDots: 1, h: 300 }); } } }
       const el = ch('c-p-daily'), kd = q('#k-p-daily');
+      { const ks = q('#k-p-sel'); if (ks) { ks.replaceChildren(); const on = p.shop !== 'All' || p.model !== 'All'; ks.hidden = !on; /* shop and model picked in the filters, shown left of the last-day figure */
+        if (on) { const sn = document.createElement('div'); sn.className = 'sn'; sn.textContent = p.shop === 'All' ? 'All Shops' : p.shop; const mn = document.createElement('div'); mn.className = 'mn'; mn.textContent = p.model === 'All' ? 'All Models' : p.model; ks.append(sn, mn); } } }
       if (kd) { kd.replaceChildren(); if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') { const f0 = flow('Production', p), lim = p.actEnd >= window.__TODAY ? window.__TODAY : '9999';
         const ld = f0.ds.filter(d => d <= p.actEnd && (f0.ac.get(d) || 0) > 0).slice(-1)[0], add = (cls, t) => { const e = document.createElement('div'); e.className = cls; e.textContent = t; kd.appendChild(e); return e; };
         if (ld) { const av = f0.ac.get(ld) || 0, pv = f0.pl.get(ld) || 0, pc = pv ? av / pv * 100 : null, dt = new Date(ld + 'T00:00:00');
