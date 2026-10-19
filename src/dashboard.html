@@ -45,7 +45,7 @@
 .ael .ktile .tl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael .ktile .tv{font-family:var(--font-anthropic-serif);font-size:30px;line-height:1.15;color:var(--navy);margin-top:4px}
 .ael .ktile .ts{font-size:11.5px;color:var(--mut)} .ael .ktile .td{font-size:11.5px;margin-top:6px;color:var(--mut)} .ael .ktile .td b{font-weight:600}
-.ael .ktile .td b.up{color:var(--good)} .ael .ktile .td b.dn{color:var(--bad)} .ael .ktile .tn{font-size:11px;color:var(--bad);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .ktile svg{display:block;width:100%;height:34px;margin-top:6px}
+.ael .ktile .td b.up{color:var(--good)} .ael .ktile .td b.dn{color:var(--bad)} .ael .fchip{margin-left:10px;font:inherit;font-size:11px;font-weight:600;color:var(--bad);background:#FBE3E3;border:0;border-radius:10px;padding:2px 9px;cursor:pointer;vertical-align:middle} .ael .ktile .tn.go{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(208,49,45,.35);text-underline-offset:2px} .ael .ktile .tn.go:hover{text-decoration-color:currentColor} .ael .ktile .tn{font-size:11px;color:var(--bad);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .ktile svg{display:block;width:100%;height:34px;margin-top:6px}
 .ael .gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .ael .gauge{text-align:center;padding:4px 6px 8px;border-right:1px solid var(--line)} .ael .gauge:last-child{border-right:0}
 .ael .gauge h4{margin:0 0 2px;font-size:13px;font-weight:600;color:var(--ink)} .ael .gauge svg{display:block;width:100%;max-width:220px;margin:0 auto}
@@ -526,7 +526,7 @@ window.AK = (() => {
   document.getElementById('f-clear').addEventListener('click', () => {
     document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
     const bv = document.getElementById('s-bomv'); if (bv) bv.value = 'all';
-    dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0 });
+    dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0, ihb: 0 });
     window.__draw && window.__draw(); });
   sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
   iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });
@@ -634,7 +634,7 @@ window.AK = (() => {
             const li = o.spark.length - 1 - [...o.spark].reverse().findIndex(z => z != null); sv.append('circle').attr('cx', x(li)).attr('cy', y(o.spark[li])).attr('r', 2.6).attr('fill', C.navy); }
           if (o.bar) { const sv = d3.select(t).append('svg').attr('viewBox', '0 0 200 34').attr('preserveAspectRatio', 'none'); const tot = o.bar.reduce((a, b) => a + b.v, 0) || 1; let x0 = 0; o.bar.forEach(b => { const w = b.v / tot * 200; sv.append('rect').attr('x', x0).attr('y', 12).attr('width', w).attr('height', 10).attr('fill', b.c); x0 += w; }); }
           const d = add('td', ''); if (o.delta != null) { const b = document.createElement('b'), good = o.lowerBetter ? o.delta <= 0 : o.delta >= 0; b.className = Math.abs(o.delta) < (o.unit === 'pts' ? .05 : .5) ? '' : good ? 'up' : 'dn'; b.textContent = `${o.delta > 0 ? '▲' : o.delta < 0 ? '▼' : '■'} ${o.unit === 'pts' ? f1(Math.abs(o.delta)) + ' pts' : Math.abs(o.delta)}`; d.append(b, ' ' + o.vsTxt); } else d.textContent = o.vsTxt || '';
-          if (o.note) { const e = add('tn', o.note); e.title = o.note; }
+          if (o.note) { const e = add('tn', o.note); e.title = o.note; if (o.noteGo) { e.classList.add('go'); e.title = o.note + ' (click to see these parts)'; e.addEventListener('click', o.noteGo); } }
           kt.appendChild(t); };
         const comp = (rows, s0, e0, pk, ak) => { const pl = d3.sum(rows.filter(r => r.date >= s0 && r.date <= planTo({ day: e0 < window.__TODAY ? 1 : 0 }, e0)), pk), ac = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), ak); return { pl, ac, c: pl ? ac / pl * 100 : null }; };
         const roll = (rows, pk, ak) => d3.range(29, -1, -1).map(k => { const d0 = off(end, -k); const pl = d3.sum(rows.filter(r => r.date >= off(d0, -7) && r.date <= off(d0, -1)), pk), ac = d3.sum(rows.filter(r => r.date >= off(d0, -6) && r.date <= d0), ak); return pl ? Math.round(ac / pl * 1000) / 10 : null; });
@@ -649,7 +649,7 @@ window.AK = (() => {
           const cuR = partAgg(p, ms, end, 'In-house'), cu = onp(cuR), pv = onp(partAgg(p, pm, pmEnd, 'In-house'));
           if (cu.n) { const sp = d3.range(29, -1, -1).map(k => { const d0 = off(end, -k), o = onp(partAgg(p, off(d0, -6), d0, 'In-house')); return o.s == null ? null : Math.round(o.s * 10) / 10; });
             const bh = d3.rollups(cuR.filter(r => r.pp > 0), v => [v.filter(r => r.pa / r.pp >= .95).length, v.length], r => r.shop).filter(([, [o, n]]) => o < n).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]);
-            tile({ label: 'In-house parts on plan · MTD', value: Math.round(cu.s) + '%', col: cu.s < 80 ? C.bad : null, sub: `${cu.ok} of ${cu.n} parts at 95%+ of plan`, spark: sp, ref: 100, delta: pv.s != null ? cu.s - pv.s : null, unit: 'pts', vsTxt, note: bh.length ? 'Behind: ' + bh.map(([sh, [o, n]]) => `${sh} ${o}/${n}`).join(' · ') : 'All shops on plan' }); } }
+            tile({ label: 'In-house parts on plan · MTD', value: Math.round(cu.s) + '%', col: cu.s < 80 ? C.bad : null, sub: `${cu.ok} of ${cu.n} parts at 95%+ of plan`, spark: sp, ref: 100, delta: pv.s != null ? cu.s - pv.s : null, unit: 'pts', vsTxt, note: bh.length ? 'Behind: ' + bh.map(([sh, [o, n]]) => `${sh} ${o}/${n}`).join(' · ') : 'All shops on plan', noteGo: bh.length ? () => { dash.setParams({ ihb: 1, ihpart: 0 }); window.__show('inhouse'); setTimeout(() => { const t = q('#c-ih-list'); t && t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); } : null }); } }
         if (dash.data('atlas_vendor_supply').status === 'ok') { const rows = D('atlas_vendor_supply').filter(r => (p.shop === 'All' || r.shop === p.shop) && r.date >= off(end, -70) && r.date <= end);
           const vc = (s0, e0) => { const sc = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), r => r.scheduled || 0), rc = d3.sum(rows.filter(r => r.date >= s0 && r.date <= e0), r => r.received || 0); return { sc, rc, c: sc ? rc / sc * 100 : null }; };
           const cu = vc(ms, end), pv = vc(pm, pmEnd), sp = d3.range(29, -1, -1).map(k => { const d0 = off(end, -k), o = vc(off(d0, -6), d0); return o.c == null ? null : Math.round(o.c * 10) / 10; });
@@ -908,7 +908,10 @@ window.AK = (() => {
       const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
       let sel = p[c.param] && DIMS().get(p[c.param]); if (!sel || !partOk(sel, p) || sel.type !== c.type) sel = null;
       if (!sel && cur.length) sel = cur.slice().sort((a, b) => (a.PC ?? 1e9) - (b.PC ?? 1e9))[0];
-      table(tbl, cur, [{ k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'models' }, { k: 'P', n: 1 }, { k: 'A', n: 1 }, { k: 'PC', n: 1, fmt: pct, color: cc }, { k: 'GAP', n: 1 }],
+      const behind = c.pre === 'ih' && !!dash.params().ihb, behindOf = r => r.P > 0 && (r.A / r.P * 100) < 95, rowsT = behind ? cur.filter(behindOf) : cur;
+      if (c.pre === 'ih') { const h3 = q('#c-ih-list h3'); let chip = h3.querySelector('.fchip'); if (behind) { if (!chip) { chip = document.createElement('button'); chip.className = 'fchip'; chip.addEventListener('click', () => dash.setParams({ ihb: 0 })); h3.appendChild(chip); } chip.textContent = `Behind plan only · ${rowsT.length} part${rowsT.length === 1 ? '' : 's'}  ✕`; chip.title = 'Parts below 95% of plan month to date. Click to show all parts.'; } else if (chip) chip.remove(); }
+      if (behind && sel && !behindOf(sel)) sel = rowsT.slice().sort((a, b) => (a.PC ?? 1e9) - (b.PC ?? 1e9))[0] || null;
+      table(tbl, rowsT, [{ k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'models' }, { k: 'P', n: 1 }, { k: 'A', n: 1 }, { k: 'PC', n: 1, fmt: pct, color: cc }, { k: 'GAP', n: 1 }],
         { q: q(`#q-${c.pre}`), sort: 'PC', dir: 1, onRow: r => dash.setParams({ [c.param]: r.code }), sel: r => sel && r.code === sel.code });
       q(`#h-${c.pre}-mon`).textContent = sel ? sel.part : 'Selected Part';
       q(`#h-${c.pre}-pcum`).textContent = sel ? `${sel.part} · ${mon(p.month)}` : 'This Month';
