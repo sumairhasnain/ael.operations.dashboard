@@ -50,6 +50,10 @@
 .ael .kmini .kf{font-size:11px;color:#5B6770;margin-top:2px}
 .ael .chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-weight:600}
 .ael .chip.smp{background:#FFF3D6;color:#8A5A00}
+.ael .gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.ael .gauge{text-align:center;padding:4px 6px 8px;border-right:1px solid var(--line)} .ael .gauge:last-child{border-right:0}
+.ael .gauge h4{margin:0 0 2px;font-size:13px;font-weight:600;color:var(--ink)} .ael .gauge svg{display:block;width:100%;max-width:220px;margin:0 auto}
+.ael .gauge .gd{font-size:12px;margin-top:2px} .ael .gauge .gd.up{color:var(--good)} .ael .gauge .gd.dn{color:var(--bad)} .ael .gauge .gt2{font-size:11px;color:var(--mut)}
 .ael .chip.snap{background:#E3ECFF;color:var(--blue)}
 .ael .chart{position:relative;min-height:200px;width:100%}
 .ael .chart svg{display:block;overflow:visible}
@@ -209,6 +213,7 @@
 
   <section class="page" id="oee">
     <div class="grid">
+      <div class="card wide" id="c-o-gauge"><h3>OEE Components <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
       <div class="card" id="c-o-shop"><h3>OEE vs Target <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
       <div class="card" id="c-o-trend"><h3>Daily OEE <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
       <div class="card wide" id="c-o-heat"><h3>Shop × Day <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_oee"></div></div>
@@ -960,9 +965,28 @@ window.AK = (() => {
       if (dash.data('smp_breakdowns').status === 'ok') table(q('#tb-bd'), bd, [{ k: 'ref' }, { k: 'date', fmt: day }, { k: 'shift' }, { k: 'shop' }, { k: 'machine' }, { k: 'category' }, { k: 'cause' }, { k: 'downtime_min', n: 1 }, { k: 'status', pill: v => v === 'Open' ? 'bad' : 'good' }], { q: q('#q-bd'), sort: 'date', dir: -1 });
     },
     oee(p) {
-      const els = ['c-o-shop', 'c-o-trend', 'c-o-heat', 'c-o-apq'].map(ch); if (els.map(e => status(e, 'smp_oee')).some(Boolean)) return;
+      const eg = ch('c-o-gauge'); const els = ['c-o-shop', 'c-o-trend', 'c-o-heat', 'c-o-apq'].map(ch); if ([eg, ...els].map(e => status(e, 'smp_oee')).some(Boolean)) return;
       const rs = D('smp_oee').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd); const ss = rs.filter(r => inShift(r, p));
       const o = r => r.availability * r.performance * r.quality; const nod = p.future ? 'No actuals yet for this month' : 'No data';
+      { /* Gauge row: Availability, Performance, Quality and OEE for the selection, against target, with change vs the previous period of equal length */
+        const all = D('smp_oee').filter(r => inShop(r, p) && inShift(r, p)); const dd = s => new Date(s + 'T00:00:00Z'), fm = d3.utcFormat('%Y-%m-%d');
+        const n = Math.max(1, Math.round((dd(p.actEnd) - dd(p.start)) / 864e5) + 1); const pe = fm(d3.utcDay.offset(dd(p.start), -1)), ps = fm(d3.utcDay.offset(dd(p.start), -n));
+        const cur = all.filter(r => r.date >= p.start && r.date <= p.actEnd), prv = all.filter(r => r.date >= ps && r.date <= pe);
+        const K = [['Availability', r => r.availability, 90], ['Performance', r => r.performance, 95], ['Quality', r => r.quality, 99], ['OEE', o, 75]];
+        eg.replaceChildren(); if (!cur.length) { empty(eg, nod); } else { const wrap = document.createElement('div'); wrap.className = 'gauges'; eg.appendChild(wrap);
+          K.forEach(([name, f, tgt]) => { const v = d3.mean(cur, f) * 100, pv = prv.length ? d3.mean(prv, f) * 100 : null; const col = v >= tgt ? C.navy : v >= tgt * .9 ? C.warn : C.bad;
+            const g = document.createElement('div'); g.className = 'gauge'; g.innerHTML = '<h4></h4>'; g.firstChild.textContent = name; wrap.appendChild(g);
+            const W = 200, H = 120, cx = 100, cy = 100, R = 82, r0 = 50; const ang = x => -Math.PI / 2 + Math.PI * Math.max(0, Math.min(100, x)) / 100;
+            const svg = d3.select(g).append('svg').attr('viewBox', `0 0 ${W} ${H}`); const arc = d3.arc().innerRadius(r0).outerRadius(R); const t = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+            t.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E2E6EB');
+            t.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: ang(v) })).attr('fill', col);
+            const ta = ang(tgt); t.append('line').attr('x1', Math.sin(ta) * (r0 - 4)).attr('y1', -Math.cos(ta) * (r0 - 4)).attr('x2', Math.sin(ta) * (R + 5)).attr('y2', -Math.cos(ta) * (R + 5)).attr('stroke', C.navy).attr('stroke-width', 2);
+            t.append('text').attr('x', -(R + r0) / 2).attr('y', 14).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5A6670').text('0');
+            t.append('text').attr('x', (R + r0) / 2).attr('y', 14).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5A6670').text('100');
+            t.append('text').attr('y', -4).attr('text-anchor', 'middle').style('font-size', '22px').style('font-weight', 600).style('fill', col).text(f1(v) + '%');
+            svg.on('mousemove', ev => tip.show(ev, [name, `Actual ${f1(v)}%`, `Target ${tgt}%`, pv != null ? `Previous ${n} days ${f1(pv)}%` : 'No previous period'])).on('mouseleave', tip.hide);
+            const d = document.createElement('div'); if (pv != null) { const dv = v - pv, fl = Math.abs(dv) < .05; d.className = 'gd ' + (fl ? '' : dv > 0 ? 'up' : 'dn'); d.textContent = `${fl ? '■' : dv > 0 ? '▲' : '▼'} ${f1(Math.abs(dv))} pts vs previous ${n} days`; } else { d.className = 'gd'; d.textContent = '—'; }
+            const tt = document.createElement('div'); tt.className = 'gt2'; tt.textContent = `Target ${tgt}% · ${Math.round(v / tgt * 100)}% of target`; g.append(d, tt); }); } }
       pvaH(els[0], d3.rollups(ss, v => d3.mean(v, o) * 100, r => r.shop).map(([s, v]) => ({ label: s, plan: 75, actual: v })).sort((a, b) => a.actual - b.actual), { planName: 'Target 75%', actName: 'OEE', fmt: v => f1(v) + '%', tickFmt: v => v + '%', rh: 26, emptyMsg: nod });
       const ds = [...new Set(rs.map(r => r.date))].sort();
       lines(els[1], ds, ['A', 'B', 'C'].filter(s => p.shift === 'All' || s === p.shift).map((s, i) => ({ name: 'Shift ' + s, color: [C.navy, C.blue, C.cyan][i], values: ds.map(d => { const v = rs.filter(r => r.date === d && r.shift === s); return v.length ? Math.round(d3.mean(v, o) * 1000) / 10 : null; }) })), { xFmt: day, fmt: v => v + '%', yFmt: v => v + '%', refs: [{ v: 75, label: 'Target 75%', color: C.navy }], min: 30, emptyMsg: nod });
