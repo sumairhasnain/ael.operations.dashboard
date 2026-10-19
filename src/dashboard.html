@@ -362,6 +362,7 @@ window.AK = (() => {
     cats.forEach(c => { let acc = 0; series.forEach(s => { const v = get(c, s.key); if (v == null || v === 0) return;
       const bx = o.stack ? x(c) : x(c) + x1(s.key), bw = o.stack ? x.bandwidth() : x1.bandwidth(); const y0 = o.stack ? acc : 0;
       svg.append('rect').attr('x', bx).attr('width', bw).attr('y', y(y0 + v)).attr('height', y(y0) - y(y0 + v)).attr('fill', typeof s.color === 'function' ? s.color(c) : s.color)
+        .style('opacity', o.focus && c !== o.focus ? 0.3 : null).style('cursor', o.onClick && (!o.clickKey || o.clickKey === s.key) ? 'pointer' : null).on('click', o.onClick && (!o.clickKey || o.clickKey === s.key) ? () => o.onClick(c) : null)
         .on('mousemove', ev => tip.show(ev, [(o.xFmt || (d => d))(c), ...series.map(ss => `${ss.name}: ${get(c, ss.key) == null ? '—' : (o.fmt || nf)(get(c, ss.key))}`), ...(o.extra ? [o.extra(c)] : [])])).on('mouseleave', tip.hide);
       if (o.vals && !o.stack) { const t = (o.valFmt || (q => q >= 1e6 ? d3.format('.2f')(q / 1e6) + 'M' : q >= 1000 ? d3.format('.1f')(q / 1000) + 'k' : d3.format(',.0f')(q)))(v), tl = t.length * 5.6 + 4, bh = y(0) - y(v), cx = bx + bw / 2;
         if (bw >= 6) { const inside = bh >= tl + 4, ty = inside ? y(v) + 4 : y(v) - 3;
@@ -467,7 +468,7 @@ window.AK = (() => {
   document.getElementById('f-clear').addEventListener('click', () => {
     document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
     const bv = document.getElementById('s-bomv'); if (bv) bv.value = 'all';
-    dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0 });
+    dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0 });
     window.__draw && window.__draw(); });
   sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
   iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });
@@ -475,8 +476,11 @@ window.AK = (() => {
   let _dt = { src: null, v: null };
   window.__dataTo = () => { const d = dash.data('atlas_parts_daily'); if (!d || d.status !== 'ok') return window.__TODAY; if (d.data !== _dt.src) { let mx = ''; for (const r of d.data) if ((r.prod_actual != null || r.disp_actual != null) && r.date > mx) mx = r.date; _dt = { src: d.data, v: mx && mx < window.__TODAY ? mx : window.__TODAY }; } return _dt.v; };
   window.__P = () => { const p = dash.params(); const month = p.month || '2026-10', e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
-    return { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf && ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop || 'All') ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY }; };
-  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
+    const __pb = { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf && ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop || 'All') ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY };
+    const base = __pb; base.full = { ...base }; const dy = String(p.day || '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dy) && dy >= base.start && dy <= base.end) return { ...base, day: dy, start: dy, end: dy, asof: dy, actEnd: [dy, window.__TODAY, window.__dataTo()].sort()[0], full: base.full };
+    return { ...base, day: null }; };
+  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
   const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
   window.__page = 'overview';
   const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
@@ -643,8 +647,8 @@ window.AK = (() => {
           const sub = add('ks', 'vs plan ' + d3.format(',')(Math.round(pv)) + (pc == null ? '' : ' · ')); if (pc != null) { const sp = document.createElement('span'); sp.className = 'kp'; sp.textContent = Math.round(pc) + '%'; sp.style.color = pc >= 100 ? C.navy : pc >= 80 ? C.warn : C.bad; sub.appendChild(sp); }
           add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model) + (p.pf && DIMS().get(p.pf) ? ' · ' + (DIMS().get(p.pf).part || p.pf) : '')); }
         else { add('kl', 'Last day produced'); add('kv', '—'); add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model)); } } }
-      if (!sA(el)) { const f = flow('Production', p); if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
-        else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const pv = f.pl.get(c) || 0, av = f.ac.get(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : (c <= p.actEnd ? f.ac.get(c) || 0 : null), { xFmt: d => +d.slice(8), marker: p.asof, vals: 1, h: 300 }); }
+      if (!sA(el)) { const pF = p.full || p, f = flow('Production', pF); if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
+        else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const pv = f.pl.get(c) || 0, av = f.ac.get(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : (c <= pF.actEnd ? f.ac.get(c) || 0 : null), { xFmt: d => +d.slice(8), marker: pF.asof, vals: 1, h: 300, focus: p.day, clickKey: 'a', onClick: c => dash.setParams({ day: p.day === c ? 0 : c }) }); }
       draw._shopPva(ch('c-p-shop'), 'Production', p);
       const em = ch('c-p-model'), hubP = ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop), emH = q('#c-p-model h3'); if (emH) emH.textContent = hubP ? 'Production Plan Vs Actual - By Part' : 'Production Plan Vs Actual - By Model';
       if (!sA(em) && hubP) { const pl = new Map(), ac = new Map(), md = new Map(), kc = new Map(), pq = { ...p, pf: null };
