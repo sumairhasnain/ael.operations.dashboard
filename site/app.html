@@ -54,6 +54,9 @@
 .ael .ksel .mn{font-size:13px;color:#5B6770;margin-top:3px}
 .ael .chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-weight:600}
 .ael .chip.smp{background:#FFF3D6;color:#8A5A00}
+.ael .mclg{display:flex;gap:16px;font-size:11.5px;color:var(--mut);margin:0 0 6px} .ael .mclg i{display:inline-block;vertical-align:middle;margin-right:5px}
+.ael .mclg i.b{width:10px;height:10px;background:var(--navy)} .ael .mclg i.b.cur{background:var(--blue)} .ael .mclg i.l{width:16px;border-top:2px dashed #8A949E}
+.ael .mcrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px} .ael .mct{font-size:12px;font-weight:600;color:var(--ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
 .ael .gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .ael .gauge{text-align:center;padding:4px 6px 8px;border-right:1px solid var(--line)} .ael .gauge:last-child{border-right:0}
 .ael .gauge h4{margin:0 0 2px;font-size:13px;font-weight:600;color:var(--ink)} .ael .gauge svg{display:block;width:100%;max-width:220px;margin:0 auto}
@@ -430,6 +433,29 @@ window.AK = (() => {
     ov.on('mousemove', ev => { const [mx] = d3.pointer(ev); const i = d3.minIndex(xs, c => Math.abs(x(c) - mx)); tip.show(ev, [(o.xFmt || (d => d))(xs[i]), ...series.flatMap(s => [`${s.name}: ${s.values[i] == null ? '—' : (o.fmt || kf)(s.values[i])}${s.sub ? ' (sub-total)' : ''}`, ...(s.sub || []).map(u => `   · ${u.name}: ${u.values[i] == null ? '—' : (o.fmt || kf)(u.values[i])}`)])]); }).on('mouseleave', tip.hide);
   }
 
+  // monthly actual bars with a dashed plan line (one small panel per stream)
+  function monthCombo(el, months, panels, o = {}) {
+    el.replaceChildren(); const lg = document.createElement('div'); lg.className = 'mclg'; lg.innerHTML = '<span><i class="b"></i>Actual</span><span><i class="b cur"></i>Current month (to date)</span><span><i class="l"></i>Plan</span>'; el.appendChild(lg);
+    const row = document.createElement('div'); row.className = 'mcrow'; el.appendChild(row); const cur = window.__TODAY.slice(0, 7);
+    const cells = panels.map(pn => { const cell = document.createElement('div'); cell.className = 'mccell'; const t = document.createElement('div'); t.className = 'mct'; t.textContent = pn.name; cell.appendChild(t); row.appendChild(cell); return cell; });
+    panels.forEach((pn, pi) => { const cell = cells[pi];
+      const vals = months.map(m => pn.get(m) || { p: 0, a: 0 }); if (!vals.some(v => v.p || v.a)) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'No data'; cell.appendChild(e); return; }
+      const h = o.h || 240, m = { t: 22, r: 10, b: 24, l: 40 }; const { svg, w } = box(cell.appendChild(document.createElement('div')), h);
+      const x = d3.scaleBand(months, [m.l, w - m.r]).padding(0.38), y = d3.scaleLinear([0, d3.max(vals, v => Math.max(v.p, v.a)) * 1.15], [h - m.b, m.t]).nice();
+      svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y).attr('y2', y);
+      svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d) + 4).attr('text-anchor', 'end').attr('font-size', 10).text(kf);
+      svg.append('g').selectAll('text').data(months).join('text').attr('x', d => x(d) + x.bandwidth() / 2).attr('y', h - 7).attr('text-anchor', 'middle').attr('font-size', 10.5).text(d => d3.utcFormat('%b')(new Date(d + '-01T00:00:00Z')));
+      svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#051C2C').attr('stroke-width', 1);
+      svg.selectAll(null).data(months).join('rect').attr('x', d => x(d)).attr('width', x.bandwidth()).attr('y', (d, i) => y(vals[i].a)).attr('height', (d, i) => y(0) - y(vals[i].a)).attr('fill', d => d === cur ? C.blue : C.navy);
+      const lf = v => v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e4 ? Math.round(v / 1e3) + 'k' : nf(Math.round(v)), ins = i => y(0) - y(vals[i].a) > 22;
+      svg.selectAll(null).data(months).join('text').attr('x', d => x(d) + x.bandwidth() / 2).attr('y', (d, i) => ins(i) ? y(0) - 8 : y(vals[i].a) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).style('font-weight', 600).style('fill', (d, i) => ins(i) ? '#fff' : d === cur ? C.blue : C.navy).text((d, i) => vals[i].a ? lf(vals[i].a) : '');
+      const pts = months.map((d, i) => [x(d) + x.bandwidth() / 2, vals[i].p]).filter(q => q[1] > 0);
+      svg.append('path').attr('d', d3.line().x(q => q[0]).y(q => y(q[1]))(pts)).attr('fill', 'none').attr('stroke', '#8A949E').attr('stroke-width', 1.6).attr('stroke-dasharray', '5 4');
+      svg.selectAll(null).data(pts).join('circle').attr('cx', q => q[0]).attr('cy', q => y(q[1])).attr('r', 3.2).attr('fill', '#fff').attr('stroke', '#8A949E').attr('stroke-width', 1.6);
+      svg.selectAll(null).data(months).join('rect').attr('x', d => x(d) - x.step() * x.padding() / 2).attr('width', x.step()).attr('y', m.t).attr('height', h - m.t - m.b).attr('fill', 'transparent')
+        .on('mousemove', (ev, d) => { const v = vals[months.indexOf(d)]; tip.show(ev, [`${pn.name} · ${d3.utcFormat('%B')(new Date(d + '-01T00:00:00Z'))}${d === cur ? ' (to date)' : ''}`, `Actual ${nf(Math.round(v.a))}`, `Plan ${nf(Math.round(v.p))}`, v.p ? `Compliance ${Math.round(v.a / v.p * 100)}%` : '']); }).on('mouseleave', tip.hide); });
+  }
+
   function donut(el, rows, o = {}) {
     if (!rows.length) return empty(el, 'No data for this selection');
     const h = o.h || 220; const { svg, w } = box(el, h); const r = Math.min(h / 2 - 10, w / 4), cx = r + 16, cy = h / 2;
@@ -469,7 +495,7 @@ window.AK = (() => {
     tbl.querySelectorAll('th').forEach((th, i) => { const k = cols[i] && cols[i].k; th.setAttribute('aria-sort', st.k === k ? (st.dir > 0 ? 'ascending' : 'descending') : 'none');
       th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field; st.dir = st.k === kk ? -st.dir : -1; st.k = kk; window.__draw(); }); } });
   }
-  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table };
+  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo };
 })();
 </script>
 
@@ -525,7 +551,7 @@ window.AK = (() => {
 <script>
 /* ---------- drawing ---------- */
 (() => {
-  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table } = window.AK;
+  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo } = window.AK;
   const D = id => dash.data(id).data || [];
   const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
   const day = s => d3.utcFormat('%-d %b')(new Date(s + 'T00:00:00Z')); const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
@@ -703,11 +729,10 @@ window.AK = (() => {
         const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = m => { const i = MSQ.indexOf(m); return i < 0 ? MSQ.length : i; };
         pvaH(em, [...pl.keys()].map(m => ({ label: m, plan: pl.get(m), actual: p.future ? null : ac.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => mi(a.label) - mi(b.label)), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
       const et = ch('c-p-trend');
-      if (!sA(et)) { const months = window.__MONTHS.filter(m => m <= '2026-10'); const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY);
-        const g = d3.rollup(rows, v => ({ p: d3.sum(v, r => r.plan), a: d3.sum(v, r => r.actual || 0) }), r => r.date.slice(0, 7), r => r.stream);
-        const cats = months.flatMap(m => ['Production', 'Dispatch', 'In-house'].map(s => m + '|' + s)).filter(c => { const [m, s] = c.split('|'); return (g.get(m) || new Map()).get(s); });
-        vbar(et, cats, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return compColor(v.a / v.p * 100); } }],
-          (c, k) => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return v[k]; }, { xFmt: c => { const [m, s] = c.split('|'); return `${mon(m)} ${s === 'In-house' ? 'IH' : s.slice(0, 4)}`; }, rot: 1, h: 260, extra: c => { const [m, s] = c.split('|'); const v = g.get(m).get(s); return `Compliance ${pct(v.a / v.p * 100)}${m === window.__TODAY.slice(0, 7) ? ` (actuals to ${+window.__dataTo().slice(8)} ${mon(m)})` : ''}`; } }); }
+      if (!sA(et)) { const months = window.__MONTHS.filter(m => m <= window.__TODAY.slice(0, 7)), pY = planTo({}, window.__TODAY); /* current month: plan to yesterday, actuals to date */
+        const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY);
+        const g = d3.rollup(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pY), r => r.plan), a: d3.sum(v, r => r.actual || 0) }), r => r.stream, r => r.date.slice(0, 7));
+        monthCombo(et, months, ['Production', 'Dispatch', 'In-house'].map(sn => ({ name: sn === 'In-house' ? 'In-house parts' : sn, get: m => (g.get(sn) || new Map()).get(m) })), { h: 240 }); }
       // parts
       const box = q('#c-p-parts .tbox'), tbl = q('#tb-parts');
       if (ATL.every(id => dash.data(id).status === 'ok')) {
