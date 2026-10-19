@@ -663,15 +663,15 @@ window.AK = (() => {
               { xFmt: day, marker: p.asof, noDots: 1, h: 300 }); } } }
       const el = ch('c-p-daily'), kd = q('#k-p-daily');
       { const ks = q('#k-p-sel'); if (ks) { ks.replaceChildren(); const on = p.shop !== 'All' || p.model !== 'All'; ks.hidden = !on; /* shop and model picked in the filters, shown left of the last-day figure */
-        if (on) { const sn = document.createElement('div'); sn.className = 'sn'; sn.textContent = p.shop === 'All' ? 'All Shops' : p.shop; const mn = document.createElement('div'); mn.className = 'mn'; mn.textContent = p.model === 'All' ? 'All Models' : p.model; ks.append(sn, mn); } } }
+        if (on) { const sn = document.createElement('div'); sn.className = 'sn'; sn.textContent = p.shop === 'All' ? 'All Shops' : p.shop; const mn = document.createElement('div'); mn.className = 'mn'; mn.textContent = (p.model === 'All' ? 'All Models' : p.model) + (p.pf && DIMS().get(p.pf) ? ' · ' + (DIMS().get(p.pf).part || p.pf) : ''); ks.append(sn, mn); } } }
       if (kd) { kd.replaceChildren(); if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') { const f0 = flow('Production', p), lim = p.actEnd >= window.__TODAY ? window.__TODAY : '9999';
         const ld = f0.ds.filter(d => d <= p.actEnd && (f0.ac.get(d) || 0) > 0).slice(-1)[0], add = (cls, t) => { const e = document.createElement('div'); e.className = cls; e.textContent = t; kd.appendChild(e); return e; };
         if (ld) { const av = f0.ac.get(ld) || 0, pv = f0.pl.get(ld) || 0, pc = pv ? av / pv * 100 : null, dt = new Date(ld + 'T00:00:00');
           add('kl', 'Last day produced · ' + dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }));
           add('kv', d3.format(',')(Math.round(av)));
           const sub = add('ks', 'vs plan ' + d3.format(',')(Math.round(pv)) + (pc == null ? '' : ' · ')); if (pc != null) { const sp = document.createElement('span'); sp.className = 'kp'; sp.textContent = Math.round(pc) + '%'; sp.style.color = pc >= 100 ? C.navy : pc >= 80 ? C.warn : C.bad; sub.appendChild(sp); }
-          add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model) + (p.pf && DIMS().get(p.pf) ? ' · ' + (DIMS().get(p.pf).part || p.pf) : '')); }
-        else { add('kl', 'Last day produced'); add('kv', '—'); add('kf', (p.shop === 'All' ? 'All shops' : p.shop) + ' · ' + (p.model === 'All' ? 'All models' : p.model)); } } }
+          }
+        else { add('kl', 'Last day produced'); add('kv', '—'); } } }
       if (!sA(el)) { const pF = p.full || p, f = flow('Production', pF), nx = c => d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(c + 'T00:00:00Z'), 1)), acP = c => nx(c) <= pF.actEnd ? (f.ac.get(nx(c)) || 0) : null; /* production recorded on a day was made the day before: show it on that day */ if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
         else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual (produced)', color: c => { const pv = f.pl.get(c) || 0, av = acP(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : acP(c), { xFmt: d => +d.slice(8), marker: pF.asof, vals: 1, h: 300, focus: p.day, clickKey: 'a', onClick: c => dash.setParams({ day: p.day === c ? 0 : c }) }); }
       draw._shopPva(ch('c-p-shop'), 'Production', p);
