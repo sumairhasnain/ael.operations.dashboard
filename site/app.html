@@ -243,6 +243,7 @@
       <div class="card wide sechd" id="c-c-hd"><div class="chd"><div><h3>Clutch Area · Machine &amp; Manpower Capacity</h3><div class="ssub" id="s-c-sub">Time studies: Clutch area robot study and standardized work charts (Center Clutch, Drive Plate). Capacity at 7.1 h per shift, 26 days.</div></div></div></div>
       <div class="card wide kpicard" id="c-c-kpi"><div class="ktiles" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-part"><h3>Load vs Capacity by Part</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
+      <div class="card wide" id="c-c-dp"><h3>Drive Plate CD70 · Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-mc"><h3>Machine Loading</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-yama"><h3>Operator Balance vs Takt</h3><div class="chart" data-source="cap_operators"></div></div>
       <div class="card" id="c-c-wait"><h3>Operator Time per Machine Cycle</h3><div class="chart" data-source="cap_machines"></div></div>
@@ -546,6 +547,34 @@ window.AK = (() => {
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h).attr('stroke', C.bad).attr('stroke-dasharray', '4 3');
   }
 
+  // process capacity in sequence: one bar per process, dotted line for the month's demand
+  function procbars(el, procs, o = {}) {
+    el.replaceChildren(); if (!procs.length) return empty(el, 'No data');
+    const lg = document.createElement('div'); lg.className = 'uleg'; lg.innerHTML = `<span><i style="width:10px;height:10px;background:#9AA8B6"></i>Process capacity /month</span><span><i style="width:10px;height:10px;background:${C.navy}"></i>Bottleneck</span><span><i style="width:10px;height:10px;border:1.5px dashed #8A949E"></i>No time study</span><span><i style="width:18px;border-top:2px dotted ${C.bad}"></i>${o.demandName || 'Demand'}</span>`; el.appendChild(lg);
+    const host = el.appendChild(document.createElement('div')); const h = o.h || 330, m = { t: 34, b: 66, l: 46, r: 12 }; const { svg, w } = box(host, h);
+    const caps = procs.filter(x => x.cap), mx = Math.max(d3.max(caps, x => x.cap) || 1, o.demand || 0) * 1.12, bn = caps.length ? d3.min(caps, x => x.cap) : null;
+    const x = d3.scaleBand(procs.map(x => x.op), [m.l, w - m.r]).padding(.32), y = d3.scaleLinear([0, mx], [h - m.b, m.t]).nice();
+    svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y).attr('y2', y);
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d) + 4).attr('text-anchor', 'end').attr('font-size', 10).text(kf);
+    const k1 = v => v >= 1e3 ? d3.format('.1f')(v / 1e3) + 'k' : nf(Math.round(v));
+    procs.forEach((pr, i) => { const x0 = x(pr.op), bw = x.bandwidth(), cx = x0 + bw / 2, isB = pr.cap && pr.cap === bn;
+      if (pr.cap) { svg.append('rect').attr('x', x0).attr('width', bw).attr('y', y(pr.cap)).attr('height', y(0) - y(pr.cap)).attr('fill', isB ? C.navy : '#9AA8B6');
+        svg.append('text').attr('x', cx).attr('y', y(pr.cap) - 18).attr('text-anchor', 'middle').attr('font-size', 12).style('font-weight', 600).style('fill', C.navy).text(k1(pr.cap));
+        if (o.demand) svg.append('text').attr('x', cx).attr('y', y(pr.cap) - 5).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', o.demand / pr.cap > 1 ? C.bad : o.demand / pr.cap > .85 ? C.warn : '#5A6670').text(Math.round(o.demand / pr.cap * 100) + '% loaded');
+        if (isB) svg.append('text').attr('x', cx).attr('y', y(pr.cap) - 31).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', C.navy).style('font-weight', 700).text('BOTTLENECK'); }
+      else { const hh = (y(0) - y(mx * .25)); svg.append('rect').attr('x', x0 + .75).attr('width', bw - 1.5).attr('y', y(0) - hh).attr('height', hh).attr('fill', 'none').attr('stroke', '#8A949E').attr('stroke-dasharray', '4 3');
+        svg.append('text').attr('x', cx).attr('y', y(0) - hh - 6).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', '#8A949E').text('No time study'); }
+      svg.append('text').attr('x', cx).attr('y', h - m.b + 15).attr('text-anchor', 'middle').attr('font-size', 11.5).style('font-weight', 600).style('fill', C.navy).text(pr.op);
+      const nm = String(pr.name || ''), parts = nm.length > 22 ? [nm.slice(0, nm.lastIndexOf(' ', 22) > 0 ? nm.lastIndexOf(' ', 22) : 22), nm.slice(nm.lastIndexOf(' ', 22) > 0 ? nm.lastIndexOf(' ', 22) + 1 : 22)] : [nm];
+      parts.forEach((t, j) => svg.append('text').attr('x', cx).attr('y', h - m.b + 29 + j * 12).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', '#5A6670').text(t));
+      svg.append('text').attr('x', cx).attr('y', h - m.b + 29 + parts.length * 12 + 2).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', C.navy).text(pr.n ? `${pr.n} machine${pr.n > 1 ? 's' : ''}` : '');
+      if (i < procs.length - 1) svg.append('text').attr('x', x0 + bw + x.step() * x.padding() / 2).attr('y', h - m.b + 15).attr('text-anchor', 'middle').attr('font-size', 11).style('fill', '#8A949E').text('›');
+      svg.append('rect').attr('x', x0 - x.step() * x.padding() / 2).attr('width', x.step()).attr('y', m.t).attr('height', h - m.t - m.b).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, pr.tip)).on('mouseleave', tip.hide); });
+    svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy);
+    if (o.demand) { svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(o.demand)).attr('y2', y(o.demand)).attr('stroke', C.bad).attr('stroke-width', 2).attr('stroke-dasharray', '2 4').attr('stroke-linecap', 'round');
+      svg.append('text').attr('x', w - m.r).attr('y', y(o.demand) - 6).attr('text-anchor', 'end').attr('font-size', 10.5).style('font-weight', 600).style('fill', C.bad).text(`${o.demandName || 'Demand'} ${k1(o.demand)}`); }
+  }
+
   function donut(el, rows, o = {}) {
     if (!rows.length) return empty(el, 'No data for this selection');
     const h = o.h || 220; const { svg, w } = box(el, h); const r = Math.min(h / 2 - 10, w / 4), cx = r + 16, cy = h / 2;
@@ -585,7 +614,7 @@ window.AK = (() => {
     tbl.querySelectorAll('th').forEach((th, i) => { const k = cols[i] && cols[i].k; th.setAttribute('aria-sort', st.k === k ? (st.dir > 0 ? 'ascending' : 'descending') : 'none');
       th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field; st.dir = st.k === kk ? -st.dir : -1; st.k = kk; window.__draw(); }); } });
   }
-  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100 };
+  return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100, procbars };
 })();
 </script>
 
@@ -641,7 +670,7 @@ window.AK = (() => {
 <script>
 /* ---------- drawing ---------- */
 (() => {
-  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100 } = window.AK;
+  const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100, procbars } = window.AK;
   const D = id => dash.data(id).data || [];
   const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
   const day = s => d3.utcFormat('%-d %b')(new Date(s + 'T00:00:00Z')); const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
@@ -1161,9 +1190,9 @@ window.AK = (() => {
       vbar(els[3], apq.map(d => d[0]), [{ key: 'a', name: 'Availability', color: C.navy }, { key: 'p', name: 'Performance', color: C.blue }, { key: 'q', name: 'Quality', color: C.cyan }], (c, k) => mm.get(c)[k], { rot: 1, h: 270, fmt: v => f1(v) + '%', yFmt: v => v + '%', emptyMsg: nod });
     },
     _capClutch(p) {
-      const CAP = ['cap_machines', 'cap_parts', 'cap_operators', 'atlas_parts_daily', 'atlas_parts'], ids = ['c-c-part', 'c-c-mc', 'c-c-yama', 'c-c-wait'].map(ch), kt = q('#c-c-kpi .ktiles'), tbl = q('#tb-capm');
+      const CAP = ['cap_machines', 'cap_parts', 'cap_operators', 'atlas_parts_daily', 'atlas_parts'], ids = ['c-c-part', 'c-c-mc', 'c-c-yama', 'c-c-wait', 'c-c-dp'].map(ch), kt = q('#c-c-kpi .ktiles'), tbl = q('#tb-capm');
       if (ids.map(e => status(e, ...CAP)).some(Boolean)) { kt.replaceChildren(); return; }
-      const [ep, em, ey, ew] = ids;
+      const [ep, em, ey, ew, edp] = ids;
       const okShop = p.shop === 'All' || p.shop === 'Clutch', okModel = r => p.model === 'All' || r.model === p.model;
       if (!okShop) { ids.forEach(e => empty(e, 'Time studies are available for the Clutch shop only')); kt.replaceChildren(); table(tbl, [], [{ k: 'line' }]); return; }
       const MC = D('cap_machines'), PT = D('cap_parts').filter(okModel), OPS = D('cap_operators');
@@ -1179,12 +1208,17 @@ window.AK = (() => {
       const PM = new Map(P.map(x => [x.part, x])); const k1 = v => v >= 1e3 ? d3.format('.1f')(v / 1e3) + 'k' : nf(Math.round(v));
       utilbars(ep, P.map(x => ({ label: x.part, sub: `Bottleneck ${x.bop} · ${x.bmcs.length} machine${x.bmcs.length > 1 ? 's' : ''} · ${k1(x.bcap)}/month`, plan: x.loadP, act: x.actP,
         tip: [x.part, `Capacity ${nf(x.bcap)} /month at bottleneck ${x.bop}`, `Planned load ${nf(Math.round(x.load))} (${Math.round(x.loadP)}%)`, `Basis: ${x.basis}`, x.act != null ? `Actual ${nf(Math.round(x.act))} in ${el} working days (${Math.round(x.actP)}% of capacity)` : 'No actuals yet', x.note || ''] })), { rh: 44 });
+      { /* Drive Plate: every process in sequence */ const dpx = PM.get('Drive Plate CD70'); const dms = MC.filter(m => m.part === 'Drive Plate CD70');
+        if (!dpx) empty(edp, 'Drive Plate CD70 is outside the current Model filter');
+        else procbars(edp, d3.groups(dms, m => m.op).sort((a, b) => a[0].localeCompare(b[0])).map(([op, v]) => { const run = v.filter(m => m.cap_month), cap = d3.sum(run, m => m.cap_month) || null;
+          return { op, name: ((v.find(m => m.operation) || {}).operation || '').replace(/\s*\(.*?\)/g, ''), cap, n: run.length, tip: [`${op} · ${(v.find(m => m.operation) || {}).operation || ''}`, cap ? `Capacity ${nf(cap)} /month on ${run.length} machine${run.length > 1 ? 's' : ''}` : 'No time study for this process', ...run.map(m => `${m.machine}: ${m.ct} s per cycle, ${m.ppc} pc/cycle, ${m.shifts} shifts → ${nf(m.cap_month)} /month`), ...v.filter(m => !m.cap_month).map(m => `${m.machine}: ${m.status.toLowerCase()}`), cap && dpx.load ? `Load ${Math.round(dpx.load / cap * 100)}% of capacity` : ''] }; }),
+          { demand: dpx.load, demandName: (dpx.planned ? 'Plan ' : 'Study load ') + d3.utcFormat('%b')(dd(ms)), h: 340 }); }
       // machines: load % of their operation's capacity
       const MR = MC.filter(m => PM.has(m.part) || (p.model === 'All' && !m.cap_month && !PM.has(m.part))).map(m => { const x = PM.get(m.part), o = x && x.ops.get(m.op); const run = !!(o && m.cap_month);
         return { ...m, load: run ? x.load / o.cap * 100 : null, act: run && x.actP != null ? x.act / (o.cap / 26 * el) * 100 : null, opcap: o ? o.cap : null, touch: m.ct && m.ht != null ? (m.ht + m.mht) / m.ct * 100 : null, waitp: m.ct && m.wait != null ? m.wait / m.ct * 100 : null }; });
       const mr = MR.slice().sort((a, b) => (b.load ?? -1) - (a.load ?? -1));
       const mrun = mr.filter(m => m.load != null), mnot = mr.length - mrun.length;
-      utilbars(em, mrun.map(m => ({ label: m.machine, sub: `${m.line || 'Line n/a'} · ${m.part} · ${m.op}`, plan: m.load, act: m.act, none: m.status === 'Standby' ? 'Standby (no share in plan)' : 'No time study',
+      utilbars(em, mrun.map(m => ({ label: m.machine, sub: `${m.line || 'Line n/a'} · ${m.part} · ${m.op}`, plan: m.load, act: m.act, none: m.status === 'Standby' ? 'Standby (no share in plan)' : m.status,
         tip: [m.machine + ' · ' + (m.line || ''), `${m.part} · ${m.op} ${m.operation || ''}`, m.ct ? `Cycle ${m.ct} s · ${m.ppc} pc/cycle · ${m.shifts || '—'} shift(s)` : 'No cycle time', m.cap_month ? `Capacity ${nf(m.cap_month)} /month (operation ${nf(m.opcap)})` : m.status, m.load != null ? `Planned load ${Math.round(m.load)}%` : '', m.act != null ? `Actual ${Math.round(m.act)}% month to date` : ''] })), { rh: 30 });
       if (mnot) { const nt = document.createElement('div'); nt.className = 'ssub'; nt.style.marginTop = '6px'; nt.textContent = `${mnot} more machine${mnot > 1 ? 's' : ''} without a time study or on standby are listed in the Machine Register below.`; em.appendChild(nt); }
       // operators vs takt

@@ -63,9 +63,10 @@
   "mht": 8,
   "mpt": 60,
   "wait": 46,
-  "cap_month": 19546,
+  "cap_month": null,
   "study_load": 13500,
-  "status": "Running"
+  "status": "Not in current set",
+  "cap_study": 19546
  },
  {
   "line": "Drive Plate Line 3",
@@ -148,9 +149,10 @@
   "mht": 14,
   "mpt": 45,
   "wait": 33,
-  "cap_month": 22527,
+  "cap_month": null,
   "study_load": 10000,
-  "status": "Running"
+  "status": "Not in current set",
+  "cap_study": 22527
  },
  {
   "line": "Drive Plate Line 3",
