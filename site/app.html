@@ -37,6 +37,10 @@
 .ael .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
 .ael .card{border:1px solid var(--line);background:#fff;padding:12px 14px;min-width:0;position:relative}
 .ael .card.wide{grid-column:1/-1}
+.ael .vsk{display:flex;flex-direction:column;gap:14px;padding:4px 2px 2px} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;align-items:end}
+.ael .vsk .vn{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-family:var(--font-anthropic-serif);font-size:26px;line-height:1.1;color:var(--navy)} .ael .vsk .vv small{font-family:inherit;font-size:13px;color:var(--mut);margin-left:6px}
+.ael .vsk .vc{text-align:right;font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vc b{display:block;font-family:var(--font-anthropic-serif);font-weight:400;font-size:20px;line-height:1.1} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:12px}
+.ael .vsk .vr.tot{border-top:1px solid var(--line);padding-top:12px} .ael .vsk .vf{font-size:11px;color:var(--mut)}
 .ael .card h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .ael .csel{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
 .ael .chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -246,6 +250,7 @@
       <div class="card wide" id="c-c-part"><h3>Load vs Capacity by Part</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-dp"><h3>Drive Plate CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-pr-cc"><h3>Clutch Center CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
+      <div class="card" id="c-c-vs-cc"><h3>Clutch Center CG125 Machined · Vendor Receiving MTD</h3><div class="vsk" data-source="atlas_vendor_supply"></div></div>
       <div class="card" id="c-c-pr-pp"><h3>Pressure Plate CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
       <div class="card" id="c-c-pr-cocd"><h3>Clutch Outer CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-pr-cocg"><h3>Clutch Outer CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
@@ -1249,6 +1254,23 @@ window.AK = (() => {
         procbars(el, PR, { actual, actualName: vend ? `In-house machined (est.) · ${vend.days}-day avg to ${fd(lastD)}` : lastD ? `${viaAssy ? 'CG125 assembly output' : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
       procChart(edp, 'Drive Plate CD70', 'DP2');
       [['c-c-pr-cc', 'Clutch Center CG125'], ['c-c-pr-pp', 'Pressure Plate CG125'], ['c-c-pr-cocd', 'Clutch Outer CD70'], ['c-c-pr-cocg', 'Clutch Outer CG125'], ['c-c-pr-cl', 'Clutch Lifter CG125']].forEach(([id, pn]) => { const e = ch(id); if (e && !status(e, ...CAP)) procChart(e, pn); });
+      { /* vendor receiving of the machined Clutch Center: each vendor's receipts MTD vs its month schedule */
+        const el = q('#c-c-vs-cc .vsk'); el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
+        if (!ok || !okShop) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = !ok ? 'Vendor receiving data not loaded' : 'Clutch shop only'; el.appendChild(m); }
+        else { const end0 = (p.actEnd || p.end), ms = end0.slice(0, 8) + '01', me = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(d3.utcMonth.offset(new Date(ms + 'T00:00:00Z'), 1), -1)), to = end0 < window.__TODAY ? end0 : window.__TODAY;
+          const rs = D('atlas_vendor_supply').filter(r => String(r.code) === '6530010066' && r.date >= ms && r.date <= me);
+          const V = d3.rollups(rs, v => ({ plan: d3.sum(v, r => +r.scheduled || 0), due: d3.sum(v.filter(r => r.date <= to), r => +r.scheduled || 0), rcv: d3.sum(v.filter(r => r.date <= to), r => +r.received || 0) }), r => r.vendor).filter(([, o]) => o.plan || o.rcv).sort((a, b) => b[1].plan - a[1].plan);
+          const nm = v => /TECNO PACK/i.test(v) ? 'Tecno Pack (TPI)' : /M\.?A\.?K/i.test(v) ? 'M.A.K Automotive' : v.replace(/\s*\(PVT\).*$/i, '');
+          const row = (label, o, tot) => { const r = document.createElement('div'); r.className = 'vr' + (tot ? ' tot' : ''); const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
+            r.innerHTML = `<div><div class="vn"></div><div class="vv"></div></div><div class="vc"><b></b>vs due to date</div>`; r.querySelector('.vn').textContent = label; const vv = r.querySelector('.vv'); vv.textContent = nf(o.rcv); const sm = document.createElement('small'); sm.textContent = `of ${nf(o.plan)} month plan`; vv.appendChild(sm);
+            const b = r.querySelector('.vc b'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
+            const sv = d3.select(r).append('svg').attr('viewBox', '0 0 300 12').attr('preserveAspectRatio', 'none'); sv.append('rect').attr('x', 0).attr('y', 3).attr('width', 300).attr('height', 6).attr('fill', '#E6EAEF');
+            if (o.plan) { sv.append('rect').attr('x', 0).attr('y', 3).attr('width', Math.min(1, o.rcv / o.plan) * 300).attr('height', 6).attr('fill', tot ? C.navy : C.blue); const xd = Math.min(1, o.due / o.plan) * 300; sv.append('line').attr('x1', xd).attr('x2', xd).attr('y1', 0).attr('y2', 12).attr('stroke', C.navy).attr('stroke-width', 1.5).attr('vector-effect', 'non-scaling-stroke'); }
+            const tl = [label, `Received ${nf(o.rcv)} · due to date ${nf(o.due)} · month plan ${nf(o.plan)}`, c == null ? '' : `Compliance ${Math.round(c)}% of schedule due`, mp == null ? '' : `${Math.round(mp)}% of month plan delivered`].filter(Boolean); r.addEventListener('mousemove', ev => tip.show(ev, tl)); r.addEventListener('mouseleave', () => tip.hide());
+            el.appendChild(r); };
+          if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = 'No schedule or receipts on 6530010066 this month'; el.appendChild(m); }
+          else { V.forEach(([v, o]) => row(nm(v), o)); const T = V.reduce((a, [, o]) => ({ plan: a.plan + o.plan, due: a.due + o.due, rcv: a.rcv + o.rcv }), { plan: 0, due: 0, rcv: 0 }); row('All vendors', T, true);
+            const f = document.createElement('div'); f.className = 'vf'; f.textContent = `Code 6530010066 · receipts 1–${+to.slice(8)} ${d3.utcFormat('%b')(new Date(ms + 'T00:00:00Z'))} · bar = share of month plan received, tick = schedule due to date`; el.appendChild(f); } } }
       // machines: load % of their operation's capacity
       const MR = MC.filter(m => PM.has(m.part) || (p.model === 'All' && !m.cap_month && !PM.has(m.part))).map(m => { const x = PM.get(m.part), o = x && x.ops.get(m.op); const run = !!(o && m.cap_month);
         return { ...m, load: run ? x.load / o.cap * 100 : null, act: run && x.actP != null ? x.act / (o.cap / 26 * el) * 100 : null, opcap: o ? o.cap : null, touch: m.ct && m.ht != null ? (m.ht + m.mht) / m.ct * 100 : null, waitp: m.ct && m.wait != null ? m.wait / m.ct * 100 : null }; });
