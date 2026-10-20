@@ -153,3 +153,38 @@ grant execute on function public.is_admin(), public.can_read(text[]), public.log
 --
 --   update public.profiles set role = 'admin', must_change_password = false
 --   where email = 'your.email@company.com';
+
+
+-- ---------- Capacity: machine shifts edited on the Capacity tab ----------
+-- One row per machine whose shifts differ from the time study. Any active user
+-- with the Capacity tab can change them; every change is logged.
+create table if not exists public.cap_shifts (
+  machine    text primary key,
+  shifts     smallint not null check (shifts between 1 and 3),
+  updated_by text,
+  updated_at timestamptz not null default now()
+);
+alter table public.cap_shifts enable row level security;
+drop policy if exists "capacity users read shifts" on public.cap_shifts;
+create policy "capacity users read shifts" on public.cap_shifts
+  for select to authenticated using (public.can_read(array['capacity']));
+
+-- p_shifts null = back to the time-study value (row removed).
+create or replace function public.set_machine_shifts(p_machine text, p_shifts int)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_email text;
+begin
+  if not public.can_read(array['capacity']) then raise exception 'no access to the Capacity tab'; end if;
+  if p_machine is null or length(p_machine) > 60 then raise exception 'bad machine'; end if;
+  select email into v_email from profiles where id = auth.uid();
+  if p_shifts is null then
+    delete from cap_shifts where machine = p_machine;
+  elsif p_shifts between 1 and 3 then
+    insert into cap_shifts (machine, shifts, updated_by, updated_at) values (p_machine, p_shifts, v_email, now())
+    on conflict (machine) do update set shifts = excluded.shifts, updated_by = excluded.updated_by, updated_at = now();
+  else raise exception 'shifts must be 1, 2 or 3'; end if;
+  insert into login_log (user_id, email, event, detail) values (auth.uid(), v_email, 'cap_shifts', p_machine || ' -> ' || coalesce(p_shifts::text, 'study'));
+end $$;
+revoke all on function public.set_machine_shifts(text, int) from public, anon;
+grant execute on function public.set_machine_shifts(text, int) to authenticated;
+grant select on public.cap_shifts to authenticated;

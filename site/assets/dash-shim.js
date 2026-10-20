@@ -40,6 +40,18 @@
   const needed = new Set();
   root.querySelectorAll('.page:not(.locked) [data-source]').forEach(el => el.dataset.source.split(/\s+/).filter(Boolean).forEach(d => needed.add(d)));
 
+  // machine shift changes made on the Capacity tab (shared by all portal users)
+  if (allowed.has('capacity')) {
+    const loadShifts = async () => { const { data, error } = await P.sb.from('cap_shifts').select('machine,shifts,updated_by,updated_at');
+      store.cap_shifts = error ? { status: 'error', data: [] } : { status: 'ok', data: data || [] }; fire(); };
+    window.__PORTAL.saveShifts = async (machine, shifts) => {
+      const { error } = await P.sb.rpc('set_machine_shifts', { p_machine: machine, p_shifts: shifts });
+      if (error) { alert('Could not save the shift change: ' + error.message); return; }
+      await loadShifts();
+    };
+    loadShifts();
+  }
+
   for (const s of scripts) { const n = document.createElement('script'); n.textContent = s.textContent; root.appendChild(n); }
 
   /* ---------- load data ---------- */
