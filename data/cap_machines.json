@@ -149,10 +149,9 @@
   "mht": 14,
   "mpt": 45,
   "wait": 33,
-  "cap_month": null,
+  "cap_month": 22527,
   "study_load": 10000,
-  "status": "Not in current set",
-  "cap_study": 22527
+  "status": "Running"
  },
  {
   "line": "Drive Plate Line 3",
@@ -305,7 +304,7 @@
   "wait": null,
   "cap_month": null,
   "study_load": null,
-  "status": "No time study"
+  "status": "Not working"
  },
  {
   "line": "Drive Plate Line 4",
@@ -322,7 +321,7 @@
   "wait": null,
   "cap_month": null,
   "study_load": null,
-  "status": "No time study"
+  "status": "Not working"
  },
  {
   "line": "CG125 Line 1",
