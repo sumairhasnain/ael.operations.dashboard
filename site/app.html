@@ -37,10 +37,10 @@
 .ael .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
 .ael .card{border:1px solid var(--line);background:#fff;padding:12px 14px;min-width:0;position:relative}
 .ael .card.wide{grid-column:1/-1}
-.ael .vsk{display:flex;flex-direction:column;gap:14px;padding:4px 2px 2px} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;align-items:end}
-.ael .vsk .vn{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-family:var(--font-anthropic-serif);font-size:26px;line-height:1.1;color:var(--navy)} .ael .vsk .vv small{font-family:inherit;font-size:13px;color:var(--mut);margin-left:6px}
-.ael .vsk .vc{text-align:right;font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vc b{display:block;font-family:var(--font-anthropic-serif);font-weight:400;font-size:20px;line-height:1.1} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:12px}
-.ael .vsk .vr.tot{border-top:1px solid var(--line);padding-top:12px} .ael .vsk .vf{font-size:11px;color:var(--mut)}
+.ael .vsk{position:absolute;top:60px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
+.ael .vsk .vh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;align-items:baseline;cursor:default}
+.ael .vsk .vn{font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vv b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:14px;color:var(--navy)}
+.ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)}
 .ael .card h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .ael .csel{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
 .ael .chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -249,8 +249,7 @@
       <div class="card wide kpicard" id="c-c-kpi"><div class="ktiles" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-part"><h3>Load vs Capacity by Part</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-dp"><h3>Drive Plate CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-c-pr-cc"><h3>Clutch Center CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
-      <div class="card" id="c-c-vs-cc"><h3>Clutch Center CG125 Machined · Vendor Receiving MTD</h3><div class="vsk" data-source="atlas_vendor_supply"></div></div>
+      <div class="card" id="c-c-pr-cc"><h3>Clutch Center CG125 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
       <div class="card" id="c-c-pr-pp"><h3>Pressure Plate CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
       <div class="card" id="c-c-pr-cocd"><h3>Clutch Outer CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-pr-cocg"><h3>Clutch Outer CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
@@ -563,7 +562,7 @@ window.AK = (() => {
     el.replaceChildren(); if (!procs.length) return empty(el, 'No data');
     const dotG = `radial-gradient(#8A949E 1.2px, transparent 1.4px) 0 0/4px 4px`, dotY = `radial-gradient(${C.warn} 1.2px, transparent 1.4px) 0 0/4px 4px`;
     const lg = document.createElement('div'); lg.className = 'uleg'; lg.innerHTML = `<span><i style="width:10px;height:12px;border:1.5px dashed #8A949E"></i>Capacity /day</span><span><i style="width:12px;height:12px;background:${C.navy}"></i>${o.actualName || 'Actual'}</span>${procs.some(x => !x.cap) ? `<span><i style="width:10px;height:12px;border:1.5px dashed ${C.warn}"></i>Not working / no study</span>` : ''}<span><i style="width:18px;border-top:2px dotted ${C.bad}"></i>Bottleneck capacity</span>`; el.appendChild(lg);
-    const host = el.appendChild(document.createElement('div')); const h = o.h || 340, m = { t: 30, b: 66, l: 46, r: 12 }; const { svg, w } = box(host, h);
+    const host = el.appendChild(document.createElement('div')); const h = (o.h || 340) + (o.mt || 0), m = { t: 30 + (o.mt || 0), b: 66, l: 46, r: 12 }; const { svg, w } = box(host, h);
     const uid = 'pb' + Math.random().toString(36).slice(2, 7), defs = svg.append('defs');
     [['g', '#8A949E'], ['y', C.warn]].forEach(([k, c]) => { const pt = defs.append('pattern').attr('id', uid + k).attr('width', 5).attr('height', 5).attr('patternUnits', 'userSpaceOnUse'); pt.append('circle').attr('cx', 2.5).attr('cy', 2.5).attr('r', 1.15).attr('fill', c); });
     const caps = procs.filter(x => x.cap), mx = Math.max(d3.max(caps, x => x.cap) || 1, o.actual || 0) * 1.12;
@@ -1251,23 +1250,24 @@ window.AK = (() => {
           return { op, name: nm, cap: cap ? cap / 26 : null, n: run.length, nOff: run.length ? 0 : v.filter(m => m.status === 'Not working').length, offLabel: v.some(m => m.status === 'Not working') ? 'Not working' : 'No time study',
             tip: [`${op} · ${nm}`, cap ? `Capacity ${nf(Math.round(cap / 26))} /day on ${run.length} machine${run.length > 1 ? 's' : ''}` : (v.some(m => m.status === 'Not working') ? 'Machines not working' : 'No time study'), ...run.map(m => `${m.machine}: ${m.ct} s per cycle, ${m.ppc} part${m.ppc > 1 ? 's' : ''} per cycle, ${m.shifts} shifts → ${nf(Math.round(m.cap_month / 26))} /day`), ...v.filter(m => !m.cap_month).map(m => `${m.machine}: ${String(m.status).toLowerCase()}`), ...(vend ? vTip : [actual != null && cap ? `${viaAssy ? 'Clutch assembly CG125 output' : 'Machined output'} ${pdLbl}: ${nf(actual)}` : '']), actual != null && cap ? `${Math.round(actual / (cap / 26) * 100)}% of capacity` : ''] }; });
         const bn = bnOp ? PR.find(x => x.op === bnOp && x.cap) : null;
-        procbars(el, PR, { actual, actualName: vend ? `In-house machined (est.) · ${vend.days}-day avg to ${fd(lastD)}` : lastD ? `${viaAssy ? 'CG125 assembly output' : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
+        procbars(el, PR, { mt: el.parentElement && el.parentElement.querySelector('.vsk') ? 64 : 0, actual, actualName: vend ? `In-house machined (est.) · ${vend.days}-day avg to ${fd(lastD)}` : lastD ? `${viaAssy ? 'CG125 assembly output' : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
       procChart(edp, 'Drive Plate CD70', 'DP2');
       [['c-c-pr-cc', 'Clutch Center CG125'], ['c-c-pr-pp', 'Pressure Plate CG125'], ['c-c-pr-cocd', 'Clutch Outer CD70'], ['c-c-pr-cocg', 'Clutch Outer CG125'], ['c-c-pr-cl', 'Clutch Lifter CG125']].forEach(([id, pn]) => { const e = ch(id); if (e && !status(e, ...CAP)) procChart(e, pn); });
       { /* vendor receiving of the machined Clutch Center: each vendor's receipts MTD vs its month schedule */
-        const el = q('#c-c-vs-cc .vsk'); el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
+        const el = q('#c-c-pr-cc .vsk'); el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
         if (!ok || !okShop) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = !ok ? 'Vendor receiving data not loaded' : 'Clutch shop only'; el.appendChild(m); }
         else { const end0 = (p.actEnd || p.end), ms = end0.slice(0, 8) + '01', me = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(d3.utcMonth.offset(new Date(ms + 'T00:00:00Z'), 1), -1)), to = end0 < window.__TODAY ? end0 : window.__TODAY;
           const rs = D('atlas_vendor_supply').filter(r => String(r.code) === '6530010066' && r.date >= ms && r.date <= me);
           const V = d3.rollups(rs, v => ({ plan: d3.sum(v, r => +r.scheduled || 0), due: d3.sum(v.filter(r => r.date <= to), r => +r.scheduled || 0), rcv: d3.sum(v.filter(r => r.date <= to), r => +r.received || 0) }), r => r.vendor).filter(([, o]) => o.plan || o.rcv).sort((a, b) => b[1].plan - a[1].plan);
-          const nm = v => /TECNO PACK/i.test(v) ? 'Tecno Pack (TPI)' : /M\.?A\.?K/i.test(v) ? 'M.A.K Automotive' : v.replace(/\s*\(PVT\).*$/i, '');
-          const row = (label, o, tot) => { const r = document.createElement('div'); r.className = 'vr' + (tot ? ' tot' : ''); const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
-            r.innerHTML = `<div><div class="vn"></div><div class="vv"></div></div><div class="vc"><b></b>vs due to date</div>`; r.querySelector('.vn').textContent = label; const vv = r.querySelector('.vv'); vv.textContent = nf(o.rcv); const sm = document.createElement('small'); sm.textContent = `of ${nf(o.plan)} month plan`; vv.appendChild(sm);
-            const b = r.querySelector('.vc b'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
-            const sv = d3.select(r).append('svg').attr('viewBox', '0 0 300 12').attr('preserveAspectRatio', 'none'); sv.append('rect').attr('x', 0).attr('y', 3).attr('width', 300).attr('height', 6).attr('fill', '#E6EAEF');
-            if (o.plan) { sv.append('rect').attr('x', 0).attr('y', 3).attr('width', Math.min(1, o.rcv / o.plan) * 300).attr('height', 6).attr('fill', tot ? C.navy : C.blue); const xd = Math.min(1, o.due / o.plan) * 300; sv.append('line').attr('x1', xd).attr('x2', xd).attr('y1', 0).attr('y2', 12).attr('stroke', C.navy).attr('stroke-width', 1.5).attr('vector-effect', 'non-scaling-stroke'); }
+          const nm = v => /TECNO PACK/i.test(v) ? 'TPI' : /M\.?A\.?K/i.test(v) ? 'M.A.K' : v.replace(/\s*\(PVT\).*$/i, '');
+          const row = (label, o) => { const r = document.createElement('div'); r.className = 'vr'; const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
+            r.innerHTML = '<div class="vn"></div><div class="vv"><b></b> / <span></span></div><div class="vc"></div>'; r.querySelector('.vn').textContent = label; r.querySelector('.vv b').textContent = kf(o.rcv); r.querySelector('.vv span').textContent = kf(o.plan);
+            const b = r.querySelector('.vc'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
+            const sv = d3.select(r).append('svg').attr('viewBox', '0 0 300 6').attr('preserveAspectRatio', 'none'); sv.append('rect').attr('width', 300).attr('height', 6).attr('fill', '#E6EAEF');
+            if (o.plan) { sv.append('rect').attr('width', Math.min(1, o.rcv / o.plan) * 300).attr('height', 6).attr('fill', C.blue); const xd = Math.min(1, o.due / o.plan) * 300 - 1; sv.append('rect').attr('x', xd).attr('width', 2).attr('height', 6).attr('fill', C.navy); }
             const tl = [label, `Received ${nf(o.rcv)} · due to date ${nf(o.due)} · month plan ${nf(o.plan)}`, c == null ? '' : `Compliance ${Math.round(c)}% of schedule due`, mp == null ? '' : `${Math.round(mp)}% of month plan delivered`].filter(Boolean); r.addEventListener('mousemove', ev => tip.show(ev, tl)); r.addEventListener('mouseleave', () => tip.hide());
             el.appendChild(r); };
+          const hd = document.createElement('div'); hd.className = 'vh'; hd.textContent = 'Machined bought in · MTD vs plan'; el.appendChild(hd);
           if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = 'No schedule or receipts on 6530010066 this month'; el.appendChild(m); }
           else { V.forEach(([v, o]) => row(nm(v), o));
  } } }
