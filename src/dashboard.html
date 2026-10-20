@@ -1253,7 +1253,7 @@ window.AK = (() => {
             el.appendChild(r); };
           if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = 'No schedule or receipts on 6530010066 this month'; el.appendChild(m); }
           else { V.forEach(([v, o]) => row(nm(v), o));
-            const f = document.createElement('div'); f.className = 'vf'; f.textContent = `Code 6530010066 · receipts 1–${+to.slice(8)} ${d3.utcFormat('%b')(new Date(ms + 'T00:00:00Z'))} · bar = share of month plan received, tick = schedule due to date`; el.appendChild(f); } } }
+ } } }
       // machines: load % of their operation's capacity
       const MR = MC.filter(m => PM.has(m.part) || (p.model === 'All' && !m.cap_month && !PM.has(m.part))).map(m => { const x = PM.get(m.part), o = x && x.ops.get(m.op); const run = !!(o && m.cap_month);
         return { ...m, load: run ? x.load / o.cap * 100 : null, act: run && x.actP != null ? x.act / (o.cap / 26 * el) * 100 : null, opcap: o ? o.cap : null, touch: m.ct && m.ht != null ? (m.ht + m.mht) / m.ct * 100 : null, waitp: m.ct && m.wait != null ? m.wait / m.ct * 100 : null }; });
