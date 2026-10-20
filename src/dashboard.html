@@ -228,6 +228,11 @@
       <div class="card wide kpicard" id="c-c-kpi"><div class="ktiles" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-part"><h3>Load vs Capacity by Part</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-dp"><h3>Drive Plate CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cc"><h3>Clutch Center CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-pp"><h3>Pressure Plate CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cocd"><h3>Clutch Outer CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cocg"><h3>Clutch Outer CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cl"><h3>Clutch Lifter CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-mc"><h3>Machine Loading</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-yama"><h3>Operator Balance vs Takt</h3><div class="chart" data-source="cap_operators"></div></div>
       <div class="card" id="c-c-wait"><h3>Operator Time per Machine Cycle</h3><div class="chart" data-source="cap_machines"></div></div>
@@ -535,24 +540,25 @@ window.AK = (() => {
   function procbars(el, procs, o = {}) {
     el.replaceChildren(); if (!procs.length) return empty(el, 'No data');
     const dotG = `radial-gradient(#8A949E 1.2px, transparent 1.4px) 0 0/4px 4px`, dotY = `radial-gradient(${C.warn} 1.2px, transparent 1.4px) 0 0/4px 4px`;
-    const lg = document.createElement('div'); lg.className = 'uleg'; lg.innerHTML = `<span><i style="width:10px;height:12px;border:1.5px dashed #8A949E"></i>Capacity per day (machine shifts × 7.1 h)</span><span><i style="width:12px;height:12px;background:${C.navy}"></i>${o.actualName || 'Actual'}</span><span><i style="width:10px;height:12px;border:1.5px dashed ${C.warn}"></i>Machine not working</span><span><i style="width:18px;border-top:2px dotted ${C.bad}"></i>Bottleneck capacity</span>`; el.appendChild(lg);
+    const lg = document.createElement('div'); lg.className = 'uleg'; lg.innerHTML = `<span><i style="width:10px;height:12px;border:1.5px dashed #8A949E"></i>Capacity /day</span><span><i style="width:12px;height:12px;background:${C.navy}"></i>${o.actualName || 'Actual'}</span>${procs.some(x => !x.cap) ? `<span><i style="width:10px;height:12px;border:1.5px dashed ${C.warn}"></i>Not working / no study</span>` : ''}<span><i style="width:18px;border-top:2px dotted ${C.bad}"></i>Bottleneck capacity</span>`; el.appendChild(lg);
     const host = el.appendChild(document.createElement('div')); const h = o.h || 340, m = { t: 30, b: 66, l: 46, r: 12 }; const { svg, w } = box(host, h);
     const uid = 'pb' + Math.random().toString(36).slice(2, 7), defs = svg.append('defs');
     [['g', '#8A949E'], ['y', C.warn]].forEach(([k, c]) => { const pt = defs.append('pattern').attr('id', uid + k).attr('width', 5).attr('height', 5).attr('patternUnits', 'userSpaceOnUse'); pt.append('circle').attr('cx', 2.5).attr('cy', 2.5).attr('r', 1.15).attr('fill', c); });
     const caps = procs.filter(x => x.cap), mx = Math.max(d3.max(caps, x => x.cap) || 1, o.actual || 0) * 1.12;
     const bn = o.bottleneck || (caps.length ? caps.reduce((a, b) => b.cap < a.cap ? b : a) : null);
-    const x = d3.scaleBand(procs.map(x => x.op), [m.l, w - m.r]).padding(.3), y = d3.scaleLinear([0, mx], [h - m.b, m.t]).nice();
+    const x = d3.scaleBand(procs.map(x => x.op), [m.l, w - m.r]).padding(procs.length < 3 ? .5 : .3), y = d3.scaleLinear([0, mx], [h - m.b, m.t]).nice();
     svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y).attr('y2', y);
     svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d) + 4).attr('text-anchor', 'end').attr('font-size', 10).text(kf);
     const k1 = o.fmt || (v => nf(Math.round(v)));
     procs.forEach((pr, i) => { const x0 = x(pr.op), bw = x.bandwidth(), cx = x0 + bw / 2, off = !pr.cap;
       const top = off ? (bn ? bn.cap * .55 : mx * .2) : pr.cap, col = off ? C.warn : '#8A949E';
-      const aw = bw * .5; svg.append('rect').attr('x', cx - aw / 2).attr('width', aw).attr('y', y(top)).attr('height', y(0) - y(top)).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 1.6).attr('stroke-dasharray', '3 3');
+      const aw = Math.min(bw * .5, 64);
       if (!off && o.actual != null) { svg.append('rect').attr('x', cx - aw / 2).attr('width', aw).attr('y', y(o.actual)).attr('height', y(0) - y(o.actual)).attr('fill', C.navy);
         svg.append('text').attr('x', cx).attr('y', y(o.actual) + 14).attr('text-anchor', 'middle').attr('font-size', 10.5).style('font-weight', 600).style('fill', '#fff').text(k1(o.actual)); }
+      svg.append('rect').attr('x', cx - aw / 2).attr('width', aw).attr('y', y(top)).attr('height', y(0) - y(top)).attr('fill', 'none').attr('stroke', !off && o.actual != null && o.actual > top ? '#C9D1D9' : col).attr('stroke-width', 1.6).attr('stroke-dasharray', '3 3');
       if (off) svg.append('text').attr('x', cx).attr('y', y(top) - 8).attr('text-anchor', 'middle').attr('font-size', 11).style('font-weight', 700).style('fill', C.warn).text(pr.offLabel || 'Not working');
-      else { svg.append('text').attr('x', cx).attr('y', y(top) - 20).attr('text-anchor', 'middle').attr('font-size', 12).style('font-weight', 600).style('fill', C.navy).text(k1(top));
-        if (o.actual != null) svg.append('text').attr('x', cx).attr('y', y(top) - 7).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', '#5A6670').text(Math.round(o.actual / top * 100) + '% utilised'); }
+      else { const ly = Math.min(y(top), o.actual != null ? y(o.actual) : y(top)); svg.append('text').attr('x', cx).attr('y', ly - 20).attr('text-anchor', 'middle').attr('font-size', 12).style('font-weight', 600).style('fill', C.navy).text(k1(top));
+        if (o.actual != null) svg.append('text').attr('x', cx).attr('y', ly - 7).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', o.actual > top ? C.bad : '#5A6670').style('font-weight', o.actual > top ? 600 : null).text(Math.round(o.actual / top * 100) + '% utilised'); }
       svg.append('text').attr('x', cx).attr('y', h - m.b + 15).attr('text-anchor', 'middle').attr('font-size', 11.5).style('font-weight', 600).style('fill', C.navy).text(pr.op);
       const nm = String(pr.name || ''), cut = nm.length > 22 ? (nm.lastIndexOf(' ', 22) > 0 ? nm.lastIndexOf(' ', 22) : 22) : -1, parts = cut < 0 ? [nm] : [nm.slice(0, cut), nm.slice(cut + 1)];
       parts.forEach((t, j) => svg.append('text').attr('x', cx).attr('y', h - m.b + 29 + j * 12).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', '#5A6670').text(t));
@@ -1207,16 +1213,19 @@ window.AK = (() => {
       const PM = new Map(P.map(x => [x.part, x])); const k1 = v => v >= 1e3 ? d3.format('.1f')(v / 1e3) + 'k' : nf(Math.round(v));
       utilbars(ep, P.map(x => ({ label: x.part, sub: `Bottleneck ${x.bop} · ${x.bmcs.length} machine${x.bmcs.length > 1 ? 's' : ''} · ${k1(x.bcap)}/month`, plan: x.loadP, act: x.actP,
         tip: [x.part, `Capacity ${nf(x.bcap)} /month at bottleneck ${x.bop}`, `Planned load ${nf(Math.round(x.load))} (${Math.round(x.loadP)}%)`, `Basis: ${x.basis}`, x.act != null ? `Actual ${nf(Math.round(x.act))} in ${el} working days (${Math.round(x.actP)}% of capacity)` : 'No actuals yet', x.note || ''] })), { rh: 44 });
-      { /* Drive Plate: every process in sequence, last day's machined output on each bar */ const dpx = PM.get('Drive Plate CD70'); const dms = MC.filter(m => m.part === 'Drive Plate CD70');
-        if (!dpx) empty(edp, 'Drive Plate CD70 is outside the current Model filter');
-        else { const codes = dpx.actual_codes.map(String), lastD = D('atlas_parts_daily').filter(r => codes.includes(String(r.code)) && r.prod_actual > 0 && r.date <= p.actEnd).map(r => r.date).sort().pop();
-          const actual = lastD ? d3.sum(D('atlas_parts_daily').filter(r => codes.includes(String(r.code)) && r.date === lastD), r => r.prod_actual || 0) : null;
-          const pdLbl = lastD ? d3.utcFormat('%a %-d %b')(d3.utcDay.offset(dd(lastD), -1)) : '';
-          const PR = d3.groups(dms, m => m.op).sort((a, b) => a[0].localeCompare(b[0])).map(([op, v]) => { const run = v.filter(m => m.cap_month), cap = d3.sum(run, m => m.cap_month) || null, nm = ((v.find(m => m.operation) || {}).operation || '').replace(/\s*\(.*?\)/g, '');
-            return { op, name: nm, cap: cap ? cap / 26 : null, n: run.length, nOff: run.length ? 0 : v.filter(m => m.status === 'Not working').length, offLabel: v.some(m => m.status === 'Not working') ? 'Not working' : 'No time study',
-              tip: [`${op} · ${nm}`, cap ? `Capacity ${nf(Math.round(cap / 26))} /day on ${run.length} machine${run.length > 1 ? 's' : ''}` : (v.some(m => m.status === 'Not working') ? 'Machines not working' : 'No time study'), ...run.map(m => `${m.machine}: ${m.ct} s per cycle, ${m.ppc} part${m.ppc > 1 ? 's' : ''} per cycle, ${m.shifts} shifts → ${nf(Math.round(m.cap_month / 26))} /day`), ...v.filter(m => !m.cap_month).map(m => `${m.machine}: ${m.status.toLowerCase()}`), actual != null && cap ? `Machined ${pdLbl}: ${nf(actual)} (${Math.round(actual / (cap / 26) * 100)}% of capacity)` : ''] }; });
-          const b2 = PR.find(x => x.op === 'DP2' && x.cap);
-          procbars(edp, PR, { actual, actualName: lastD ? `Machined output · ${pdLbl} (Atlas)` : 'Machined output (no Atlas data)', bottleneck: b2, h: 350 }); } }
+      /* daily capacity by process vs last day's actual output, one chart per part */
+      const procChart = (el, partName, bnOp) => { if (!el) return; const px = PM.get(partName); const pms = MC.filter(m => m.part === partName);
+        if (!px) { empty(el, `${partName} is outside the current Model filter`); return; }
+        const codes = px.actual_codes.map(String), rowsA = D('atlas_parts_daily').filter(r => codes.includes(String(r.code)) && r.date <= p.actEnd);
+        const lastD = rowsA.filter(r => r.prod_actual > 0).map(r => r.date).sort().pop(), actual = lastD ? d3.sum(rowsA.filter(r => r.date === lastD), r => r.prod_actual || 0) : null;
+        const pdLbl = lastD ? d3.utcFormat('%a %-d %b')(d3.utcDay.offset(dd(lastD), -1)) : '', viaAssy = codes.some(c => c.startsWith('90'));
+        const PR = d3.groups(pms, m => m.op).sort((a, b) => a[0].localeCompare(b[0])).map(([op, v]) => { const run = v.filter(m => m.cap_month), cap = d3.sum(run, m => m.cap_month) || null, nm = ((v.find(m => m.operation) || {}).operation || '').replace(/\s*\(.*?\)/g, '');
+          return { op, name: nm, cap: cap ? cap / 26 : null, n: run.length, nOff: run.length ? 0 : v.filter(m => m.status === 'Not working').length, offLabel: v.some(m => m.status === 'Not working') ? 'Not working' : 'No time study',
+            tip: [`${op} · ${nm}`, cap ? `Capacity ${nf(Math.round(cap / 26))} /day on ${run.length} machine${run.length > 1 ? 's' : ''}` : (v.some(m => m.status === 'Not working') ? 'Machines not working' : 'No time study'), ...run.map(m => `${m.machine}: ${m.ct} s per cycle, ${m.ppc} part${m.ppc > 1 ? 's' : ''} per cycle, ${m.shifts} shifts → ${nf(Math.round(m.cap_month / 26))} /day`), ...v.filter(m => !m.cap_month).map(m => `${m.machine}: ${String(m.status).toLowerCase()}`), actual != null && cap ? `${viaAssy ? 'Clutch assembly CG125 output' : 'Machined output'} ${pdLbl}: ${nf(actual)} (${Math.round(actual / (cap / 26) * 100)}% of capacity)` : ''] }; });
+        const bn = bnOp ? PR.find(x => x.op === bnOp && x.cap) : null;
+        procbars(el, PR, { actual, actualName: lastD ? `${viaAssy ? 'CG125 assembly output' : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
+      procChart(edp, 'Drive Plate CD70', 'DP2');
+      [['c-c-pr-cc', 'Clutch Center CG125'], ['c-c-pr-pp', 'Pressure Plate CG125'], ['c-c-pr-cocd', 'Clutch Outer CD70'], ['c-c-pr-cocg', 'Clutch Outer CG125'], ['c-c-pr-cl', 'Clutch Lifter CG125']].forEach(([id, pn]) => { const e = ch(id); if (e && !status(e, ...CAP)) procChart(e, pn); });
       // machines: load % of their operation's capacity
       const MR = MC.filter(m => PM.has(m.part) || (p.model === 'All' && !m.cap_month && !PM.has(m.part))).map(m => { const x = PM.get(m.part), o = x && x.ops.get(m.op); const run = !!(o && m.cap_month);
         return { ...m, load: run ? x.load / o.cap * 100 : null, act: run && x.actP != null ? x.act / (o.cap / 26 * el) * 100 : null, opcap: o ? o.cap : null, touch: m.ct && m.ht != null ? (m.ht + m.mht) / m.ct * 100 : null, waitp: m.ct && m.wait != null ? m.wait / m.ct * 100 : null }; });
