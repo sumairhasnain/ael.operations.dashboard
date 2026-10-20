@@ -1269,7 +1269,7 @@ window.AK = (() => {
             const tl = [label, `Received ${nf(o.rcv)} · due to date ${nf(o.due)} · month plan ${nf(o.plan)}`, c == null ? '' : `Compliance ${Math.round(c)}% of schedule due`, mp == null ? '' : `${Math.round(mp)}% of month plan delivered`].filter(Boolean); r.addEventListener('mousemove', ev => tip.show(ev, tl)); r.addEventListener('mouseleave', () => tip.hide());
             el.appendChild(r); };
           if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = 'No schedule or receipts on 6530010066 this month'; el.appendChild(m); }
-          else { V.forEach(([v, o]) => row(nm(v), o)); const T = V.reduce((a, [, o]) => ({ plan: a.plan + o.plan, due: a.due + o.due, rcv: a.rcv + o.rcv }), { plan: 0, due: 0, rcv: 0 }); row('All vendors', T, true);
+          else { V.forEach(([v, o]) => row(nm(v), o));
             const f = document.createElement('div'); f.className = 'vf'; f.textContent = `Code 6530010066 · receipts 1–${+to.slice(8)} ${d3.utcFormat('%b')(new Date(ms + 'T00:00:00Z'))} · bar = share of month plan received, tick = schedule due to date`; el.appendChild(f); } } }
       // machines: load % of their operation's capacity
       const MR = MC.filter(m => PM.has(m.part) || (p.model === 'All' && !m.cap_month && !PM.has(m.part))).map(m => { const x = PM.get(m.part), o = x && x.ops.get(m.op); const run = !!(o && m.cap_month);
