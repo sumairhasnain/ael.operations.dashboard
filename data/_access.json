@@ -106,7 +106,8 @@
     "vendor"
   ],
   "atlas_vendor_supply": [
-    "vendor"
+    "vendor",
+    "capacity"
   ],
   "atlas_child_stock": [
     "vendor"
