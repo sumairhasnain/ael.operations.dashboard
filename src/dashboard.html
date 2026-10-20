@@ -1183,7 +1183,9 @@ window.AK = (() => {
       const [ep, em, ey, ew, edp] = ids;
       const okShop = p.shop === 'All' || p.shop === 'Clutch', okModel = r => p.model === 'All' || r.model === p.model;
       if (!okShop) { ids.forEach(e => empty(e, 'Time studies are available for the Clutch shop only')); kt.replaceChildren(); table(tbl, [], [{ k: 'line' }]); return; }
-      const MC = D('cap_machines'), PT = D('cap_parts').filter(okModel), OPS = D('cap_operators');
+      const arr = v => Array.isArray(v) ? v.map(String) : typeof v === 'string' ? (v.trim().startsWith('[') ? (() => { try { return JSON.parse(v).map(String); } catch { return []; } })() : v.split(/[,;\s]+/).filter(Boolean)) : v != null ? [String(v)] : [];
+      const num = v => v == null || v === '' ? null : +v;
+      const MC = D('cap_machines').map(m => ({ ...m, ct: num(m.ct), ppc: num(m.ppc) || 1, shifts: num(m.shifts), ht: num(m.ht), mht: num(m.mht), mpt: num(m.mpt), wait: num(m.wait), cap_month: num(m.cap_month), study_load: num(m.study_load) })), PT = D('cap_parts').filter(okModel).map(x => ({ ...x, actual_codes: arr(x.actual_codes), plan_codes: arr(x.plan_codes) })), OPS = D('cap_operators').map(o => ({ ...o, handling: +o.handling || 0, machine_handling: +o.machine_handling || 0, takt: +o.takt }));
       // working days: capacity is per 26-day month; elapsed = production days (recorded next morning) excluding Sundays
       const fm = d3.utcFormat('%Y-%m-%d'), dd = x => new Date(x + 'T00:00:00Z'), prodTo = fm(d3.utcDay.offset(dd([p.actEnd, window.__dataTo()].sort()[0]), -1));
       const wd = (a, b) => { let n = 0; for (let d = dd(a); d <= dd(b); d = d3.utcDay.offset(d, 1)) if (d.getUTCDay() !== 0) n++; return n; };
