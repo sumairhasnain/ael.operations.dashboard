@@ -37,7 +37,7 @@
 .ael .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
 .ael .card{border:1px solid var(--line);background:#fff;padding:12px 14px;min-width:0;position:relative}
 .ael .card.wide{grid-column:1/-1}
-#c-c-pr-cc .uleg,#c-c-pr-pp .uleg{flex-direction:column;align-items:flex-start;gap:4px} .ael .vsk{position:absolute;top:36px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
+#c-c-pr-cc .uleg,#c-c-pr-pp .uleg,#c-c-pr-cocd .uleg,#c-c-pr-cocg .uleg,#c-c-pr-cl .uleg{flex-direction:column;align-items:flex-start;gap:4px} .ael .vsk{position:absolute;top:36px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
 .ael .vsk .vh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;align-items:baseline;cursor:default}
 .ael .vsk .vn{font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vv b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:14px;color:var(--navy)}
 .ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)}
@@ -251,9 +251,9 @@
       <div class="card wide" id="c-c-dp"><h3>Drive Plate CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-pr-cc"><h3>Clutch Center CG125 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
       <div class="card" id="c-c-pr-pp"><h3>Pressure Plate CG125 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts atlas_vendor_supply"></div></div>
-      <div class="card" id="c-c-pr-cocd"><h3>Clutch Outer CD70 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-c-pr-cocg"><h3>Clutch Outer CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
-      <div class="card" id="c-c-pr-cl"><h3>Clutch Lifter CG125 · Daily Capacity by Process</h3><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cocd"><h3>Clutch Outer CD70 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cocg"><h3>Clutch Outer CG125 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
+      <div class="card" id="c-c-pr-cl"><h3>Clutch Lifter CG125 · Daily Capacity by Process</h3><div class="vsk" data-source="atlas_vendor_supply"></div><div class="chart" data-source="cap_machines cap_parts atlas_parts_daily atlas_parts"></div></div>
       <div class="card wide" id="c-c-mc"><h3>Machine Loading</h3><div class="chart" data-source="cap_machines cap_parts cap_operators atlas_parts_daily atlas_parts"></div></div>
       <div class="card" id="c-c-yama"><h3>Operator Balance vs Takt</h3><div class="chart" data-source="cap_operators"></div></div>
       <div class="card" id="c-c-wait"><h3>Operator Time per Machine Cycle</h3><div class="chart" data-source="cap_machines"></div></div>
@@ -1253,13 +1253,13 @@ window.AK = (() => {
         procbars(el, PR, { mt: el.parentElement && el.parentElement.querySelector('.vsk') ? 22 : 0, actual, actualName: vend ? `In-house machined (est.) · ${vend.days}-day avg to ${fd(lastD)}` : lastD ? `${viaAssy ? 'CG125 assembly output' : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
       procChart(edp, 'Drive Plate CD70', 'DP2');
       [['c-c-pr-cc', 'Clutch Center CG125'], ['c-c-pr-pp', 'Pressure Plate CG125'], ['c-c-pr-cocd', 'Clutch Outer CD70'], ['c-c-pr-cocg', 'Clutch Outer CG125'], ['c-c-pr-cl', 'Clutch Lifter CG125']].forEach(([id, pn]) => { const e = ch(id); if (e && !status(e, ...CAP)) procChart(e, pn); });
-      [['#c-c-pr-cc .vsk', '6530010066'], ['#c-c-pr-pp .vsk', '6530010065']].forEach(([sel, VC]) => { /* machined parts also bought in: each vendor's receipts MTD vs its month schedule */
+      [['#c-c-pr-cc .vsk', '6530010066'], ['#c-c-pr-pp .vsk', '6530010065'], ['#c-c-pr-cocd .vsk', '6530010063'], ['#c-c-pr-cocg .vsk', '6520213002'], ['#c-c-pr-cl .vsk', '6530010064']].forEach(([sel, VC]) => { /* machined parts also bought in: each vendor's receipts MTD vs its month schedule */
         const el = q(sel); if (!el) return; el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
         if (!ok || !okShop) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = !ok ? 'Vendor receiving data not loaded' : 'Clutch shop only'; el.appendChild(m); }
         else { const end0 = (p.actEnd || p.end), ms = end0.slice(0, 8) + '01', me = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(d3.utcMonth.offset(new Date(ms + 'T00:00:00Z'), 1), -1)), to = end0 < window.__TODAY ? end0 : window.__TODAY;
           const rs = D('atlas_vendor_supply').filter(r => String(r.code) === VC && r.date >= ms && r.date <= me);
           const V = d3.rollups(rs, v => ({ plan: d3.sum(v, r => +r.scheduled || 0), due: d3.sum(v.filter(r => r.date <= to), r => +r.scheduled || 0), rcv: d3.sum(v.filter(r => r.date <= to), r => +r.received || 0) }), r => r.vendor).filter(([, o]) => o.plan || o.rcv).sort((a, b) => b[1].plan - a[1].plan);
-          const nm = v => /TECNO PACK/i.test(v) ? 'TPI' : /M\.?A\.?K/i.test(v) ? 'M.A.K' : v.replace(/\s*\(PVT\).*$/i, '');
+          const nm = v => /TECNO PACK/i.test(v) ? 'TPI' : /M\.?A\.?K/i.test(v) ? 'M.A.K' : /^MBI/i.test(v) ? 'MBI' : v.replace(/\s*\(PVT\).*$/i, '');
           const row = (label, o) => { const r = document.createElement('div'); r.className = 'vr'; const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
             r.innerHTML = '<div class="vn"></div><div class="vv"><b></b> / <span></span></div><div class="vc"></div>'; r.querySelector('.vn').textContent = label; r.querySelector('.vv b').textContent = kf(o.rcv); r.querySelector('.vv span').textContent = kf(o.plan);
             const b = r.querySelector('.vc'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
