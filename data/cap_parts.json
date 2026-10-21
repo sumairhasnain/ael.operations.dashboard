@@ -15,25 +15,23 @@
   "part": "Clutch Outer CD70",
   "model": "CD70",
   "actual_codes": [
-   "9010113004"
+   "6530010063"
   ],
   "plan_codes": [
    "6530010063"
   ],
-  "basis": "CD70 clutch assembly less machined outers received from vendors (TPI, MAK, MBI) on 6530010063",
-  "vendor_code": "6530010063"
+  "basis": "In-house machined output booked in Atlas on 6530010063"
  },
  {
   "part": "Clutch Outer CG125",
   "model": "CG125",
   "actual_codes": [
-   "9020113004"
+   "6520213002"
   ],
   "plan_codes": [
    "6520213002"
   ],
-  "basis": "CG125 clutch assembly less machined outers received from vendors (MAK, TPI, MBI) on 6520213002",
-  "vendor_code": "6520213002"
+  "basis": "In-house machined output booked in Atlas on 6520213002"
  },
  {
   "part": "Clutch Center CG125",
