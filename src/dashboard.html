@@ -23,7 +23,7 @@
 #c-c-dp .uleg,#c-c-pr-cc .uleg,#c-c-pr-pp .uleg,#c-c-pr-cocd .uleg,#c-c-pr-cocg .uleg,#c-c-pr-cl .uleg{flex-direction:column;align-items:flex-start;gap:4px} .ael .vsk{position:absolute;top:36px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
 .ael .vsk .vr.ih{padding-bottom:6px;border-bottom:1px solid var(--line)} .ael .vsk .vh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;align-items:baseline;cursor:default}
 .ael .vsk .vn{font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vv b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:14px;color:var(--navy)}
-.ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)} .ael .vsk.vpop{position:fixed;right:auto;width:260px;z-index:50;box-shadow:0 6px 20px rgba(5,28,44,.18);pointer-events:none}
+.ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)} .ael .vpop{position:fixed;z-index:50;flex-direction:column;gap:8px;pointer-events:none} .ael .vpop .vsk{position:static;width:260px;box-shadow:0 6px 20px rgba(5,28,44,.18)}
 .ael .card h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .ael .csel{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
 .ael .chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -765,6 +765,18 @@ window.AK = (() => {
           if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = `No schedule or receipts on ${VC} this month`; el.appendChild(m); }
           else { V.forEach(([v, o]) => row(nm(v), o));
  } } };
+  /* hover card: each machined part (and the CG125 clutch assembly they go into) shows its vendor-wise panel from the Capacity tab */
+  const VPAN = { dp: ['Drive Plate CD70 machined', '6010213013', { own: '6510213002' }], cc: ['Clutch Center CG125 machined', '6530010066', { asm: '9020113004' }], pp: ['Pressure Plate CG125 machined', '6530010065', { asm: '9020113004' }],
+    cl: ['Clutch Lifter CG125 machined', '6530010064', { asm: '9020113004' }], cocd: ['Clutch Outer CD70 machined', '6530010063', { own: '6530010063', asm: '9010113004' }], cocg: ['Clutch Outer CG125 machined', '6520213002', { own: '6520213002', asm: '9020113004' }] };
+  const VHOV = { '6510213011': ['dp'], '6510213002': ['dp'], '6010213013': ['dp'], '6530010066': ['cc'], '6530010065': ['pp'], '6530010064': ['cl'], '6530010063': ['cocd'], '6520213002': ['cocg'], '9020113004': ['cc', 'pp', 'cl'] };
+  window.__vendHover = tables => { let pop = document.getElementById('vpop'); if (!pop) { pop = document.createElement('div'); pop.id = 'vpop'; pop.className = 'vpop'; pop.style.display = 'none'; document.getElementById('ael').appendChild(pop); }
+    const hide = () => { pop.style.display = 'none'; pop.dataset.code = ''; };
+    tables.forEach(t => { if (!t || t.__vh) return; t.__vh = 1;
+      t.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), code = tr && tr.cells[0] ? tr.cells[0].textContent.trim() : '', keys = VHOV[code]; if (!keys) return hide();
+        if (pop.dataset.code !== code) { pop.dataset.code = code; pop.replaceChildren(); const p = window.__P();
+          keys.forEach(k => { const [title, VC, IH] = VPAN[k], box = document.createElement('div'); box.className = 'vsk'; pop.appendChild(box); vendPanel(box, VC, IH, p, true); const hd = box.querySelector('.vh'); if (hd) hd.textContent = title + ' · MTD vs month plan'; }); }
+        pop.style.display = 'flex'; const w = pop.offsetWidth, hgt = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12; if (x + w > innerWidth - 8) x = ev.clientX - w - 16; if (y + hgt > innerHeight - 8) y = Math.max(8, innerHeight - hgt - 8); pop.style.left = x + 'px'; pop.style.top = y + 'px'; });
+      t.addEventListener('mouseleave', hide); }); };
   const draw = {
     overview(p) {
       { /* KPI tiles: month to date vs the same point last month, with a 30-day trend */
@@ -930,7 +942,7 @@ window.AK = (() => {
         const pq = { ...p, shop: p.sf ? 'All' : p.shop, model: p.mf ? 'All' : p.model };
         const psd = dash.data('atlas_part_stock').status === 'ok' ? D('atlas_part_stock') : [], stk = new Map(psd.filter(r => r.stock != null).map(r => [String(r.code), +r.stock])), ssl = new Map(psd.filter(r => +r.safety > 0).map(r => [String(r.code), +r.safety]));
         const pmF = p.full || p, ptot = new Map(); D('atlas_parts_daily').forEach(r => { if (r.date >= pmF.start && r.date <= pmF.end && r.prod_plan) ptot.set(String(r.code), (ptot.get(String(r.code)) || 0) + r.prod_plan); }); /* full-month plan from Atlas */
-        const rows = partAgg(pq, p.start, p.asof).filter(r => r.pp || r.dp).map(r => ({ ...r, ord: so(r), pt: ptot.get(String(r.code)) || null, stk: stk.has(String(r.code)) ? stk.get(String(r.code)) : null, ss: ssl.has(String(r.code)) ? ssl.get(String(r.code)) : null }));
+        const rows = partAgg(pq, p.start, p.asof).filter(r => r.pp || r.dp || r.pa > 0 || r.da > 0).map(r => ({ ...r, ord: so(r), pt: ptot.get(String(r.code)) || null, stk: stk.has(String(r.code)) ? stk.get(String(r.code)) : null, ss: ssl.has(String(r.code)) ? ssl.get(String(r.code)) : null }));
         const dim = r => (p.sf && r.shop !== p.shop && !(r.shops || []).includes(p.shop)) || (p.mf && !String(r.models || '').split(/[\/,]\s*/).map(x => x.trim()).includes(p.model));
         const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
         const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops && r.shops.length > 1) ? r.shops.join(' / ') : v, click: v => dash.setParams(p.sf && p.shop === v ? { shop: 'All', sf: 0, pf: 0 } : { shop: v, sf: 1, pf: 0 }), bold: v => p.sf && p.shop === v }, { k: 'models' }, { k: 'ss', n: 1 }, { k: 'stk', n: 1, color: (v, r) => v != null && r.ss && v < r.ss ? C.bad : null }, { k: 'pt', n: 1 }, { k: 'pp', n: 1 }, { k: 'pa', n: 1 }, { k: 'pc', n: 1, fmt: pct, color: cc }, { k: 'dp', n: 1 }, { k: 'da', n: 1 }, { k: 'dc', n: 1, fmt: pct, color: cc }];
@@ -938,15 +950,7 @@ window.AK = (() => {
         const keep = r => !dim(r); /* a clicked shop/model shows only its own parts; the box shrinks to fit */
         table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
         table(q('#tb-parts2'), rows.filter(r => !fg(r) && keep(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 });
-        { /* hovering a Drive Plate machined row shows the same vendor-wise panel as the Capacity tab */
-          const HOV = { '6510213011': ['6010213013', { own: '6510213002' }], '6510213002': ['6010213013', { own: '6510213002' }] };
-          let pop = document.getElementById('vpop'); if (!pop) { pop = document.createElement('div'); pop.id = 'vpop'; pop.className = 'vsk vpop'; pop.style.display = 'none'; document.getElementById('ael').appendChild(pop); }
-          const hide = () => { pop.style.display = 'none'; pop.dataset.code = ''; };
-          [tbl, q('#tb-parts2')].forEach(t => { if (!t || t.__vh) return; t.__vh = 1;
-            t.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), code = tr && tr.cells[0] ? tr.cells[0].textContent.trim() : '', h = HOV[code]; if (!h) return hide();
-              if (pop.dataset.code !== code) { pop.dataset.code = code; vendPanel(pop, h[0], h[1], window.__P(), true); const hd = pop.querySelector('.vh'); if (hd) hd.textContent = 'Drive Plate CD70 machined · MTD vs month plan'; }
-              pop.style.display = 'flex'; const w = pop.offsetWidth, hgt = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12; if (x + w > innerWidth - 8) x = ev.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; pop.style.left = x + 'px'; pop.style.top = y + 'px'; });
-            t.addEventListener('mouseleave', hide); }); }
+        window.__vendHover([tbl, q('#tb-parts2')]);
       }
     },
     product(p) {
@@ -1140,6 +1144,7 @@ window.AK = (() => {
       const st = stkAll.map(r => { const o = byCA.get(String(r.code)) || { s: 0, r: 0 }; return { ...r, cover: r.safety_stock ? Math.round((r.stock + r.vendor_stock) / r.safety_stock * 100) : null, sch: o.s, rcv: o.r, comp: o.s ? o.r / o.s * 100 : null }; });
       const pick = (v, r) => dash.setParams({ vpart: String(r.code) === vpart ? 0 : String(r.code) }), isP = (v, r) => String(r.code) === vpart;
       table(q('#tb-vs'), st, [{ k: 'code', click: pick, bold: isP }, { k: 'part', click: pick, bold: isP }, { k: 'shop' }, { k: 'vendors' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover', n: 1, fmt: v => v + '%', color: v => v == null ? null : v < 50 ? C.bad : v < 100 ? C.warn : null }, { k: 'sch', n: 1 }, { k: 'rcv', n: 1 }, { k: 'comp', n: 1, fmt: pct, color: cc }], { q: q('#q-vs'), sort: 'cover', dir: 1, dim: r => vpart && String(r.code) !== vpart });
+      window.__vendHover([q('#tb-vs')]);
       // monthly trend
       const tm = d3.rollups(sup.filter(r => okSM(r) && okV(r)), v => ({ s: d3.sum(v, r => r.date <= p.asof ? r.scheduled || 0 : 0), r: d3.sum(v, r => r.date <= aEnd ? r.received || 0 : 0) }), r => r.date.slice(0, 7)).sort((x, y) => d3.ascending(x[0], y[0]));
       const tmm = new Map(tm);
