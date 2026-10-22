@@ -23,7 +23,7 @@
 #c-c-dp .uleg,#c-c-pr-cc .uleg,#c-c-pr-pp .uleg,#c-c-pr-cocd .uleg,#c-c-pr-cocg .uleg,#c-c-pr-cl .uleg{flex-direction:column;align-items:flex-start;gap:4px} .ael .vsk{position:absolute;top:36px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
 .ael .vsk .vr.ih{padding-bottom:6px;border-bottom:1px solid var(--line)} .ael .vsk .vh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;align-items:baseline;cursor:default}
 .ael .vsk .vn{font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vv b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:14px;color:var(--navy)}
-.ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)}
+.ael .vsk .vc{font-family:var(--font-anthropic-serif);font-size:14px;min-width:34px;text-align:right} .ael .vsk svg{grid-column:1/-1;display:block;width:100%;height:6px;margin-top:3px} .ael .vsk .vf{font-size:11px;color:var(--mut)} .ael .vsk.vpop{position:fixed;right:auto;width:260px;z-index:50;box-shadow:0 6px 20px rgba(5,28,44,.18);pointer-events:none}
 .ael .card h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .ael .csel{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
 .ael .chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -736,6 +736,35 @@ window.AK = (() => {
   }
   const byKey = (rows, key, val) => d3.rollup(rows, v => d3.sum(v, val), r => r[key]);
 
+  /* vendor + in-house receiving panel for a machined part (Capacity charts; also the hover card on Part Compliance tables) */
+  const vendPanel = (el, VC, IH, p, okShop = true) => {
+        if (!el) return; el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
+        if (!ok || !okShop) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = !ok ? 'Vendor receiving data not loaded' : 'Clutch shop only'; el.appendChild(m); }
+        else { const end0 = (p.actEnd || p.end), ms = end0.slice(0, 8) + '01', me = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(d3.utcMonth.offset(new Date(ms + 'T00:00:00Z'), 1), -1)), to = end0 < window.__TODAY ? end0 : window.__TODAY;
+          const rs = D('atlas_vendor_supply').filter(r => String(r.code) === VC && r.date >= ms && r.date <= me);
+          const V = d3.rollups(rs, v => ({ plan: d3.sum(v, r => +r.scheduled || 0), due: d3.sum(v.filter(r => r.date <= to), r => +r.scheduled || 0), rcv: d3.sum(v.filter(r => r.date <= to), r => +r.received || 0) }), r => r.vendor).filter(([, o]) => o.plan || o.rcv).sort((a, b) => b[1].plan - a[1].plan);
+          const nm = v => /TECNO PACK/i.test(v) ? 'TPI' : /M\.?A\.?K/i.test(v) ? 'M.A.K' : /^MBI/i.test(v) ? 'MBI' : /BURRAQ/i.test(v) ? 'Burraq' : /HUSSAIN/i.test(v) ? 'Hussain Eng.' : /SYED/i.test(v) ? 'Syed Eng.' : /UNIVERSAL/i.test(v) ? 'Universal' : v.replace(/\s*\(PVT\).*$/i, '');
+          const row = (label, o, ih) => { const r = document.createElement('div'); r.className = 'vr' + (ih ? ' ih' : ''); const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
+            r.innerHTML = '<div class="vn"></div><div class="vv"><b></b> / <span></span></div><div class="vc"></div>'; r.querySelector('.vn').textContent = label; r.querySelector('.vv b').textContent = kf(o.rcv); r.querySelector('.vv span').textContent = kf(o.plan);
+            const b = r.querySelector('.vc'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
+            const sv = d3.select(r).append('svg').attr('viewBox', '0 0 300 6').attr('preserveAspectRatio', 'none'); sv.append('rect').attr('width', 300).attr('height', 6).attr('fill', '#E6EAEF');
+            if (o.plan) { sv.append('rect').attr('width', Math.min(1, o.rcv / o.plan) * 300).attr('height', 6).attr('fill', ih ? C.navy : C.blue); const xd = Math.min(1, o.due / o.plan) * 300 - 1; sv.append('rect').attr('x', xd).attr('width', 2).attr('height', 6).attr('fill', C.navy); }
+            const tl = ih ? [label, ...ih] : [label, `Received ${nf(o.rcv)} · due to date ${nf(o.due)} · month plan ${nf(o.plan)}`, c == null ? '' : `Compliance ${Math.round(c)}% of schedule due`, mp == null ? '' : `${Math.round(mp)}% of month plan delivered`].filter(Boolean); r.addEventListener('mousemove', ev => tip.show(ev, tl)); r.addEventListener('mouseleave', () => tip.hide());
+            el.appendChild(r); };
+          const hd = document.createElement('div'); hd.className = 'vh'; hd.textContent = 'Machined · MTD vs month plan'; el.appendChild(hd);
+          if (IH && dash.data('atlas_parts_daily').status === 'ok') { /* in-house machining: own code from Atlas, or assembly use less bought-in */
+            const pd = D('atlas_parts_daily'), pTo = window.__planTo({ day: 0 }, to), sm = (c, f) => d3.sum(pd.filter(r => String(r.code) === c && r.date >= ms && f(r.date)), r => r), g = (c, k, f) => d3.sum(pd.filter(r => String(r.code) === c && r.date >= ms && r.date <= me && f(r.date)), r => +r[k] || 0);
+            let o, lines;
+            if (IH.own) { o = { plan: g(IH.own, 'prod_plan', () => true), due: g(IH.own, 'prod_plan', d => d <= pTo), rcv: g(IH.own, 'prod_actual', d => d <= to) }; lines = [`Atlas production on ${IH.own}: ${nf(o.rcv)} · plan due ${nf(o.due)} · month plan ${nf(o.plan)}`];
+              if (!o.plan && IH.asm) { const vs = k => d3.sum(V, ([, x]) => x[k]), A = { plan: g(IH.asm, 'prod_plan', () => true), due: g(IH.asm, 'prod_plan', d => d <= pTo) }; o.plan = Math.max(0, A.plan - vs('plan')); o.due = A.plan ? Math.round(o.plan * A.due / A.plan) : 0;
+                lines = [`In-house machined (Atlas, ${IH.own}): ${nf(o.rcv)}`, `Plan: assembly plan ${nf(A.plan)} less vendor schedule ${nf(vs('plan'))} = ${nf(o.plan)} (no in-house plan in Atlas)`, `Due to date ${nf(o.due)}`]; } }
+            else { const vs = k => d3.sum(V, ([, x]) => x[k]), A = { plan: g(IH.asm, 'prod_plan', () => true), due: g(IH.asm, 'prod_plan', d => d <= pTo), rcv: g(IH.asm, 'prod_actual', d => d <= to) };
+              const ip = Math.max(0, A.plan - vs('plan')); o = { plan: ip, due: A.plan ? Math.round(ip * A.due / A.plan) : 0, rcv: Math.max(0, A.rcv - vs('rcv')) }; /* in-house share falls due in step with the assembly plan */
+              lines = [`Assemblies ${nf(A.rcv)} less bought in ${nf(vs('rcv'))} = ${nf(o.rcv)} machined in-house (est.)`, `Plan: assembly plan ${nf(A.plan)} less vendor schedule ${nf(vs('plan'))} = ${nf(o.plan)}`, `Due to date ${nf(o.due)} (in step with assembly plan ${nf(A.due)} of ${nf(A.plan)})`]; }
+            const c = o.due ? o.rcv / o.due * 100 : null; if (c != null) lines.push(`Compliance ${Math.round(c)}% of plan due`); row('In-house', o, lines); }
+          if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = `No schedule or receipts on ${VC} this month`; el.appendChild(m); }
+          else { V.forEach(([v, o]) => row(nm(v), o));
+ } } };
   const draw = {
     overview(p) {
       { /* KPI tiles: month to date vs the same point last month, with a 30-day trend */
@@ -909,6 +938,15 @@ window.AK = (() => {
         const keep = r => !dim(r); /* a clicked shop/model shows only its own parts; the box shrinks to fit */
         table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
         table(q('#tb-parts2'), rows.filter(r => !fg(r) && keep(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 });
+        { /* hovering a Drive Plate machined row shows the same vendor-wise panel as the Capacity tab */
+          const HOV = { '6510213011': ['6010213013', { own: '6510213002' }], '6510213002': ['6010213013', { own: '6510213002' }] };
+          let pop = document.getElementById('vpop'); if (!pop) { pop = document.createElement('div'); pop.id = 'vpop'; pop.className = 'vsk vpop'; pop.style.display = 'none'; document.getElementById('ael').appendChild(pop); }
+          const hide = () => { pop.style.display = 'none'; pop.dataset.code = ''; };
+          [tbl, q('#tb-parts2')].forEach(t => { if (!t || t.__vh) return; t.__vh = 1;
+            t.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), code = tr && tr.cells[0] ? tr.cells[0].textContent.trim() : '', h = HOV[code]; if (!h) return hide();
+              if (pop.dataset.code !== code) { pop.dataset.code = code; vendPanel(pop, h[0], h[1], window.__P(), true); const hd = pop.querySelector('.vh'); if (hd) hd.textContent = 'Drive Plate CD70 machined · MTD vs month plan'; }
+              pop.style.display = 'flex'; const w = pop.offsetWidth, hgt = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12; if (x + w > innerWidth - 8) x = ev.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; pop.style.left = x + 'px'; pop.style.top = y + 'px'; });
+            t.addEventListener('mouseleave', hide); }); }
       }
     },
     product(p) {
@@ -1235,34 +1273,7 @@ window.AK = (() => {
             tip: [`${op} · ${nm}`, cap ? `Capacity ${nf(Math.round(cap / 26))} /day on ${run.length} machine${run.length > 1 ? 's' : ''}` : (v.some(m => m.status === 'Not working') ? 'Machines not working' : 'No time study'), ...run.map(m => `${m.machine}: ${m.ct} s per cycle, ${m.ppc} part${m.ppc > 1 ? 's' : ''} per cycle, ${m.shifts} shifts → ${nf(Math.round(m.cap_month / 26))} /day`), ...v.filter(m => !m.cap_month).map(m => `${m.machine}: ${String(m.status).toLowerCase()}`), ...(vend ? vTip : [actual != null && cap ? `${viaAssy ? `Clutch assembly ${/CD70/.test(partName) ? 'CD70' : 'CG125'} output` : 'Machined output'} ${pdLbl}: ${nf(actual)}` : '']), actual != null && cap ? `${Math.round(actual / (cap / 26) * 100)}% of capacity` : ''] }; });
         const bn = bnOp ? PR.find(x => x.op === bnOp && x.cap) : null;
         procbars(el, PR, { mt: (v => v ? Math.max(0, v.offsetHeight - 62) : 0)(el.parentElement && el.parentElement.querySelector('.vsk')), actual, actualName: vend ? `In-house machined (est.) · ${vend.days}-day avg to ${fd(lastD)}` : lastD ? `${viaAssy ? `${/CD70/.test(partName) ? 'CD70' : 'CG125'} assembly output` : 'Machined output'} · ${pdLbl}` : 'Actual output (no Atlas data)', bottleneck: bn || undefined, h: PR.length > 3 ? 350 : 320 }); };
-      [['#c-c-dp .vsk', '6010213013', { own: '6510213002' }], ['#c-c-pr-cc .vsk', '6530010066', { asm: '9020113004' }], ['#c-c-pr-pp .vsk', '6530010065', { asm: '9020113004' }], ['#c-c-pr-cocd .vsk', '6530010063', { own: '6530010063', asm: '9010113004' }], ['#c-c-pr-cocg .vsk', '6520213002', { own: '6520213002', asm: '9020113004' }], ['#c-c-pr-cl .vsk', '6530010064', { asm: '9020113004' }]].forEach(([sel, VC, IH]) => { /* machined parts also bought in: each vendor's receipts MTD vs its month schedule */
-        const el = q(sel); if (!el) return; el.replaceChildren(); const ok = dash.data('atlas_vendor_supply').status === 'ok';
-        if (!ok || !okShop) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = !ok ? 'Vendor receiving data not loaded' : 'Clutch shop only'; el.appendChild(m); }
-        else { const end0 = (p.actEnd || p.end), ms = end0.slice(0, 8) + '01', me = d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(d3.utcMonth.offset(new Date(ms + 'T00:00:00Z'), 1), -1)), to = end0 < window.__TODAY ? end0 : window.__TODAY;
-          const rs = D('atlas_vendor_supply').filter(r => String(r.code) === VC && r.date >= ms && r.date <= me);
-          const V = d3.rollups(rs, v => ({ plan: d3.sum(v, r => +r.scheduled || 0), due: d3.sum(v.filter(r => r.date <= to), r => +r.scheduled || 0), rcv: d3.sum(v.filter(r => r.date <= to), r => +r.received || 0) }), r => r.vendor).filter(([, o]) => o.plan || o.rcv).sort((a, b) => b[1].plan - a[1].plan);
-          const nm = v => /TECNO PACK/i.test(v) ? 'TPI' : /M\.?A\.?K/i.test(v) ? 'M.A.K' : /^MBI/i.test(v) ? 'MBI' : /BURRAQ/i.test(v) ? 'Burraq' : /HUSSAIN/i.test(v) ? 'Hussain Eng.' : /SYED/i.test(v) ? 'Syed Eng.' : /UNIVERSAL/i.test(v) ? 'Universal' : v.replace(/\s*\(PVT\).*$/i, '');
-          const row = (label, o, ih) => { const r = document.createElement('div'); r.className = 'vr' + (ih ? ' ih' : ''); const c = o.due ? o.rcv / o.due * 100 : null, mp = o.plan ? o.rcv / o.plan * 100 : null;
-            r.innerHTML = '<div class="vn"></div><div class="vv"><b></b> / <span></span></div><div class="vc"></div>'; r.querySelector('.vn').textContent = label; r.querySelector('.vv b').textContent = kf(o.rcv); r.querySelector('.vv span').textContent = kf(o.plan);
-            const b = r.querySelector('.vc'); b.textContent = c == null ? '—' : Math.round(c) + '%'; b.style.color = c == null ? C.grey : c >= 95 ? C.navy : c >= 80 ? C.warn : C.bad;
-            const sv = d3.select(r).append('svg').attr('viewBox', '0 0 300 6').attr('preserveAspectRatio', 'none'); sv.append('rect').attr('width', 300).attr('height', 6).attr('fill', '#E6EAEF');
-            if (o.plan) { sv.append('rect').attr('width', Math.min(1, o.rcv / o.plan) * 300).attr('height', 6).attr('fill', ih ? C.navy : C.blue); const xd = Math.min(1, o.due / o.plan) * 300 - 1; sv.append('rect').attr('x', xd).attr('width', 2).attr('height', 6).attr('fill', C.navy); }
-            const tl = ih ? [label, ...ih] : [label, `Received ${nf(o.rcv)} · due to date ${nf(o.due)} · month plan ${nf(o.plan)}`, c == null ? '' : `Compliance ${Math.round(c)}% of schedule due`, mp == null ? '' : `${Math.round(mp)}% of month plan delivered`].filter(Boolean); r.addEventListener('mousemove', ev => tip.show(ev, tl)); r.addEventListener('mouseleave', () => tip.hide());
-            el.appendChild(r); };
-          const hd = document.createElement('div'); hd.className = 'vh'; hd.textContent = 'Machined · MTD vs month plan'; el.appendChild(hd);
-          if (IH && dash.data('atlas_parts_daily').status === 'ok') { /* in-house machining: own code from Atlas, or assembly use less bought-in */
-            const pd = D('atlas_parts_daily'), pTo = window.__planTo({ day: 0 }, to), sm = (c, f) => d3.sum(pd.filter(r => String(r.code) === c && r.date >= ms && f(r.date)), r => r), g = (c, k, f) => d3.sum(pd.filter(r => String(r.code) === c && r.date >= ms && r.date <= me && f(r.date)), r => +r[k] || 0);
-            let o, lines;
-            if (IH.own) { o = { plan: g(IH.own, 'prod_plan', () => true), due: g(IH.own, 'prod_plan', d => d <= pTo), rcv: g(IH.own, 'prod_actual', d => d <= to) }; lines = [`Atlas production on ${IH.own}: ${nf(o.rcv)} · plan due ${nf(o.due)} · month plan ${nf(o.plan)}`];
-              if (!o.plan && IH.asm) { const vs = k => d3.sum(V, ([, x]) => x[k]), A = { plan: g(IH.asm, 'prod_plan', () => true), due: g(IH.asm, 'prod_plan', d => d <= pTo) }; o.plan = Math.max(0, A.plan - vs('plan')); o.due = A.plan ? Math.round(o.plan * A.due / A.plan) : 0;
-                lines = [`In-house machined (Atlas, ${IH.own}): ${nf(o.rcv)}`, `Plan: assembly plan ${nf(A.plan)} less vendor schedule ${nf(vs('plan'))} = ${nf(o.plan)} (no in-house plan in Atlas)`, `Due to date ${nf(o.due)}`]; } }
-            else { const vs = k => d3.sum(V, ([, x]) => x[k]), A = { plan: g(IH.asm, 'prod_plan', () => true), due: g(IH.asm, 'prod_plan', d => d <= pTo), rcv: g(IH.asm, 'prod_actual', d => d <= to) };
-              const ip = Math.max(0, A.plan - vs('plan')); o = { plan: ip, due: A.plan ? Math.round(ip * A.due / A.plan) : 0, rcv: Math.max(0, A.rcv - vs('rcv')) }; /* in-house share falls due in step with the assembly plan */
-              lines = [`Assemblies ${nf(A.rcv)} less bought in ${nf(vs('rcv'))} = ${nf(o.rcv)} machined in-house (est.)`, `Plan: assembly plan ${nf(A.plan)} less vendor schedule ${nf(vs('plan'))} = ${nf(o.plan)}`, `Due to date ${nf(o.due)} (in step with assembly plan ${nf(A.due)} of ${nf(A.plan)})`]; }
-            const c = o.due ? o.rcv / o.due * 100 : null; if (c != null) lines.push(`Compliance ${Math.round(c)}% of plan due`); row('In-house', o, lines); }
-          if (!V.length) { const m = document.createElement('div'); m.className = 'vf'; m.textContent = `No schedule or receipts on ${VC} this month`; el.appendChild(m); }
-          else { V.forEach(([v, o]) => row(nm(v), o));
- } } });
+      [['#c-c-dp .vsk', '6010213013', { own: '6510213002' }], ['#c-c-pr-cc .vsk', '6530010066', { asm: '9020113004' }], ['#c-c-pr-pp .vsk', '6530010065', { asm: '9020113004' }], ['#c-c-pr-cocd .vsk', '6530010063', { own: '6530010063', asm: '9010113004' }], ['#c-c-pr-cocg .vsk', '6520213002', { own: '6520213002', asm: '9020113004' }], ['#c-c-pr-cl .vsk', '6530010064', { asm: '9020113004' }]].forEach(([sel, VC, IH]) => vendPanel(q(sel), VC, IH, p, okShop));
       procChart(edp, 'Drive Plate CD70', 'DP2');
       [['c-c-pr-cc', 'Clutch Center CG125'], ['c-c-pr-pp', 'Pressure Plate CG125'], ['c-c-pr-cocd', 'Clutch Outer CD70'], ['c-c-pr-cocg', 'Clutch Outer CG125'], ['c-c-pr-cl', 'Clutch Lifter CG125']].forEach(([id, pn]) => { const e = ch(id); if (e && !status(e, ...CAP)) procChart(e, pn); });
       // machines: load % of their operation's capacity
