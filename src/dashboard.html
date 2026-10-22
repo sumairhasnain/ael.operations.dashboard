@@ -100,6 +100,7 @@
       <div class="filters">
         <label>Shop<select id="f-shop" aria-label="Shop"></select></label>
         <label>Model<select id="f-model" aria-label="Model"></select></label>
+        <label>Part<select id="f-part" aria-label="Part" style="max-width:230px"></select></label>
         <label>Month<select id="f-month" aria-label="Month"></select></label>
         <label>As of<input id="f-date" type="date" min="2026-06-01" max="2026-12-31" aria-label="As of date"></label>
         <label>Shift<select id="f-shift" aria-label="Shift"><option value="All">All</option><option>A</option><option>B</option><option>C</option></select></label>
@@ -627,14 +628,28 @@ window.AK = (() => {
   window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; window.__TODAY = '2026-10-22';
   const mEnd = m => { const [y, mm] = m.split('-').map(Number); return `${m}-${String(new Date(Date.UTC(y, mm, 0)).getUTCDate()).padStart(2, '0')}`; };
   window.__mEnd = mEnd;
-  const sShop = document.getElementById('f-shop'), sMonth = document.getElementById('f-month'), iDate = document.getElementById('f-date'), sShift = document.getElementById('f-shift'), sModel = document.getElementById('f-model');
+  const sShop = document.getElementById('f-shop'), sMonth = document.getElementById('f-month'), iDate = document.getElementById('f-date'), sShift = document.getElementById('f-shift'), sModel = document.getElementById('f-model'), sPart = document.getElementById('f-part');
   sShop.replaceChildren(new Option('All shops', 'All'), ...SHOPS.map(s => new Option(s, s)));
   sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new Option(s, s)));
   sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
   const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: '2026-10', asof: '2026-10-22', shift: 'All' }); };
   setDefaults();
   sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
-  sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0 }));
+  sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
+  sPart.addEventListener('change', () => dash.setParams({ pf: sPart.value === 'All' ? 0 : sPart.value, vpart: 0, ihpart: 0, dpart: 0, cp: 0 }));
+  /* part list for the Part filter: Atlas parts (finished and in-house, with their models) plus vendor child parts (models through the BOM), narrowed by the chosen shop and model */
+  let _pl = {};
+  const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? A.data : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
+    if (_pl.a === a && _pl.k === k && _pl.b === b) return _pl.rows;
+    const mm = new Map(a.map(r => [String(r.code), String(r.models || r.model || '').split('/').filter(Boolean)])), shs = r => { const v = r.shops; if (Array.isArray(v)) return v; try { const j = JSON.parse(v); if (Array.isArray(j)) return j; } catch (e) {} return v ? String(v).split('/').map(x => x.trim()).filter(Boolean) : []; };
+    const bm = new Map(); b.forEach(x => { const set = bm.get(String(x.code)) || new Set(); String(x.fg || '').split(/[;,]/).forEach(f => (mm.get(f.split(':')[0].trim()) || []).forEach(m => set.add(m))); bm.set(String(x.code), set); });
+    const rows = new Map(); a.forEach(r => rows.set(String(r.code), { code: String(r.code), part: r.part || String(r.code), shops: [r.shop, ...shs(r)].filter(Boolean), mods: mm.get(String(r.code)) || [] }));
+    k.forEach(r => { if (!rows.has(String(r.code))) rows.set(String(r.code), { code: String(r.code), part: r.part || String(r.code), shops: [r.shop].filter(Boolean), mods: [...(bm.get(String(r.code)) || [])], vendor: 1 }); });
+    _pl = { a, k, b, rows: [...rows.values()].sort((x, y) => d3.ascending(x.part, y.part) || d3.ascending(x.code, y.code)) }; return _pl.rows; };
+  let _pk = '';
+  const fillParts = p => { const L = partList().filter(r => (p.shop === 'All' || r.shops.includes(p.shop)) && (p.model === 'All' || r.mods.includes(p.model)) || r.code === p.pf), key = [p.shop, p.model, L.length, _pl.rows && _pl.rows.length].join('|');
+    if (key !== _pk) { _pk = key; sPart.replaceChildren(new Option(L.length ? `All parts (${L.length})` : 'All parts', 'All'), ...L.map(r => new Option(`${r.part.trim()} · ${r.code}`, r.code))); }
+    sPart.value = p.pf && L.some(r => r.code === p.pf) ? p.pf : 'All'; sPart.title = sPart.selectedOptions[0] ? sPart.selectedOptions[0].text : ''; };
   sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }));
   document.getElementById('f-clear').addEventListener('click', () => {
     document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
@@ -647,11 +662,11 @@ window.AK = (() => {
   let _dt = { src: null, v: null };
   window.__dataTo = () => { const d = dash.data('atlas_parts_daily'); if (!d || d.status !== 'ok') return window.__TODAY; if (d.data !== _dt.src) { let mx = ''; for (const r of d.data) if ((r.prod_actual != null || r.disp_actual != null) && r.date > mx) mx = r.date; _dt = { src: d.data, v: mx && mx < window.__TODAY ? mx : window.__TODAY }; } return _dt.v; };
   window.__P = () => { const p = dash.params(); const month = p.month || '2026-10', e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
-    const __pb = { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf && ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop || 'All') ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY };
+    const __pb = { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY };
     const base = __pb; base.full = { ...base }; const dy = String(p.day || '');
     if (/^\d{4}-\d{2}-\d{2}$/.test(dy) && dy >= base.start && dy <= base.end) return { ...base, day: dy, start: dy, end: dy, asof: dy, actEnd: [dy, window.__TODAY, window.__dataTo()].sort()[0], full: base.full };
     return { ...base, day: null }; };
-  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
+  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; fillParts(p); sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
   const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
   window.__page = 'overview';
   const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
@@ -1106,7 +1121,7 @@ window.AK = (() => {
       const rcvTo = sup.reduce((m, r) => r.received > 0 && r.date > m ? r.date : m, '');
       const aEnd = [p.asof, rcvTo || p.asof].sort()[0];
       const okSM0 = r => (p.shop === 'All' || r.shop === p.shop) && (p.model === 'All' || (mods.get(String(r.code)) || new Set()).has(p.model));
-      let vpart = String(dash.params().vpart || ''); if (vpart && !info.has(vpart)) vpart = '';
+      let vpart = String(dash.params().vpart || p.pf || ''); if (vpart && !info.has(vpart)) vpart = '';
       const okSM = r => okSM0(r) && (!vpart || String(r.code) === vpart);
       const pkH = q('#c-v-kpi h3'); if (pkH) pkH.textContent = 'Vendor Supply - Month to Date' + (vpart ? ' · ' + ((info.get(vpart) || {}).part || vpart) : '');
       const inMonth = sup.filter(r => r.date >= p.start && r.date <= p.end && okSM(r));
@@ -1118,7 +1133,7 @@ window.AK = (() => {
       const rows = inMonth.filter(okV);
       const sch = r => r.date <= p.asof ? r.scheduled || 0 : 0, rcv = r => r.date <= aEnd ? r.received || 0 : 0;
       const T = { m: d3.sum(rows, r => r.scheduled || 0), s: d3.sum(rows, sch), r: d3.sum(rows, rcv) };
-      const stkAll = stk.filter(r => r.source === 'Vendor' && okSM0(r) && (!vend || String(r.vendors || '').split(' / ').includes(vend)));
+      const stkAll = stk.filter(r => r.source === 'Vendor' && okSM0(r) && (!p.pf || String(r.code) === String(p.pf)) && (!vend || String(r.vendors || '').split(' / ').includes(vend)));
       const stkRows = stkAll.filter(r => !vpart || String(r.code) === vpart);
       const below = stkRows.filter(r => r.safety_stock > 0 && r.stock + r.vendor_stock < r.safety_stock).length;
       kv.replaceChildren(); const kadd = (l, v, sub, col) => { const d = document.createElement('div'); d.className = 'kmini'; [['kl', l], ['kv', v], ['ks', sub]].forEach(([c, t]) => { const e = document.createElement('div'); e.className = c; e.textContent = t; if (c === 'kv' && col) e.style.color = col; d.appendChild(e); }); kv.appendChild(d); };
