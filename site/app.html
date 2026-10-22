@@ -923,8 +923,9 @@ window.AK = (() => {
         const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
         const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops && r.shops.length > 1) ? r.shops.join(' / ') : v, click: v => dash.setParams(p.sf && p.shop === v ? { shop: 'All', sf: 0, pf: 0 } : { shop: v, sf: 1, pf: 0 }), bold: v => p.sf && p.shop === v }, { k: 'models' }, { k: 'ss', n: 1 }, { k: 'stk', n: 1, color: (v, r) => v != null && r.ss && v < r.ss ? C.bad : null }, { k: 'pt', n: 1 }, { k: 'pp', n: 1 }, { k: 'pa', n: 1 }, { k: 'pc', n: 1, fmt: pct, color: cc }, { k: 'dp', n: 1 }, { k: 'da', n: 1 }, { k: 'dc', n: 1, fmt: pct, color: cc }];
         const fg = r => String(r.code).startsWith('90');
-        table(tbl, rows.filter(fg), cols, { q: q('#q-parts'), sort: 'ord', dir: 1, dim });
-        table(q('#tb-parts2'), rows.filter(r => !fg(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1, dim });
+        const keep = r => !dim(r); /* a clicked shop/model shows only its own parts; the box shrinks to fit */
+        table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
+        table(q('#tb-parts2'), rows.filter(r => !fg(r) && keep(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 });
       }
     },
     product(p) {
