@@ -16,13 +16,15 @@
   const PKEY = 'ael_dash_params';
   let params = {};
   try { params = JSON.parse(sessionStorage.getItem(PKEY) || '{}') || {}; } catch (e) { params = {}; }
+  // A tab left open overnight must not keep yesterday's date: on a new day, drop the remembered month/date (filters stay).
+  if (params._day !== window.__PORTAL.today) { delete params.asof; delete params.month; delete params.day; params._day = window.__PORTAL.today; }
   let queued = false;
   const fire = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; cbs.forEach(f => { try { f(); } catch (e) { console.error(e); } }); }); };
   window.dash = {
     data: id => store[id] || { status: 'loading', data: [] },
     onData: f => { cbs.push(f); },
     params: () => ({ ...params }),
-    setParams: o => { params = { ...params, ...o }; try { sessionStorage.setItem(PKEY, JSON.stringify(params)); } catch (e) {} fire(); },
+    setParams: o => { params = { ...params, ...o, _day: window.__PORTAL.today }; try { sessionStorage.setItem(PKEY, JSON.stringify(params)); } catch (e) {} fire(); },
     setLink: p => { try { history.replaceState(null, '', '#' + p); } catch (e) {} },
     colors: []
   };
