@@ -1,1 +1,1276 @@
-[{"code":"9010113004","part":"CLUTCH ASSY CD70","shop":"Clutch","model":"CD70","models":"CD70","type":"Finished"},{"code":"9020113004","part":"CLUTCH ASSY CG125","shop":"Clutch","model":"CG125","models":"CG125","type":"Finished"},{"code":"9030113004","part":"CLUTCH ASSY PRIDOR","shop":"Clutch","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9030113005","part":"CLUTCH ASSY PRIDOR INHOUSE","shop":"Clutch","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9070113004","part":"CLUTCH ASSY K4AA","shop":"Clutch","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"6510118001","part":"DRUM GEAR SHIFT MACH. CD70 GGJX","shop":"Drum Gear","model":"CD70","models":"CD70","type":"In-house"},{"code":"9030158000","part":"FUEL COCK PRIDOR","shop":"Fuel Cock","model":"Pridor","models":"Pridor/CB125F","type":"Finished"},{"code":"9010410005","part":"CARBURETOR ASSY CD70","shop":"Carburetor","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9020410007","part":"CARBURETOR ASSY CG-125","shop":"Carburetor","model":"CG125","models":"CG125","type":"Finished"},{"code":"9020410008","part":"CARBURETOR ASSY CG125S","shop":"Carburetor","model":"CG125S","models":"CG125S","type":"Finished"},{"code":"9080410001","part":"CARBURETOR ASSY CB125F","shop":"Carburetor","model":"CB125F","models":"CB125F","type":"Finished"},{"code":"9070410002","part":"CARBURETOR ASSY CB150F","shop":"Carburetor","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070410001","part":"CARBURETOR ASSY K4AA","shop":"Carburetor","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"6510410003","part":"BODY CARBURETOR MACH CD-70","shop":"Carburetor","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520410004","part":"BODY CARBURETOR MACH CG125","shop":"Carburetor","model":"CG125","models":"CG125","type":"In-house"},{"code":"6510410001","part":"BODY CARBURETOR CASTED CD70","shop":"Carburetor","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520410001","part":"BODY CARBURETOR CASTED CG125","shop":"Carburetor","model":"CG125","models":"CG125","type":"In-house"},{"code":"9090603005","part":"HUB FR WHEEL CD70","shop":"Hubs","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9090603002","part":"HUB REAR WHEEL CD70","shop":"Hubs","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9020610001","part":"HUB REAR WHEEL CG125","shop":"Hubs","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9010910002","part":"COIL IGNITION CD70","shop":"Ignition Coil","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9020910002","part":"COIL IGNITION CG125","shop":"Ignition Coil","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9030910003","part":"COIL IGNITION PRIDOR","shop":"Ignition Coil","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9010410006","part":"JOINT CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9010410007","part":"SCREW ADJUST CD","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9020410011","part":"SCREW STOP CG125","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"9020410012","part":"PIPE OVERFLOW CG125","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"9010410010","part":"PIN FLOAT ARM CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9090410002","part":"PIN KNOCK CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9010410011","part":"PLUG STRAIGHT CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"6510410005","part":"SCREW STOP CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9010410012","part":"FCB CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"9020410016","part":"FCB CG125","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"9010320001","part":"PISTON CD70","shop":"Piston","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9090320001","part":"PISTON CG","shop":"Piston","model":"CG125","models":"CG125/CB125F/CG125S","type":"Finished"},{"code":"9030320001","part":"PISTON PRIDOR","shop":"Piston","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9110320008","part":"PISTON CD70 GB5 SPD (STD)","shop":"Piston","model":"CD70","models":"CD70","type":"In-house"},{"code":"9120320010","part":"PISTON MACH CG-125 SPD (STD)","shop":"Piston","model":"CG125S","models":"CG125S","type":"In-house"},{"code":"9140320003","part":"PISTON MACH DLX SPD (0.05MM)","shop":"Piston","model":"\u2014","models":"","type":"In-house"},{"code":"9090311000","part":"BFT BUFFED CG-125","shop":"Bridge Fork Top","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9080311000","part":"BFT BUFFED CB125F","shop":"Bridge Fork Top","model":"CB125F","models":"CB125F","type":"Finished"},{"code":"9030331000","part":"CYLINDER PRIDOR","shop":"CIF Machining","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9010331000","part":"SLEEVE CYLINDER CD70","shop":"CIF Machining","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9090331000","part":"SLEEVE CYLINDER CG","shop":"CIF Machining","model":"CG125","models":"CG125/CG125S/CB125F","type":"Finished"},{"code":"9070331000","part":"SLEEVE CYLINDER CB150F/K4AA","shop":"CIF Machining","model":"CB150F","models":"CB150F/K4AA","type":"Finished"},{"code":"9010510001","part":"COVER R SIDE CD70","shop":"Polymer","model":"CD70","models":"CD70","type":"Finished"},{"code":"9010510002","part":"COVER L SIDE CD70","shop":"Polymer","model":"CD70","models":"CD70","type":"Finished"},{"code":"9010510004","part":"COVER R RR SIDE CD70","shop":"Polymer","model":"CD70","models":"CD70","type":"Finished"},{"code":"9010510003","part":"COVER L RR SIDE CD70","shop":"Polymer","model":"CD70","models":"CD70","type":"Finished"},{"code":"9010510012","part":"SEAT BASE CD70","shop":"Polymer","model":"CD70","models":"CD70","type":"Finished"},{"code":"9020510002","part":"COVER L SIDE CG125","shop":"Polymer","model":"CG125","models":"CG125","type":"Finished"},{"code":"9020510001","part":"COVER R SIDE CG125","shop":"Polymer","model":"CG125","models":"CG125","type":"Finished"},{"code":"9020510003","part":"COVER AIR CLEANER CG","shop":"Polymer","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9020510004","part":"CASE AIR CLEANER CG","shop":"Polymer","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9030510003","part":"PANEL INNER PRIDOR","shop":"Polymer","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9030510005","part":"FENDER REAR PRIDOR","shop":"Polymer","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9030510004","part":"VISOR FRONT PRIDOR","shop":"Polymer","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9050510006","part":"PANEL FR VISOR INNER CD DREAM","shop":"Polymer","model":"CD-Dream","models":"CD-Dream","type":"Finished"},{"code":"9050510007","part":"VISOR FRONT CD DREAM","shop":"Polymer","model":"CD-Dream","models":"CD-Dream","type":"Finished"},{"code":"9070510008","part":"SHROUD R CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510009","part":"SHROUD R NATURAL CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510010","part":"SHROUD L CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510011","part":"SHROUD L NATURAL CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510016","part":"COWL L SIDE CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510017","part":"COWL R SIDE CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510013","part":"FENDER FRONT CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510012","part":"FENDER REAR CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510014","part":"COVER R SIDE CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"9070510015","part":"COVER L SIDE CB150F","shop":"Polymer","model":"CB150F","models":"CB150F","type":"Finished"},{"code":"6510511000","part":"CASE COIL CD70","shop":"Ignition Coil","model":"CD70","models":"CD70","type":"In-house"},{"code":"6510511001","part":"CASE H/T CD70","shop":"Ignition Coil","model":"CD70","models":"CD70","type":"In-house"},{"code":"9020510005","part":"SEAT BASE CG","shop":"Polymer","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9070510212","part":"SEAT BASE K4AA","shop":"Polymer","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"9070510213","part":"COVER TAIL LIGHT UPPER K4AA","shop":"Polymer","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"9070510214","part":"COVER TAIL LIGHT LOWER K4AA","shop":"Polymer","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"9020510006","part":"CASE HEAD LIGHT CG125","shop":"Polymer","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"6510213001","part":"CLUTCH OUTER CASTING CD-70","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520213001","part":"CLUTCH OUTER (CASTING) CG125","shop":"Clutch","model":"CG125","models":"CG125","type":"In-house"},{"code":"6520101002","part":"HUB REAR CG125 (CASTED)","shop":"Hubs","model":"CG125","models":"CG125","type":"In-house"},{"code":"9090603006","part":"CYLINDER CASTED CG","shop":"HPDC / Die Cast","model":"CG125","models":"CG125/CG125S","type":"Finished"},{"code":"9090603003","part":"COVER L CRANK CASE CG","shop":"HPDC / Die Cast","model":"CG125","models":"CG125","type":"Finished"},{"code":"9020603001","part":"COVER R CRANK CASE CG125","shop":"HPDC / Die Cast","model":"CG125","models":"CG125/CB125F/CG125S","type":"Finished"},{"code":"6510101018","part":"FCB CASTED CD70","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520101017","part":"FCB CASTED CG125","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"6510321002","part":"PISTON CASTED CD70 BASE MODEL","shop":"Piston","model":"CD70","models":"CD70","type":"In-house"},{"code":"6510321001","part":"PISTON CASTED CD70 GB-5","shop":"Piston","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520321002","part":"PISTON CASTED CG-125","shop":"Piston","model":"CG125","models":"CG125","type":"In-house"},{"code":"6590321000","part":"PISTON CASTED CG125/S/CB125F","shop":"Piston","model":"CG125","models":"CG125/CB125F","type":"In-house"},{"code":"6530321000","part":"PISTON CASTED PRIDOR","shop":"Piston","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6510321000","part":"PISTON CASTED CD-70 GGJX","shop":"Piston","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520321000","part":"PISTON CASTED CG-125 KYHA","shop":"Piston","model":"CG125","models":"CG125","type":"In-house"},{"code":"6590311000","part":"BFT CASTED CG-125/CG-S","shop":"Bridge Fork Top","model":"CG125","models":"CG125","type":"In-house"},{"code":"6580311000","part":"BFT CASTED CB125F","shop":"Bridge Fork Top","model":"CB125F","models":"CB125F","type":"In-house"},{"code":"9070311001","part":"BFT K4AA","shop":"Bridge Fork Top","model":"K4AA","models":"K4AA","type":"Finished"},{"code":"6530381000","part":"CYLINDER PRIDOR CASTED","shop":"CIF Machining","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6510381000","part":"SLEEVE CASTED CD70","shop":"CIF Machining","model":"CD70","models":"CD70","type":"In-house"},{"code":"6590381000","part":"SLEEVE CG","shop":"CIF Machining","model":"CG125","models":"CG125","type":"In-house"},{"code":"6570381000","part":"SLEEVE CASTED CB-150F","shop":"CIF Machining","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6510380001","part":"DRUM GEAR SHIFT CD70 (GGJX) CASTING","shop":"Drum Gear","model":"CD70","models":"CD70","type":"In-house"},{"code":"6503800001","part":"DRIVE PLATE CD70 (GGJX) CASTING","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house","shops":["Clutch","CIF Machining"]},{"code":"6510213004","part":"PLATE CLUTCH A","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house","area":"Clutch Press","level":2,"parent":"9010113004"},{"code":"6510213003","part":"PLATE CLUTCH C","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house","area":"Clutch Press","level":2,"parent":"9010113004"},{"code":"6590213007","part":"CLUTCH PLATES CG125/PRIDOR","shop":"Clutch","model":"CG125","models":"CG125/Pridor","type":"In-house"},{"code":"6520213003","part":"PLATE DRIVEN GEAR CG125","shop":"Clutch","model":"CG125","models":"CG125","type":"In-house"},{"code":"6530213008","part":"PLATE DRIVEN GEAR PRIDOR","shop":"Clutch","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6570213010","part":"PLATE CLUTCH CB150F","shop":"Clutch","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6570213009","part":"PLATE DRIVEN GEAR K4AA","shop":"Clutch","model":"K4AA","models":"K4AA","type":"In-house"},{"code":"9010118003","part":"DRUM GEAR SHIFT CD70","shop":"Drum Gear","model":"CD70","models":"CD70/CD-Dream","type":"Finished"},{"code":"9020118003","part":"DRUM GEAR SHIFT CG","shop":"Drum Gear","model":"CG125","models":"CG125","type":"Finished"},{"code":"9090218002","part":"FORK GEAR SHIFT CENTER C24","shop":"Drum Gear","model":"CG125","models":"CG125","type":"Finished"},{"code":"9090218001","part":"FORK GEAR SHIFT RIGHT C24","shop":"Drum Gear","model":"CG125","models":"CG125","type":"Finished"},{"code":"9030118000","part":"DRUM GEAR SHIFT PRIDOR","shop":"Drum Gear","model":"Pridor","models":"Pridor","type":"Finished"},{"code":"9020101001","part":"COVER CYLINDER HEAD CG","shop":"HPDC / Die Cast","model":"CG125","models":"CG125/CB125F/CG125S","type":"Finished"},{"code":"6520380001","part":"DRUM GEAR SHIFT CG125 KYHP CASTING","shop":"Drum Gear","model":"CG125","models":"CG125","type":"In-house"},{"code":"6530010063","part":"CLUTCH OUTER MACHINED CD-70","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house"},{"code":"6510213002","part":"DRIVE PLATE CD70 MACH.","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house"},{"code":"6520213002","part":"CLUTCH OUTER CG-125 (MACHINED)","shop":"Clutch","model":"CG125","models":"CG125","type":"In-house"},{"code":"9090218004","part":"FORK GEAR SHIFT R (IMP)","shop":"Drum Gear","model":"\u2014","models":"","type":"In-house"},{"code":"9090218003","part":"FORK GEAR SHIFT C (IMP)","shop":"Drum Gear","model":"\u2014","models":"","type":"In-house"},{"code":"9090410001","part":"SCREW DRAIN CD70/CG125","shop":"Carb Child Parts","model":"CD70","models":"CD70/CG125","type":"In-house"},{"code":"9020410009","part":"JOINT CG125","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"9020410010","part":"SCREW ADJUST CG","shop":"Carb Child Parts","model":"CG125","models":"CG125","type":"In-house"},{"code":"9010410009","part":"PIPE OVERFLOW CD","shop":"Carb Child Parts","model":"CD70","models":"CD70","type":"In-house"},{"code":"6590410001","part":"SCREW DRAIN CD70/CG125 (IH)","shop":"Carb Child Parts","model":"CD70","models":"CD70/CG125","type":"In-house"},{"code":"6520101003","part":"HUB FRONT CASTED CG-125","shop":"Hubs","model":"CG125","models":"CG125","type":"In-house"},{"code":"9020610002","part":"HUB FRONT CG125","shop":"Hubs","model":"CG125","models":"CG125/CG125S/CB125F","type":"Finished"},{"code":"6530381005","part":"CLUTCH CENTER WITH BOSS PRIDOR","shop":"CIF Machining","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6530380001","part":"DRUM GEAR SHIFT PRIDOR CASTED","shop":"CIF Machining","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6530101007","part":"OUTER CLUTCH PRIDOR CASTED","shop":"HPDC / Die Cast","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6530101004","part":"CLUTCH LIFTER PRIDOR CASTED","shop":"HPDC / Die Cast","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6530101006","part":"CLUTCH CENTER PRIDOR CASTED","shop":"HPDC / Die Cast","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6530101005","part":"PRESSURE PLATE PRIDOR CASTED","shop":"HPDC / Die Cast","model":"Pridor","models":"Pridor","type":"In-house"},{"code":"6570101012","part":"OUTER CLUTCH CB150","shop":"HPDC / Die Cast","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6570101013","part":"CLUTCH LIFTER CB150F CASTED","shop":"HPDC / Die Cast","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6570101014","part":"CLUTCH CENTER CB150F CASTED","shop":"HPDC / Die Cast","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6570101015","part":"PRESSURE PLATE CB150F CASTED","shop":"HPDC / Die Cast","model":"CB150F","models":"CB150F","type":"In-house"},{"code":"6510213011","part":"DRIVE PLATE CD70 MACH (VEN DP)","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house"},{"code":"6590331001","part":"SLEEVE CYLINDER CG125 MACHINED","shop":"CIF Machining","model":"CG125","models":"CG125","type":"In-house"},{"code":"6510213012","part":"DRIVE PLATE CD70 MACH (OSP)","shop":"Clutch","model":"CD70","models":"CD70","type":"In-house"}]
+[
+ {
+  "code": "9010113004",
+  "part": "CLUTCH ASSY CD70",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9020113004",
+  "part": "CLUTCH ASSY CG125",
+  "shop": "Clutch",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9030113004",
+  "part": "CLUTCH ASSY PRIDOR",
+  "shop": "Clutch",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9030113005",
+  "part": "CLUTCH ASSY PRIDOR INHOUSE",
+  "shop": "Clutch",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9070113004",
+  "part": "CLUTCH ASSY K4AA",
+  "shop": "Clutch",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "6510118001",
+  "part": "DRUM GEAR SHIFT MACH. CD70 GGJX",
+  "shop": "Drum Gear",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9030158000",
+  "part": "FUEL COCK PRIDOR",
+  "shop": "Fuel Cock",
+  "model": "Pridor",
+  "models": "Pridor/CB125F",
+  "type": "Finished"
+ },
+ {
+  "code": "9010410005",
+  "part": "CARBURETOR ASSY CD70",
+  "shop": "Carburetor",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9020410007",
+  "part": "CARBURETOR ASSY CG-125",
+  "shop": "Carburetor",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9020410008",
+  "part": "CARBURETOR ASSY CG125S",
+  "shop": "Carburetor",
+  "model": "CG125S",
+  "models": "CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9080410001",
+  "part": "CARBURETOR ASSY CB125F",
+  "shop": "Carburetor",
+  "model": "CB125F",
+  "models": "CB125F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070410002",
+  "part": "CARBURETOR ASSY CB150F",
+  "shop": "Carburetor",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070410001",
+  "part": "CARBURETOR ASSY K4AA",
+  "shop": "Carburetor",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "6510410003",
+  "part": "BODY CARBURETOR MACH CD-70",
+  "shop": "Carburetor",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520410004",
+  "part": "BODY CARBURETOR MACH CG125",
+  "shop": "Carburetor",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6510410001",
+  "part": "BODY CARBURETOR CASTED CD70",
+  "shop": "Carburetor",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520410001",
+  "part": "BODY CARBURETOR CASTED CG125",
+  "shop": "Carburetor",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9090603005",
+  "part": "HUB FR WHEEL CD70",
+  "shop": "Hubs",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9090603002",
+  "part": "HUB REAR WHEEL CD70",
+  "shop": "Hubs",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9020610001",
+  "part": "HUB REAR WHEEL CG125",
+  "shop": "Hubs",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9010910002",
+  "part": "COIL IGNITION CD70",
+  "shop": "Ignition Coil",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9020910002",
+  "part": "COIL IGNITION CG125",
+  "shop": "Ignition Coil",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9030910003",
+  "part": "COIL IGNITION PRIDOR",
+  "shop": "Ignition Coil",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9010410006",
+  "part": "JOINT CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9010410007",
+  "part": "SCREW ADJUST CD",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9020410011",
+  "part": "SCREW STOP CG125",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9020410012",
+  "part": "PIPE OVERFLOW CG125",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9010410010",
+  "part": "PIN FLOAT ARM CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9090410002",
+  "part": "PIN KNOCK CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9010410011",
+  "part": "PLUG STRAIGHT CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6510410005",
+  "part": "SCREW STOP CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9010410012",
+  "part": "FCB CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9020410016",
+  "part": "FCB CG125",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9010320001",
+  "part": "PISTON CD70",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9090320001",
+  "part": "PISTON CG",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125/CB125F/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9030320001",
+  "part": "PISTON PRIDOR",
+  "shop": "Piston",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9110320008",
+  "part": "PISTON CD70 GB5 SPD (STD)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9120320010",
+  "part": "PISTON MACH CG-125 SPD (STD)",
+  "shop": "Piston",
+  "model": "CG125S",
+  "models": "CG125S",
+  "type": "In-house"
+ },
+ {
+  "code": "9140320003",
+  "part": "PISTON MACH DLX SPD (0.05MM)",
+  "shop": "Piston",
+  "model": "\u2014",
+  "models": "",
+  "type": "In-house"
+ },
+ {
+  "code": "9090311000",
+  "part": "BFT BUFFED CG-125",
+  "shop": "Bridge Fork Top",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9080311000",
+  "part": "BFT BUFFED CB125F",
+  "shop": "Bridge Fork Top",
+  "model": "CB125F",
+  "models": "CB125F",
+  "type": "Finished"
+ },
+ {
+  "code": "9030331000",
+  "part": "CYLINDER PRIDOR",
+  "shop": "CIF Machining",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9010331000",
+  "part": "SLEEVE CYLINDER CD70",
+  "shop": "CIF Machining",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9090331000",
+  "part": "SLEEVE CYLINDER CG",
+  "shop": "CIF Machining",
+  "model": "CG125",
+  "models": "CG125/CG125S/CB125F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070331000",
+  "part": "SLEEVE CYLINDER CB150F/K4AA",
+  "shop": "CIF Machining",
+  "model": "CB150F",
+  "models": "CB150F/K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "9010510001",
+  "part": "COVER R SIDE CD70",
+  "shop": "Polymer",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9010510002",
+  "part": "COVER L SIDE CD70",
+  "shop": "Polymer",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9010510004",
+  "part": "COVER R RR SIDE CD70",
+  "shop": "Polymer",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9010510003",
+  "part": "COVER L RR SIDE CD70",
+  "shop": "Polymer",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9010510012",
+  "part": "SEAT BASE CD70",
+  "shop": "Polymer",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ },
+ {
+  "code": "9020510002",
+  "part": "COVER L SIDE CG125",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9020510001",
+  "part": "COVER R SIDE CG125",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9020510003",
+  "part": "COVER AIR CLEANER CG",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9020510004",
+  "part": "CASE AIR CLEANER CG",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9030510003",
+  "part": "PANEL INNER PRIDOR",
+  "shop": "Polymer",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9030510005",
+  "part": "FENDER REAR PRIDOR",
+  "shop": "Polymer",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9030510004",
+  "part": "VISOR FRONT PRIDOR",
+  "shop": "Polymer",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9050510006",
+  "part": "PANEL FR VISOR INNER CD DREAM",
+  "shop": "Polymer",
+  "model": "CD-Dream",
+  "models": "CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9050510007",
+  "part": "VISOR FRONT CD DREAM",
+  "shop": "Polymer",
+  "model": "CD-Dream",
+  "models": "CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510008",
+  "part": "SHROUD R CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510009",
+  "part": "SHROUD R NATURAL CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510010",
+  "part": "SHROUD L CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510011",
+  "part": "SHROUD L NATURAL CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510016",
+  "part": "COWL L SIDE CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510017",
+  "part": "COWL R SIDE CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510013",
+  "part": "FENDER FRONT CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510012",
+  "part": "FENDER REAR CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510014",
+  "part": "COVER R SIDE CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510015",
+  "part": "COVER L SIDE CB150F",
+  "shop": "Polymer",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "6510511000",
+  "part": "CASE COIL CD70",
+  "shop": "Ignition Coil",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6510511001",
+  "part": "CASE H/T CD70",
+  "shop": "Ignition Coil",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9020510005",
+  "part": "SEAT BASE CG",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510212",
+  "part": "SEAT BASE K4AA",
+  "shop": "Polymer",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510213",
+  "part": "COVER TAIL LIGHT UPPER K4AA",
+  "shop": "Polymer",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "9070510214",
+  "part": "COVER TAIL LIGHT LOWER K4AA",
+  "shop": "Polymer",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "9020510006",
+  "part": "CASE HEAD LIGHT CG125",
+  "shop": "Polymer",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "6510213001",
+  "part": "CLUTCH OUTER CASTING CD-70",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520213001",
+  "part": "CLUTCH OUTER (CASTING) CG125",
+  "shop": "Clutch",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6520101002",
+  "part": "HUB REAR CG125 (CASTED)",
+  "shop": "Hubs",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9090603006",
+  "part": "CYLINDER CASTED CG",
+  "shop": "HPDC / Die Cast",
+  "model": "CG125",
+  "models": "CG125/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "9090603003",
+  "part": "COVER L CRANK CASE CG",
+  "shop": "HPDC / Die Cast",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9020603001",
+  "part": "COVER R CRANK CASE CG125",
+  "shop": "HPDC / Die Cast",
+  "model": "CG125",
+  "models": "CG125/CB125F/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "6510101018",
+  "part": "FCB CASTED CD70",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520101017",
+  "part": "FCB CASTED CG125",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6510321002",
+  "part": "PISTON CASTED CD70 BASE MODEL",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6510321001",
+  "part": "PISTON CASTED CD70 GB-5",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520321002",
+  "part": "PISTON CASTED CG-125",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6590321000",
+  "part": "PISTON CASTED CG125/S/CB125F",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125/CB125F",
+  "type": "In-house"
+ },
+ {
+  "code": "6530321000",
+  "part": "PISTON CASTED PRIDOR",
+  "shop": "Piston",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6510321000",
+  "part": "PISTON CASTED CD-70 GGJX",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520321000",
+  "part": "PISTON CASTED CG-125 KYHA",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6590311000",
+  "part": "BFT CASTED CG-125/CG-S",
+  "shop": "Bridge Fork Top",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6580311000",
+  "part": "BFT CASTED CB125F",
+  "shop": "Bridge Fork Top",
+  "model": "CB125F",
+  "models": "CB125F",
+  "type": "In-house"
+ },
+ {
+  "code": "9070311001",
+  "part": "BFT K4AA",
+  "shop": "Bridge Fork Top",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "Finished"
+ },
+ {
+  "code": "6530381000",
+  "part": "CYLINDER PRIDOR CASTED",
+  "shop": "CIF Machining",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6510381000",
+  "part": "SLEEVE CASTED CD70",
+  "shop": "CIF Machining",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6590381000",
+  "part": "SLEEVE CG",
+  "shop": "CIF Machining",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6570381000",
+  "part": "SLEEVE CASTED CB-150F",
+  "shop": "CIF Machining",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6510380001",
+  "part": "DRUM GEAR SHIFT CD70 (GGJX) CASTING",
+  "shop": "Drum Gear",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6503800001",
+  "part": "DRIVE PLATE CD70 (GGJX) CASTING",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house",
+  "shops": [
+   "Clutch",
+   "CIF Machining"
+  ]
+ },
+ {
+  "code": "6510213004",
+  "part": "PLATE CLUTCH A",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house",
+  "area": "Clutch Press",
+  "level": 2,
+  "parent": "9010113004"
+ },
+ {
+  "code": "6510213003",
+  "part": "PLATE CLUTCH C",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house",
+  "area": "Clutch Press",
+  "level": 2,
+  "parent": "9010113004"
+ },
+ {
+  "code": "6590213007",
+  "part": "CLUTCH PLATES CG125/PRIDOR",
+  "shop": "Clutch",
+  "model": "CG125",
+  "models": "CG125/Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6520213003",
+  "part": "PLATE DRIVEN GEAR CG125",
+  "shop": "Clutch",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6530213008",
+  "part": "PLATE DRIVEN GEAR PRIDOR",
+  "shop": "Clutch",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6570213010",
+  "part": "PLATE CLUTCH CB150F",
+  "shop": "Clutch",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6570213009",
+  "part": "PLATE DRIVEN GEAR K4AA",
+  "shop": "Clutch",
+  "model": "K4AA",
+  "models": "K4AA",
+  "type": "In-house"
+ },
+ {
+  "code": "9010118003",
+  "part": "DRUM GEAR SHIFT CD70",
+  "shop": "Drum Gear",
+  "model": "CD70",
+  "models": "CD70/CD-Dream",
+  "type": "Finished"
+ },
+ {
+  "code": "9020118003",
+  "part": "DRUM GEAR SHIFT CG",
+  "shop": "Drum Gear",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9090218002",
+  "part": "FORK GEAR SHIFT CENTER C24",
+  "shop": "Drum Gear",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9090218001",
+  "part": "FORK GEAR SHIFT RIGHT C24",
+  "shop": "Drum Gear",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "Finished"
+ },
+ {
+  "code": "9030118000",
+  "part": "DRUM GEAR SHIFT PRIDOR",
+  "shop": "Drum Gear",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "Finished"
+ },
+ {
+  "code": "9020101001",
+  "part": "COVER CYLINDER HEAD CG",
+  "shop": "HPDC / Die Cast",
+  "model": "CG125",
+  "models": "CG125/CB125F/CG125S",
+  "type": "Finished"
+ },
+ {
+  "code": "6520380001",
+  "part": "DRUM GEAR SHIFT CG125 KYHP CASTING",
+  "shop": "Drum Gear",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6530010063",
+  "part": "CLUTCH OUTER MACHINED CD-70",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6510213002",
+  "part": "DRIVE PLATE CD70 MACH.",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6520213002",
+  "part": "CLUTCH OUTER CG-125 (MACHINED)",
+  "shop": "Clutch",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9090218004",
+  "part": "FORK GEAR SHIFT R (IMP)",
+  "shop": "Drum Gear",
+  "model": "\u2014",
+  "models": "",
+  "type": "In-house"
+ },
+ {
+  "code": "9090218003",
+  "part": "FORK GEAR SHIFT C (IMP)",
+  "shop": "Drum Gear",
+  "model": "\u2014",
+  "models": "",
+  "type": "In-house"
+ },
+ {
+  "code": "9090410001",
+  "part": "SCREW DRAIN CD70/CG125",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70/CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9020410009",
+  "part": "JOINT CG125",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9020410010",
+  "part": "SCREW ADJUST CG",
+  "shop": "Carb Child Parts",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9010410009",
+  "part": "PIPE OVERFLOW CD",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6590410001",
+  "part": "SCREW DRAIN CD70/CG125 (IH)",
+  "shop": "Carb Child Parts",
+  "model": "CD70",
+  "models": "CD70/CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6520101003",
+  "part": "HUB FRONT CASTED CG-125",
+  "shop": "Hubs",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9020610002",
+  "part": "HUB FRONT CG125",
+  "shop": "Hubs",
+  "model": "CG125",
+  "models": "CG125/CG125S/CB125F",
+  "type": "Finished"
+ },
+ {
+  "code": "6530381005",
+  "part": "CLUTCH CENTER WITH BOSS PRIDOR",
+  "shop": "CIF Machining",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6530380001",
+  "part": "DRUM GEAR SHIFT PRIDOR CASTED",
+  "shop": "CIF Machining",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6530101007",
+  "part": "OUTER CLUTCH PRIDOR CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6530101004",
+  "part": "CLUTCH LIFTER PRIDOR CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6530101006",
+  "part": "CLUTCH CENTER PRIDOR CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6530101005",
+  "part": "PRESSURE PLATE PRIDOR CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6570101012",
+  "part": "OUTER CLUTCH CB150",
+  "shop": "HPDC / Die Cast",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6570101013",
+  "part": "CLUTCH LIFTER CB150F CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6570101014",
+  "part": "CLUTCH CENTER CB150F CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6570101015",
+  "part": "PRESSURE PLATE CB150F CASTED",
+  "shop": "HPDC / Die Cast",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "In-house"
+ },
+ {
+  "code": "6510213011",
+  "part": "DRIVE PLATE CD70 MACH (VEN DP)",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "6590331001",
+  "part": "SLEEVE CYLINDER CG125 MACHINED",
+  "shop": "CIF Machining",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "6510213012",
+  "part": "DRIVE PLATE CD70 MACH (OSP)",
+  "shop": "Clutch",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320005",
+  "part": "PISTON CD70 SPD (STD)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320006",
+  "part": "PISTON CD70 SPD (0.50MM)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320007",
+  "part": "PISTON CD70 SPD (1.0MM)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320009",
+  "part": "PISTON CD70 GB5 SPD (0.50MM)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320010",
+  "part": "PISTON CD70 GB5 SPD (1.0MM)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9110320002",
+  "part": "PISTON CD70 GGJX SPD (0.50MM)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9120320011",
+  "part": "PISTON MACH CG-125 SPD (0.5MM)",
+  "shop": "Piston",
+  "model": "CG125S",
+  "models": "CG125S",
+  "type": "In-house"
+ },
+ {
+  "code": "9120320009",
+  "part": "PISTON MACH CG-125 SPD (1.0MM)",
+  "shop": "Piston",
+  "model": "CG125S",
+  "models": "CG125S",
+  "type": "In-house"
+ },
+ {
+  "code": "9120320001",
+  "part": "PISTON MACH CG KYHA SPD (STD)",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9120320002",
+  "part": "PISTON MACH CG KYHA SPD (0.05MM)",
+  "shop": "Piston",
+  "model": "CG125",
+  "models": "CG125",
+  "type": "In-house"
+ },
+ {
+  "code": "9130320002",
+  "part": "PISTON MACH PRIDOR SPD (STD)",
+  "shop": "Piston",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "9130320003",
+  "part": "PISTON MACH PRIDOR SPD (0.5MM)",
+  "shop": "Piston",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "9130320001",
+  "part": "PISTON MACH PRIDOR SPD (1.00MM)",
+  "shop": "Piston",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "9140320002",
+  "part": "PISTON MACH DLX SPD (1.00MM)",
+  "shop": "Piston",
+  "model": "\u2014",
+  "models": "",
+  "type": "In-house"
+ },
+ {
+  "code": "6530118000",
+  "part": "DRUM GEAR SHIFT MACH PRIDOR",
+  "shop": "Drum Gear",
+  "model": "Pridor",
+  "models": "Pridor",
+  "type": "In-house"
+ },
+ {
+  "code": "6510381005",
+  "part": "CYLINDER CASTED CD70 (SPD)",
+  "shop": "CIF Machining",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9113311000",
+  "part": "CYLINDER MACHINED CD70 (SPD)",
+  "shop": "CIF Machining",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "In-house"
+ },
+ {
+  "code": "9070110000",
+  "part": "REGULATOR RECTIFIER CB150F",
+  "shop": "Bridge Fork Top",
+  "model": "CB150F",
+  "models": "CB150F",
+  "type": "Finished"
+ },
+ {
+  "code": "9010320002",
+  "part": "PISTON CD70 (SAP code 9010320002)",
+  "shop": "Piston",
+  "model": "CD70",
+  "models": "CD70",
+  "type": "Finished"
+ }
+]
