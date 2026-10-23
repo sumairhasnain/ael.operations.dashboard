@@ -619,7 +619,10 @@ window.AK = (() => {
   function table(tbl, rows, cols, o = {}) {
     const st = ts[tbl.id] || (ts[tbl.id] = { k: o.sort, dir: o.dir || -1 }); const q = o.q ? (o.q.value || '').toLowerCase() : '';
     let rs = rows.filter(r => !q || cols.some(c => String(r[c.k] ?? '').toLowerCase().includes(q)));
-    if (st.k) rs = rs.slice().sort((a, b) => { const x = a[st.k], y = b[st.k]; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * st.dir; });
+    const cmp1 = (k, d) => { const c = cols.find(cc => cc.k === k); return (a, b) => { const x = a[k], y = b[k]; if (c && c.cmp) return c.cmp(x, y, a, b) * d; if (x == null) return y == null ? 0 : 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * d; }; };
+    /* multi-key sort (o.multi lists the columns that stack: click one, then another, and the second sorts within the first) */
+    if (o.multi && st.keys && st.keys.length) { const fs = st.keys.map(x => cmp1(x.k, x.dir)); rs = rs.slice().sort((a, b) => { for (const f of fs) { const v = f(a, b); if (v) return v; } return 0; }); }
+    else if (st.k) rs = rs.slice().sort(cmp1(st.k, st.dir));
     const tb = tbl.tBodies[0]; tb.replaceChildren();
     if (!rs.length) { const tr = document.createElement('tr'), td = document.createElement('td'); td.colSpan = cols.length; td.textContent = 'No rows for this selection'; td.style.color = '#5A6670'; tr.appendChild(td); tb.appendChild(tr); }
     rs.forEach(r => { const tr = document.createElement('tr'); if (o.dim && o.dim(r)) tr.style.opacity = 0.3; if (o.onRow) { tr.style.cursor = 'pointer'; tr.tabIndex = 0; tr.addEventListener('click', () => o.onRow(r)); tr.addEventListener('keydown', ev => { if (ev.key === 'Enter') o.onRow(r); }); if (o.sel && o.sel(r)) tr.style.background = '#EEF4FF'; } cols.forEach(c => { const td = document.createElement('td'); if (c.n) td.className = 'n'; const v = r[c.k];
@@ -630,7 +633,15 @@ window.AK = (() => {
       if (c.click) { td.style.cursor = 'pointer'; td.style.textDecoration = 'underline dotted'; td.title = 'Click to focus on this ' + c.k; td.addEventListener('click', ev => { ev.stopPropagation(); c.click(v, r); }); if (c.bold && c.bold(v, r)) td.style.fontWeight = 700; }
       tr.appendChild(td); }); tb.appendChild(tr); });
     tbl.querySelectorAll('th').forEach((th, i) => { const k = cols[i] && cols[i].k; th.setAttribute('aria-sort', st.k === k ? (st.dir > 0 ? 'ascending' : 'descending') : 'none');
-      th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field; st.dir = st.k === kk ? -st.dir : -1; st.k = kk; window.__draw(); }); } });
+      if (o.multi) { if (th.dataset.lbl == null) th.dataset.lbl = th.textContent; const ix = (st.keys || []).findIndex(x => x.k === k); th.textContent = th.dataset.lbl + (ix >= 0 && st.keys.length ? ' ' + (st.keys[ix].dir > 0 ? '▲' : '▼') + (st.keys.length > 1 ? ix + 1 : '') : ''); th.title = o.multi.includes(k) ? 'Click to sort; click ' + o.multi.filter(x => x !== k).join(' / ') + ' next to sort within it' : 'Click to sort'; }
+      th.onclick = null; if (!th._b) { th._b = 1; th.addEventListener('click', () => { const kk = th.dataset.k || th.dataset.field;
+        if (o.multi) { const ks = st.keys || []; const at = ks.findIndex(x => x.k === kk);
+          if (at >= 0) ks[at].dir = -ks[at].dir; /* same column again: flip it, keep the order of the keys */
+          else if (o.multi.includes(kk) && ks.length && ks.every(x => o.multi.includes(x.k))) ks.push({ k: kk, dir: 1 }); /* stack under the current sort */
+          else st.keys = [{ k: kk, dir: o.multi.includes(kk) ? 1 : -1 }];
+          if (at >= 0 || st.keys === ks) st.keys = ks; st.k = st.keys[0].k; st.dir = st.keys[0].dir; }
+        else { st.dir = st.k === kk ? -st.dir : -1; st.k = kk; }
+        window.__draw(); }); } });
   }
   return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100, procbars };
 })();
@@ -1522,7 +1533,10 @@ window.AK = (() => {
       vbar(es, shops, [{ key: 'Critical', name: 'Critical', color: C.bad }, { key: 'Non-critical', name: 'Non-critical', color: C.blue }, { key: 'Not set', name: 'Not set', color: C.sky }], (c, k) => (mm.get(c) || new Map()).get(k), { stack: 1, rot: 1, h: 260, yFmt: d3.format('d'), emptyMsg: 'No open issues' });
       const md = d3.rollups(open, v => v.length, r => r.last_meeting).sort((a, b) => d3.ascending(a[0], b[0]));
       vbar(ea, md.map(d => d[0]), [{ key: 'n', name: 'Open', color: C.navy }], c => md.find(d => d[0] === c)[1], { xFmt: day, rot: 1, h: 260, yFmt: d3.format('d'), noLegend: 1, emptyMsg: 'No open issues' });
-      table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop' }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good' }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1 });
+      /* shop order as on the Production tab; an issue for several shops sorts by its first shop */
+      const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock', 'Cushion', 'Supply Chain', 'General'];
+      const sx = v => { const i = SEQ.indexOf(String(v || '').split(', ')[0]); return i < 0 ? SEQ.length : i; };
+      table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop', cmp: (x, y) => sx(x) - sx(y) || String(x).localeCompare(String(y)) }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good', cmp: (x, y) => (x === 'open' ? 0 : 1) - (y === 'open' ? 0 : 1) }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1, multi: ['status', 'shop'] });
     }
   };
   window.__draw = () => { window.__syncFilters(); const f = draw[window.__page]; if (f) f(window.__P()); };
