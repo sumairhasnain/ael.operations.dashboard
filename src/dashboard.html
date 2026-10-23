@@ -689,7 +689,11 @@ window.AK = (() => {
 /* ---------- drawing ---------- */
 (() => {
   const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vbar, lines, donut, heat, table, monthCombo, hrank, utilbars, yama, split100, procbars } = window.AK;
-  const D = id => dash.data(id).data || [];
+  /* the Claude view can hand list fields (e.g. an issue's shops) to the page as JSON text: turn them back into lists */
+  const _lst = v => { if (Array.isArray(v) || v == null) return v; const t = String(v).trim(); if (t[0] === '[') { try { const j = JSON.parse(t); if (Array.isArray(j)) return j; } catch (e) {} } return t ? t.split(/\s*[\/,]\s*/).filter(Boolean) : undefined; };
+  const _dn = new Map();
+  const D = id => { const src = dash.data(id).data || []; if (id !== 'atlas_issues') return src; const c = _dn.get(id); if (c && c.src === src) return c.rows;
+    const rows = src.map(r => r.shops == null || Array.isArray(r.shops) ? r : { ...r, shops: _lst(r.shops) }); _dn.set(id, { src, rows }); return rows; };
   const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
   const day = s => d3.utcFormat('%-d %b')(new Date(s + 'T00:00:00Z')); const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
   const pct = v => v == null ? '—' : d3.format('.0f')(v) + '%';
