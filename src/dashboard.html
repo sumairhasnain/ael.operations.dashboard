@@ -11,6 +11,7 @@
 .ael .filters button.fclr:hover{background:#163B57}
 .ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
 .ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
+.ael .filters select.fon,.ael .filters input.fon{background:#E0A100;color:#000;border-color:#E0A100;font-weight:600;color-scheme:light}.ael .filters select.fon option{background:#fff;color:#000;font-weight:400}.ael .filters input.fon::-webkit-datetime-edit-year-field,.ael .filters input.fon::-webkit-datetime-edit-month-field,.ael .filters input.fon::-webkit-datetime-edit-day-field,.ael .filters input.fon::-webkit-datetime-edit-text{color:#000}
 .ael .tabs{display:flex;gap:2px;overflow-x:auto;margin-top:12px;scrollbar-width:thin}
 .ael .tab{background:transparent;border:0;color:#C9D3DC;font:inherit;font-size:13px;padding:10px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
 .ael .tab:hover{color:#fff}
@@ -677,7 +678,9 @@ window.AK = (() => {
     const base = __pb; base.full = { ...base }; const dy = String(p.day || '');
     if (/^\d{4}-\d{2}-\d{2}$/.test(dy) && dy >= base.start && dy <= base.end) return { ...base, day: dy, start: dy, end: dy, asof: dy, actEnd: [dy, window.__TODAY, window.__dataTo()].sort()[0], full: base.full };
     return { ...base, day: null }; };
-  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; fillParts(p); sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; };
+  window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; fillParts(p); sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; /* highlight any filter that is not at its default, whether picked here or set by clicking a chart */
+    const cm = window.__TODAY.slice(0, 7), on = (el, v) => el && el.classList.toggle('fon', !!v);
+    on(sShop, p.shop !== 'All'); on(sModel, p.model !== 'All'); on(sPart, !!p.pf); on(sShift, p.shift !== 'All'); on(sMonth, p.month !== cm); on(iDate, !!p.day || p.asof !== (p.month === cm ? window.__TODAY : p.end)); };
   const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
   window.__page = 'overview';
   const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
