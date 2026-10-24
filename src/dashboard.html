@@ -9,6 +9,7 @@
 .ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ael .filters button.fclr{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;align-self:flex-end}
 .ael .filters button.fclr:hover{background:#163B57}
+.ael .filters button.fclr.fon{background:#D0312D;border-color:#D0312D;color:#fff}.ael .filters button.fclr.fon:hover{background:#B02622}
 .ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
 .ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
 .ael .filters select.fon,.ael .filters input.fon{background:#E0A100;color:#000;border-color:#E0A100;font-weight:600;color-scheme:light}.ael .filters select.fon option{background:#fff;color:#000;font-weight:400}.ael .filters input.fon::-webkit-datetime-edit-year-field,.ael .filters input.fon::-webkit-datetime-edit-month-field,.ael .filters input.fon::-webkit-datetime-edit-day-field,.ael .filters input.fon::-webkit-datetime-edit-text{color:#000}
@@ -680,7 +681,16 @@ window.AK = (() => {
     return { ...base, day: null }; };
   window.__syncFilters = () => { const p = window.__P(); { const dt = window.__dataTo(), el = document.getElementById('f-data'); if (el) el.textContent = p.day ? `Showing ${+p.day.slice(8)} ${new Date(p.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} only · click the bar again or Clear filters` : `Plan to ${+p.asof.slice(8)} ${new Date(p.asof + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })} · Atlas actuals to ${+dt.slice(8)} ${new Date(dt + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } sShop.value = p.shop; sModel.value = p.model; fillParts(p); sMonth.value = p.month; sShift.value = p.shift; if (document.activeElement !== iDate) iDate.value = p.asof; /* highlight any filter that is not at its default, whether picked here or set by clicking a chart */
     const cm = window.__TODAY.slice(0, 7), on = (el, v) => el && el.classList.toggle('fon', !!v);
-    on(sShop, p.shop !== 'All'); on(sModel, p.model !== 'All'); on(sPart, !!p.pf); on(sShift, p.shift !== 'All'); on(sMonth, p.month !== cm); on(iDate, !!p.day || p.asof !== (p.month === cm ? window.__TODAY : p.end)); };
+    on(sShop, p.shop !== 'All'); on(sModel, p.model !== 'All'); on(sPart, !!p.pf); on(sShift, p.shift !== 'All'); on(sMonth, p.month !== cm); on(iDate, !!p.day || p.asof !== (p.month === cm ? window.__TODAY : p.end)); window.__clearState(); };
+  /* Clear filters turns red whenever anything narrows the view: a highlighted dropdown, a chart click (any selection
+     parameter, including ones added later), a search box with text, or a table view switch away from its default */
+  const NOT_FILTER = new Set(['month', 'asof', '_day', 'capsh', 'shop', 'model', 'shift']);
+  window.__clearState = () => { const btn = document.getElementById('f-clear'); if (!btn) return; const root = document.getElementById('ael');
+    const dd = !!root.querySelector('.filters .fon:not(#f-clear)'), pr = Object.entries(dash.params() || {}).some(([k, v]) => !NOT_FILTER.has(k) && v !== 0 && v !== '0' && v !== '' && v != null && v !== false && v !== 'All' && v !== 'all');
+    const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw = [...root.querySelectorAll('select[data-default]')].some(e => e.value !== e.dataset.default) || ((document.getElementById('s-bomv') || {}).value || 'all') !== 'all';
+    const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
+  document.getElementById('ael').addEventListener('input', ev => { if (ev.target.matches('input.q')) window.__clearState(); });
+  document.getElementById('ael').addEventListener('change', ev => { if (ev.target.matches('select')) setTimeout(window.__clearState, 0); });
   const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
   window.__page = 'overview';
   const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
