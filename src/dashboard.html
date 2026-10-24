@@ -9,6 +9,10 @@
 .ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ael .filters button.fclr{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;align-self:flex-end}
 .ael .filters button.fclr:hover{background:#163B57}
+.ael .filters .pwrap{position:relative;display:block}.ael .filters #f-part{width:250px;padding-right:24px}.ael .filters #f-part::-webkit-search-cancel-button{display:none}.ael .filters #f-part::placeholder{color:#9FB2C4}.ael .filters #f-part.fon::placeholder{color:#333}
+.ael .filters .px{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:inherit;font-size:16px;line-height:1;cursor:pointer;padding:0 4px}.ael .filters #f-part.fon+.px{color:#000}
+.ael .filters .psug{position:absolute;left:0;top:100%;margin-top:2px;z-index:50;width:max(100%,360px);max-height:320px;overflow:auto;background:#fff;color:#051C2C;border:1px solid #C9D1D9;border-radius:4px;box-shadow:0 6px 18px rgba(5,28,44,.18);font-size:13px;text-transform:none;letter-spacing:normal;font-weight:400}
+.ael .filters .psug div{padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}.ael .filters .psug div.on,.ael .filters .psug div:hover{background:#EEF4FF}.ael .filters .psug small{color:#5A6670;white-space:nowrap}.ael .filters .psug b{font-weight:700;color:#2251FF}.ael .filters .psug .pn{color:#5A6670;cursor:default}
 .ael .filters button.fclr.fon{background:#D0312D;border-color:#D0312D;color:#fff}.ael .filters button.fclr.fon:hover{background:#B02622}
 .ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
 .ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
@@ -102,7 +106,7 @@
       <div class="filters">
         <label>Shop<select id="f-shop" aria-label="Shop"></select></label>
         <label>Model<select id="f-model" aria-label="Model"></select></label>
-        <label>Part<select id="f-part" aria-label="Part" style="max-width:230px"></select></label>
+        <label class="psl">Part<span class="pwrap"><input id="f-part" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="f-part-list" autocomplete="off" spellcheck="false" placeholder="All parts · type to search"><button type="button" class="px" id="f-part-x" aria-label="Clear part" hidden>×</button><div class="psug" id="f-part-list" role="listbox" hidden></div></span></label>
         <label>Month<select id="f-month" aria-label="Month"></select></label>
         <label>As of<input id="f-date" type="date" min="2026-06-01" max="2026-12-31" aria-label="As of date"></label>
         <label>Shift<select id="f-shift" aria-label="Shift"><option value="All">All</option><option>A</option><option>B</option><option>C</option></select></label>
@@ -649,7 +653,25 @@ window.AK = (() => {
   setDefaults();
   sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
   sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
-  sPart.addEventListener('change', () => dash.setParams({ pf: sPart.value === 'All' ? 0 : sPart.value, vpart: 0, ihpart: 0, dpart: 0, cp: 0 }));
+  /* Part filter: type part of a name or code, pick from the suggestions (like a search box) */
+  const pList = document.getElementById('f-part-list'), pX = document.getElementById('f-part-x'); let _ps = [], _pi = -1, _pL = [];
+  const pickPart = code => { pList.hidden = true; sPart.setAttribute('aria-expanded', 'false'); dash.setParams({ pf: code || 0, vpart: 0, ihpart: 0, dpart: 0, cp: 0 }); if (!code) sPart.value = ''; };
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const showSug = () => { const t = sPart.value.trim().toLowerCase(), ws = t.split(/\s+/).filter(Boolean);
+    const hit = r => { const h = (r.part + ' ' + r.code).toLowerCase(); return ws.every(w => h.includes(w)); };
+    _ps = (ws.length ? _pL.filter(hit).sort((a, b) => { const sa = a.part.toLowerCase().startsWith(ws[0]) || a.code.startsWith(ws[0]) ? 0 : 1, sb = b.part.toLowerCase().startsWith(ws[0]) || b.code.startsWith(ws[0]) ? 0 : 1; return sa - sb; }) : _pL).slice(0, 15); _pi = -1;
+    const mark = x => { let o = esc(x); ws.forEach(w => { o = o.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<b>$1</b>'); }); return o; };
+    pList.innerHTML = _ps.length ? _ps.map((r, i) => `<div role="option" data-i="${i}"><span>${mark(r.part.trim())}</span><small>${mark(r.code)}</small></div>`).join('') + (ws.length ? '' : `<div class="pn">Type to narrow ${_pL.length} parts</div>`) : '<div class="pn">No part matches</div>';
+    pList.hidden = false; sPart.setAttribute('aria-expanded', 'true'); };
+  const moveSug = d => { const it = [...pList.querySelectorAll('div[data-i]')]; if (!it.length) return; _pi = (_pi + d + it.length) % it.length; it.forEach((e, i) => e.classList.toggle('on', i === _pi)); it[_pi].scrollIntoView({ block: 'nearest' }); };
+  sPart.addEventListener('focus', () => { sPart.select(); showSug(); });
+  sPart.addEventListener('input', showSug);
+  sPart.addEventListener('keydown', ev => { if (ev.key === 'ArrowDown') { ev.preventDefault(); if (pList.hidden) showSug(); moveSug(1); } else if (ev.key === 'ArrowUp') { ev.preventDefault(); moveSug(-1); }
+    else if (ev.key === 'Enter') { ev.preventDefault(); if (!sPart.value.trim()) pickPart(0); else { const r = _ps[_pi >= 0 ? _pi : 0]; if (r) pickPart(r.code); } sPart.blur(); }
+    else if (ev.key === 'Escape') { pList.hidden = true; sPart.blur(); } });
+  pList.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pickPart(_ps[+d.dataset.i].code); sPart.blur(); });
+  sPart.addEventListener('blur', () => setTimeout(() => { pList.hidden = true; sPart.setAttribute('aria-expanded', 'false'); window.__syncFilters(); }, 120));
+  pX.addEventListener('click', () => pickPart(0));
   /* part list for the Part filter: Atlas parts (finished and in-house, with their models) plus vendor child parts (models through the BOM), narrowed by the chosen shop and model */
   let _pl = {};
   const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? A.data : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
@@ -661,8 +683,8 @@ window.AK = (() => {
     _pl = { a, k, b, rows: [...rows.values()].sort((x, y) => d3.ascending(x.part, y.part) || d3.ascending(x.code, y.code)) }; return _pl.rows; };
   let _pk = '';
   const fillParts = p => { const L = partList().filter(r => (p.shop === 'All' || r.shops.includes(p.shop)) && (p.model === 'All' || r.mods.includes(p.model)) || r.code === p.pf), key = [p.shop, p.model, L.length, _pl.rows && _pl.rows.length].join('|');
-    if (key !== _pk) { _pk = key; sPart.replaceChildren(new Option(L.length ? `All parts (${L.length})` : 'All parts', 'All'), ...L.map(r => new Option(`${r.part.trim()} · ${r.code}`, r.code))); }
-    sPart.value = p.pf && L.some(r => r.code === p.pf) ? p.pf : 'All'; sPart.title = sPart.selectedOptions[0] ? sPart.selectedOptions[0].text : ''; };
+    if (key !== _pk) { _pk = key; _pL = L; sPart.placeholder = `All parts (${L.length}) · type to search`; }
+    const cur = p.pf ? L.find(r => r.code === p.pf) : null; if (document.activeElement !== sPart) sPart.value = cur ? `${cur.part.trim()} · ${cur.code}` : ''; sPart.title = sPart.value; pX.hidden = !p.pf; };
   sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }));
   document.getElementById('f-clear').addEventListener('click', () => {
     document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
