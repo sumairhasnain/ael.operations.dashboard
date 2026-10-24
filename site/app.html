@@ -98,6 +98,10 @@
 .ael .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600}
 .ael .pill.bad{background:#FBE3E3;color:var(--bad)} .ael .pill.warn{background:#FFF1D1;color:#8A5A00} .ael .pill.good{background:#DDF2E7;color:var(--good)} .ael .pill.neu{background:var(--soft);color:var(--mut)}
 .ael input.q{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;margin-bottom:8px;min-width:220px}
+.ael .qbar{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}.ael .qwrap{position:relative;display:inline-block}
+.ael button.qclr{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #4A6680;border-radius:4px;background:#051C2C;color:#fff;cursor:pointer}.ael button.qclr:hover{background:#163B57}.ael button.qclr.fon{background:#D0312D;border-color:#D0312D}.ael button.qclr.fon:hover{background:#B02622}
+.ael .qsug{position:absolute;left:0;top:calc(100% - 6px);z-index:60;min-width:100%;width:max-content;max-width:520px;max-height:300px;overflow:auto;background:#fff;color:#051C2C;border:1px solid #C9D1D9;border-radius:4px;box-shadow:0 6px 18px rgba(5,28,44,.18);font-size:12.5px}
+.ael .qsug div{padding:5px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:14px}.ael .qsug div.on,.ael .qsug div:hover{background:#EEF4FF}.ael .qsug small{color:#5A6670;white-space:nowrap}.ael .qsug b{color:#2251FF}.ael .qsug .pn{color:#5A6670;cursor:default}
 .ael .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin-top:4px}
 .ael .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .ael .issue{border-left:3px solid var(--bad);padding:6px 10px;margin-bottom:8px;background:#FCFCFD}
@@ -622,7 +626,35 @@ window.AK = (() => {
 
   // sortable table; cols [{k, n, fmt, pill, color}], key column first
   const ts = {};
+  /* every table search box: suggestions taken from that table's own rows (part, code, shop, vendor ... with the column they come from),
+     plus a Clear filters button beside it that works like the one at the top */
+  const qEsc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function qSearch(inp) { if (inp.__qs) return; inp.__qs = 1;
+    const bar = document.createElement('div'); bar.className = 'qbar'; const wrap = document.createElement('span'); wrap.className = 'qwrap'; inp.parentNode.insertBefore(bar, inp); wrap.appendChild(inp); bar.appendChild(wrap);
+    const list = document.createElement('div'); list.className = 'qsug'; list.hidden = true; list.setAttribute('role', 'listbox'); wrap.appendChild(list);
+    inp.setAttribute('role', 'combobox'); inp.setAttribute('aria-autocomplete', 'list'); inp.setAttribute('autocomplete', 'off');
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'qclr'; btn.textContent = 'Clear filters'; btn.title = 'Clear all filters and searches on the dashboard'; bar.appendChild(btn);
+    btn.addEventListener('click', () => { const top = document.getElementById('f-clear'); if (top) top.click(); });
+    let sg = [], ix = -1;
+    const cands = () => { const S = inp.__sug; if (!S) return []; const seen = new Map();
+      S.cols.forEach((c, ci) => { if (c.n) return; const th = S.tbl.querySelectorAll('thead th')[ci], lab = th ? (th.dataset.lbl || th.textContent).replace(/[▲▼]\d?/g, '').trim() : c.k;
+        S.rows.forEach(r => { let v = r[c.k]; if (v == null || typeof v === 'number') return; v = String(v).trim(); if (!v || v.length > 70 || /^\d{4}-\d{2}-\d{2}$/.test(v)) return; (Array.isArray(r[c.k]) ? r[c.k] : /^(vendors?|shops?|models?)$/.test(c.k) ? v.split(/\s*(?: \/ |, )\s*/).filter(Boolean) : [v]).forEach(x => { const key = String(x).toLowerCase(); if (!seen.has(key)) seen.set(key, { v: String(x), lab }); }); }); });
+      return [...seen.values()]; };
+    const show = () => { const t = inp.value.trim().toLowerCase(), ws = t.split(/\s+/).filter(Boolean); if (!ws.length) { list.hidden = true; return; }
+      sg = cands().filter(o => ws.every(w => o.v.toLowerCase().includes(w))).sort((a, b) => (a.v.toLowerCase().startsWith(ws[0]) ? 0 : 1) - (b.v.toLowerCase().startsWith(ws[0]) ? 0 : 1) || a.v.length - b.v.length).slice(0, 12); ix = -1;
+      const mark = x => { let h = qEsc(x); ws.forEach(w => { h = h.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<b>$1</b>'); }); return h; };
+      list.innerHTML = sg.length ? sg.map((o, i) => `<div role="option" data-i="${i}"><span>${mark(o.v)}</span><small>${qEsc(o.lab)}</small></div>`).join('') : '<div class="pn">No match in this table</div>'; list.hidden = false; };
+    const pick = o => { inp.value = o.v; list.hidden = true; inp.dispatchEvent(new Event('input', { bubbles: true })); };
+    const move = d => { const it = [...list.querySelectorAll('div[data-i]')]; if (!it.length) return; ix = (ix + d + it.length) % it.length; it.forEach((e, i) => e.classList.toggle('on', i === ix)); it[ix].scrollIntoView({ block: 'nearest' }); };
+    inp.addEventListener('input', ev => { if (ev.isTrusted !== false) show(); });
+    inp.addEventListener('focus', show);
+    inp.addEventListener('keydown', ev => { if (ev.key === 'ArrowDown') { ev.preventDefault(); if (list.hidden) show(); move(1); } else if (ev.key === 'ArrowUp') { ev.preventDefault(); move(-1); }
+      else if (ev.key === 'Enter') { if (!list.hidden && sg.length) { ev.preventDefault(); pick(sg[ix >= 0 ? ix : 0]); } } else if (ev.key === 'Escape') list.hidden = true; });
+    list.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pick(sg[+d.dataset.i]); });
+    inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; }, 120));
+    window.__clearState && window.__clearState(); }
   function table(tbl, rows, cols, o = {}) {
+    if (o.q) { o.q.__sug = { rows, cols, tbl }; qSearch(o.q); }
     const st = ts[tbl.id] || (ts[tbl.id] = { k: o.sort, dir: o.dir || -1 }); const q = o.q ? (o.q.value || '').toLowerCase() : '';
     let rs = rows.filter(r => !q || cols.some(c => String(r[c.k] ?? '').toLowerCase().includes(q)));
     const cmp1 = (k, d) => { const c = cols.find(cc => cc.k === k); return (a, b) => { const x = a[k], y = b[k]; if (c && c.cmp) return c.cmp(x, y, a, b) * d; if (x == null) return y == null ? 0 : 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * d; }; };
@@ -727,7 +759,7 @@ window.AK = (() => {
   window.__clearState = () => { const btn = document.getElementById('f-clear'); if (!btn) return; const root = document.getElementById('ael');
     const dd = !!root.querySelector('.filters .fon:not(#f-clear)'), pr = Object.entries(dash.params() || {}).some(([k, v]) => !NOT_FILTER.has(k) && v !== 0 && v !== '0' && v !== '' && v != null && v !== false && v !== 'All' && v !== 'all');
     const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw = [...root.querySelectorAll('select[data-default]')].some(e => e.value !== e.dataset.default) || ((document.getElementById('s-bomv') || {}).value || 'all') !== 'all';
-    const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
+    const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); root.querySelectorAll('button.qclr').forEach(b => b.classList.toggle('fon', act)); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
   document.getElementById('ael').addEventListener('input', ev => { if (ev.target.matches('input.q')) window.__clearState(); });
   document.getElementById('ael').addEventListener('change', ev => { if (ev.target.matches('select')) setTimeout(window.__clearState, 0); });
   const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
