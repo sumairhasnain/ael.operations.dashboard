@@ -65,9 +65,9 @@
 .ael .gauge .gd{font-size:12px;margin-top:2px} .ael .gauge .gd.up{color:var(--good)} .ael .gauge .gd.dn{color:var(--bad)} .ael .gauge .gt2{font-size:11px;color:var(--mut)}
 .ael .chip.snap{background:#E3ECFF;color:var(--blue)}
 .ael .chart{position:relative;min-height:200px;width:100%}
-.ael .yscl{position:absolute;right:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px}.ael .yscl input[type=range]{writing-mode:vertical-lr;direction:rtl;width:18px;margin:0;accent-color:#051C2C;cursor:ns-resize}
-.ael .yscl .yrs{border:1px solid #C9D1D9;background:#fff;color:#051C2C;border-radius:4px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.ael .yscl .yrs:disabled{opacity:.35;cursor:default}.ael .yscl .yrs:not(:disabled){border-color:#E0A100;background:#FFF6DB}
-.ael .yscl .yv{width:44px;font:inherit;font-size:11px;text-align:center;padding:2px 1px;border:1px solid #C9D1D9;border-radius:3px;color:#051C2C;background:#fff}.ael .yscl .yv:focus{outline:2px solid #2251FF;border-color:#2251FF}
+.ael .yscl{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px}.ael .yscl input[type=range]{writing-mode:vertical-lr;direction:rtl;width:18px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:ns-resize}.ael .yscl input[type=range]::-webkit-slider-runnable-track{inline-size:100%;block-size:4px;width:4px;background:#E6EAEE;border-radius:2px}.ael .yscl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;background:#C3CAD1;border:1px solid #AEB7BF;margin-left:-4px}.ael .yscl input[type=range]:hover::-webkit-slider-thumb{background:#AEB7BF}.ael .yscl input[type=range]::-moz-range-track{width:4px;background:#E6EAEE;border-radius:2px}.ael .yscl input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#C3CAD1;border:1px solid #AEB7BF}
+.ael .yscl .yrs{border:1px solid #DDE2E7;background:#fff;color:#8C96A0;border-radius:4px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.ael .yscl .yrs:disabled{opacity:.35;cursor:default}.ael .yscl .yrs:not(:disabled){border-color:#E0A100;background:#FFF6DB}
+.ael .yscl .yv{width:44px;font:inherit;font-size:11px;text-align:center;padding:2px 1px;border:1px solid #DDE2E7;border-radius:3px;color:#5A6670;background:#fff}.ael .yscl .yv:focus{outline:2px solid #2251FF;border-color:#2251FF}
 .ael .chart svg{display:block;overflow:visible}
 .ael .chart text{font-family:var(--font-anthropic-sans);fill:var(--mut);font-size:11px}
 .ael .chart .lbl{fill:var(--ink)}
@@ -437,7 +437,7 @@ window.AK = (() => {
     const all = series.flatMap(s => s.values).filter(v => v != null);
     if (!all.length) return empty(el, o.emptyMsg || 'No data for this selection');
     const h = o.h || 230, m = { t: 14, r: 86, b: 26, l: 46 }; const bx = box(el, h), svg = bx.svg, sc = o.scale !== false; let w = bx.w;
-    if (sc) { w = bx.w - 50; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)'); }
+    if (sc) { w = bx.w - 50; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px'); }
     const lo = o.min != null ? o.min : Math.min(0, d3.min([...all, ...(o.refs || []).map(r => r.v)])), autoHi = d3.max([...all, ...(o.refs || []).map(r => r.v)]) * 1.06;
     /* vertical scale: a slider, a reset icon and an editable top value let the viewer zoom in when one large-volume line flattens the rest */
     const skey = ((el.closest('.card') || {}).id || el.id || 'c') + '|' + (o.scaleKey || ''), YM = window.__ymax || (window.__ymax = {});
