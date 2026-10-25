@@ -880,12 +880,12 @@ window.AK = (() => {
       if (worst && worst.cov < 1) { o.projMat = o.mtd + Math.max(0, o.proj - o.mtd) * Math.max(0, worst.cov); o.limit = { code: worst.code, part: (cs.get(worst.code) || {}).part || worst.part, cover: Math.round(worst.cov * 100) }; } });
     _pj = { src, key, vs: D('atlas_vendor_supply'), v: { map, NR, last, rem, anchor, wd, need, cs, lastR } }; return _pj.v; };
   /* Month-end projection switch: one setting for the whole dashboard, remembered in this browser */
-  let _pon = true; try { _pon = localStorage.getItem('ael.projOn') !== '0'; } catch (e) {}
+  let _pon = false; try { _pon = localStorage.getItem('ael.proj') === '1'; } catch (e) {} /* starts OFF; the viewer turns it on */
   let _pok = true; /* projections open up after the 10th of the month; before that there's too little of the month to go on */
   const projGate = p => { _pok = !!p && (p.month < String(window.__TODAY || '').slice(0, 7) || +String(p.asof || '').slice(8, 10) > 10); projSync(); };
   window.__projOn = () => _pon && _pok;
   const projSync = () => { const on = _pon && _pok, r = document.getElementById('ael'); if (r) r.classList.toggle('noproj', !on); const b = document.getElementById('f-proj'); if (!b) return; b.disabled = !_pok; b.setAttribute('aria-pressed', String(on)); b.title = !_pok ? 'Projections open up after the 10th of the month' : on ? 'Month-end projections are on. Click to turn them off.' : 'Month-end projections are off. Click to turn them on.'; };
-  document.getElementById('f-proj').addEventListener('click', () => { if (!_pok) return; _pon = !_pon; try { localStorage.setItem('ael.projOn', _pon ? '1' : '0'); } catch (e) {} projSync(); window.__draw(); });
+  document.getElementById('f-proj').addEventListener('click', () => { if (!_pok) return; _pon = !_pon; try { localStorage.setItem('ael.proj', _pon ? '1' : '0'); } catch (e) {} projSync(); window.__draw(); });
   projSync();
   const projSum = (p, codes) => { if (!_pon || !_pok) return null; const P = PROJ(p); let s = 0, n = 0, lim = []; [...new Set(codes)].forEach(c => { const o = P.map.get(String(c)); if (!o) return; s += o.projMat; n++; if (o.limit) lim.push(o.limit); }); return n ? { v: s, lim } : null; };
   const projNote = (P, lim) => (P.NR ? `Projection: ${P.NR} working days left at the last-${P.last.length}-day rate` : 'Month complete') + (lim.length ? ` · capped by ${lim.slice(0, 2).map(l => l.part + ' (' + l.cover + '% cover)').join(', ')}` : '');
