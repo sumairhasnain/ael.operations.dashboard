@@ -1000,9 +1000,13 @@ window.AK = (() => {
         if (!status(ec, ...ATL, 'atlas_bom')) {
           const dims = DIMS(), bom = D('atlas_bom'), kids = new Map();
           bom.forEach(b => { if (b.source !== 'In-house') return; String(b.fg || '').split(';').forEach(t => { const [fc, qt] = t.split(':'); if (!fc) return; if (!kids.has(fc)) kids.set(fc, []); kids.get(fc).push({ code: String(b.code), qty: +qt || 1, name: (dims.get(String(b.code)) || {}).part || b.part }); }); });
-          const fgs = partAgg({ ...p, pf: null }, p.start, p.asof, 'Finished').filter(r => kids.has(r.code)).sort((a, b) => b.pp - a.pp);
+          /* an assembly and its in-house variant (e.g. CLUTCH ASSY PRIDOR and CLUTCH ASSY PRIDOR INHOUSE) are one finished part here: their components are pooled */
+          const fbase = r => String(r.part || r.code).toUpperCase().replace(/\s*[-(]?\s*IN-?HOUSE\)?\s*$/, '').trim(), fgAll = partAgg({ ...p, pf: null }, p.start, p.asof, 'Finished').filter(r => kids.has(r.code));
+          const fgG = new Map(); fgAll.forEach(r => { const k = fbase(r), g = fgG.get(k) || { ...r, part: k, codes: [], pp: 0, best: -1 }; g.codes.push(r.code); g.pp += r.pp || 0; if ((r.pp || 0) > g.best) { g.best = r.pp || 0; g.code = r.code; } fgG.set(k, g); });
+          const fgs = [...fgG.values()].sort((a, b) => b.pp - a.pp), grpOf = c => fgs.find(g => g.codes.includes(c));
+          fgs.forEach(g => { const all = []; g.codes.forEach(c => (kids.get(c) || []).forEach(k => all.push(k))); kids.set(g.code, all); });
           sel.replaceChildren(...fgs.map(r => new Option(r.part || r.code, r.code)));
-          const main = [p.cp, p.pf].find(c => c && fgs.some(r => r.code === c)) || (fgs[0] || {}).code;
+          const main = (grpOf([p.cp, p.pf].find(c => c && grpOf(c)) || '') || fgs[0] || {}).code, mainCodes = (grpOf(main) || { codes: [main] }).codes;
           if (!main) { sel.style.display = 'none'; empty(ec, 'No finished part with in-house components for this selection'); }
           else { sel.style.display = ''; sel.value = main; sel.onchange = () => dash.setParams({ cp: sel.value });
             const ds = datesOf(p), byC = new Map(); D('atlas_parts_daily').forEach(r => { if (r.date >= p.start && r.date <= p.actEnd) { const m = byC.get(r.code) || new Map(); m.set(r.date, (m.get(r.date) || 0) + (r.prod_actual || 0)); byC.set(r.code, m); } });
@@ -1012,7 +1016,7 @@ window.AK = (() => {
             const sh = t => t.length > 26 ? t.slice(0, 25) + '…' : t, base = n => String(n).toUpperCase().split('(')[0].replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
             const grp = []; ks.forEach(k => { const key = lvl(k) + '|' + (lvl(k) === 'L2' ? base(k.name) : k.code); let g = grp.find(x => x.key === key); if (!g) grp.push(g = { key, lv: lvl(k), name: lvl(k) === 'L2' ? base(k.name) : k.name, qty: k.qty, codes: [] }); g.codes.push(k.code); });
             const cumG = cs => { const arrs = cs.map(c => cum(c)); return ds.map((d, i) => arrs[0][i] == null ? null : d3.sum(arrs, a => a[i] || 0)); };
-            lines(ec, ds, [{ name: sh((dims.get(main) || {}).part || main), color: C.bad, w: 2.8, values: cum(main) }, ...grp.map((g, i) => ({ name: g.lv + ' ' + sh(g.name) + (g.codes.length > 1 ? ' (' + g.codes.length + ' alt.)' : '') + (g.qty > 1 ? ' ×' + g.qty : ''), color: PAL[i % PAL.length], dash: g.lv === 'L3' ? '5 4' : null, w: g.lv === 'L3' ? 1.4 : 1.6, values: cumG(g.codes), sub: g.codes.length > 1 ? g.codes.map(c => ({ name: (dims.get(c) || {}).part || c, values: cum(c) })) : null }))],
+            lines(ec, ds, [{ name: sh((grpOf(main) || {}).part || (dims.get(main) || {}).part || main) + (mainCodes.length > 1 ? ' (' + mainCodes.length + ' codes)' : ''), color: C.bad, w: 2.8, values: mainCodes.length > 1 ? cumG(mainCodes) : cum(main) }, ...grp.map((g, i) => ({ name: g.lv + ' ' + sh(g.name) + (g.codes.length > 1 ? ' (' + g.codes.length + ' alt.)' : '') + (g.qty > 1 ? ' ×' + g.qty : ''), color: PAL[i % PAL.length], dash: g.lv === 'L3' ? '5 4' : null, w: g.lv === 'L3' ? 1.4 : 1.6, values: cumG(g.codes), sub: g.codes.length > 1 ? g.codes.map(c => ({ name: (dims.get(c) || {}).part || c, values: cum(c) })) : null }))],
               { xFmt: day, marker: p.asof, noDots: 1, h: 300 }); } } }
       const el = ch('c-p-daily'), kd = q('#k-p-daily');
       { const ks = q('#k-p-sel'); if (ks) { ks.replaceChildren(); const on = p.shop !== 'All' || p.model !== 'All'; ks.hidden = !on; /* shop and model picked in the filters, shown left of the last-day figure */
