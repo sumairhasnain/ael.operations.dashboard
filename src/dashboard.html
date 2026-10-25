@@ -26,6 +26,7 @@
 .ael .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
 .ael .card{border:1px solid var(--line);background:#fff;padding:12px 14px;min-width:0;position:relative}
 .ael .card.wide{grid-column:1/-1}
+.ael #x-out-note{margin-top:12px;clear:both}.ael #c-x-out{height:auto}.ael .xnote{font-size:12px;color:var(--mut);margin:0 0 8px;max-width:120ch}.ael .wkc{display:inline-flex;gap:3px}.ael .wkc span{font-size:10.5px;min-width:32px;text-align:center;padding:1px 3px;border-radius:2px;font-variant-numeric:tabular-nums}
 #c-c-dp .uleg,#c-c-pr-cc .uleg,#c-c-pr-pp .uleg,#c-c-pr-cocd .uleg,#c-c-pr-cocg .uleg,#c-c-pr-cl .uleg{flex-direction:column;align-items:flex-start;gap:4px} .ael .vsk{position:absolute;top:36px;right:14px;width:236px;z-index:2;background:#fff;border:1px solid var(--line);padding:7px 10px 8px;display:flex;flex-direction:column;gap:6px}
 .ael .vsk .vr.ih{padding-bottom:6px;border-bottom:1px solid var(--line)} .ael .vsk .vh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)} .ael .vsk .vr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;align-items:baseline;cursor:default}
 .ael .vsk .vn{font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ael .vsk .vv{font-size:11.5px;color:var(--mut);white-space:nowrap} .ael .vsk .vv b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:14px;color:var(--navy)}
@@ -311,6 +312,10 @@
       <div class="card" id="c-x-shop"><h3>Open by Shop</h3><div class="chart" data-source="atlas_issues"></div></div>
       <div class="card" id="c-x-age"><h3>Open by Date</h3><div class="chart" data-source="atlas_issues"></div></div>
       <div class="card wide" id="c-x-table"><h3>Issues Log</h3><input class="q" id="q-iss" placeholder="Search issue" aria-label="Search issues"><div class="tbox"><table class="tb" id="tb-iss" data-source="atlas_issues" data-row-key="id"><thead><tr><th data-field="id">#</th><th data-field="item">Item</th><th data-field="shop">Shop</th><th data-field="priority">Priority</th><th data-field="status">Status</th><th data-field="problem">Problem</th><th data-field="last_meeting">Last meeting</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide kpicard" id="c-x-out"><h3>Month-end Outlook <span class="chip snap" id="x-out-asof"></span></h3><div class="ktiles"></div><p class="xnote" id="x-out-note"></p></div>
+      <div class="card wide" id="c-x-fih"><h3>In-house Production Flags</h3><p class="xnote">Chronic: below 85% month to date, under 85% in 2 of the last 3 weeks, and short on at least 6 of the last 10 plan days. Watch: below 85% with at least one weak week.</p><input class="q" id="q-fih" placeholder="Search part, code or shop" aria-label="Search in-house flags"><div class="tbox"><table class="tb" id="tb-fih"><thead><tr><th data-field="level">Flag</th><th data-field="part">Part</th><th data-field="code">Code</th><th data-field="shop">Shop</th><th data-field="mtd_pct">MTD</th><th data-field="wk">Last 3 weeks</th><th data-field="miss">Short days</th><th data-field="proj_pct">Proj. month-end</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide" id="c-x-fv"><h3>Vendor Supply Flags</h3><p class="xnote">Chronic: below 80% of schedule in each of the last 3 weeks, or below 70% month to date with 2 weak weeks. Watch: below 85% with a weak week. Faraz's two codes are combined.</p><input class="q" id="q-fv" placeholder="Search vendor" aria-label="Search vendor flags"><div class="tbox"><table class="tb" id="tb-fv"><thead><tr><th data-field="level">Flag</th><th data-field="vendor">Vendor</th><th data-field="parts">Parts</th><th data-field="mtd_pct">MTD</th><th data-field="wk">Last 3 weeks</th><th data-field="short">Short to date</th><th data-field="month">Month schedule</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card wide" id="c-x-fs"><h3>Stock Flags</h3><p class="xnote" id="x-fs-note"></p><input class="q" id="q-fs" placeholder="Search part, code, shop or vendor" aria-label="Search stock flags"><div class="tbox"><table class="tb" id="tb-fs"><thead><tr><th data-field="level">Flag</th><th data-field="part">Part</th><th data-field="code">Code</th><th data-field="shop">Shop</th><th data-field="stock">Stock</th><th data-field="safety">Safety</th><th data-field="cover">Days cover</th><th data-field="last">Last receipt</th><th data-field="cv">Chronic vendor</th></tr></thead><tbody></tbody></table></div></div>
     </div>
   </section>
   <section class="page" id="projects">
@@ -377,8 +382,9 @@ window.AK = (() => {
     if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
     const rh = o.rh || 30, h = rows.length * rh + 26; const { svg, w } = box(el, h);
     const lw = Math.min(w * 0.38, d3.max(rows, r => textW(svg, r.label)) + 10);
-    const max = d3.max(rows, r => Math.max(r.plan || 0, r.actual || 0, r.month || 0)) * 1.08 || 1, hasM = rows.some(r => r.month > 0);
-    const x = d3.scaleLinear([0, max], [lw, w - (o.vals ? (hasM ? 120 : 96) : 52)]);
+    const max = d3.max(rows, r => Math.max(r.plan || 0, r.actual || 0, r.month || 0, r.proj || 0)) * 1.08 || 1, hasM = rows.some(r => r.month > 0), hasP = rows.some(r => r.proj != null);
+    const hid = 'ph' + Math.random().toString(36).slice(2, 8); if (hasP) svg.append('defs').append('pattern').attr('id', hid).attr('patternUnits', 'userSpaceOnUse').attr('width', 6).attr('height', 6).attr('patternTransform', 'rotate(45)').call(g => { g.append('rect').attr('width', 6).attr('height', 6).attr('fill', '#EEF2FF'); g.append('rect').attr('width', 2.5).attr('height', 6).attr('fill', C.blue).attr('opacity', .55); });
+    const x = d3.scaleLinear([0, max], [lw, w - (o.vals ? (hasP ? 150 : hasM ? 120 : 96) : 52)]);
     svg.append('g').attr('class', 'grid').selectAll('line').data(x.ticks(4)).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', h - 22);
     svg.append('g').selectAll('text').data(x.ticks(4)).join('text').attr('x', x).attr('y', h - 6).attr('text-anchor', 'middle').text(o.tickFmt || kf);
     rows.forEach((r, i) => { const y = i * rh; const comp = r.plan && r.actual != null ? r.actual / r.plan * 100 : null;
@@ -387,9 +393,10 @@ window.AK = (() => {
       /* whole-month plan: a grey dotted outline around the plan bar, out to the month total */
       if (r.month > (r.plan || 0)) svg.append('rect').attr('x', lw + 0.5).attr('y', y + 4.5).attr('height', (rh - 8) / 2 - 1).attr('width', Math.max(0, x(r.month) - lw - 1)).attr('fill', 'none').attr('stroke', '#9AA5B1').attr('stroke-width', 1).attr('stroke-dasharray', '2 2');
       svg.append('rect').attr('x', lw).attr('y', y + 4).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.plan || 0) - lw)).attr('fill', C.plan);
+      if (r.proj != null && r.actual != null && r.proj > r.actual) svg.append('rect').attr('x', x(r.actual)).attr('y', y + 4 + (rh - 8) / 2).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.proj) - x(r.actual))).attr('fill', `url(#${hid})`).attr('stroke', C.blue).attr('stroke-width', .6); /* projected rest of month */
       svg.append('rect').attr('x', lw).attr('y', y + 4 + (rh - 8) / 2).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.actual || 0) - lw)).attr('fill', r.actual == null ? 'none' : compColor(comp, o.inv));
       svg.append('rect').attr('x', 0).attr('y', y).attr('width', w).attr('height', rh).attr('fill', 'transparent').style('cursor', o.onClick ? 'pointer' : null).on('click', () => o.onClick && o.onClick(r.label))
-        .on('mousemove', ev => tip.show(ev, r.tip || [r.label, `Plan ${(o.fmt || nf)(r.plan || 0)}`, `Actual ${r.actual == null ? '—' : (o.fmt || nf)(r.actual)}`, comp == null ? '' : `${o.inv ? 'Share of plan' : 'Compliance'} ${d3.format('.0f')(comp)}%`, r.month ? `Month plan ${(o.fmt || nf)(r.month)} · remaining ${(o.fmt || nf)(Math.max(0, r.month - (r.actual || 0)))}` : '', r.month && r.actual != null ? `${d3.format('.0f')(r.actual / r.month * 100)}% of month plan made` : ''].filter(Boolean))).on('mouseleave', tip.hide);
+        .on('mousemove', ev => tip.show(ev, r.tip || [r.label, `Plan ${(o.fmt || nf)(r.plan || 0)}`, `Actual ${r.actual == null ? '—' : (o.fmt || nf)(r.actual)}`, comp == null ? '' : `${o.inv ? 'Share of plan' : 'Compliance'} ${d3.format('.0f')(comp)}%`, r.month ? `Month plan ${(o.fmt || nf)(r.month)} · remaining ${(o.fmt || nf)(Math.max(0, r.month - (r.actual || 0)))}` : '', r.month && r.actual != null ? `${d3.format('.0f')(r.actual / r.month * 100)}% of month plan made` : '', r.proj != null ? `Projected month-end ${(o.fmt || nf)(Math.round(r.proj))}${r.month ? ' (' + d3.format('.0f')(r.proj / r.month * 100) + '% of month plan)' : ''}` : '', r.projNote || ''].filter(Boolean))).on('mouseleave', tip.hide);
       let px = x(Math.max(r.plan || 0, r.actual || 0)) + 5, py = y + rh / 2 + 4;
       if (o.vals) { const vf = v => v >= 1000 ? d3.format('.1f')(v / 1000) + ' k' : d3.format(',.0f')(v), bh = (rh - 8) / 2;
         const pT = r.plan > 0 ? vf(r.plan) : '', pW = pT.length * 6.2 + 8, pOut = r.plan > 0 && x(r.plan) - lw < pW + 2 ? x(r.plan) + pW + 6 : 0;
@@ -400,9 +407,11 @@ window.AK = (() => {
           svg.append('text').attr('x', tx).attr('y', by + bh / 2 + 3.5).attr('text-anchor', inside ? 'end' : 'start').style('font-size', '10.5px').style('font-weight', 600).style('pointer-events', 'none').style('fill', inside ? col : C.navy).text(t);
           if (k === 1) ax = inside ? end + 5 : end + tw + 4; if (!inside) px = Math.max(px, end + tw + 6); });
         if (r.month > 0) { px = ax; py = y + 4 + bh + bh / 2 + 3.5; } /* % sits just outside the actual bar, level with the actual figure */ }
-      svg.append('text').attr('x', px).attr('y', py).style('font-weight', 600).style('font-size', r.month > 0 ? '10.5px' : null).style('fill', compColor(comp, o.inv)).text(comp == null || r.actual == null ? '—' : d3.format('.0f')(comp) + '%');
+      if (r.proj != null && r.proj > (r.actual || 0)) px = Math.max(px, x(r.proj) + 5);
+      const pct = svg.append('text').attr('x', px).attr('y', py).style('font-weight', 600).style('font-size', r.month > 0 ? '10.5px' : null).style('fill', compColor(comp, o.inv)).text(comp == null || r.actual == null ? '—' : d3.format('.0f')(comp) + '%');
+      if (r.proj != null && r.month > 0) { const pp = r.proj / r.month * 100; svg.append('text').attr('x', px + ((pct.node().getComputedTextLength && pct.node().getComputedTextLength()) || 28) + 5).attr('y', py).style('font-size', '10.5px').style('font-weight', 600).style('fill', C.blue).text('→ ' + d3.format('.0f')(pp) + '% month').append('title').text('Projected month-end ÷ whole-month plan'); }
     } });
-    legend(el, [[o.planName || 'Plan', C.plan], [o.actName || 'Actual', C.navy], ['Below 80%', C.bad], ...(hasM ? [['Month plan (dotted)', '#C9D1D9']] : [])]);
+    legend(el, [[o.planName || 'Plan', C.plan], [o.actName || 'Actual', C.navy], ['Below 80%', C.bad], ...(hasM ? [['Month plan (dotted)', '#C9D1D9']] : []), ...(hasP ? [['Projected to month-end (hatched)', '#9DB2FF']] : [])]);
   }
 
   // vertical grouped/stacked bars. cats[], series [{key,name,color}], get(c,k)
@@ -785,7 +794,7 @@ window.AK = (() => {
     /* Products tab opens on the Clutch shop when no shop is picked yet */ if (b.dataset.p === 'product' && window.__P().shop === 'All' && (window.__SHOPS || []).includes('Clutch')) dash.setParams({ shop: 'Clutch', sf: 0, pf: 0 }); });
   show(location.hash.slice(1) || 'overview', false);
   [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
-  ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
+  ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm','q-fih','q-fv','q-fs'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
 })();
 </script>
 
@@ -831,6 +840,29 @@ window.AK = (() => {
       let o = out.get(r.code); if (!o) out.set(r.code, o = { ...dm, pp: 0, pa: 0, dp: 0, da: 0 });
       if (r.date <= pEnd) { o.pp += r.prod_plan || 0; o.dp += r.disp_plan || 0; } if (r.date <= aEnd) { o.pa += r.prod_actual || 0; o.da += r.disp_actual || 0; } });
     return [...out.values()].map(o => ({ ...o, pc: o.pp ? o.pa / o.pp * 100 : null, gap: Math.max(0, o.pp - o.pa), dc: o.dp ? o.da / o.dp * 100 : null, dp: o.type === 'In-house' ? null : o.dp, da: o.type === 'In-house' ? null : o.da })); };
+
+  /* ---- month-end projection: made to date + average daily output of the last 10 working days x working days left,
+     capped where a bought-in part linked in Atlas's BOM cannot cover the rest of the month (stock + receipts at the vendor's recent rate) ---- */
+  let _pj = {};
+  const PROJ = p => { const src = D('atlas_parts_daily'), m = p.month, T = window.__TODAY, anchor = [p.asof, T].sort()[0], key = [m, anchor, T].join('|');
+    if (_pj.src === src && _pj.key === key && _pj.vs === D('atlas_vendor_supply')) return _pj.v;
+    const tot = new Map(), by = new Map();
+    src.forEach(r => { if (!r.date.startsWith(m)) return; tot.set(r.date, (tot.get(r.date) || 0) + (r.prod_plan || 0)); let o = by.get(r.code); if (!o) by.set(r.code, o = new Map()); const x = o.get(r.date) || [0, 0]; x[0] += r.prod_plan || 0; x[1] += r.prod_actual || 0; o.set(r.date, x); });
+    const wd = [...tot].filter(([, v]) => v > 5000).map(([d]) => d).sort(), last = wd.filter(d => d < anchor && d < T).slice(-10), rem = wd.filter(d => d > anchor), NR = rem.length, L = new Set(last);
+    const map = new Map(); by.forEach((o, code) => { let mtd = 0, mp = 0, rs = 0; o.forEach((x, d) => { mp += x[0]; if (d <= anchor) mtd += x[1]; if (L.has(d)) rs += x[1]; }); const rate = last.length ? rs / last.length : 0; map.set(code, { code, mtd, month: mp, rate, proj: mtd + rate * NR, projMat: mtd + rate * NR }); });
+    /* bought-in check */
+    const MERGED = new Set(['9010118004', '9010118005', '9010118006', '9020118002', '9030118001']), kids = new Map(), cs = new Map(D('atlas_child_stock').map(c => [String(c.code), c])), vrate = new Map(), lastR = new Map();
+    D('atlas_bom').forEach(b => { if (b.link !== 'BOM' || b.source !== 'Vendor' || MERGED.has(String(b.code))) return; String(b.fg || '').split(';').forEach(t => { const [f, q] = t.split(':'); if (f) (kids.get(f) || kids.set(f, []).get(f)).push({ code: String(b.code), q: +q || 1, part: b.part }); }); });
+    D('atlas_vendor_supply').forEach(r => { if (!String(r.date).startsWith(m)) return; const c = String(r.code); if (L.has(r.date)) vrate.set(c, (vrate.get(c) || 0) + (+r.received || 0) / (last.length || 1)); if (+r.received > 0 && (!lastR.get(c) || r.date > lastR.get(c))) lastR.set(c, r.date); });
+    const need = new Map(); kids.forEach((ks, f) => { const o = map.get(f); if (!o) return; ks.forEach(k => need.set(k.code, (need.get(k.code) || 0) + Math.max(0, o.proj - o.mtd) * k.q)); });
+    const avail = c => (+(cs.get(c) || {}).stock || 0) + (vrate.get(c) || 0) * NR + (map.has(c) ? map.get(c).rate * NR : 0);
+    kids.forEach((ks, f) => { const o = map.get(f); if (!o) return; let worst = null;
+      ks.forEach(k => { const n = need.get(k.code) || 0; if (n <= 0 || !cs.has(k.code) || (!(+cs.get(k.code).stock > 0) && !lastR.has(k.code))) return; const cov = avail(k.code) / n; if (!worst || cov < worst.cov) worst = { ...k, cov }; });
+      if (worst && worst.cov < 1) { o.projMat = o.mtd + Math.max(0, o.proj - o.mtd) * Math.max(0, worst.cov); o.limit = { code: worst.code, part: (cs.get(worst.code) || {}).part || worst.part, cover: Math.round(worst.cov * 100) }; } });
+    _pj = { src, key, vs: D('atlas_vendor_supply'), v: { map, NR, last, rem, anchor, wd, need, cs, lastR } }; return _pj.v; };
+  const projSum = (p, codes) => { const P = PROJ(p); let s = 0, n = 0, lim = []; [...new Set(codes)].forEach(c => { const o = P.map.get(String(c)); if (!o) return; s += o.projMat; n++; if (o.limit) lim.push(o.limit); }); return n ? { v: s, lim } : null; };
+  const projNote = (P, lim) => (P.NR ? `Projection: ${P.NR} working days left at the last-${P.last.length}-day rate` : 'Month complete') + (lim.length ? ` · capped by ${lim.slice(0, 2).map(l => l.part + ' (' + l.cover + '% cover)').join(', ')}` : '');
+  window.__PROJ = PROJ;
 
   // flow: plan/actual by day for a stream at shop level
   function flow(stream, p) {
@@ -1019,7 +1051,9 @@ window.AK = (() => {
       const pq = p.sf ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
       const pEnd = planTo(p, p.asof), pl = byKey(rows.filter(r => r.date <= pEnd), 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
       const rowsM = SR(p).filter(r => r.stream === stream && r.date >= p.month + '-01' && r.date <= window.__mEnd(p.month) && (inShop(r, pq) || (pq.shop === 'All' && r.sec))), mp = byKey(rowsM, 'shop', r => r.plan);
-      pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), month: mp.get(s) || 0, actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
+      const prj = new Map(); if (stream !== 'Dispatch' && !p.future) { const cs = d3.group(rows.filter(r => r.date <= p.actEnd || true), r => r.shop); cs.forEach((v, sh) => { const ps = projSum(p, v.map(r => r.code)); if (ps) prj.set(sh, ps); }); }
+      const P0 = stream !== 'Dispatch' ? PROJ(p) : null;
+      pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), month: mp.get(s) || 0, actual: p.future ? null : (ac.get(s) || 0), proj: prj.has(s) ? Math.max(prj.get(s).v, ac.get(s) || 0) : null, projNote: prj.has(s) ? projNote(P0, prj.get(s).lim) : '' })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
     },
     production(p) {
       comboChart(ch('c-p-cum'), p); if (ch('c-p-cumi')) cumChart(ch('c-p-cumi'), 'In-house', p);
@@ -1064,12 +1098,14 @@ window.AK = (() => {
         const allIH = p.shop === 'HPDC / Die Cast', fin = new Map(); partAgg(pq, p.start, p.asof).filter(r => allIH || r.type === 'Finished' || /MACH/i.test(r.part || '')).forEach(r => { const k = r.part || r.code; kc.set(k, r.code); md.set(k, r.model); fin.set(k, r.type === 'Finished' ? 0 : 1); pl.set(k, (pl.get(k) || 0) + r.pp); ac.set(k, (ac.get(k) || 0) + r.pa); });
         const mpl = new Map(); partAgg({ ...pq, day: 'M' }, p.month + '-01', window.__mEnd(p.month)).filter(r => allIH || r.type === 'Finished' || /MACH/i.test(r.part || '')).forEach(r => { const k = r.part || r.code; mpl.set(k, (mpl.get(k) || 0) + r.pp); }); /* whole-month plan */
         const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = k => { const i = MSQ.indexOf(md.get(k)); return i < 0 ? MSQ.length : i; };
-        pvaH(em, [...pl.keys()].map(k => ({ label: k, plan: pl.get(k), month: mpl.get(k) || 0, actual: p.future ? null : ac.get(k) || 0 })).filter(r => r.plan > 0 || (allIH && r.actual > 0)).sort((x, y) => (allIH ? fin.get(x.label) - fin.get(y.label) : 0) || mi(x.label) - mi(y.label) || y.plan - x.plan), { vals: 1, rh: 38, focus: p.pf ? [...kc.keys()].find(k => kc.get(k) === p.pf) || null : null, onClick: k => dash.setParams({ pf: p.pf && kc.get(k) === p.pf ? 0 : kc.get(k) }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
+        const P1 = PROJ(p), pk = k => projSum(p, [kc.get(k)]);
+        pvaH(em, [...pl.keys()].map(k => ({ label: k, plan: pl.get(k), month: mpl.get(k) || 0, proj: p.future || !pk(k) ? null : Math.max(pk(k).v, ac.get(k) || 0), projNote: pk(k) ? projNote(P1, pk(k).lim) : '', actual: p.future ? null : ac.get(k) || 0 })).filter(r => r.plan > 0 || (allIH && r.actual > 0)).sort((x, y) => (allIH ? fin.get(x.label) - fin.get(y.label) : 0) || mi(x.label) - mi(y.label) || y.plan - x.plan), { vals: 1, rh: 38, focus: p.pf ? [...kc.keys()].find(k => kc.get(k) === p.pf) || null : null, onClick: k => dash.setParams({ pf: p.pf && kc.get(k) === p.pf ? 0 : kc.get(k) }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
       else if (!sA(em)) { const pl = new Map(), ac = new Map();
-        const pM = p.mf ? { ...p, model: 'All' } : p; partAgg(pM, p.start, p.asof, 'Finished').forEach(r => (pM.model === 'All' ? [r.model || r.mods[0]].filter(Boolean) : r.mods.filter(m => m === pM.model)).forEach(m => { pl.set(m, (pl.get(m) || 0) + r.pp); ac.set(m, (ac.get(m) || 0) + r.pa); }));
+        const pM = p.mf ? { ...p, model: 'All' } : p, mcodes = new Map(); partAgg(pM, p.start, p.asof, 'Finished').forEach(r => (pM.model === 'All' ? [r.model || r.mods[0]].filter(Boolean) : r.mods.filter(m => m === pM.model)).forEach(m => { pl.set(m, (pl.get(m) || 0) + r.pp); ac.set(m, (ac.get(m) || 0) + r.pa); (mcodes.get(m) || mcodes.set(m, []).get(m)).push(r.code); }));
         const mpl = new Map(); partAgg({ ...pM, day: 'M' }, p.month + '-01', window.__mEnd(p.month), 'Finished').forEach(r => (pM.model === 'All' ? [r.model || r.mods[0]].filter(Boolean) : r.mods.filter(m => m === pM.model)).forEach(m => mpl.set(m, (mpl.get(m) || 0) + r.pp))); /* whole-month plan */
         const MSQ = ['CD70', 'CG125', 'CG125S', 'Pridor', 'CD-Dream', 'CB125F', 'CB150F', 'K4AA'], mi = m => { const i = MSQ.indexOf(m); return i < 0 ? MSQ.length : i; };
-        pvaH(em, [...pl.keys()].map(m => ({ label: m, plan: pl.get(m), month: mpl.get(m) || 0, actual: p.future ? null : ac.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => mi(a.label) - mi(b.label)), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
+        const P2 = PROJ(p), pmk = m => projSum(p, mcodes.get(m) || []);
+        pvaH(em, [...pl.keys()].map(m => ({ label: m, plan: pl.get(m), month: mpl.get(m) || 0, proj: p.future || !pmk(m) ? null : Math.max(pmk(m).v, ac.get(m) || 0), projNote: pmk(m) ? projNote(P2, pmk(m).lim) : '', actual: p.future ? null : ac.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => mi(a.label) - mi(b.label)), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' }); }
       const et = ch('c-p-trend');
       if (!sA(et)) { const months = window.__MONTHS.filter(m => m <= window.__TODAY.slice(0, 7)), pY = planTo({}, window.__TODAY); /* current month: plan to yesterday, actuals to date */
         const rows = SR(p).filter(r => inShop(r, p) && r.date <= window.__TODAY);
@@ -1200,9 +1236,10 @@ window.AK = (() => {
       const fix = r => ({ ...r, P: r[c.pk] || 0, A: r[c.ak] || 0, PC: r[c.pk] ? (r[c.ak] || 0) / r[c.pk] * 100 : null, GAP: Math.max(0, (r[c.pk] || 0) - (r[c.ak] || 0)) });
       const cur = partAgg(p, p.start, p.asof, c.type).map(fix).filter(r => r.P || r.A);
       const pm = new Map(), am = new Map();
-      const pM = p.mf ? { ...p, model: 'All' } : p; (p.mf ? partAgg(pM, p.start, p.asof, c.type).map(fix).filter(r => r.P || r.A) : cur).forEach(r => (pM.model === 'All' ? [r.model || r.mods[0] || 'Untagged'] : r.mods.filter(m => m === pM.model)).forEach(m => { pm.set(m, (pm.get(m) || 0) + r.P); am.set(m, (am.get(m) || 0) + r.A); }));
+      const pM = p.mf ? { ...p, model: 'All' } : p, dmc = new Map(); (p.mf ? partAgg(pM, p.start, p.asof, c.type).map(fix).filter(r => r.P || r.A) : cur).forEach(r => (pM.model === 'All' ? [r.model || r.mods[0] || 'Untagged'] : r.mods.filter(m => m === pM.model)).forEach(m => { pm.set(m, (pm.get(m) || 0) + r.P); am.set(m, (am.get(m) || 0) + r.A); (dmc.get(m) || dmc.set(m, []).get(m)).push(r.code); }));
+      const P3 = c.stream !== 'Dispatch' ? PROJ(p) : null, dpk = m => P3 ? projSum(p, dmc.get(m) || []) : null;
       const mmo = new Map(); partAgg({ ...pM, day: 'M' }, p.month + '-01', window.__mEnd(p.month), c.type).map(fix).forEach(r => (pM.model === 'All' ? [r.model || r.mods[0] || 'Untagged'] : r.mods.filter(m => m === pM.model)).forEach(m => mmo.set(m, (mmo.get(m) || 0) + r.P)));
-      if (emod) pvaH(emod, [...pm.keys()].map(m => ({ label: m, plan: pm.get(m), month: mmo.get(m) || 0, actual: p.future ? null : am.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => b.plan - a.plan), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: nod });
+      if (emod) pvaH(emod, [...pm.keys()].map(m => ({ label: m, plan: pm.get(m), month: mmo.get(m) || 0, proj: p.future || !dpk(m) ? null : Math.max(dpk(m).v, am.get(m) || 0), projNote: dpk(m) ? projNote(P3, dpk(m).lim) : '', actual: p.future ? null : am.get(m) || 0 })).filter(r => r.plan > 0).sort((a, b) => b.plan - a.plan), { vals: 1, rh: 38, focus: p.mf ? p.model : null, onClick: m => dash.setParams(p.mf && p.model === m ? { model: 'All', mf: 0 } : { model: m, mf: 1 }), emptyMsg: nod });
       const cm = window.__TODAY.slice(0, 7), months = window.__MONTHS.filter(m => m <= cm);
       const tr = months.map(m => { const rs = partAgg(p, m + '-01', m === cm ? window.__TODAY : window.__mEnd(m), c.type).map(fix); return [m, { p: d3.sum(rs, r => r.P), a: d3.sum(rs, r => r.A) }]; }).filter(x => x[1].p > 0);
       const tg = new Map(tr);
@@ -1630,6 +1667,49 @@ window.AK = (() => {
       const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock', 'Cushion', 'Supply Chain', 'General'];
       const sx = v => { const i = SEQ.indexOf(String(v || '').split(', ')[0]); return i < 0 ? SEQ.length : i; };
       table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop', cmp: (x, y) => sx(x) - sx(y) || String(x).localeCompare(String(y)) }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good', cmp: (x, y) => (x === 'open' ? 0 : 1) - (y === 'open' ? 0 : 1) }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1, multi: ['status', 'shop'] });
+      /* ---- month-end outlook and chronic flags (follow the Shop, Model and Part filters) ---- */
+      { const P = PROJ(p), dims = DIMS(), T = window.__TODAY, okP = code => { const dm = dims.get(String(code)); return dm && partOk(dm, { ...p, pf: null }) && (!p.pf || String(code) === String(p.pf)); };
+        const wdDone = P.wd.filter(d => d <= P.anchor && d < T), wkKey = d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7)); return t.toISOString().slice(0, 10); };
+        const W = [...d3.group(wdDone, wkKey)].sort((a, b) => d3.ascending(a[0], b[0])).slice(-4).filter(([, ds]) => ds.length >= 3).slice(-3).map(([k, ds]) => ({ a: ds[0], b: ds[ds.length - 1], lab: `${+ds[0].slice(8)}–${day(ds[ds.length - 1])}` }));
+        const pEnd = planTo(p, p.asof), byC = new Map(); D('atlas_parts_daily').forEach(r => { if (!r.date.startsWith(p.month)) return; (byC.get(r.code) || byC.set(r.code, []).get(r.code)).push(r); });
+        const L = new Set(P.last), wkChip = arr => { const sp = document.createElement('span'); sp.className = 'wkc'; arr.forEach((v, i) => { const e = document.createElement('span'); e.textContent = v == null ? '–' : v + '%'; e.title = W[i] ? W[i].lab : ''; if (v != null) e.className = 'pill ' + (v >= 95 ? 'good' : v >= 80 ? 'warn' : 'bad'); sp.appendChild(e); }); return sp; };
+        /* in-house + finished parts */
+        const fih = []; byC.forEach((rs, code) => { if (!okP(code)) return; const dm = dims.get(code); let mp = 0, ma = 0; rs.forEach(r => { if (r.date <= pEnd) mp += r.prod_plan || 0; if (r.date <= P.anchor) ma += r.prod_actual || 0; }); if (mp <= 0) return;
+          const wk = W.map(w => { let a = 0, b = 0; rs.forEach(r => { if (r.date >= w.a && r.date <= w.b) { a += r.prod_plan || 0; b += r.prod_actual || 0; } }); return a ? Math.round(b / a * 100) : null; });
+          const pd = rs.filter(r => L.has(r.date) && (r.prod_plan || 0) > 0), miss = pd.filter(r => (r.prod_actual || 0) < 0.9 * r.prod_plan).length, c = ma / mp * 100, low = wk.filter(v => v != null && v < 85).length;
+          const lvl = c < 85 && low >= 2 && pd.length && miss / pd.length >= 0.6 ? 'Chronic' : c < 85 && low >= 1 ? 'Watch' : null; if (!lvl) return;
+          const pr = P.map.get(code) || {}; fih.push({ level: lvl, part: dm.part, code, shop: (dm.shops && dm.shops.length > 1) ? dm.shops.join(' / ') : dm.shop, mtd_pct: Math.round(c), wk, miss, pdays: pd.length, proj_pct: pr.month ? Math.round(pr.projMat / pr.month * 100) : null }); });
+        /* vendors */
+        const MK = v => /^FARAZ (ENGINEERING )?INDUSTRIES/i.test(String(v || '').trim()) ? 'FARAZ INDUSTRIES (2 vendor codes)' : v, mods = new Map();
+        D('atlas_bom').forEach(b => { const set = mods.get(String(b.code)) || new Set(); String(b.fg || '').split(/[;,]/).forEach(x => { const dm = dims.get(x.split(':')[0]); if (dm) dm.mods.forEach(m => set.add(m)); }); mods.set(String(b.code), set); });
+        const okV = r => (p.shop === 'All' || r.shop === p.shop) && (p.model === 'All' || (mods.get(String(r.code)) || new Set()).has(p.model)) && (!p.pf || String(r.code) === String(p.pf));
+        const vg = new Map(); D('atlas_vendor_supply').forEach(r => { if (!String(r.date).startsWith(p.month) || !okV(r)) return; const v = MK(r.vendor), o = vg.get(v) || vg.set(v, { s: 0, r: 0, sm: 0, parts: new Set(), w: W.map(() => [0, 0]) }).get(v); o.parts.add(String(r.code)); o.sm += +r.scheduled || 0;
+          if (r.date <= P.anchor) { o.s += +r.scheduled || 0; o.r += +r.received || 0; } W.forEach((w, i) => { if (r.date >= w.a && r.date <= w.b) { o.w[i][0] += +r.scheduled || 0; o.w[i][1] += +r.received || 0; } }); });
+        const fv = []; vg.forEach((o, v) => { if (o.s < (p.shop === 'All' && !p.pf ? 20000 : 1000)) return; const wk = o.w.map(([a, b]) => a ? Math.round(b / a * 100) : null), c = o.r / o.s * 100, low = wk.filter(x => x != null && x < 80).length;
+          const lvl = (low === W.length && W.length >= 3) || (c < 70 && low >= 2) ? 'Chronic' : c < 85 && low >= 1 ? 'Watch' : null; if (lvl) fv.push({ level: lvl, vendor: v, parts: o.parts.size, mtd_pct: Math.round(c), wk, short: Math.round(o.s - o.r), month: Math.round(o.sm) }); });
+        const chronicV = new Set(fv.filter(r => r.level === 'Chronic').map(r => r.vendor));
+        /* stock */
+        const fs = []; let below = 0; D('atlas_child_stock').forEach(x => { if (!okV(x)) return; const st = +x.stock || 0, sf = +x.safety_stock || 0, dn = P.NR ? (P.need.get(String(x.code)) || 0) / P.NR : 0, cover = dn > 0 ? st / dn : null;
+          const cvs = String(x.vendors || '').split(' / ').map(v => MK(v.trim())).filter(v => v && chronicV.has(v));
+          let lvl = cover != null && cover < 2 ? 'Critical' : sf && st < sf && (cvs.length || (cover != null && cover < 5)) ? 'High' : null; if (!lvl) { if (sf && st < sf) below++; return; }
+          const lr = P.lastR.get(String(x.code)); fs.push({ level: lvl, part: x.part, code: x.code, shop: x.shop, stock: st, safety: sf, cover: cover == null ? null : Math.round(cover * 10) / 10, last: lr ? day(lr) : '—', cv: [...new Set(cvs)].join(', ') || '—' }); });
+        /* outlook tiles */
+        { const kt = q('#c-x-out .ktiles'); kt.replaceChildren(); const fin = [...P.map.values()].filter(o => { const dm = dims.get(o.code); return dm && dm.type === 'Finished' && dm.shop !== 'Drum Gear' && okP(o.code); });
+          const tp = d3.sum(fin, o => o.month), tj = d3.sum(fin, o => o.projMat), ta = d3.sum(fin, o => o.mtd), shopsAt = [...d3.rollup(fin, v => [d3.sum(v, o => o.projMat), d3.sum(v, o => o.month)], o => dims.get(o.code).shop)].filter(([, [a, b]]) => b > 0 && a / b < 0.9).map(([k]) => k);
+          const tile = (l, v, sub, col) => { const t = document.createElement('div'); t.className = 'ktile'; t.innerHTML = '<div class="tl"></div><div class="tv"></div><div class="ts"></div>'; t.querySelector('.tl').textContent = l; const e = t.querySelector('.tv'); e.textContent = v; if (col) e.style.color = col; t.querySelector('.ts').textContent = sub; kt.appendChild(t); };
+          const pp = tp ? tj / tp * 100 : null; tile('Projected month-end', pp == null ? '—' : Math.round(pp) + '%', `${kf(tj)} of ${kf(tp)} month plan · ${kf(ta)} made`, pp == null ? null : pp >= 95 ? C.good : pp >= 85 ? C.warn : C.bad);
+          tile('Shops under 90% at month-end', String(shopsAt.length), shopsAt.join(', ') || 'None', shopsAt.length ? C.bad : C.good);
+          const ci = fih.filter(r => r.level === 'Chronic').length; tile('Chronic in-house parts', String(ci), `${fih.length - ci} more on watch`, ci ? C.bad : C.good);
+          const cvn = fv.filter(r => r.level === 'Chronic'); tile('Chronic vendors', String(cvn.length), `short ${kf(d3.sum(cvn, r => r.short))} pcs to date`, cvn.length ? C.bad : C.good);
+          const cs = fs.filter(r => r.level === 'Critical').length; tile('Critical stock', String(cs), `under 2 days of cover · ${fs.length - cs} high`, cs ? C.bad : C.good);
+          q('#x-out-asof').textContent = P.NR ? `${P.NR} working days left` : 'Month complete';
+          q('#x-out-note').textContent = `Projected month-end = made to ${day(P.anchor)} + average daily output of the last ${P.last.length} working days × ${P.NR} working days left, capped where a bought-in part linked in Atlas's BOM can't cover the rest of the month. Weeks: ${W.map(w => w.lab).join(', ')}. Drum Gear is left out of the totals because its month plan in Atlas (about 13k) doesn't match its output.`; }
+        const lv = { Chronic: 0, Critical: 0, High: 1, Watch: 1 }, pillL = v => v === 'Chronic' || v === 'Critical' ? 'bad' : 'warn', pc0 = v => v == null ? '—' : v + '%';
+        const cmpL = (x, y) => (lv[x] ?? 2) - (lv[y] ?? 2);
+        table(q('#tb-fih'), fih, [{ k: 'level', pill: pillL, cmp: cmpL }, { k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'mtd_pct', n: 1, fmt: pc0 }, { k: 'wk', render: (td, v) => td.appendChild(wkChip(v)) }, { k: 'miss', fmt: (v, r) => `${v} of ${r.pdays}` }, { k: 'proj_pct', n: 1, fmt: pc0, color: v => v == null ? null : v < 85 ? C.bad : null }], { q: q('#q-fih'), sort: 'level', dir: 1 });
+        table(q('#tb-fv'), fv, [{ k: 'level', pill: pillL, cmp: cmpL }, { k: 'vendor' }, { k: 'parts', n: 1 }, { k: 'mtd_pct', n: 1, fmt: pc0 }, { k: 'wk', render: (td, v) => td.appendChild(wkChip(v)) }, { k: 'short', n: 1 }, { k: 'month', n: 1 }], { q: q('#q-fv'), sort: 'level', dir: 1 });
+        q('#x-fs-note').textContent = `Critical: under 2 working days of cover against the projected rest-of-month need. High: below safety and either under 5 days of cover or supplied by a chronic vendor. ${below} other parts are below safety but not flagged.`;
+        table(q('#tb-fs'), fs, [{ k: 'level', pill: pillL, cmp: cmpL }, { k: 'part' }, { k: 'code' }, { k: 'shop' }, { k: 'stock', n: 1 }, { k: 'safety', n: 1 }, { k: 'cover', n: 1, fmt: v => v == null ? '—' : v, color: v => v != null && v < 2 ? C.bad : null }, { k: 'last' }, { k: 'cv' }], { q: q('#q-fs'), sort: 'level', dir: 1 }); }
     }
   };
   window.__draw = () => { window.__syncFilters(); const f = draw[window.__page]; if (f) f(window.__P()); };
