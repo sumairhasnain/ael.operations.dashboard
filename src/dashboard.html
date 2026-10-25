@@ -377,26 +377,32 @@ window.AK = (() => {
     if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
     const rh = o.rh || 30, h = rows.length * rh + 26; const { svg, w } = box(el, h);
     const lw = Math.min(w * 0.38, d3.max(rows, r => textW(svg, r.label)) + 10);
-    const max = d3.max(rows, r => Math.max(r.plan || 0, r.actual || 0)) * 1.08 || 1;
-    const x = d3.scaleLinear([0, max], [lw, w - (o.vals ? 96 : 52)]);
+    const max = d3.max(rows, r => Math.max(r.plan || 0, r.actual || 0, r.month || 0)) * 1.08 || 1, hasM = rows.some(r => r.month > 0);
+    const x = d3.scaleLinear([0, max], [lw, w - (o.vals ? (hasM ? 120 : 96) : 52)]);
     svg.append('g').attr('class', 'grid').selectAll('line').data(x.ticks(4)).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', h - 22);
     svg.append('g').selectAll('text').data(x.ticks(4)).join('text').attr('x', x).attr('y', h - 6).attr('text-anchor', 'middle').text(o.tickFmt || kf);
     rows.forEach((r, i) => { const y = i * rh; const comp = r.plan && r.actual != null ? r.actual / r.plan * 100 : null;
       const G = svg.append('g').style('opacity', o.focus && o.focus !== r.label ? 0.3 : 1); const svgR = svg; { const svg = G;
       svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', y + rh / 2 + 4).attr('text-anchor', 'end').style('font-weight', o.focus === r.label ? 700 : null).text(r.label);
+      /* whole-month plan: a grey dotted outline around the plan bar, out to the month total */
+      if (r.month > (r.plan || 0)) svg.append('rect').attr('x', lw + 0.5).attr('y', y + 4.5).attr('height', (rh - 8) / 2 - 1).attr('width', Math.max(0, x(r.month) - lw - 1)).attr('fill', 'none').attr('stroke', '#9AA5B1').attr('stroke-width', 1).attr('stroke-dasharray', '2 2');
       svg.append('rect').attr('x', lw).attr('y', y + 4).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.plan || 0) - lw)).attr('fill', C.plan);
       svg.append('rect').attr('x', lw).attr('y', y + 4 + (rh - 8) / 2).attr('height', (rh - 8) / 2).attr('width', Math.max(0, x(r.actual || 0) - lw)).attr('fill', r.actual == null ? 'none' : compColor(comp, o.inv));
       svg.append('rect').attr('x', 0).attr('y', y).attr('width', w).attr('height', rh).attr('fill', 'transparent').style('cursor', o.onClick ? 'pointer' : null).on('click', () => o.onClick && o.onClick(r.label))
-        .on('mousemove', ev => tip.show(ev, r.tip || [r.label, `Plan ${(o.fmt || nf)(r.plan || 0)}`, `Actual ${r.actual == null ? '—' : (o.fmt || nf)(r.actual)}`, comp == null ? '' : `${o.inv ? 'Share of plan' : 'Compliance'} ${d3.format('.0f')(comp)}%`])).on('mouseleave', tip.hide);
-      let px = x(Math.max(r.plan || 0, r.actual || 0)) + 5;
+        .on('mousemove', ev => tip.show(ev, r.tip || [r.label, `Plan ${(o.fmt || nf)(r.plan || 0)}`, `Actual ${r.actual == null ? '—' : (o.fmt || nf)(r.actual)}`, comp == null ? '' : `${o.inv ? 'Share of plan' : 'Compliance'} ${d3.format('.0f')(comp)}%`, r.month ? `Month plan ${(o.fmt || nf)(r.month)} · remaining ${(o.fmt || nf)(Math.max(0, r.month - (r.actual || 0)))}` : '', r.month && r.actual != null ? `${d3.format('.0f')(r.actual / r.month * 100)}% of month plan made` : ''].filter(Boolean))).on('mouseleave', tip.hide);
+      let px = x(Math.max(r.plan || 0, r.actual || 0)) + 5, py = y + rh / 2 + 4;
       if (o.vals) { const vf = v => v >= 1000 ? d3.format('.1f')(v / 1000) + ' k' : d3.format(',.0f')(v), bh = (rh - 8) / 2;
-        [[r.plan, y + 4, C.navy], [r.actual, y + 4 + bh, '#fff']].forEach(([v, by, col]) => { if (v == null || !(v > 0)) return; const t = vf(v), tw = t.length * 6.2 + 8, end = x(v);
+        const pT = r.plan > 0 ? vf(r.plan) : '', pW = pT.length * 6.2 + 8, pOut = r.plan > 0 && x(r.plan) - lw < pW + 2 ? x(r.plan) + pW + 6 : 0;
+        if (r.month > (r.plan || 0)) svg.append('text').attr('x', Math.max(x(r.month) + 4, pOut)).attr('y', y + 4 + bh / 2 + 3.5).style('font-size', '10px').style('fill', '#7A8591').style('pointer-events', 'none').text(vf(r.month) + ' month');
+        let ax = x(r.actual || 0) + 5;
+        [[r.plan, y + 4, C.navy], [r.actual, y + 4 + bh, '#fff']].forEach(([v, by, col], k) => { if (v == null || !(v > 0)) return; const t = vf(v), tw = t.length * 6.2 + 8, end = x(v);
           const inside = end - lw >= tw + 2; const tx = inside ? end - 4 : end + 4;
           svg.append('text').attr('x', tx).attr('y', by + bh / 2 + 3.5).attr('text-anchor', inside ? 'end' : 'start').style('font-size', '10.5px').style('font-weight', 600).style('pointer-events', 'none').style('fill', inside ? col : C.navy).text(t);
-          if (!inside) px = Math.max(px, end + tw + 6); }); }
-      svg.append('text').attr('x', px).attr('y', y + rh / 2 + 4).style('font-weight', 600).style('fill', compColor(comp, o.inv)).text(comp == null || r.actual == null ? '—' : d3.format('.0f')(comp) + '%');
+          if (k === 1) ax = inside ? end + 5 : end + tw + 4; if (!inside) px = Math.max(px, end + tw + 6); });
+        if (r.month > 0) { px = ax; py = y + 4 + bh + bh / 2 + 3.5; } /* % sits just outside the actual bar, level with the actual figure */ }
+      svg.append('text').attr('x', px).attr('y', py).style('font-weight', 600).style('font-size', r.month > 0 ? '10.5px' : null).style('fill', compColor(comp, o.inv)).text(comp == null || r.actual == null ? '—' : d3.format('.0f')(comp) + '%');
     } });
-    legend(el, [[o.planName || 'Plan', C.plan], [o.actName || 'Actual', C.navy], ['Below 80%', C.bad]]);
+    legend(el, [[o.planName || 'Plan', C.plan], [o.actName || 'Actual', C.navy], ['Below 80%', C.bad], ...(hasM ? [['Month plan (dotted)', '#C9D1D9']] : [])]);
   }
 
   // vertical grouped/stacked bars. cats[], series [{key,name,color}], get(c,k)
@@ -1012,7 +1018,8 @@ window.AK = (() => {
       if (sA(el)) return;
       const pq = p.sf ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
       const pEnd = planTo(p, p.asof), pl = byKey(rows.filter(r => r.date <= pEnd), 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
-      pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
+      const rowsM = SR(p).filter(r => r.stream === stream && r.date >= p.month + '-01' && r.date <= window.__mEnd(p.month) && (inShop(r, pq) || (pq.shop === 'All' && r.sec))), mp = byKey(rowsM, 'shop', r => r.plan);
+      pvaH(el, [...pl.keys()].map(s => ({ label: s, plan: pl.get(s), month: mp.get(s) || 0, actual: p.future ? null : (ac.get(s) || 0) })).filter(r => r.plan > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
     },
     production(p) {
       comboChart(ch('c-p-cum'), p); if (ch('c-p-cumi')) cumChart(ch('c-p-cumi'), 'In-house', p);
