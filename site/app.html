@@ -1961,7 +1961,7 @@ window.addEventListener('resize', () => window.__draw());
 <div class="ivbar" id="iv-bar"><label>Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label><div class="nt" id="iv-note"></div></div>
 <div class="ivk" id="iv-kpi"></div>
 <div class="grid">
-<div class="card" id="c-iv-cat"><div class="ivh"><h3>Stock Value by Category</h3><div class="ivtog" id="iv-tog" role="group" aria-label="Categories shown on this tab"></div></div><div class="ivsub" id="iv-cat-sub"></div><div class="ivdon"><div class="chart" id="iv-d-cat"></div><div class="ivleg" id="iv-l-cat"></div></div></div>
+<div class="card" id="c-iv-cat"><div class="ivh"><h3>Stock Value by Category</h3><div class="ivtog" id="iv-tog" role="group" aria-label="Categories shown on this tab"></div></div><div class="ivdon"><div class="chart" id="iv-d-cat"></div><div class="ivleg" id="iv-l-cat"></div></div></div>
 <div class="card" id="c-iv-shop"><h3>Stock Value by Shop &amp; Stage</h3><div class="ivsub">Click a shop to filter the whole dashboard</div><div class="chart" id="iv-shop"></div></div>
 <div class="card" id="c-iv-rcv"><h3>Received into Stock by Month</h3><div class="ivsub">Purchase receipts from suppliers and production put into stock (SAP 101 less 102)</div><div class="chart" id="iv-rcv"></div></div>
 <div class="card" id="c-iv-cons"><h3>Shop Consumption by Month</h3><div class="ivsub">Issues to cost centres (SAP 201 less 202 returns), raw material excluded</div><div class="chart" id="iv-cons"></div></div>
@@ -2059,7 +2059,7 @@ window.addEventListener('resize', () => window.__draw());
     /* category donut */
     const Sc = base.filter(r => pass(r, 'cat'));
     legendDonut(q('#iv-d-cat'), q('#iv-l-cat'), CATS.map(c => { const rs = Sc.filter(r => r.category === c); return { label: c, value: d3.sum(rs, r => r.value_pkr), n: rs.length, color: CATC[c], brief: CATB[c], off: !on(c) }; }).filter(x => x.value > 0), togg, off.length ? 'stock shown' : 'stock value');
-    q('#iv-cat-sub').textContent = off.length ? 'Left out across the tab: ' + off.join(', ') + '. Click a button, slice or row to switch a category back on' : 'The buttons switch a category on or off across the whole tab';
+    
 
     /* by shop and stage */
     const isShop = r => r.shop && r.shop !== '—' && r.shop !== 'Other';
