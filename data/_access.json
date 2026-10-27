@@ -136,5 +136,8 @@
   ],
   "sap_rcv_sup": [
     "inventory"
+  ],
+  "cr_conv": [
+    "savings"
   ]
 }

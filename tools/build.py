@@ -26,7 +26,7 @@ PATCHES = [
 ]
 out = src
 # The VA/CR Activities and Inventory (SAP) scripts live in their own files on the Claude dashboard (files/vacr.js, files/inv.js); inline them here.
-for _js in ('vacr.js', 'inv.js'):
+for _js in ('vacr.js', 'conv.js', 'inv.js'):
     _f = ROOT / 'src' / _js
     if f'<script src="{_js}"></script>' in out:
         if not _f.exists():
