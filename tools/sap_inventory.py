@@ -91,9 +91,19 @@ desc = pd.concat([s.drop_duplicates('Material').set_index('Material')['Material 
                   r.drop_duplicates('Material').set_index('Material')['Material Description'],
                   c.drop_duplicates('Material').set_index('Material')['Material Description']])
 desc = desc[~desc.index.duplicated()]
+LUBRX = re.compile(r'\bOILS?\b|GREASE|LUBRICANT|LUBRICATION GREAS')
+NOTLUB = re.compile(r'FILTER|SEAL|PUMP|STONE|GUN|GAUGE|GUAGE|ABSORBENT|SPILL|TRAP|UNIT|LUBRICATOR|KEROSINE|SUCTION')
+def cat2(code, g, d):
+    """Umair's rule (27 Oct): codes 10.. and 15.. are Consumables, 20.. Tools, 25.. Spares; lubricants are their own category and never counted
+    in the other three. Other codes (30.., 50.., 60.., 65.., 90.., 91..) are production parts."""
+    d = str(d or '').upper(); c = str(code)
+    if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d)): return 'Lubricants'
+    return {'10': 'Consumables', '15': 'Consumables', '20': 'Tools', '25': 'Spares'}.get(c[:2], 'Production parts')
 def info(code):
     g = mg.get(code, ''); d = desc.get(code, '')
     cat, st = cat_of(g); sh, how = shop_of(code, g, d)
+    raw = cat == 'Raw material'; cat = cat2(code, g, d)
+    if raw and cat != 'Lubricants': st = st or 'Raw material' 
     return g, d, cat, st, sh, how
 
 today = pd.Timestamp(ASOF_FLOW)
@@ -109,13 +119,15 @@ for code in set(r['Material']) | set(c['Material']) | set(s['Material']): inf[co
 for row in r[r['m'].isin(months)].itertuples(index=False):
     g, d, cat, st, sh, how = inf[row.Material]; addf(row.m, sh, cat, row.kind, float(row.amt))
 for row in c[c['eff_m'].isin(months)].itertuples(index=False):
-    g, d, cat, st, sh, how = inf[row.Material]; addf(row.eff_m, CC.get(row.cc, ''), cat, 'Consumption', float(row.val))
+    g, d, cat, st, sh, how = inf[row.Material]
+    if g in RAW: continue   # raw material goes to production orders (261); its 201/202 lines here are mostly booking corrections
+    addf(row.eff_m, CC.get(row.cc, ''), cat, 'Consumption', float(row.val))
 FLOW = [{'month': k[0], 'shop': k[1], 'category': k[2], 'kind': k[3], 'value_pkr': round(v[0]), 'lines': v[1], 'asof': ASOF_FLOW} for k, v in flow.items() if abs(v[0]) >= 1]
 
 # ---- issues by cost centre ----
 ccr = {}
 for row in c[c['eff_m'].isin(months)].itertuples(index=False):
-    if inf[row.Material][2] == 'Raw material': continue   # raw material goes to production orders (261); its 201/202 lines here are mostly booking corrections
+    if inf[row.Material][0] in RAW: continue   # raw material goes to production orders (261); its 201/202 lines here are mostly booking corrections
     cc = row.cc if isinstance(row.cc, str) else '—'; k = (row.eff_m, cc); o = ccr.setdefault(k, [0.0, 0, {}]); o[0] += float(row.val); o[1] += 1
     g = inf[row.Material][2]; o[2][g] = o[2].get(g, 0) + float(row.val)
 CCR = []
