@@ -125,17 +125,12 @@ for row in c[c['eff_m'].isin(months)].itertuples(index=False):
 FLOW = [{'month': k[0], 'shop': k[1], 'category': k[2], 'kind': k[3], 'value_pkr': round(v[0]), 'lines': v[1], 'asof': ASOF_FLOW} for k, v in flow.items() if abs(v[0]) >= 1]
 
 # ---- issues by cost centre ----
-ccr = {}
+ccr = {}   # one row per month, cost centre and stock category, so the tab's category toggles can filter it
 for row in c[c['eff_m'].isin(months)].itertuples(index=False):
     if inf[row.Material][0] in RAW: continue   # raw material goes to production orders (261); its 201/202 lines here are mostly booking corrections
-    cc = row.cc if isinstance(row.cc, str) else '—'; k = (row.eff_m, cc); o = ccr.setdefault(k, [0.0, 0, {}]); o[0] += float(row.val); o[1] += 1
-    g = inf[row.Material][2]; o[2][g] = o[2].get(g, 0) + float(row.val)
-CCR = []
-for (m, cc), (v, n, by) in ccr.items():
-    if abs(v) < 1: continue
-    top = sorted(by.items(), key=lambda x: -x[1])[0][0] if by else ''
-    CCR.append({'month': m, 'cc': cc, 'shop': CC.get(cc, ''), 'label': 'CC ' + cc + (' · ' + CC[cc] if cc in CC else ' · ' + CCN[cc] if cc in CCN else ''),
-                'value_pkr': round(v), 'lines': n, 'top_category': top, 'asof': ASOF_FLOW})
+    cc = row.cc if isinstance(row.cc, str) else '—'; k = (row.eff_m, cc, inf[row.Material][2]); o = ccr.setdefault(k, [0.0, 0]); o[0] += float(row.val); o[1] += 1
+CCR = [{'month': m, 'cc': cc, 'category': cat, 'shop': CC.get(cc, ''), 'label': 'CC ' + cc + (' · ' + CC[cc] if cc in CC else ' · ' + CCN[cc] if cc in CCN else ''),
+        'value_pkr': round(v), 'lines': n, 'asof': ASOF_FLOW} for (m, cc, cat), (v, n) in ccr.items() if abs(v) >= 1]
 
 # ---- purchase receipts by supplier, last 3 months ----
 vn = json.load(open(__import__('os').path.join(__import__('os').path.dirname(__file__), 'sap_vendor_names.json')))
@@ -143,8 +138,8 @@ for q in json.load(open(DATA + 'atlas_vendors.json')): vn.setdefault(str(q['vend
 p3 = months[-3:]
 sup = {}
 for row in r[(r['kind'] == 'Purchase') & r['m'].isin(p3)].itertuples(index=False):
-    sh = inf[row.Material][4]; k = (row.m, str(row.Supplier).lstrip('0'), sh); o = sup.setdefault(k, [0.0, 0]); o[0] += float(row.amt); o[1] += 1
-SUP = [{'month': k[0], 'supplier': k[1], 'name': vn.get(k[1], 'Supplier ' + k[1]), 'shop': k[2], 'value_pkr': round(v[0]), 'lines': v[1], 'asof': ASOF_FLOW} for k, v in sup.items() if abs(v[0]) >= 1]
+    sh = inf[row.Material][4]; k = (row.m, str(row.Supplier).lstrip('0'), sh, inf[row.Material][2]); o = sup.setdefault(k, [0.0, 0]); o[0] += float(row.amt); o[1] += 1
+SUP = [{'month': k[0], 'supplier': k[1], 'name': vn.get(k[1], 'Supplier ' + k[1]), 'shop': k[2], 'category': k[3], 'value_pkr': round(v[0]), 'lines': v[1], 'asof': ASOF_FLOW} for k, v in sup.items() if abs(v[0]) >= 1]
 
 # ---- stock register: one row per material with stock ----
 ag = s.groupby('Material').agg(qty=('Unrestricted', 'sum'), qi=('Quality Inspection', 'sum'), transit=('Transit and Transfer', 'sum'), blocked=('Blocked', 'sum'),
