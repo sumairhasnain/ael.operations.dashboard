@@ -1154,7 +1154,7 @@ const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops
 const fg = r => String(r.code).startsWith('90');
 const keep = r => !dim(r); /* a clicked shop/model shows only its own parts; the box shrinks to fit */
 table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
-table(q('#tb-parts2'), mk({ ...p, shop: 'All', model: 'All', pf: null }).filter(r => !fg(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 }); /* 27 Oct: level 2, 3, 4... parts always all shown, whatever shop / model / part filter is on */
+table(q('#tb-parts2'), mk({ ...p, shop: p.shop === 'All' && p.pf && DIMS().get(p.pf) ? DIMS().get(p.pf).shop : p.shop, model: 'All', pf: null }).filter(r => !fg(r)), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 }); /* 27 Oct: every level 2, 3, 4... part of the chosen shop (top filter or a clicked shop), whatever model / part filter is on */
 window.__vendHover([tbl, q('#tb-parts2')]);
 }
 },
