@@ -1559,13 +1559,14 @@ table(tbl, rows, [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp
 },
 inventory(p) {
 if (window.__inv) window.__inv(p);
+const pOn = !window.__invOn || window.__invOn('Production parts'), okC = window.__invOk || (() => true), offM = 'Production parts are switched off';
 const es = ch('c-i-safety');
-if (!status(es, 'atlas_shop_parts')) { const rs = D('atlas_shop_parts').filter(r => inShop(r, p)).sort((a, b) => b.below_safety - a.below_safety); const m = new Map(rs.map(r => [r.shop, r]));
+if (!pOn) empty(es, offM); else if (!status(es, 'atlas_shop_parts')) { const rs = D('atlas_shop_parts').filter(r => inShop(r, p)).sort((a, b) => b.below_safety - a.below_safety); const m = new Map(rs.map(r => [r.shop, r]));
 vbar(es, rs.map(r => r.shop), [{ key: 'h', name: 'Below 50%', color: C.bad }, { key: 's', name: '50–100%', color: C.warn }, { key: 'o', name: 'At or above', color: C.sky }], (c, k) => { const r = m.get(c); return k === 'h' ? r.below_half_safety : k === 's' ? r.below_safety - r.below_half_safety : r.with_safety_level - r.below_safety; }, { stack: 1, rot: 1, h: 260 }); }
 const ev = ch('c-i-vendor');
-if (!status(ev, 'atlas_vendors')) pvaH(ev, D('atlas_vendors').filter(r => r.month_schedule > 150000).map(r => ({ label: r.vendor.length > 24 ? r.vendor.slice(0, 23) + '…' : r.vendor, plan: r.month_schedule, actual: r.received_mtd })).sort((a, b) => a.actual / a.plan - b.actual / b.plan).slice(0, 12), { planName: 'Monthly schedule', actName: 'Received to date', rh: 26 });
+if (!pOn) empty(ev, offM); else if (!status(ev, 'atlas_vendors')) pvaH(ev, D('atlas_vendors').filter(r => r.month_schedule > 150000).map(r => ({ label: r.vendor.length > 24 ? r.vendor.slice(0, 23) + '…' : r.vendor, plan: r.month_schedule, actual: r.received_mtd })).sort((a, b) => a.actual / a.plan - b.actual / b.plan).slice(0, 12), { planName: 'Monthly schedule', actName: 'Received to date', rh: 26 });
 document.querySelectorAll('[data-asof]').forEach(el => { try { const r = D(el.dataset.asof) || [], a = (r.find(x => x.asof) || {}).asof; if (a) el.textContent = `${+a.slice(8)} ${new Date(a + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } catch (e) {} });
-if (dash.data('atlas_stock_critical').status === 'ok') table(q('#tb-crit'), D('atlas_stock_critical').filter(r => inShop(r, p)), [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover_pct', n: 1, fmt: v => v + '%', color: v => v < 25 ? C.bad : C.warn }], { q: q('#q-crit'), sort: 'cover_pct', dir: 1 });
+if (dash.data('atlas_stock_critical').status === 'ok') table(q('#tb-crit'), D('atlas_stock_critical').filter(r => inShop(r, p) && okC(r.code)), [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover_pct', n: 1, fmt: v => v + '%', color: v => v < 25 ? C.bad : C.warn }], { q: q('#q-crit'), sort: 'cover_pct', dir: 1 });
 },
 cost(p) {
 const em = ch('c-k-month'), es = ch('c-k-shop'), eu = ch('c-k-unit'), eg = ch('c-k-margin');

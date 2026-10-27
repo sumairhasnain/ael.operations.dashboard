@@ -115,6 +115,10 @@
       if (o.onClick) g.on('click', () => o.onClick(c)); });
     const lg = document.createElement('div'); lg.className = 'legend'; keys.forEach(k => { if (!cats.some(c => get(c, k))) return; const s = document.createElement('span'), i = document.createElement('i'); i.style.background = o.color(k); s.append(i, document.createTextNode(o.name(k))); lg.appendChild(s); }); el.appendChild(lg); }
 
+  /* the category buttons also steer the Atlas cards below (all of them are production parts): is this material code's category switched on? */
+  const catOfCode = c => { c = String(c || ''); return !/^\d{10}$/.test(c) ? 'Lubricants' : ({ '10': 'Consumables', '15': 'Consumables', '20': 'Tools', '25': 'Spares' })[c.slice(0, 2)] || 'Production parts'; };
+  window.__invOk = code => { const off = String(P().invoff || '').split('|'); const r = (load().S || []).find(x => x.code === String(code)); return !off.includes(r ? r.category : catOfCode(code)); };
+  window.__invOn = cat => !String(P().invoff || '').split('|').includes(cat);
   window.__inv = g => {
     const host = q('#inv-sap'); if (!host) return;
     const st = ['sap_stock', 'sap_flow', 'sap_cc', 'sap_rcv_sup'].map(id => dash.data(id).status);
