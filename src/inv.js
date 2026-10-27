@@ -72,7 +72,7 @@
 <div class="ivsep">Atlas: safety stock and vendor supply</div>
 </div>`;
     const qi = q('#q-iv'); if (qi) qi.addEventListener('input', () => window.__draw());
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => set({ invoff: 0, invage: 0 })); }
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => set({ invage: 0 }));   /* the category toggles are left as they are: only a click on a button changes them */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };

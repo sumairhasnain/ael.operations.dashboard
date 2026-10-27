@@ -736,7 +736,7 @@ const cm = window.__TODAY.slice(0, 7), on = (el, v) => el && el.classList.toggle
 on(sShop, p.shop !== 'All'); on(sModel, p.model !== 'All'); on(sPart, !!p.pf); on(sShift, p.shift !== 'All'); on(sMonth, p.month !== cm); on(iDate, !!p.day || p.asof !== (p.month === cm ? window.__TODAY : p.end)); window.__clearState(); };
 /* Clear filters turns red whenever anything narrows the view: a highlighted dropdown, a chart click (any selection
 parameter, including ones added later), a search box with text, or a table view switch away from its default */
-const NOT_FILTER = new Set(['month', 'asof', '_day', 'capsh', 'shop', 'model', 'shift']);
+const NOT_FILTER = new Set(['month', 'asof', '_day', 'capsh', 'shop', 'model', 'shift', 'invoff']);
 window.__clearState = () => { const btn = document.getElementById('f-clear'); if (!btn) return; const root = document.getElementById('ael');
 const dd = !!root.querySelector('.filters .fon:not(#f-clear)'), pr = Object.entries(dash.params() || {}).some(([k, v]) => !NOT_FILTER.has(k) && v !== 0 && v !== '0' && v !== '' && v != null && v !== false && v !== 'All' && v !== 'all');
 const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw = [...root.querySelectorAll('select[data-default]')].some(e => e.value !== e.dataset.default) || ((document.getElementById('s-bomv') || {}).value || 'all') !== 'all';
