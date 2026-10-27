@@ -273,12 +273,10 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-w-list"><h3>By Area &amp; Section</h3><input class="q" id="q-wf" placeholder="Search area or section" aria-label="Search areas"><div class="tbox" data-source="sp_attendance"><table class="tb" id="tb-wf"><thead><tr><th data-k="area">Area</th><th data-k="section">Section</th><th class="n" data-k="hc">Headcount</th><th class="n" data-k="avgp">Avg present</th><th class="n" data-k="abs">Absent days</th><th class="n" data-k="absp">Absent %</th><th class="n" data-k="leave">Leave days</th><th class="n" data-k="ot">OT hours</th><th class="n" data-k="otph">OT h / present day</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 </section>
-<section class="page" id="inventory">
+<section class="page" id="inventory"><i hidden data-source="sap_stock sap_flow sap_cc sap_rcv_sup"></i><div id="inv-sap"></div>
 <div class="grid">
 <div class="card" id="c-i-safety"><h3>Below Safety Stock <span class="chip snap" data-asof="atlas_shop_parts">14 Oct</span></h3><div class="chart" data-source="atlas_shop_parts"></div></div>
 <div class="card" id="c-i-vendor"><h3>Vendor Supply <span class="chip snap" data-asof="atlas_vendors">14 Oct</span></h3><div class="chart" data-source="atlas_vendors"></div></div>
-<div class="card" id="c-i-tools"><h3>Tools &amp; Spares <span class="chip snap">Jul 2026</span></h3><div class="chart" data-source="atlas_tools_by_shop"></div></div>
-<div class="card" id="c-i-trend"><h3>Inventory Value</h3><div class="chart" data-source="atlas_tools_trend"></div></div>
 <div class="card wide" id="c-i-crit"><h3>Critical Parts <span class="chip snap" data-asof="atlas_stock_critical">14 Oct</span></h3><input class="q" id="q-crit" placeholder="Search part" aria-label="Search critical parts"><div class="tbox"><table class="tb" id="tb-crit" data-source="atlas_stock_critical" data-row-key="code"><thead><tr><th data-field="code">Code</th><th data-field="part">Part</th><th data-field="shop">Shop</th><th class="n" data-field="safety_stock">Safety</th><th class="n" data-field="stock">Stock</th><th class="n" data-field="vendor_stock">At vendor</th><th class="n" data-field="cover_pct">Cover %</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 </section>
@@ -1560,16 +1558,12 @@ const cc = v => v == null ? null : v > 10 ? C.bad : v > 5 ? C.warn : null;
 table(tbl, rows, [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }], { q: q('#q-wf'), sort: 'absp', dir: -1 });
 },
 inventory(p) {
+if (window.__inv) window.__inv(p);
 const es = ch('c-i-safety');
 if (!status(es, 'atlas_shop_parts')) { const rs = D('atlas_shop_parts').filter(r => inShop(r, p)).sort((a, b) => b.below_safety - a.below_safety); const m = new Map(rs.map(r => [r.shop, r]));
 vbar(es, rs.map(r => r.shop), [{ key: 'h', name: 'Below 50%', color: C.bad }, { key: 's', name: '50–100%', color: C.warn }, { key: 'o', name: 'At or above', color: C.sky }], (c, k) => { const r = m.get(c); return k === 'h' ? r.below_half_safety : k === 's' ? r.below_safety - r.below_half_safety : r.with_safety_level - r.below_safety; }, { stack: 1, rot: 1, h: 260 }); }
 const ev = ch('c-i-vendor');
 if (!status(ev, 'atlas_vendors')) pvaH(ev, D('atlas_vendors').filter(r => r.month_schedule > 150000).map(r => ({ label: r.vendor.length > 24 ? r.vendor.slice(0, 23) + '…' : r.vendor, plan: r.month_schedule, actual: r.received_mtd })).sort((a, b) => a.actual / a.plan - b.actual / b.plan).slice(0, 12), { planName: 'Monthly schedule', actName: 'Received to date', rh: 26 });
-const et = ch('c-i-tools');
-if (!status(et, 'atlas_tools_by_shop')) { const rs = D('atlas_tools_by_shop').filter(r => r.stock_value_pkr_m > 0 && (p.shop === 'All' || r.shop === p.shop || (p.shop === 'HPDC / Die Cast' && r.shop === 'HPDC') || (p.shop === 'Hubs' && r.shop === 'Hub'))).sort((a, b) => b.stock_value_pkr_m - a.stock_value_pkr_m).slice(0, 12); const m = new Map(rs.map(r => [r.shop, r]));
-vbar(et, rs.map(r => r.shop), [{ key: 'tools_pkr_m', name: 'Tools', color: C.navy }, { key: 'spares_pkr_m', name: 'Spares', color: C.blue }, { key: 'consumables_pkr_m', name: 'Consumables', color: C.cyan }], (c, k) => m.get(c)[k], { stack: 1, rot: 1, h: 260, fmt: v => f1(v) + ' M', yFmt: v => v + 'M', emptyMsg: 'No tools inventory mapped to this shop' }); }
-const etr = ch('c-i-trend');
-if (!status(etr, 'atlas_tools_trend')) lines(etr, D('atlas_tools_trend').map(r => r.month), [{ name: 'PKR M', color: C.blue, values: D('atlas_tools_trend').map(r => r.stock_value_pkr_m) }], { xFmt: mon, fmt: f1, yFmt: v => v + 'M', min: 340 });
 document.querySelectorAll('[data-asof]').forEach(el => { try { const r = D(el.dataset.asof) || [], a = (r.find(x => x.asof) || {}).asof; if (a) el.textContent = `${+a.slice(8)} ${new Date(a + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`; } catch (e) {} });
 if (dash.data('atlas_stock_critical').status === 'ok') table(q('#tb-crit'), D('atlas_stock_critical').filter(r => inShop(r, p)), [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover_pct', n: 1, fmt: v => v + '%', color: v => v < 25 ? C.bad : C.warn }], { q: q('#q-crit'), sort: 'cover_pct', dir: 1 });
 },
@@ -1680,3 +1674,4 @@ window.addEventListener('resize', () => window.__draw());
 })();
 </script>
 <script src="vacr.js"></script>
+<script src="inv.js"></script>

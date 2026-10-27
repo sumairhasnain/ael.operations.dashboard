@@ -124,5 +124,17 @@
   ],
   "cr_ideas": [
     "savings"
+  ],
+  "sap_stock": [
+    "inventory"
+  ],
+  "sap_flow": [
+    "inventory"
+  ],
+  "sap_cc": [
+    "inventory"
+  ],
+  "sap_rcv_sup": [
+    "inventory"
   ]
 }
