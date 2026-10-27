@@ -137,7 +137,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <button class="tab" role="tab" id="t-workforce" data-p="workforce">Workforce</button>
 <button class="tab" role="tab" id="t-inventory" data-p="inventory">Inventory</button>
 <button class="tab" role="tab" id="t-cost" data-p="cost">Cost</button>
-<button class="tab" role="tab" id="t-savings" data-p="savings">Savings</button>
+<button class="tab" role="tab" id="t-savings" data-p="savings">VA/CR Activities</button>
 <button class="tab" role="tab" id="t-issues" data-p="issues">Issues</button>
 <button class="tab" role="tab" id="t-projects" data-p="projects">Projects</button>
 <button class="tab" role="tab" id="t-bom" data-p="bom">B.O.M</button>
@@ -290,13 +290,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card" id="c-k-margin"><h3>Margin <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_unit_cost"></div></div>
 </div>
 </section>
-<section class="page" id="savings">
-<div class="grid">
-<div class="card" id="c-s-month"><h3>Target vs Realised <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_savings"></div></div>
-<div class="card" id="c-s-stage"><h3>Pipeline <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_ideas"></div></div>
-<div class="card wide" id="c-s-table"><h3>Idea Tracker <span class="chip smp">Sample</span></h3><div class="tbox"><table class="tb" id="tb-ideas" data-source="smp_ideas" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="idea">Idea</th><th data-field="shop">Area</th><th data-field="lever">Lever</th><th class="n" data-field="est_saving_pkr_m">Target PKR M</th><th class="n" data-field="realised_pkr_m">Realised PKR M</th><th data-field="stage">Stage</th><th data-field="target_date">Due</th></tr></thead><tbody></tbody></table></div></div>
-</div>
-</section>
+<section class="page" id="savings"></section>
 <section class="page" id="issues">
 <div class="grid">
 <div class="card" id="c-x-shop"><h3>Open by Shop</h3><div class="chart" data-source="atlas_issues"></div></div>
@@ -1590,13 +1584,7 @@ if (!status(eg, 'smp_unit_cost')) { const rs = D('smp_unit_cost').filter(r => in
 pvaH(eg, rs.sort((a, b) => b.actual / b.plan - a.actual / a.plan), { inv: 1, planName: 'Price', actName: 'Unit cost', rh: 24, emptyMsg: 'No products mapped to this shop' }); }
 },
 savings(p) {
-const em = ch('c-s-month'), es = ch('c-s-stage');
-if (!status(em, 'smp_savings')) { const rs = D('smp_savings'); let ct = 0, ca = 0; const cumT = rs.map(r => (ct += r.target_pkr_m)), cumA = rs.map(r => r.realised_pkr_m == null ? null : (ca += r.realised_pkr_m));
-lines(em, rs.map(r => r.month), [{ name: 'Target', color: C.grey, dash: '5 4', values: cumT }, { name: 'Realised', color: C.navy, values: cumA }], { xFmt: mon, fmt: v => f1(v) + ' M', yFmt: v => v + 'M', marker: p.month, min: 0 }); }
-const ideas = D('smp_ideas').filter(r => p.shop === 'All' || r.shop === p.shop);
-if (!status(es, 'smp_ideas')) { const st = ['Idea', 'Evaluate', 'Approved', 'Implementing', 'Done']; const g = d3.rollup(ideas, v => ({ e: d3.sum(v, r => r.est_saving_pkr_m), r: d3.sum(v, r => r.realised_pkr_m) }), r => r.stage);
-vbar(es, st.filter(s => g.get(s)), [{ key: 'e', name: 'Target', color: C.plan }, { key: 'r', name: 'Realised', color: C.navy }], (c, k) => g.get(c)[k], { fmt: v => f1(v) + ' M', yFmt: v => v + 'M', emptyMsg: 'No ideas for this shop' }); }
-if (dash.data('smp_ideas').status === 'ok') table(q('#tb-ideas'), ideas, [{ k: 'ref' }, { k: 'idea' }, { k: 'shop' }, { k: 'lever' }, { k: 'est_saving_pkr_m', n: 1, fmt: f1 }, { k: 'realised_pkr_m', n: 1, fmt: f1 }, { k: 'stage', pill: v => ({ Done: 'good', Implementing: 'warn', Approved: 'warn' })[v] || 'neu' }, { k: 'target_date', fmt: day }], { sort: 'est_saving_pkr_m', dir: -1 });
+if (window.__vacr) window.__vacr(p);
 },
 projects(p) {
 const es = ch('c-j-status'), eo = ch('c-j-owner'), host = q('#j-gantts'); if (status(es, 'jira_issues') | status(eo, 'jira_issues')) return;
@@ -1691,3 +1679,4 @@ dash.onData(() => window.__draw());
 window.addEventListener('resize', () => window.__draw());
 })();
 </script>
+<script src="vacr.js"></script>

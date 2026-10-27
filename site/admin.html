@@ -88,7 +88,7 @@
           ${u.id === me.id ? '' : `<button class="btn sm ghost" data-a="toggle">${u.active ? 'Disable' : 'Enable'}</button><button class="btn sm danger" data-a="del">Delete</button>`}
         </div></td></tr>`).join('')}
       </tbody></table></div>
-      <p class="small muted">Yellow tabs (Cost, Savings, Workforce) are restricted: viewers see them only if you tick them. Managers and admins see everything.</p>`;
+      <p class="small muted">Yellow tabs (Cost, VA/CR Activities, Workforce) are restricted: viewers see them only if you tick them. Managers and admins see everything.</p>`;
     el.querySelectorAll('button[data-a]').forEach(b => b.onclick = () => {
       const u = users.find(x => x.id === b.closest('tr').dataset.id);
       ({ edit: () => editDlg(u), reset: () => resetDlg(u), toggle: () => toggle(u), del: () => delDlg(u) })[b.dataset.a]();
@@ -116,7 +116,7 @@
     const rows = [
       ['Open the dashboard (all shops and models)', 1, 1, 1],
       ['Standard tabs: Overview, Production, Products, Vendor Supply, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects, B.O.M', 1, 1, 'Ticked tabs'],
-      ['Restricted tabs: Cost, Savings, Workforce', 1, 1, 'Only if ticked'],
+      ['Restricted tabs: Cost, VA/CR Activities, Workforce', 1, 1, 'Only if ticked'],
       ['Change own password', 1, 1, 1],
       ['Reset own forgotten password by email', 1, 1, 1],
       ['Add, edit, disable or delete users', 1, 0, 0],

@@ -25,6 +25,12 @@ PATCHES = [
      "if (!pages.includes(p) || !window.__PORTAL.canTab(p)) p = window.__PORTAL.firstTab;"),
 ]
 out = src
+# The VA/CR Activities tab's script lives in its own file on the Claude dashboard (files/vacr.js); inline it here.
+_vacr = ROOT / 'src' / 'vacr.js'
+if '<script src="vacr.js"></script>' in out:
+    if not _vacr.exists():
+        sys.exit('BUILD STOPPED: src/vacr.js is missing.')
+    out = out.replace('<script src="vacr.js"></script>', '<script>\n' + _vacr.read_text(encoding='utf-8') + '\n</script>')
 for name, rx, rep in PATCHES:
     out, n = re.subn(rx, rep, out)
     if n == 0:
