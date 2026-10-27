@@ -43,13 +43,13 @@
 .ael #savings .ccsav{color:#1E8C5A;font-weight:600} .ael #savings .ccup{color:#D0312D;font-weight:600}
 `; document.head.appendChild(st); }
 
-  const mount = () => { if (q('#c-cc')) return true; const anchor = q('#c-cr-q'); if (!anchor) return false; const grid = anchor.parentElement;
+  const mount = () => { if (q('#c-cc')) return true; const sec = q('#savings'); if (!sec || !q('#c-cr-reg')) return false;   /* placed at the bottom of the tab, after the ideas tables */
     const w = document.createElement('div'); w.className = 'grid'; w.innerHTML = `<div class="card wide" id="c-cc"><div class="cchead"><h3>Conversion Cost per Unit (Rs) · 2025-26 vs 2026-27</h3>
 <div class="ccctl"><select id="cc-f-prod" aria-label="Product"></select><select id="cc-f-idea" aria-label="CR idea"></select><span class="ccel" id="cc-el" role="group" aria-label="Cost element"></span></div></div>
 <div class="ccsub" id="cc-sub"></div><div class="ccgrid" id="cc-grid"></div>
 <div class="ccsplit"><div><div class="ccsub" style="font-weight:600;color:var(--navy);font-size:12.5px">Saving per unit by product and cost element</div><div class="tbox"><table class="tb" id="tb-ccv"><thead><tr><th data-k="product">Product</th><th data-k="y0" class="n">Previous FY</th><th data-k="y1" class="n">Latest FY</th><th data-k="sav" class="n">Saving</th><th data-k="pct" class="n">% change</th><th data-k="lab" class="n">Labor</th><th data-k="tool" class="n">Tools &amp; Cons.</th><th data-k="util" class="n">Utilities</th><th data-k="rm" class="n">Repair &amp; Maint.</th><th data-k="cop" class="n">% of COP</th><th data-k="ideas" class="n">CR ideas Rs/unit</th></tr></thead><tbody></tbody></table></div></div>
 <div><div class="ccsub" style="font-weight:600;color:var(--navy);font-size:12.5px" id="cc-ih">CR ideas behind the conversion saving</div><div class="tbox"><table class="tb" id="tb-ccv-i"><thead><tr><th data-k="key">#</th><th data-k="item">Idea</th><th data-k="prod">Product</th><th data-k="el">Element</th><th data-k="cr_unit" class="n">Rs/unit</th><th data-k="status">Status</th></tr></thead><tbody></tbody></table></div></div></div></div>`;
-    grid.parentElement.insertBefore(w, grid);
+    sec.appendChild(w);
     const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => set({ ccprod: 0, ccel: 0 })); return true; };
 
   function stack(el, years, val, o) {   // stacked bars for one product, one bar per year
