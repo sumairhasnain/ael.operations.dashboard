@@ -12,9 +12,9 @@
   const nf = d3.format(','), n2 = d3.format(',.2~f');
   const mon = s => { const [y, m] = String(s).split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1] + '-' + y.slice(2); };
   const dmy = s => s ? `${+s.slice(8)} ${mon(s.slice(0, 7)).slice(0, 3)} ${s.slice(2, 4)}` : '—';
-  const CATS = ['Consumables', 'Tools', 'Spares', 'Lubricants', 'Production parts'];
-  const CATC = { Consumables: '#051C2C', Tools: '#2251FF', Spares: '#00A9F4', Lubricants: '#1F9E89', 'Production parts': '#B9C1C9' };
-  const CATB = { Consumables: 'Material codes starting 10.. and 15.. (includes ingots, resin and other raw material), lubricants left out', Tools: 'Material codes starting 20.., lubricants left out', Spares: 'Material codes starting 25..', Lubricants: 'Engine, gear, hydraulic, cutting and industrial oils and greases, whatever the code', 'Production parts': 'Other codes (30.., 50.., 60.., 65.., 90.., 91..): child, in-house and finished parts' };
+  const CATS = ['Raw Material', 'Consumables', 'Tools', 'Spares', 'Lubricants', 'Production parts'];
+  const CATC = { 'Raw Material': '#7B61FF', Consumables: '#051C2C', Tools: '#2251FF', Spares: '#00A9F4', Lubricants: '#1F9E89', 'Production parts': '#8E9AA6' };
+  const CATB = { 'Raw Material': 'Codes 10.. / 15.. that are production inputs: ingots, plastic resin, steel sheet, brass and steel rods (SAP raw-material groups or a shop\'s bought-in input)', Consumables: 'Other material codes starting 10.. and 15.., lubricants left out', Tools: 'Material codes starting 20.., lubricants left out', Spares: 'Material codes starting 25..', Lubricants: 'Engine, gear, hydraulic, cutting and industrial oils and greases, whatever the code', 'Production parts': 'Other codes (30.., 50.., 60.., 65.., 90.., 91..): child, in-house and finished parts' };
   const STG = ['Imported parts', 'Vendor parts', 'Outsourced', 'In-house WIP', 'Finished', 'Raw material', 'Shop spares & consumables', ''];
   const STC = { 'Imported parts': '#051C2C', 'Vendor parts': '#2251FF', Outsourced: '#7B61FF', 'In-house WIP': '#00A9F4', Finished: '#1F9E89', 'Raw material': '#E0A100', 'Shop spares & consumables': '#AAE6F0', '': '#C9D1D9' };
   const STN = s => s || 'Other';

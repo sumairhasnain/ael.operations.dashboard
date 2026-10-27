@@ -1,11 +1,12 @@
 """Build the Inventory tab datasets from three SAP exports (MB52 stock, MB51 101/102 receipts, MB51 201/202 issues).
-Usage: python3 make_inv.py <receiving.xlsx> <consumption.xlsx> <mb52.xlsx> <out_dir>
+Usage: python3 make_inv.py <receiving.xlsx> <consumption.xlsx> <mb52.xlsx> <out_dir> [mb52 date YYYY-MM-DD]
 Writes sap_stock.json (one row per material in stock), sap_flow.json (monthly receipts/issues by shop),
 sap_cc.json (monthly issues by cost centre) and sap_rcv_sup.json (purchase receipts by supplier, last 3 months)."""
 import sys, json, re, datetime as dt
 import pandas as pd
 
 RCV, CONS, MB52, OUT = sys.argv[1:5]
+STOCK_ASOF = sys.argv[5] if len(sys.argv) > 5 else dt.date.today().isoformat()   # date the MB52 was taken
 DATA = __import__('os').path.join(__import__('os').path.dirname(__file__), '..', 'data') + '/'
 TXT = {'Material': str, 'Storage Location': str, 'Cost Center': str, 'Supplier': str, 'Movement Type': str, 'Material Group': str}
 r = pd.read_excel(RCV, dtype=TXT); c = pd.read_excel(CONS, dtype=TXT); s = pd.read_excel(MB52, dtype=TXT)
@@ -46,7 +47,9 @@ def cat_of(g):
             return ('Shop spares & consumables' if st == 'Shop spares & consumables' else 'Shop parts'), st
     return 'Other', ''
 
+CARB_RM = {'1010410003', '1010410004', '1010410005', '1010410006', '1010410007', '1010410008', '1010410009', '1010410010', '1010410011'}   # brass / SS / free-cutting rods and brass tube: Carburetor child parts' raw material (Umair, 28 Oct)
 def shop_of(code, g, desc):
+    if code in CARB_RM: return 'Carb Child Parts', 'Umair'
     if code in atlas: return atlas[code], 'Atlas'
     g = str(g or '')
     for p, sh in PFX:
@@ -94,10 +97,13 @@ desc = desc[~desc.index.duplicated()]
 LUBRX = re.compile(r'\bOILS?\b|GREASE|LUBRICANT|LUBRICATION GREAS')
 NOTLUB = re.compile(r'FILTER|SEAL|PUMP|STONE|GUN|GAUGE|GUAGE|ABSORBENT|SPILL|TRAP|UNIT|LUBRICATOR|KEROSINE|SUCTION')
 def cat2(code, g, d):
-    """Umair's rule (27 Oct): codes 10.. and 15.. are Consumables, 20.. Tools, 25.. Spares; lubricants are their own category and never counted
+    """Umair's rule (27 Oct, Raw Material added 28 Oct): codes 10.. and 15.. are Consumables, 20.. Tools, 25.. Spares; lubricants are their own category and never counted
     in the other three. Other codes (30.., 50.., 60.., 65.., 90.., 91..) are production parts."""
     d = str(d or '').upper(); c = str(code)
     if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d)): return 'Lubricants'
+    # 28 Oct: Raw Material is its own category: 10../15.. codes in the SAP raw-material groups, or held as a shop's bought-in
+    # input (e.g. brass / steel rods for Carburetor child parts, plastic resin for Polymer) rather than its general stores
+    if c[:2] in ('10', '15') and (g in RAW or (any(g.startswith(p) for p, _ in PFX) and not re.search(r'GEN$|-GE$|-G$', g))): return 'Raw Material'
     return {'10': 'Consumables', '15': 'Consumables', '20': 'Tools', '25': 'Spares'}.get(c[:2], 'Production parts')
 def info(code):
     g = mg.get(code, ''); d = desc.get(code, '')
@@ -163,7 +169,7 @@ for code, a in ag.iterrows():
                 'value_pkr': round(float(a['value'])), 'unit_pkr': round(float(a['value']) / float(a['qty']), 2) if a['qty'] else None, 'slocs': a['slocs'],
                 'last_rcv': lrd.strftime('%Y-%m-%d') if age is not None else None, 'last_issue': lid.strftime('%Y-%m-%d') if lid is not None and not pd.isna(lid) else None,
                 'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'cover_days': round(float(a['qty']) / rate) if rate else None,
-                'age_days': age, 'age_bucket': bucket, 'asof': dt.date.today().isoformat()})
+                'age_days': age, 'age_bucket': bucket, 'asof': STOCK_ASOF})
 
 def dump(n, rows):
     json.dump(rows, open(OUT + '/' + n + '.json', 'w'), ensure_ascii=False, separators=(',', ':'))
