@@ -72,7 +72,7 @@
 <div class="ivsep">Atlas: safety stock and vendor supply</div>
 </div>`;
     const qi = q('#q-iv'); if (qi) qi.addEventListener('input', () => window.__draw());
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => set({ invage: 0 }));   /* the category toggles are left as they are: only a click on a button changes them */ }
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants'); set({ invage: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
