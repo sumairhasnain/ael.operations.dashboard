@@ -82,7 +82,8 @@
     const meta = new Map(C0.map(r => [r.product, r]));
     /* ideas that belong to a product: same shop, and the same model (or an all-model idea) */
     const ideaProd = (r, pr) => { const m = meta.get(pr); return m && r.dash_shop === m.dash_shop && (r.model === m.model || r.model === 'All models' || m.model === 'All models'); };
-    const ideasPass = r => (!p.crcat || r.category === p.crcat) && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && elOf(r) !== 'Material';
+    const KP = { done: r => r.status === 'Completed', ip: r => r.status === 'In Progress', pend: r => r.status === 'Pending' || r.status === 'Proposal', capex: r => +r.investment_pkr > 0 };   /* the KPI tiles at the top of the tab */
+    const ideasPass = r => (!p.crcat || r.category === p.crcat) && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && (!KP[p.crkpi] || KP[p.crkpi](r)) && elOf(r) !== 'Material';
     const selIdea = p.crsel ? ideasAll.filter(r => r.key === p.crsel) : [];
     const ideaHit = pr => !selIdea.length || selIdea.some(r => ideaProd(r, pr));
 

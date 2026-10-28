@@ -1715,7 +1715,9 @@ window.addEventListener('resize', () => window.__draw());
   const mon = s => { const [y, m] = String(s).split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1] + '-' + y.slice(2); };
   const q = s => document.querySelector(s);
   const P = () => dash.params() || {};
-  const KEYS = ['crcat', 'crshop', 'crst', 'crq', 'crmodel', 'crsrc', 'crsel'];
+  const KEYS = ['crcat', 'crshop', 'crst', 'crq', 'crmodel', 'crsrc', 'crsel', 'crkpi'];
+  /* KPI tiles act as filters (dash param crkpi) */
+  const KPI = { done: ['Achieved', r => r.status === 'Completed'], ip: ['In progress', r => r.status === 'In Progress'], pend: ['Pending + proposals', r => r.status === 'Pending' || r.status === 'Proposal'], capex: ['Needs investment', r => +r.investment_pkr > 0] };
   const set = o => dash.setParams(o);
   const tog = (k, v) => set({ [k]: P()[k] === v ? 0 : v, crsel: 0 });
 
@@ -1733,6 +1735,8 @@ window.addEventListener('resize', () => window.__draw());
 .ael #savings .crmt button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .ael #savings .crmt button:disabled{opacity:.42;cursor:not-allowed}
 .ael #savings #cr-metric button{font-size:12.5px;padding:0 12px;height:28px;box-sizing:border-box}
+.ael #savings .ktile[data-k]{cursor:pointer;transition:background .15s,opacity .15s}.ael #savings .ktile[data-k]:hover{background:#F4F7FB}
+.ael #savings .ktile.kon{background:#EEF4FF;box-shadow:inset 0 3px 0 var(--navy)}.ael #savings .ktile.koff{opacity:.45}
 .ael #savings .crcrumbs{display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;min-height:0}
 .ael #savings .crcrumbs button{font:inherit;font-size:11.5px;border:1px solid #E0A100;background:#FFF6DA;color:#000;border-radius:12px;padding:2px 10px;cursor:pointer}
 .ael #savings .crcrumbs button:hover{background:#FFE8A3}
@@ -1774,7 +1778,7 @@ window.addEventListener('resize', () => window.__draw());
   const srcOf = r => /VA\/CR sheet/.test(r.source) ? 'VA/CR sheets' : 'Shop CR plans';
   const pass = (r, p, g, skip) => (g.shop === 'All' || r.dash_shop === g.shop) && (g.model === 'All' || r.model === g.model || r.model === 'All models')
     && (skip === 'cat' || !p.crcat || r.category === p.crcat) && (skip === 'shop' || !p.crshop || r.shop === p.crshop) && (skip === 'model' || !p.crmodel || modelOf(r) === p.crmodel)
-    && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && (!p.crsrc || srcOf(r) === p.crsrc);
+    && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && (!p.crsrc || srcOf(r) === p.crsrc) && (skip === 'kpi' || !KPI[p.crkpi] || KPI[p.crkpi][1](r));
   const metric = () => window.__vacrMetric || 'annual';
   const mval = rs => metric() === 'count' ? new Set(rs.map(r => r.key)).size : metric() === 'unit' ? d3.sum(rs, r => r.cr_unit || 0) : d3.sum(rs, r => metric() === 'monthly' ? r.monthly_pkr : r.annual_pkr);
   const fV = v => metric() === 'count' ? v : metric() === 'unit' ? d3.format(',.2f')(v) : fM(v);
@@ -1857,10 +1861,12 @@ window.addEventListener('resize', () => window.__draw());
   function selBox(id, ph, opts, key) { const s = q('#' + id); if (!s) return; const cur = P()[key] || ''; if (s.dataset.k !== opts.join('|')) { s.dataset.k = opts.join('|'); s.replaceChildren(); [['', ph], ...opts.map(o => Array.isArray(o) ? o : [o, o])].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); }); }
     s.value = cur; s.classList.toggle('fon', !!cur); if (!s._b) { s._b = 1; s.addEventListener('change', () => set({ [key]: s.value || 0, crsel: 0 })); } }
 
-  function crumbs(el) { el.replaceChildren(); const p = P(); const names = { crcat: 'Category', crshop: 'Shop', crst: 'Status', crq: 'Quarter', crmodel: 'Model', crsrc: 'Source' };
-    Object.keys(names).forEach(k => { if (!p[k]) return; const b = document.createElement('button'); b.textContent = `${names[k]}: ${k === 'crq' ? QL[p[k]] : p[k]}  ✕`; b.title = 'Remove this filter'; b.addEventListener('click', () => set({ [k]: 0, crsel: 0 })); el.appendChild(b); }); }
+  function crumbs(el) { el.replaceChildren(); const p = P(); const names = { crcat: 'Category', crshop: 'Shop', crst: 'Status', crq: 'Quarter', crmodel: 'Model', crsrc: 'Source', crkpi: 'Showing' };
+    Object.keys(names).forEach(k => { if (!p[k]) return; const b = document.createElement('button'); b.textContent = `${names[k]}: ${k === 'crq' ? QL[p[k]] : k === 'crkpi' ? (KPI[p[k]] || [p[k]])[0] : p[k]}  ✕`; b.title = 'Remove this filter'; b.addEventListener('click', () => set({ [k]: 0, crsel: 0 })); el.appendChild(b); }); }
 
-  function tile(kt, l, v, s, col) { const t = document.createElement('div'); t.className = 'ktile'; const a = document.createElement('div'); a.className = 'tl'; a.textContent = l; const b = document.createElement('div'); b.className = 'tv'; b.textContent = v; if (col) b.style.color = col; const c = document.createElement('div'); c.className = 'ts'; c.textContent = s; t.append(a, b, c); kt.appendChild(t); }
+  function tile(kt, l, v, s, col, k) { const t = document.createElement('div'); t.className = 'ktile';
+    if (k) { const cur = P().crkpi; t.dataset.k = k; if (k !== 'all' && cur === k) t.classList.add('kon'); else if (cur && KPI[cur] && k !== 'all') t.classList.add('koff'); t.title = k === 'all' ? (cur ? 'Click to show all ideas again' : 'All ideas in this selection') : cur === k ? 'Click again to show all ideas' : 'Click to show only these ideas across the tab';
+      t.addEventListener('click', () => set({ crkpi: k === 'all' || P().crkpi === k ? 0 : k, crsel: 0 })); } const a = document.createElement('div'); a.className = 'tl'; a.textContent = l; const b = document.createElement('div'); b.className = 'tv'; b.textContent = v; if (col) b.style.color = col; const c = document.createElement('div'); c.className = 'ts'; c.textContent = s; t.append(a, b, c); kt.appendChild(t); }
 
   window.__vacr = g => {
     const sec = q('#savings'); if (!sec) return;
@@ -1879,13 +1885,13 @@ window.addEventListener('resize', () => window.__draw());
     crumbs(q('#cr-crumbs'));
     const rs = all.filter(r => pass(r, p, g)), keys = new Set(rs.map(r => r.key));
     /* KPI tiles */
-    { const kt = q('#cr-kpi'); kt.replaceChildren(); const ann = d3.sum(rs, r => r.annual_pkr), mo = d3.sum(rs, r => r.monthly_pkr), done = rs.filter(r => r.status === 'Completed'), ip = rs.filter(r => r.status === 'In Progress'), inv = d3.rollups(rs.filter(r => r.investment_pkr), v => v[0].investment_pkr, r => r.key);
+    { const rs = all.filter(r => pass(r, p, g, 'kpi')), keys = new Set(rs.map(r => r.key)); const kt = q('#cr-kpi'); kt.replaceChildren(); const ann = d3.sum(rs, r => r.annual_pkr), mo = d3.sum(rs, r => r.monthly_pkr), done = rs.filter(r => r.status === 'Completed'), ip = rs.filter(r => r.status === 'In Progress'), inv = d3.rollups(rs.filter(r => r.investment_pkr), v => v[0].investment_pkr, r => r.key);
       const n = s => new Set(rs.filter(r => r.status === s).map(r => r.key)).size;
-      tile(kt, 'Annual saving (run-rate)', fRs(ann), `${fRs(mo)} a month · ${keys.size} ideas`);
-      tile(kt, 'Achieved (completed)', fRs(d3.sum(done, r => r.annual_pkr)), `${pct(d3.sum(done, r => r.annual_pkr), ann)} of the run-rate · ${n('Completed')} ideas`, '#1E8C5A');
-      tile(kt, 'In progress', fRs(d3.sum(ip, r => r.annual_pkr)), `${n('In Progress')} ideas being implemented`, '#B07A00');
-      tile(kt, 'Pending + proposals', fRs(d3.sum(rs.filter(r => r.status === 'Pending' || r.status === 'Proposal'), r => r.annual_pkr)), `${n('Pending')} pending · ${n('Proposal')} VA/CR proposals`);
-      tile(kt, 'Investment needed', inv.length ? fRs(d3.sum(inv, d => d[1])) : '—', inv.length ? `${inv.length} idea${inv.length === 1 ? '' : 's'} need capex` : 'No capex in this selection'); }
+      tile(kt, 'Annual saving (run-rate)', fRs(ann), `${fRs(mo)} a month · ${keys.size} ideas`, null, 'all');
+      tile(kt, 'Achieved (completed)', fRs(d3.sum(done, r => r.annual_pkr)), `${pct(d3.sum(done, r => r.annual_pkr), ann)} of the run-rate · ${n('Completed')} ideas`, '#1E8C5A', 'done');
+      tile(kt, 'In progress', fRs(d3.sum(ip, r => r.annual_pkr)), `${n('In Progress')} ideas being implemented`, '#B07A00', 'ip');
+      tile(kt, 'Pending + proposals', fRs(d3.sum(rs.filter(r => r.status === 'Pending' || r.status === 'Proposal'), r => r.annual_pkr)), `${n('Pending')} pending · ${n('Proposal')} VA/CR proposals`, null, 'pend');
+      tile(kt, 'Investment needed', inv.length ? fRs(d3.sum(inv, d => d[1])) : '—', inv.length ? `${inv.length} idea${inv.length === 1 ? '' : 's'} need capex` : 'No capex in this selection', null, 'capex'); }
     /* donuts (each ignores its own filter so the other slices stay visible) */
     /* each donut has its own Annual CR / Per Unit CR / Ideas switch (one on at a time) */
     const measured = (box, key, mr, names, fn) => { window.__vacrM = window.__vacrM || { mod: window.__vacrModM }; const gl = window.__vacrMetric, mm = gl || (['unit', 'count'].includes(window.__vacrM[key]) ? window.__vacrM[key] : 'annual'), bx = q('#' + box);
@@ -2006,7 +2012,8 @@ window.addEventListener('resize', () => window.__draw());
     const meta = new Map(C0.map(r => [r.product, r]));
     /* ideas that belong to a product: same shop, and the same model (or an all-model idea) */
     const ideaProd = (r, pr) => { const m = meta.get(pr); return m && r.dash_shop === m.dash_shop && (r.model === m.model || r.model === 'All models' || m.model === 'All models'); };
-    const ideasPass = r => (!p.crcat || r.category === p.crcat) && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && elOf(r) !== 'Material';
+    const KP = { done: r => r.status === 'Completed', ip: r => r.status === 'In Progress', pend: r => r.status === 'Pending' || r.status === 'Proposal', capex: r => +r.investment_pkr > 0 };   /* the KPI tiles at the top of the tab */
+    const ideasPass = r => (!p.crcat || r.category === p.crcat) && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && (!KP[p.crkpi] || KP[p.crkpi](r)) && elOf(r) !== 'Material';
     const selIdea = p.crsel ? ideasAll.filter(r => r.key === p.crsel) : [];
     const ideaHit = pr => !selIdea.length || selIdea.some(r => ideaProd(r, pr));
 
