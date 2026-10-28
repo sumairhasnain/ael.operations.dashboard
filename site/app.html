@@ -1550,14 +1550,14 @@ const wfShops = r => /KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === '
 const all = D('sp_attendance').filter(r => p.shop === 'All' || wfShops(r).includes(p.shop));
 const rs = all.filter(r => r.date >= p.start && r.date <= p.actEnd);
 const nod = p.future ? 'No attendance yet for this month' : (all.some(r => r.date.slice(0, 7) === p.month) ? 'No data for this selection' : 'The attendance file covers ' + [...new Set(D('sp_attendance').map(r => mon(r.date) + ' ' + r.date.slice(0, 4)))].join(', ') + ' only');
-if (!rs.length) { ids.forEach(e => empty(e, nod)); table(tbl, [], [{ k: 'area' }]); return; }
+if (!rs.length) { ids.forEach(e => empty(e, nod)); table(tbl, window.__wfMiss ? window.__wfMiss(p, [], null) : [], [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }]); window.__wf && window.__wf(tbl, p, null); return; }
 const work = r => new Date(r.date + 'T00:00:00Z').getUTCDay() !== 0;
 const absPct = v => { const pa = d3.sum(v.filter(work), r => r.present + r.absent); return pa ? d3.sum(v.filter(work), r => r.absent) / pa * 100 : null; };
 const pctf = v => d3.format('.1f')(v) + '%';
 const byArea = d3.rollups(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours) }), r => r.area);
 const ga = new Map(byArea), areas = byArea.map(d => d[0]);
 /* table areas in the Production tab's shop order (charts stay sorted by value); a bar click (param wfa) narrows the rest of the page to that area */
-const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a)); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
+const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer', 'Fuel Cock'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a) || a); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
 const sel = areas.includes(dash.params().wfa) ? dash.params().wfa : null, pick = { focus: sel, onClick: c => dash.setParams({ wfa: sel === c ? 0 : c }) }, rf = sel ? rs.filter(r => r.area === sel) : rs;
 const aSort = areas.slice().sort((a, b) => (ga.get(b).abs ?? -1) - (ga.get(a).abs ?? -1));
 vbar(eabs, aSort, [{ key: 'a', name: 'Absenteeism %', color: c => ga.get(c).abs > 10 ? C.bad : ga.get(c).abs > 5 ? C.warn : C.navy }], c => ga.get(c).abs == null ? null : Math.round(ga.get(c).abs * 10) / 10,
@@ -1571,13 +1571,13 @@ vbar(edot, days, [{ key: 'o', name: 'Overtime hours', color: c => new Date(c + '
 { xFmt: d => +d.slice(8), extra: c => `${byDay.get(c).otp} people on overtime${new Date(c + 'T00:00:00Z').getUTCDay() === 0 ? ' · Sunday' : ''}`, noLegend: 1 });
 const rows = d3.rollups(rf, v => { const w = v.filter(work); const nd = new Set(w.map(r => r.date)).size || 1; const pres = d3.sum(w, r => r.present);
 return { area: v[0].area, section: v[0].section, shop: v[0].shop, hc: d3.max(v, r => r.headcount), avgp: pres / nd, abs: d3.sum(w, r => r.absent), absp: absPct(v), leave: d3.sum(w, r => r.leave), ot: d3.sum(v, r => r.ot_hours), otph: pres ? d3.sum(v, r => r.ot_hours) / pres : null }; },
-r => r.area + '|' + r.section).map(d => ({ key: d[0], ...d[1] }));
+r => r.area + '|' + r.section).map(d => ({ key: d[0], ...d[1] })); rows.push(...(window.__wfMiss ? window.__wfMiss(p, rows, sel) : []));
 /* last day each area / section marked attendance in the sheet (whole file, not just the selected dates); a day counts once at least half the people are marked (any marks on a Sunday) */
 const marked = r => { const m = r.present + r.absent + r.leave + (r.off || 0) + r.other; return m > 0 && (m >= r.headcount / 2 || !work(r)); };
 const lastUpd = d3.rollup(all.filter(marked), v => d3.max(v, r => r.date), r => r.area + '|' + r.section); rows.forEach(r => { r.upd = lastUpd.get(r.key) || null; });
 const lag = d => { if (!d) return 99; let n = 0; for (let t = new Date(d + 'T00:00:00Z'), e = new Date(window.__TODAY + 'T00:00:00Z'); (t = new Date(+t + 864e5)) <= e;) if (t.getUTCDay() !== 0) n++; return n; };
 const cc = v => v == null ? null : v > 10 ? C.bad : v > 5 ? C.warn : null;
-table(tbl, rows, [{ k: 'area', cmp: (x, y, a, b) => aCmp(x, y) || a.section.localeCompare(b.section) }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }, { k: 'upd', n: 1, fmt: v => day(v), color: v => lag(v) >= 3 ? C.bad : lag(v) === 2 ? C.warn : null, render: (td, v) => { td.textContent = v ? day(v) : 'Not entered'; td.title = v ? (lag(v) ? lag(v) + ' working day' + (lag(v) === 1 ? '' : 's') + ' behind' : 'Updated today') : 'Only overtime entered, no attendance'; } }], { q: q('#q-wf'), sort: 'area', dir: 1 }); window.__wf && window.__wf(tbl, p, sel);
+table(tbl, rows, [{ k: 'area', cmp: (x, y, a, b) => aCmp(x, y) || a.section.localeCompare(b.section) }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }, { k: 'upd', n: 1, fmt: v => day(v), color: v => lag(v) >= 3 ? C.bad : lag(v) === 2 ? C.warn : null, render: (td, v) => { td.textContent = v ? day(v) : 'Not entered'; td.title = v ? (lag(v) ? lag(v) + ' working day' + (lag(v) === 1 ? '' : 's') + ' behind' : 'Updated today') : 'No attendance entered in the SharePoint sheet'; } }], { q: q('#q-wf'), sort: 'area', dir: 1 }); window.__wf && window.__wf(tbl, p, sel);
 },
 inventory(p) {
 if (window.__inv) window.__inv(p);
@@ -2463,7 +2463,23 @@ window.addEventListener('resize', () => window.__draw());
     let x = rc.right + 8; if (x + pw > innerWidth - 8) x = Math.max(8, rc.left - pw - 8); if (x < 8) x = 8;
     pop.style.left = x + 'px'; pop.style.top = Math.max(8, Math.min(rc.top - 10, innerHeight - ph - 8)) + 'px';
   };
+  /* rows for the By Area & Section table that have no attendance at all: sections on the sheet's roster with nothing marked
+     in the selected dates, and production shops that have no area in the sheet. Rows never marked are shaded red below. */
+  const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock'];
+  window.__wfMiss = (p, rows, sel) => {
+    const ppl = (dash.data('sp_attendance_people') || {}).data || [], att = (dash.data('sp_attendance') || {}).data || [];
+    const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const have = new Set(rows.map(r => r.key)), out = [];
+    d3.rollups(ppl.filter(r => r.month === p.month && inShop(r) && (!sel || r.area === sel)), v => ({ n: v.length, shop: v[0].shop }), r => r.area + '|' + r.section)
+      .forEach(([k, o]) => { if (!have.has(k)) { const [area, section] = k.split('|'); out.push({ key: k, area, section, shop: o.shop, hc: o.n }); } });
+    if (!sel) { const cov = new Set([...att, ...ppl].map(r => r.shop)); PSH.forEach(s => { if (!cov.has(s) && (p.shop === 'All' || p.shop === s)) out.push({ key: s + '|', area: s, section: null, shop: s, hc: null }); }); }
+    return out;
+  };
   window.__wf = (tbl, p, sel) => { P = p || {};
+    tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
+      if (c[1].textContent === '—') { last.textContent = 'Not in sheet'; last.title = 'This shop has no area in the SharePoint attendance sheet'; }
+      else if (c[2].textContent === '0') { last.textContent = 'Overtime only'; last.style.color = '#5A6670'; last.style.fontWeight = ''; last.title = 'Only the Overtime sheet uses this section; these people\'s attendance sits under their own sections'; }
+      const miss = /^Not /.test(last.textContent); tr.style.background = miss ? '#FDECEC' : ''; tr.title = miss ? 'No attendance entered for this ' + (c[1].textContent === '—' ? 'shop' : 'section') + ' so far' : ''; });
     /* a Clear filter button on both "by Area" charts while a bar is selected */
     ['c-w-abs', 'c-w-ot'].forEach(id => { const h = document.querySelector('#' + id + ' h3'); if (!h) return; let b = h.querySelector('.wfclr');
       if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'qclr fon wfclr'; b.textContent = 'Clear filter'; b.style.cssText = 'margin-left:auto;font-size:11.5px;padding:3px 10px'; b.addEventListener('click', () => dash.setParams({ wfa: 0 })); h.appendChild(b); }
