@@ -2567,7 +2567,66 @@ window.addEventListener('resize', () => window.__draw());
       k.querySelector('.sn').textContent = sel || p.shop; k.querySelector('.mn').textContent = (sel ? 'Area' : 'Shop') + ' · ' + f0(hc) + ' people';
       k.querySelector('.kl').textContent = kl; const v = k.querySelector('.kv'); v.textContent = kv; v.style.color = colr; k.querySelector('.ks').textContent = ks; });
   };
-  window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf);
+  /* Overtime while absent (Umair, 28 Oct): people cut 1.0x for absent days who earn 1.5x overtime in the same week.
+     From sp_attendance_people: ot_in_abs_weeks (overtime hours in Mon-Sun weeks with an absence), abs_in_ot_weeks (absent days in
+     weeks with overtime), absent_with_ot_days (days marked absent that also carry overtime). Swapped hours = the smaller of those
+     absent hours (8 a day) and that overtime: hours moved from normal pay to overtime pay; extra pay = half of them. */
+  const oaCss = document.createElement('style');
+  oaCss.textContent = `#c-w-oa .oag{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px}@media (max-width:900px){#c-w-oa .oag{grid-template-columns:1fr}}
+#c-w-oa .oak{display:flex;flex-wrap:wrap;gap:8px 22px;margin:2px 0 10px}#c-w-oa .oak div{border-left:3px solid #D0312D;padding:2px 0 2px 10px}
+#c-w-oa .oak span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770}#c-w-oa .oak b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C}
+#c-w-oa .oas{font-size:11.5px;color:#5A6670;margin:-4px 0 8px;line-height:1.4}`;
+  document.head.appendChild(oaCss);
+  const oa = (p, sel) => {
+    const AK = window.AK; if (!AK) return; const { C, tip, box, empty, table } = AK; let card = document.getElementById('c-w-oa');
+    if (!card) { const host = document.getElementById('c-w-list'); if (!host) return;
+      card = document.createElement('div'); card.className = 'card wide'; card.id = 'c-w-oa';
+      card.innerHTML = '<h3>Overtime While Absent</h3><div class="oas" id="wf-oa-sub"></div><div class="oak" id="wf-oa-k"></div><div class="oag"><div><div class="chart" id="wf-oa-sc"></div></div><div><div style="font-size:12px;font-weight:600;color:#051C2C;margin:0 0 4px">By area: swapped hours (people)</div><div class="chart" id="wf-oa-ar"></div></div></div>';
+      const card2 = document.createElement('div'); card2.className = 'card wide'; card2.id = 'c-w-oal';
+      card2.innerHTML = '<h3>Who: Overtime in the Same Week as an Absence</h3><input class="q" id="q-wfoa" placeholder="Search name, EMP ID, area or section" aria-label="Search people"><div class="tbox"><table class="tb" id="tb-wfoa"><thead><tr><th data-k="name">Name</th><th data-k="emp_id">EMP ID</th><th data-k="area">Area</th><th data-k="section">Section</th><th class="n" data-k="absent">Absent days</th><th class="n" data-k="abs_in_ot_weeks">Absent in OT weeks</th><th class="n" data-k="ot_hours">OT hours</th><th class="n" data-k="ot_in_abs_weeks">OT in absent weeks</th><th class="n" data-k="absent_with_ot_days">Absent + OT same day</th><th class="n" data-k="sw">Swapped hours</th><th class="n" data-k="xp">Extra pay (h)</th></tr></thead><tbody></tbody></table></div>';
+      host.after(card, card2); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
+    const all = (dash.data('sp_attendance_people') || {}).data || [], m = p.month || (window.__TODAY || '').slice(0, 7);
+    const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const base = all.filter(r => r.month === m && inShop(r)), rs = base.filter(r => !sel || r.area === sel).map(r => { const sw = Math.min((r.abs_in_ot_weeks || 0) * 8, r.ot_in_abs_weeks || 0); return { ...r, sw, xp: sw / 2 }; });
+    const fl = rs.filter(r => r.sw > 0), f0 = d3.format(','), fx = d3.format(',.1~f'), sc = document.getElementById('wf-oa-sc'), ar = document.getElementById('wf-oa-ar');
+    document.getElementById('wf-oa-sub').textContent = `${mon(m)}${sel ? ' · ' + sel : p.shop !== 'All' ? ' · ' + p.shop : ''}. Each dot is a person: absent days in the month (across) against overtime hours (up). Red dots did overtime in the same week (Mon–Sun) they were absent, so the absence is cut at 1.0× while the hours come back at 1.5×; dark red also have overtime on a day marked absent. Bigger dot = more overtime in those weeks. Swapped hours = the smaller of the absent hours (8 a day) and that overtime; the extra pay is half of them.`;
+    const K = document.getElementById('wf-oa-k'); K.replaceChildren();
+    [['People', f0(fl.length), `of ${f0(rs.length)}`], ['Overtime in absent weeks', f0(Math.round(d3.sum(fl, r => r.ot_in_abs_weeks))) + ' h', ''], ['Swapped hours', f0(Math.round(d3.sum(fl, r => r.sw))) + ' h', ''], ['Extra pay', f0(Math.round(d3.sum(fl, r => r.xp))) + ' h', 'at the normal rate'], ['Absent + OT same day', f0(d3.sum(rs, r => r.absent_with_ot_days || 0)), f0(rs.filter(r => r.absent_with_ot_days > 0).length) + ' people']]
+      .forEach(([l, v, s]) => { const d = document.createElement('div'); d.innerHTML = `<span>${esc(l)}</span><b>${esc(v)}</b>${s ? ` <span style="display:inline;letter-spacing:0;text-transform:none">${esc(s)}</span>` : ''}`; K.appendChild(d); });
+    if (!rs.some(r => 'ot_in_abs_weeks' in r)) { empty(sc, 'Week-level overtime is not in the attendance data yet'); ar.replaceChildren(); }
+    else if (!rs.length) { empty(sc, 'No people for this selection'); ar.replaceChildren(); }
+    else {
+      const H = 300, { svg, w } = box(sc, H), M = { l: 40, r: 12, t: 10, b: 34 }, xm = Math.max(4, d3.max(rs, r => r.absent) || 0) + .6, ym = (d3.max(rs, r => r.ot_hours) || 10) * 1.08;
+      const x = d3.scaleLinear([0, xm], [M.l, w - M.r]), y = d3.scaleLinear([0, ym], [H - M.b, M.t]), rr = d3.scaleSqrt([0, d3.max(fl, r => r.ot_in_abs_weeks) || 1], [3, 9]);
+      svg.append('rect').attr('x', x(.5)).attr('y', M.t).attr('width', x(xm) - x(.5)).attr('height', y(Math.min(8, ym)) - M.t).attr('fill', '#FDECEC');
+      svg.append('text').attr('x', w - M.r - 4).attr('y', M.t + 13).attr('text-anchor', 'end').attr('font-size', 10.5).style('fill', '#D0312D').text('absent and on overtime');
+      const ax = svg.append('g').attr('transform', `translate(0,${H - M.b})`).call(d3.axisBottom(x).ticks(Math.min(10, Math.ceil(xm))).tickSizeOuter(0)), ay = svg.append('g').attr('transform', `translate(${M.l},0)`).call(d3.axisLeft(y).ticks(5).tickSizeOuter(0));
+      [ax, ay].forEach(g => { g.selectAll('text').attr('font-size', 10).style('fill', '#5A6670'); g.selectAll('path,line').attr('stroke', '#C9D1D9'); });
+      svg.append('text').attr('x', (M.l + w - M.r) / 2).attr('y', H - 4).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', '#5A6670').text('Absent days in the month');
+      svg.append('text').attr('transform', `translate(11,${(M.t + H - M.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', '#5A6670').text('Overtime hours');
+      const jit = r => { let h2 = 0; for (const ch of String(r.emp_id) + r.name) h2 = (h2 * 31 + ch.charCodeAt(0)) % 997; return (h2 / 997 - .5) * .36; };
+      [...rs.filter(r => !r.sw), ...fl.sort((a, b) => a.sw - b.sw)].forEach(r => { const f = r.sw > 0;
+        svg.append('circle').attr('cx', x(Math.max(0, r.absent + jit(r)))).attr('cy', y(r.ot_hours)).attr('r', f ? rr(r.ot_in_abs_weeks) : 2.6)
+          .attr('fill', f ? (r.absent_with_ot_days > 0 ? '#8B1E1B' : '#D0312D') : '#B9C1C9').attr('fill-opacity', f ? .8 : .55).attr('stroke', f ? '#fff' : 'none').attr('stroke-width', .8)
+          .on('mousemove', ev => tip.show(ev, [r.name + ' · ' + r.emp_id, r.area + ' · ' + r.section, `Absent ${fx(r.absent)} days · overtime ${fx(r.ot_hours)} h this month`,
+            ...(f ? [`Overtime in weeks with an absence: ${fx(r.ot_in_abs_weeks)} h (absent ${fx(r.abs_in_ot_weeks)} days in those weeks)`, r.absent_with_ot_days ? `Overtime on ${r.absent_with_ot_days} day(s) marked absent` : '', `Swapped ${fx(r.sw)} h → extra pay ${fx(r.xp)} h`] : ['No overtime in a week with an absence'])].filter(Boolean)))
+          .on('mouseleave', tip.hide); });
+      /* by area */
+      const ga = d3.rollups(base.map(r => ({ ...r, sw: Math.min((r.abs_in_ot_weeks || 0) * 8, r.ot_in_abs_weeks || 0) })), v => ({ sw: d3.sum(v, r => r.sw), n: v.filter(r => r.sw > 0).length, hc: v.length }), r => r.area).filter(d => d[1].sw > 0).sort((a, b) => b[1].sw - a[1].sw);
+      if (!ga.length) empty(ar, 'Nobody did overtime in a week they were absent'); else {
+        const rh = 24, h3 = ga.length * rh + 6, bx = box(ar, h3), lw = 132, xs = d3.scaleLinear([0, d3.max(ga, d => d[1].sw)], [lw, bx.w - 70]);
+        ga.forEach(([a, o], i) => { const y0 = 3 + i * rh, g = bx.svg.append('g').style('cursor', 'pointer').style('opacity', sel && sel !== a ? .35 : 1);
+          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 4).attr('font-size', 11.5).style('fill', '#051C2C').style('font-weight', sel === a ? 700 : 500).text(a.length > 22 ? a.slice(0, 21) + '…' : a);
+          g.append('rect').attr('x', lw).attr('y', y0 + 4).attr('width', Math.max(1, xs(o.sw) - lw)).attr('height', rh - 8).attr('fill', '#D0312D');
+          g.append('text').attr('x', xs(o.sw) + 5).attr('y', y0 + rh / 2 + 4).attr('font-size', 11).style('fill', '#051C2C').style('font-weight', 600).text(`${f0(Math.round(o.sw))} h (${o.n})`);
+          g.append('rect').attr('x', 0).attr('y', y0).attr('width', bx.w).attr('height', rh).attr('fill', 'transparent')
+            .on('mousemove', ev => tip.show(ev, [a, `${o.n} of ${o.hc} people did overtime in a week they were absent`, `Swapped hours ${f0(Math.round(o.sw))} · extra pay ${f0(Math.round(o.sw / 2))} h`, sel === a ? 'Click to show all areas' : 'Click to filter the page to this area']))
+            .on('mouseleave', tip.hide).on('click', () => { tip.hide(); dash.setParams({ wfa: sel === a ? 0 : a }); }); }); } }
+    const tb = document.getElementById('tb-wfoa'), nf1 = v => v ? fx(v) : '—';
+    table(tb, fl, [{ k: 'name' }, { k: 'emp_id' }, { k: 'area' }, { k: 'section' }, { k: 'absent', n: 1, fmt: nf1 }, { k: 'abs_in_ot_weeks', n: 1, fmt: nf1 }, { k: 'ot_hours', n: 1, fmt: nf1 }, { k: 'ot_in_abs_weeks', n: 1, fmt: nf1, color: () => '#D0312D' },
+      { k: 'absent_with_ot_days', n: 1, fmt: nf1, color: v => v > 0 ? '#8B1E1B' : null }, { k: 'sw', n: 1, fmt: nf1 }, { k: 'xp', n: 1, fmt: nf1 }], { q: document.getElementById('q-wfoa'), sort: 'sw', dir: -1 });
+  };
+  window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf); try { oa(P, sel); } catch (e) { console.error(e); }
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
       if (c[1].textContent === '—') { last.textContent = 'Not in sheet'; last.title = 'This shop has no area in the SharePoint attendance sheet'; }
       else if (c[2].textContent === '0') { last.textContent = 'Overtime only'; last.style.color = '#5A6670'; last.style.fontWeight = ''; last.title = 'Only the Overtime sheet uses this section; these people\'s attendance sits under their own sections'; }
