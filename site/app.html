@@ -2288,7 +2288,7 @@ window.addEventListener('resize', () => window.__draw());
 <div class="card" id="c-iv-shop"><h3 title="Click a shop to filter the whole dashboard" style="cursor:help">Stock Value by Shop &amp; Stage</h3><div class="chart" id="iv-shop"></div></div>
 <div class="card" id="c-iv-rcv"><h3>Received into Stock by Month</h3><div class="chart" id="iv-rcv"></div></div>
 <div class="card" id="c-iv-cons"><h3>Shop Consumption by Month</h3><div class="chart" id="iv-cons"></div></div>
-<div class="card" id="c-iv-cc"><h3>Consumption by Cost Centre</h3><div class="ivsub" id="iv-cc-sub"></div><div class="chart" id="iv-cc"></div></div>
+<div class="card" id="c-iv-cc"><h3>Consumption by Cost Centre</h3><div class="chart" id="iv-cc"></div></div>
 <div class="card" id="c-iv-sup"><h3>Top Suppliers Received</h3><div class="ivsub" id="iv-sup-sub"></div><div class="chart" id="iv-sup"></div></div>
 <div class="ivsep">Shortage against use</div>
 <div class="card wide" id="c-iv-cov"><div class="ivh"><h3>Stock Cover against Use, by Category</h3><div class="ivtog" id="iv-covm" role="group" aria-label="Count materials or value"></div></div><div class="ivsub" id="iv-cov-sub"></div><div class="chart" id="iv-cov"></div></div>
@@ -2421,7 +2421,6 @@ window.addEventListener('resize', () => window.__draw());
     const ccs = d3.rollup(CCm, v => v[0].label, r => r.cc), ccv = (cc, m) => d3.sum(CCm.filter(r => r.cc === cc && r.month === m), r => r.value_pkr);
     const ccRows = [...ccs.keys()].map(cc => ({ label: ccs.get(cc), actual: ccv(cc, M), plan: prev3.length ? d3.mean(prev3, m => ccv(cc, m)) : 0 })).filter(r => r.actual > 0 || r.plan > 0)
       .sort((a, b) => b.actual - a.actual || b.plan - a.plan).slice(0, 12).map(r => ({ ...r, tip: [r.label, `${mon(M)}${part ? ' to date' : ''}: ${fRs(r.actual)}`, `3-month average: ${fRs(r.plan)}`] }));
-    q('#iv-cc-sub').textContent = `${mon(M)}${part ? ' to date' : ''} against the average of ${prev3.map(mon).join(', ') || 'earlier months'}. Shop names on cost centres are read from what each one draws`;
     pvaH(q('#iv-cc'), ccRows, { inv: 1, planName: '3-month average', actName: mon(M), fmt: fRs, rh: 26, emptyMsg: 'No issues to cost centres for this selection' });
 
     /* suppliers */
