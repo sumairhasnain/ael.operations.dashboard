@@ -69,7 +69,7 @@
 `; document.head.appendChild(st); }
 
   { const host = q('#inv-sap'); if (host && !q('#iv-bar')) host.innerHTML = `
-<div class="ivhead"><h2>Inventory</h2><span id="iv-asof"></span><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
+<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
 <div class="ivbar" id="iv-bar"><div class="nt" id="iv-note"></div></div>
 <div class="ivk" id="iv-kpi"></div>
 <div class="grid">
