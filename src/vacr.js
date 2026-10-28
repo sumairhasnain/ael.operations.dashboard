@@ -171,7 +171,10 @@
   window.__vacr = g => {
     const sec = q('#savings'); if (!sec) return;
     const all = rowsAll(), st = dash.data('cr_ideas').status;
-    const hd = q('#cr-asof'); if (hd) hd.textContent = st === 'ok' ? `${new Set((all || []).map(r => r.key)).size} ideas from ${new Set((all || []).map(r => r.source)).size} decks · FY 2026-27` : st === 'error' ? 'Failed to load' : 'Loading…';
+    /* the ideas / decks / FY line shows as a tooltip on the page title; the line itself only appears while loading or on an error */
+    { const txt = st === 'ok' ? `${new Set((all || []).map(r => r.key)).size} ideas from ${new Set((all || []).map(r => r.source)).size} decks · FY 2026-27` : st === 'error' ? 'Failed to load' : 'Loading…', hd = q('#cr-asof'), h2 = q('#savings .crhead h2');
+      if (hd) { hd.textContent = txt; hd.hidden = st === 'ok'; }
+      if (h2) { h2._tt = txt; if (!h2._t) { h2._t = 1; h2.style.cursor = 'help'; h2.addEventListener('mousemove', ev => tip.show(ev, [h2.textContent, h2._tt])); h2.addEventListener('mouseleave', () => tip.hide()); } } }
     if (!all) { ['#cr-kpi', '#cr-d-cat', '#cr-d-shop', '#cr-d-mod', '#cr-q', '#cr-mx', '#cr-det'].forEach(s => { const e = q(s); if (e) e.replaceChildren(); }); return; }
     const p = P();
     selBox('cr-f-cat', 'All categories', CATS, 'crcat'); selBox('cr-f-st', 'All statuses', STS, 'crst');
