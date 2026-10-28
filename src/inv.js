@@ -154,7 +154,8 @@
     const stockAsOf = (D.S.find(r => r.asof) || {}).asof || '', flowTo = (D.F.find(r => r.asof) || {}).asof || '';
     const months = [...new Set(D.F.map(r => r.month))].sort(), M = months.includes(g.month) ? g.month : months[months.length - 1];
     const prev3 = months.filter(m => m < M).slice(-3), part = M === flowTo.slice(0, 7);
-    q('#iv-asof').textContent = `Stock: SAP MB52, ${dmy(stockAsOf)} · Receipts and issues to ${dmy(flowTo)}` + (g.model !== 'All' ? ` · Model ${g.model} matched on the material description` : '');
+    { const t = `Stock: SAP MB52, ${dmy(stockAsOf)} · Receipts and issues to ${dmy(flowTo)}` + (g.model !== 'All' ? ` · Model ${g.model} matched on the material description` : ''), e = q('#iv-asof'), h = q('#inventory .ivhead h2');   /* shown as the title's tooltip (Umair, 28 Oct) */
+      if (e) { e.textContent = ''; e.hidden = true; } if (h) { h.title = t; h.style.cursor = 'help'; } }
     q('#iv-note').textContent = (g.shop !== 'All' ? `Shop ${g.shop}: materials linked to the shop through Atlas, their SAP group or a clear raw-material name. ` : '') + 'Consumption is SAP 201/202 to cost centres; production orders (261) are not in these files.';
     selBox('iv-f-age', 'All ages', AGES.filter(a => base.some(r => r.age_bucket === a && pass(r, 'age'))), 'invage');
 
