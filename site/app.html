@@ -1709,6 +1709,7 @@ window.addEventListener('resize', () => window.__draw());
   const shopC = s => SHC[Math.max(0, SHOPS.indexOf(s)) % SHC.length];
   const QS = ['Q1', 'Q2', 'Q3', 'Q4'], QL = { Q1: 'Q1 · Jul–Sep 26', Q2: 'Q2 · Oct–Dec 26', Q3: 'Q3 · Jan–Mar 27', Q4: 'Q4 · Apr–Jun 27' };
   const fRs = v => { v = +v || 0; const a = Math.abs(v); return a >= 1e6 ? 'Rs ' + d3.format(',.2f')(v / 1e6) + 'M' : a >= 1e3 ? 'Rs ' + d3.format(',.0f')(v / 1e3) + 'K' : 'Rs ' + d3.format(',')(Math.round(v)); };
+  const fRs1 = v => { v = +v || 0; const a = Math.abs(v); return a >= 1e6 ? 'Rs ' + d3.format(',.1f')(v / 1e6) + 'M' : fRs(v); }; /* KPI tiles: one decimal */
   const fM = v => d3.format(',.2f')((+v || 0) / 1e6);
   const fU = v => v == null ? '—' : 'Rs ' + d3.format(',.2~f')(v);
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
@@ -1888,11 +1889,11 @@ window.addEventListener('resize', () => window.__draw());
     /* KPI tiles */
     { const rs = all.filter(r => pass(r, p, g, 'kpi')), keys = new Set(rs.map(r => r.key)); const kt = q('#cr-kpi'); kt.replaceChildren(); const ann = d3.sum(rs, r => r.annual_pkr), mo = d3.sum(rs, r => r.monthly_pkr), done = rs.filter(r => r.status === 'Completed'), ip = rs.filter(r => r.status === 'In Progress'), inv = d3.rollups(rs.filter(r => r.investment_pkr), v => v[0].investment_pkr, r => r.key);
       const n = s => new Set(rs.filter(r => r.status === s).map(r => r.key)).size;
-      tile(kt, 'Annual saving (run-rate)', fRs(ann), `${fRs(mo)} a month · ${keys.size} ideas`, null, 'all');
-      tile(kt, 'Achieved (completed)', fRs(d3.sum(done, r => r.annual_pkr)), `${pct(d3.sum(done, r => r.annual_pkr), ann)} of the run-rate · ${n('Completed')} ideas`, '#1E8C5A', 'done');
-      tile(kt, 'In progress', fRs(d3.sum(ip, r => r.annual_pkr)), `${n('In Progress')} ideas being implemented`, '#B07A00', 'ip');
-      tile(kt, 'Pending + proposals', fRs(d3.sum(rs.filter(r => r.status === 'Pending' || r.status === 'Proposal'), r => r.annual_pkr)), `${n('Pending')} pending · ${n('Proposal')} VA/CR proposals`, null, 'pend');
-      tile(kt, 'Investment needed', inv.length ? fRs(d3.sum(inv, d => d[1])) : '—', inv.length ? `${inv.length} idea${inv.length === 1 ? '' : 's'} need capex` : 'No capex in this selection', null, 'capex'); }
+      tile(kt, 'Annual saving (run-rate)', fRs1(ann), `${fRs1(mo)} a month · ${keys.size} ideas`, null, 'all');
+      tile(kt, 'Achieved (completed)', fRs1(d3.sum(done, r => r.annual_pkr)), `${pct(d3.sum(done, r => r.annual_pkr), ann)} of the run-rate · ${n('Completed')} ideas`, '#1E8C5A', 'done');
+      tile(kt, 'In progress', fRs1(d3.sum(ip, r => r.annual_pkr)), `${n('In Progress')} ideas being implemented`, '#B07A00', 'ip');
+      tile(kt, 'Pending + proposals', fRs1(d3.sum(rs.filter(r => r.status === 'Pending' || r.status === 'Proposal'), r => r.annual_pkr)), `${n('Pending')} pending · ${n('Proposal')} VA/CR proposals`, null, 'pend');
+      tile(kt, 'Investment needed', inv.length ? fRs1(d3.sum(inv, d => d[1])) : '—', inv.length ? `${inv.length} idea${inv.length === 1 ? '' : 's'} need capex` : 'No capex in this selection', null, 'capex'); }
     /* donuts (each ignores its own filter so the other slices stay visible) */
     /* each donut has its own Annual CR / Per Unit CR / Ideas switch (one on at a time) */
     const measured = (box, key, mr, names, fn) => { window.__vacrM = window.__vacrM || { mod: window.__vacrModM }; const gl = window.__vacrMetric, mm = gl || (['unit', 'count'].includes(window.__vacrM[key]) ? window.__vacrM[key] : 'annual'), bx = q('#' + box);
