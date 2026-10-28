@@ -1556,13 +1556,13 @@ const absPct = v => { const pa = d3.sum(v.filter(work), r => r.present + r.absen
 const pctf = v => d3.format('.1f')(v) + '%';
 const byArea = d3.rollups(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours) }), r => r.area);
 const ga = new Map(byArea), areas = byArea.map(d => d[0]);
-/* areas in the Production tab's shop order; a bar click (param wfa) narrows the rest of the page to that area */
+/* table areas in the Production tab's shop order (charts stay sorted by value); a bar click (param wfa) narrows the rest of the page to that area */
 const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a)); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
 const sel = areas.includes(dash.params().wfa) ? dash.params().wfa : null, pick = { focus: sel, onClick: c => dash.setParams({ wfa: sel === c ? 0 : c }) }, rf = sel ? rs.filter(r => r.area === sel) : rs;
-const aSort = areas.slice().sort(aCmp);
+const aSort = areas.slice().sort((a, b) => (ga.get(b).abs ?? -1) - (ga.get(a).abs ?? -1));
 vbar(eabs, aSort, [{ key: 'a', name: 'Absenteeism %', color: c => ga.get(c).abs > 10 ? C.bad : ga.get(c).abs > 5 ? C.warn : C.navy }], c => ga.get(c).abs == null ? null : Math.round(ga.get(c).abs * 10) / 10,
 { rot: 1, h: 270, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%' }], noLegend: 1, ...pick });
-vbar(eot, aSort, [{ key: 'o', name: 'Overtime hours', color: C.blue }], c => Math.round(ga.get(c).ot), { rot: 1, h: 270, noLegend: 1, ...pick });
+vbar(eot, areas.slice().sort((a, b) => ga.get(b).ot - ga.get(a).ot), [{ key: 'o', name: 'Overtime hours', color: C.blue }], c => Math.round(ga.get(c).ot), { rot: 1, h: 270, noLegend: 1, ...pick });
 const days = [...new Set(rf.map(r => r.date))].sort();
 const byDay = d3.rollup(rf, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours), otp: d3.sum(v, r => r.ot_people) }), r => r.date);
 const wdays = days.filter(d => new Date(d + 'T00:00:00Z').getUTCDay() !== 0);
