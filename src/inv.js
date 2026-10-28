@@ -65,6 +65,8 @@
 .ael #inventory .ivtog button.off{background:#fff;color:var(--c);opacity:.55;font-weight:500}
 .ael #inventory .ivtog button:hover{opacity:1}
 .ael #inventory table.tb td.n{text-align:right;font-variant-numeric:tabular-nums}
+.ael #inventory #iv-exl{max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
+.ael #inventory #iv-exl::-webkit-scrollbar{width:8px} .ael #inventory #iv-exl::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory #iv-exl::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
 .ael #inventory .ivsep{grid-column:1/-1;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:8px 0 4px;margin-top:4px}
 `; document.head.appendChild(st); }
 
@@ -249,9 +251,9 @@
     /* excess: value above 90 days of use, by category; the largest items */
     { const ex = CATS.filter(c => on(c) && S.some(r => r.category === c && r.excess_pkr > 0)), xs = k => (c, kk) => d3.sum(S.filter(r => r.category === c && (kk === 'none' ? !r.use_month : r.use_month > 0)), r => r.excess_pkr || 0);
       vbar(q('#iv-exc'), ex, [{ key: 'over', name: 'Above 6 months of use', color: '#2251FF' }, { key: 'none', name: 'No use in 6 months', color: '#051C2C' }], xs(), { stack: 1, h: 250, rot: 1, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, emptyMsg: 'No excess stock for this selection' });
-      const top = S.filter(r => r.excess_pkr > 0 && r.use_month > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 10);
+      const top = S.filter(r => r.excess_pkr > 0 && r.use_month > 0).sort((a, b) => b.excess_pkr - a.excess_pkr);   /* all of them; the chart scrolls (Umair, 28 Oct) */
       hrank(q('#iv-exl'), top.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)} days of cover`, value: r.excess_pkr,
-        tip: [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover`, `Above 6 months of use: ${fRs(r.excess_pkr)}`, r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : 'No receipt since Jan 2024', r.last_issue ? `Last issued ${dmy(r.last_issue)}` : 'No cost-centre issue since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No excess on items in use' }); }
+        tip: [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover`, `Above 6 months of use: ${fRs(r.excess_pkr)}`, r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : 'No receipt since Jan 2024', r.last_issue ? `Last issued ${dmy(r.last_issue)}` : 'No cost-centre issue since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No excess on items in use' }); const sv = q('#iv-exl svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
 
     /* slow and non-moving: value by time since last movement, by category; the largest non-moving items */
     { const Sm = base.filter(r => pass(r));
