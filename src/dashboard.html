@@ -1136,8 +1136,7 @@ const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops
 const fg = r => String(r.code).startsWith('90');
 const keep = r => !dim(r); /* a clicked shop/model shows only its own parts; the box shrinks to fit */
 table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
-const pk = p.pf ? new Set(D('atlas_bom').filter(b => String(b.fg || '').split(/[;,]/).some(x => x.split(':')[0] === String(p.pf))).map(b => String(b.code))) : null;
-table(q('#tb-parts2'), mk({ ...p, shop: p.shop === 'All' && p.pf && DIMS().get(p.pf) ? DIMS().get(p.pf).shop : p.shop, model: 'All', pf: null }).filter(r => !fg(r) && (p.model === 'All' || String(r.models || '').split(/[\/,]\s*/).includes(p.model)) && (!pk || !pk.size || pk.has(String(r.code)))), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 }); /* 27 Oct: every level 2, 3, 4... part of the chosen shop (top filter or a clicked shop), whatever model / part filter is on */
+table(q('#tb-parts2'), mk({ ...p, shop: p.shop === 'All' && p.pf && DIMS().get(p.pf) ? DIMS().get(p.pf).shop : p.shop, model: 'All', pf: null }).filter(r => !fg(r) && (p.model === 'All' || !r.models || String(r.models).split(/[\/,]\s*/).includes(p.model))), cols, { q: q('#q-parts2'), sort: 'ord', dir: 1 }); /* every level 2, 3, 4 part of the chosen shop and model (castings, machined and bought-in alike); a picked part does not narrow it */
 window.__vendHover([tbl, q('#tb-parts2')]);
 }
 },
