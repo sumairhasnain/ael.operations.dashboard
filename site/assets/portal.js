@@ -4,7 +4,7 @@
   const TABS = [
     ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
-    ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Workforce'], ['inventory', 'Inventory'],
+    ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'],
     ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M']
   ].map(([id, name]) => ({ id, name }));
   const RESTRICTED = ['cost', 'savings', 'workforce'];
