@@ -2276,8 +2276,8 @@ window.addEventListener('resize', () => window.__draw());
 .ael #inventory .ivtog button.off{background:#fff;color:var(--c);opacity:.55;font-weight:500}
 .ael #inventory .ivtog button:hover{opacity:1}
 .ael #inventory table.tb td.n{text-align:right;font-variant-numeric:tabular-nums}
-.ael #inventory #iv-exl{max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
-.ael #inventory #iv-exl::-webkit-scrollbar{width:8px} .ael #inventory #iv-exl::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory #iv-exl::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
+.ael #inventory :is(#iv-exl,#iv-slow){max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
+.ael #inventory :is(#iv-exl,#iv-slow)::-webkit-scrollbar{width:8px} .ael #inventory :is(#iv-exl,#iv-slow)::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory :is(#iv-exl,#iv-slow)::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
 .ael #inventory .ivsep{grid-column:1/-1;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:8px 0 4px;margin-top:4px}
 `; document.head.appendChild(st); }
 
@@ -2478,9 +2478,9 @@ window.addEventListener('resize', () => window.__draw());
     const Sa = base.filter(r => pass(r, 'age'));
     vbar(q('#iv-age'), AGES, CATS.filter(c => Sa.some(r => r.category === c)).map(c => ({ key: c, name: c, color: CATC[c] })), (a, c) => d3.sum(Sa.filter(r => r.age_bucket === a && r.category === c), r => r.value_pkr),
       { stack: 1, h: 250, rot: 1, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: age || null, onClick: a => set({ invage: age === a ? 0 : a }), emptyMsg: 'No stock for this selection' });
-    const slow = S.filter(r => r.age_days == null || r.age_days > 180).sort((a, b) => b.value_pkr - a.value_pkr).slice(0, 10);
+    const slow = S.filter(r => (r.age_days == null || r.age_days > 180) && r.value_pkr > 0).sort((a, b) => b.value_pkr - a.value_pkr);   /* all of them; the chart scrolls */
     hrank(q('#iv-slow'), slow.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.last_rcv ? 'last in ' + dmy(r.last_rcv) : 'no receipt since Jan 2024'}${r.shop ? ' · ' + r.shop : ''}`, value: r.value_pkr,
-      tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_rcv ? 'Last received ' + dmy(r.last_rcv) + ` (${r.age_days} days)` : 'No receipt since Jan 2024', r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue on record'] })), { fmt: fM, rh: 34, emptyMsg: 'No aged stock for this selection' });
+      tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_rcv ? 'Last received ' + dmy(r.last_rcv) + ` (${r.age_days} days)` : 'No receipt since Jan 2024', r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue on record'] })), { fmt: fM, rh: 34, emptyMsg: 'No aged stock for this selection' }); { const sv = q('#iv-slow svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
 
     /* register */
     const Sr = baseAll.filter(r => pass(r) && (!cov || r.cover_bucket === cov) && (!mov || r.move_bucket === mov) && (!r.oos || cov === 'Out of stock'));
