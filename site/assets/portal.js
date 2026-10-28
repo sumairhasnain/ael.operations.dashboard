@@ -7,7 +7,8 @@
     ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'],
     ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M']
   ].map(([id, name]) => ({ id, name }));
-  const RESTRICTED = ['cost', 'savings', 'workforce'];
+  const RESTRICTED = ['cost', 'savings'];
+  const OPEN = ['workforce']; /* Manpower: open to every signed-in user (Umair, 28 Oct) */
   const DEFAULT_TABS = TABS.map(t => t.id).filter(t => !RESTRICTED.includes(t));
   const configured = C.supabaseUrl && !/YOUR-PROJECT/.test(C.supabaseUrl) && C.supabaseKey && !/PASTE-/.test(C.supabaseKey);
 
@@ -27,7 +28,7 @@
   }) : '—';
   const todayPKT = () => new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10);
 
-  const P = window.Portal = { sb, C, TABS, RESTRICTED, DEFAULT_TABS, esc, pkt, todayPKT, go, configured };
+  const P = window.Portal = { sb, C, TABS, RESTRICTED, OPEN, DEFAULT_TABS, esc, pkt, todayPKT, go, configured };
 
   P.notConfigured = el => {
     el.innerHTML = `<div class="msg warn"><b>Portal not connected yet.</b> Open <code>site/assets/config.js</code> and paste your Supabase Project URL and publishable key (setup guide, step 3).</div>`;
@@ -44,7 +45,7 @@
     return { ...data, session };
   };
 
-  P.tabsFor = prof => prof.role === 'viewer' ? TABS.map(t => t.id).filter(t => (prof.tabs || []).includes(t)) : TABS.map(t => t.id);
+  P.tabsFor = prof => prof.role === 'viewer' ? TABS.map(t => t.id).filter(t => OPEN.includes(t) || (prof.tabs || []).includes(t)) : TABS.map(t => t.id);
 
   /* Check the visitor is signed in and allowed here. Redirects otherwise. */
   P.guard = async ({ admin = false, allowMustChange = false } = {}) => {

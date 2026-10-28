@@ -41,7 +41,7 @@
     users = u.data || []; logs = l.data || [];
   };
   const device = ua => !ua ? '' : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows PC' : /Mac OS/.test(ua) ? 'Mac' : 'Other';
-  const tabsOf = u => u.role === 'viewer' ? (u.tabs || []) : P.TABS.map(t => t.id);
+  const tabsOf = u => P.tabsFor(u);
   const chips = u => u.role !== 'viewer' ? '<span class="muted small">All 17 tabs</span>'
     : `<div class="tabchips">${tabsOf(u).map(t => `<span class="${P.RESTRICTED.includes(t) ? 'r' : ''}">${esc(TN[t] || t)}</span>`).join('')}</div>`;
   const csvCell = v => /[",\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? '');
@@ -88,7 +88,7 @@
           ${u.id === me.id ? '' : `<button class="btn sm ghost" data-a="toggle">${u.active ? 'Disable' : 'Enable'}</button><button class="btn sm danger" data-a="del">Delete</button>`}
         </div></td></tr>`).join('')}
       </tbody></table></div>
-      <p class="small muted">Yellow tabs (Cost, VA/CR Activities, Manpower) are restricted: viewers see them only if you tick them. Managers and admins see everything.</p>`;
+      <p class="small muted">Yellow tabs (Cost, VA/CR Activities) are restricted: viewers see them only if you tick them. Managers and admins see everything.</p>`;
     el.querySelectorAll('button[data-a]').forEach(b => b.onclick = () => {
       const u = users.find(x => x.id === b.closest('tr').dataset.id);
       ({ edit: () => editDlg(u), reset: () => resetDlg(u), toggle: () => toggle(u), del: () => delDlg(u) })[b.dataset.a]();
@@ -116,7 +116,7 @@
     const rows = [
       ['Open the dashboard (all shops and models)', 1, 1, 1],
       ['Standard tabs: Overview, Production, Products, Vendor Supply, In-house, Quality, Maintenance, OEE, Capacity, Efficiency, Inventory, Issues, Projects, B.O.M', 1, 1, 'Ticked tabs'],
-      ['Restricted tabs: Cost, VA/CR Activities, Manpower', 1, 1, 'Only if ticked'],
+      ['Restricted tabs: Cost, VA/CR Activities', 1, 1, 'Only if ticked'],
       ['Change own password', 1, 1, 1],
       ['Reset own forgotten password by email', 1, 1, 1],
       ['Add, edit, disable or delete users', 1, 0, 0],
@@ -137,14 +137,14 @@
     dlg.showModal(); return df;
   };
   const dsay = (t, cls = 'bad') => { const m = df.querySelector('#dm'); m.className = 'msg ' + cls; m.textContent = t; };
-  const tabBoxes = (sel, role) => `<div class="checks" id="tabs">${P.TABS.map(t => `<label class="${P.RESTRICTED.includes(t.id) ? 'r' : ''}"><input type="checkbox" value="${t.id}" ${role !== 'viewer' || sel.includes(t.id) ? 'checked' : ''} ${role !== 'viewer' ? 'disabled' : ''}>${esc(t.name)}${P.RESTRICTED.includes(t.id) ? ' ·&nbsp;restricted' : ''}</label>`).join('')}</div>`;
+  const tabBoxes = (sel, role) => `<div class="checks" id="tabs">${P.TABS.map(t => `<label class="${P.RESTRICTED.includes(t.id) ? 'r' : ''}"><input type="checkbox" value="${t.id}" ${role !== 'viewer' || sel.includes(t.id) || P.OPEN.includes(t.id) ? 'checked' : ''} ${role !== 'viewer' || P.OPEN.includes(t.id) ? 'disabled' : ''}>${esc(t.name)}${P.RESTRICTED.includes(t.id) ? ' ·&nbsp;restricted' : ''}${P.OPEN.includes(t.id) ? ' ·&nbsp;open to all' : ''}</label>`).join('')}</div>`;
   const wireRole = () => {
     const rs = df.querySelector('#role'), box = () => df.querySelectorAll('#tabs input');
     let saved = null;
     rs.onchange = () => {
       const v = rs.value !== 'viewer';
       if (v) { saved = [...box()].filter(i => i.checked).map(i => i.value); box().forEach(i => { i.checked = true; i.disabled = true; }); }
-      else box().forEach(i => { i.disabled = false; i.checked = (saved || P.DEFAULT_TABS).includes(i.value); });
+      else box().forEach(i => { const o = P.OPEN.includes(i.value); i.disabled = o; i.checked = o || (saved || P.DEFAULT_TABS).includes(i.value); });
     };
   };
   const pickedTabs = () => [...df.querySelectorAll('#tabs input')].filter(i => i.checked).map(i => i.value);

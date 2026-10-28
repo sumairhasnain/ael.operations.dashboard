@@ -1,5 +1,5 @@
 {
-  "_note": "Which dashboard tabs need each dataset. A viewer can read a dataset only if they may open one of these tabs. Cost, Savings and Workforce data are deliberately NOT linked to Overview.",
+  "_note": "Which dashboard tabs need each dataset. A viewer can read a dataset only if they may open one of these tabs. Cost and Savings data are deliberately NOT linked to Overview. Manpower (workforce) is open to everyone, so its attendance data is listed under every tab.",
   "_default": [
     "overview"
   ],
@@ -97,7 +97,23 @@
     "savings"
   ],
   "sp_attendance": [
-    "workforce"
+    "overview",
+    "production",
+    "product",
+    "vendor",
+    "inhouse",
+    "quality",
+    "maintenance",
+    "oee",
+    "capacity",
+    "efficiency",
+    "workforce",
+    "inventory",
+    "cost",
+    "savings",
+    "issues",
+    "projects",
+    "bom"
   ],
   "atlas_part_stock": [
     "inhouse",
@@ -139,5 +155,24 @@
   ],
   "cr_conv": [
     "savings"
+  ],
+  "sp_attendance_people": [
+    "overview",
+    "production",
+    "product",
+    "vendor",
+    "inhouse",
+    "quality",
+    "maintenance",
+    "oee",
+    "capacity",
+    "efficiency",
+    "workforce",
+    "inventory",
+    "cost",
+    "savings",
+    "issues",
+    "projects",
+    "bom"
   ]
 }
