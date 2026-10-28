@@ -75,7 +75,7 @@
 <div class="grid">
 <div class="card" id="c-iv-cat"><div class="ivh"><h3>Stock Value by Category</h3><div class="ivtog" id="iv-tog" role="group" aria-label="Categories shown on this tab"></div></div><div class="ivdon"><div class="chart" id="iv-d-cat"></div><div class="ivleg" id="iv-l-cat"></div></div></div>
 <div class="card" id="c-iv-shop"><h3 title="Click a shop to filter the whole dashboard" style="cursor:help">Stock Value by Shop &amp; Stage</h3><div class="chart" id="iv-shop"></div></div>
-<div class="card" id="c-iv-rcv"><h3>Received into Stock by Month</h3><div class="ivsub">Purchase receipts from suppliers and production put into stock (SAP 101 less 102)</div><div class="chart" id="iv-rcv"></div></div>
+<div class="card" id="c-iv-rcv"><h3>Received into Stock by Month</h3><div class="chart" id="iv-rcv"></div></div>
 <div class="card" id="c-iv-cons"><h3>Shop Consumption by Month</h3><div class="ivsub">Issues to cost centres (SAP 201 less 202 returns), raw material excluded</div><div class="chart" id="iv-cons"></div></div>
 <div class="card" id="c-iv-cc"><h3>Consumption by Cost Centre</h3><div class="ivsub" id="iv-cc-sub"></div><div class="chart" id="iv-cc"></div></div>
 <div class="card" id="c-iv-sup"><h3>Top Suppliers Received</h3><div class="ivsub" id="iv-sup-sub"></div><div class="chart" id="iv-sup"></div></div>
