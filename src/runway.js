@@ -1,4 +1,4 @@
-/* Stock runway hover (29 Oct, Umair): on "Production Plan Vs Actual - By Part", hovering a part name shows how long the part
+/* Stock runway hover (29 Oct, Umair): on "Part Compliance - Other Parts", hovering a part name shows how long the part
    and its BOM components (in-house made and vendor supplied) will last at the current month's plan, against the next delivery.
    Bar = today to projected run-out (Atlas stock / average daily need). Dot = next delivery: in-house = next planned
    production day in Atlas; vendor = expected from the last 30 days' delivery pattern (Atlas has no booked delivery dates). */
@@ -76,7 +76,7 @@
     });
     const nBad = rows.filter(r => r.lvl === 'bad').length;
     return `<div class="hd">${esc(part || c)} <span>— Stock runway · run-out vs next delivery</span></div>`
-      + (nBad ? `<div class="fl">${nBad} item${nBad > 1 ? 's' : ''} run out before the next delivery</div>` : '')
+      + (nBad ? `<div class="fl">${nBad > 1 ? nBad + ' items run' : '1 item runs'} out before the next delivery</div>` : '')
       + `<svg viewBox="-10 0 ${W + 10} ${H}" width="100%" height="${H}" style="margin-top:6px">${g}</svg>`
       + `<div class="ft">Bar: Atlas stock ÷ average daily need at this month's plan (working days, Sundays off). Dot: next delivery. In-house = next planned production day in Atlas; vendor = expected from the last 30 days' receipts (Atlas has no booked delivery dates).${more ? ` ${more} more components not shown.` : ''}</div>`;
   };
@@ -89,4 +89,13 @@
     pop.style.left = x + 'px'; pop.style.top = Math.max(8, Math.min(ev.clientY + 12, innerHeight - ph - 8)) + 'px'; return true;
   };
   window.__rwH = () => { pop.style.display = 'none'; cur = null; };
+  /* Part Compliance - Other Parts: the Part cell (2nd column; code in the 1st). Runs before the row's vendor-receiving card and replaces it while on the name. */
+  const T2 = document.getElementById('tb-parts2');
+  if (T2) {
+    const css2 = document.createElement('style'); css2.textContent = '#tb-parts2 tbody td:nth-child(2){cursor:help;text-decoration:underline dotted #9AA5B1}'; document.head.appendChild(css2);
+    T2.addEventListener('mousemove', ev => { const td = ev.target.closest('tbody td'), tr = td && td.parentElement;
+      if (!td || td.cellIndex !== 1 || !tr.cells[0]) return window.__rwH();
+      if (window.__rw(ev, { code: tr.cells[0].textContent.trim(), part: td.textContent.trim() })) { ev.stopImmediatePropagation(); const vp = document.getElementById('vpop'); if (vp) { vp.style.display = 'none'; vp.dataset.code = ''; } } }, true);
+    T2.addEventListener('mouseleave', () => window.__rwH());
+  }
 })();
