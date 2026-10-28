@@ -719,7 +719,7 @@ sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }))
 document.getElementById('f-clear').addEventListener('click', () => {
 document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
 const bv = document.getElementById('s-bomv'); if (bv) bv.value = 'all';
-dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0, ihb: 0 });
+dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0, ihb: 0, wfa: 0 });
 window.__draw && window.__draw(); });
 sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
 iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });
@@ -1539,18 +1539,20 @@ const absPct = v => { const pa = d3.sum(v.filter(work), r => r.present + r.absen
 const pctf = v => d3.format('.1f')(v) + '%';
 const byArea = d3.rollups(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours) }), r => r.area);
 const ga = new Map(byArea), areas = byArea.map(d => d[0]);
-const aSort = areas.slice().sort((a, b) => (ga.get(b).abs ?? -1) - (ga.get(a).abs ?? -1));
+/* areas in the Production tab's shop order; a bar click (param wfa) narrows the rest of the page to that area */
+const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a)); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
+const sel = areas.includes(dash.params().wfa) ? dash.params().wfa : null, pick = { focus: sel, onClick: c => dash.setParams({ wfa: sel === c ? 0 : c }) }, rf = sel ? rs.filter(r => r.area === sel) : rs;
+const aSort = areas.slice().sort(aCmp);
 vbar(eabs, aSort, [{ key: 'a', name: 'Absenteeism %', color: c => ga.get(c).abs > 10 ? C.bad : ga.get(c).abs > 5 ? C.warn : C.navy }], c => ga.get(c).abs == null ? null : Math.round(ga.get(c).abs * 10) / 10,
-{ rot: 1, h: 270, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%' }], noLegend: 1 });
-const oSort = areas.slice().sort((a, b) => ga.get(b).ot - ga.get(a).ot);
-vbar(eot, oSort, [{ key: 'o', name: 'Overtime hours', color: C.blue }], c => Math.round(ga.get(c).ot), { rot: 1, h: 270, noLegend: 1 });
-const days = [...new Set(rs.map(r => r.date))].sort();
-const byDay = d3.rollup(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours), otp: d3.sum(v, r => r.ot_people) }), r => r.date);
+{ rot: 1, h: 270, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%' }], noLegend: 1, ...pick });
+vbar(eot, aSort, [{ key: 'o', name: 'Overtime hours', color: C.blue }], c => Math.round(ga.get(c).ot), { rot: 1, h: 270, noLegend: 1, ...pick });
+const days = [...new Set(rf.map(r => r.date))].sort();
+const byDay = d3.rollup(rf, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours), otp: d3.sum(v, r => r.ot_people) }), r => r.date);
 const wdays = days.filter(d => new Date(d + 'T00:00:00Z').getUTCDay() !== 0);
 lines(edabs, wdays, [{ name: 'Absenteeism', color: C.bad, values: wdays.map(d => byDay.get(d).abs == null ? null : Math.round(byDay.get(d).abs * 10) / 10) }], { xFmt: day, yFmt: v => v + '%', fmt: pctf, refs: [{ v: 5, label: 'Target 5%', color: '#8C96A0' }], min: 0 });
 vbar(edot, days, [{ key: 'o', name: 'Overtime hours', color: c => new Date(c + 'T00:00:00Z').getUTCDay() === 0 ? C.warn : C.blue }], c => Math.round(byDay.get(c).ot),
 { xFmt: d => +d.slice(8), extra: c => `${byDay.get(c).otp} people on overtime${new Date(c + 'T00:00:00Z').getUTCDay() === 0 ? ' · Sunday' : ''}`, noLegend: 1 });
-const rows = d3.rollups(rs, v => { const w = v.filter(work); const nd = new Set(w.map(r => r.date)).size || 1; const pres = d3.sum(w, r => r.present);
+const rows = d3.rollups(rf, v => { const w = v.filter(work); const nd = new Set(w.map(r => r.date)).size || 1; const pres = d3.sum(w, r => r.present);
 return { area: v[0].area, section: v[0].section, shop: v[0].shop, hc: d3.max(v, r => r.headcount), avgp: pres / nd, abs: d3.sum(w, r => r.absent), absp: absPct(v), leave: d3.sum(w, r => r.leave), ot: d3.sum(v, r => r.ot_hours), otph: pres ? d3.sum(v, r => r.ot_hours) / pres : null }; },
 r => r.area + '|' + r.section).map(d => ({ key: d[0], ...d[1] }));
 /* last day each area / section marked attendance in the sheet (whole file, not just the selected dates); a day counts once at least half the people are marked (any marks on a Sunday) */
@@ -1558,7 +1560,7 @@ const marked = r => { const m = r.present + r.absent + r.leave + (r.off || 0) + 
 const lastUpd = d3.rollup(all.filter(marked), v => d3.max(v, r => r.date), r => r.area + '|' + r.section); rows.forEach(r => { r.upd = lastUpd.get(r.key) || null; });
 const lag = d => { if (!d) return 99; let n = 0; for (let t = new Date(d + 'T00:00:00Z'), e = new Date(window.__TODAY + 'T00:00:00Z'); (t = new Date(+t + 864e5)) <= e;) if (t.getUTCDay() !== 0) n++; return n; };
 const cc = v => v == null ? null : v > 10 ? C.bad : v > 5 ? C.warn : null;
-table(tbl, rows, [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }, { k: 'upd', n: 1, fmt: v => day(v), color: v => lag(v) >= 3 ? C.bad : lag(v) === 2 ? C.warn : null, render: (td, v) => { td.textContent = v ? day(v) : 'Not entered'; td.title = v ? (lag(v) ? lag(v) + ' working day' + (lag(v) === 1 ? '' : 's') + ' behind' : 'Updated today') : 'Only overtime entered, no attendance'; } }], { q: q('#q-wf'), sort: 'absp', dir: -1 }); window.__wf && window.__wf(tbl, p);
+table(tbl, rows, [{ k: 'area', cmp: (x, y, a, b) => aCmp(x, y) || a.section.localeCompare(b.section) }, { k: 'section' }, { k: 'hc', n: 1 }, { k: 'avgp', n: 1, fmt: v => d3.format('.0f')(v) }, { k: 'abs', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'absp', n: 1, fmt: v => v == null ? '—' : pctf(v), color: cc }, { k: 'leave', n: 1, fmt: v => d3.format(',.1~f')(v) }, { k: 'ot', n: 1, fmt: v => d3.format(',.0f')(v) }, { k: 'otph', n: 1, fmt: v => v == null ? '—' : d3.format('.2f')(v) }, { k: 'upd', n: 1, fmt: v => day(v), color: v => lag(v) >= 3 ? C.bad : lag(v) === 2 ? C.warn : null, render: (td, v) => { td.textContent = v ? day(v) : 'Not entered'; td.title = v ? (lag(v) ? lag(v) + ' working day' + (lag(v) === 1 ? '' : 's') + ' behind' : 'Updated today') : 'Only overtime entered, no attendance'; } }], { q: q('#q-wf'), sort: 'area', dir: 1 }); window.__wf && window.__wf(tbl, p, sel);
 },
 inventory(p) {
 if (window.__inv) window.__inv(p);

@@ -38,7 +38,12 @@
     let x = rc.right + 8; if (x + pw > innerWidth - 8) x = Math.max(8, rc.left - pw - 8); if (x < 8) x = 8;
     pop.style.left = x + 'px'; pop.style.top = Math.max(8, Math.min(rc.top - 10, innerHeight - ph - 8)) + 'px';
   };
-  window.__wf = (tbl, p) => { P = p || {}; if (tbl._wf) return; tbl._wf = 1;
+  window.__wf = (tbl, p, sel) => { P = p || {};
+    /* a Clear filter button on both "by Area" charts while a bar is selected */
+    ['c-w-abs', 'c-w-ot'].forEach(id => { const h = document.querySelector('#' + id + ' h3'); if (!h) return; let b = h.querySelector('.wfclr');
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'qclr fon wfclr'; b.textContent = 'Clear filter'; b.style.cssText = 'margin-left:auto;font-size:11.5px;padding:3px 10px'; b.addEventListener('click', () => dash.setParams({ wfa: 0 })); h.appendChild(b); }
+      b.hidden = !sel; b.title = sel ? 'Showing ' + sel + ' only: click to show all areas' : ''; });
+    if (tbl._wf) return; tbl._wf = 1;
     tbl.addEventListener('mouseover', ev => { const td = ev.target.closest('td'); if (!td || !td.closest('tbody') || td.cellIndex > 1 || td.parentElement.children.length < 3) return;
       const tr = td.parentElement; show(td, tr.children[0].textContent, td.cellIndex === 1 ? tr.children[1].textContent : null); });
     tbl.addEventListener('mouseout', ev => { const td = ev.target.closest('td'); if (td && td.cellIndex <= 1 && !(ev.relatedTarget && pop.contains(ev.relatedTarget))) hide(); });
