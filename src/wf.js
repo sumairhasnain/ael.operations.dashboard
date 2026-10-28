@@ -50,14 +50,31 @@
     if (!sel) { const cov = new Set([...att, ...ppl].map(r => r.shop)); PSH.forEach(s => { if (!cov.has(s) && (p.shop === 'All' || p.shop === s)) out.push({ key: s + '|', area: s, section: null, shop: s, hc: null }); }); }
     return out;
   };
-  window.__wf = (tbl, p, sel) => { P = p || {};
+  /* KPI corner on the two "by Area" charts while a shop (top filter) or an area (bar click) is picked, styled like the
+     Production tab's Daily Production card: the name on the left, the period's absenteeism / overtime % on the right.
+     Overtime % = overtime hours against present man-days at 8 hours each. */
+  const kpis = (p, sel, rf) => {
+    const on = !!(rf && rf.length && (sel || p.shop !== 'All')), sun = r => new Date(r.date + 'T00:00:00Z').getUTCDay() === 0, w = (rf || []).filter(r => !sun(r));
+    const pres = d3.sum(w, r => r.present), abs = d3.sum(w, r => r.absent), ot = d3.sum(rf || [], r => r.ot_hours), f0 = d3.format(','), f1 = d3.format(',.1f');
+    const dd = s => +s.slice(8) + ' ' + MON[+s.slice(5, 7) - 1], per = p.day ? dd(p.day) : +(p.start || '01').slice(-2) + '–' + dd(p.actEnd || p.end), hc = d3.sum(d3.rollups(rf || [], v => d3.max(v, r => r.headcount), r => r.area + '|' + r.section), d => d[1]);
+    const ap = pres + abs ? abs / (pres + abs) * 100 : null, op = pres ? ot / (pres * 8) * 100 : null;
+    [['c-w-abs', 'Absenteeism', ap, `absent ${d3.format(',.1~f')(abs)} of ${d3.format(',.1~f')(pres + abs)} man-days · target 5%`, ap > 10 ? '#D0312D' : ap > 5 ? '#E0A100' : '#051C2C'],
+     ['c-w-ot', 'Overtime', op, `${f0(Math.round(ot))} OT hours on ${d3.format(',.1~f')(pres)} present days (8-h shift)`, '#051C2C']].forEach(([id, lab, v, sub, colr]) => {
+      const card = document.getElementById(id); if (!card) return; let hd = card.querySelector('.chd');
+      if (!hd) { const h3 = card.querySelector('h3'); if (!h3) return; hd = document.createElement('div'); hd.className = 'chd'; h3.before(hd); hd.appendChild(h3);
+        const kw = document.createElement('div'); kw.className = 'kwrap'; kw.innerHTML = '<div class="ksel"><div class="sn"></div><div class="mn"></div></div><div class="kmini"><div class="kl"></div><div class="kv"></div><div class="ks"></div></div>'; hd.appendChild(kw); }
+      const kw = hd.querySelector('.kwrap'); kw.style.display = on ? '' : 'none'; if (!on) return;
+      kw.querySelector('.sn').textContent = sel || p.shop; kw.querySelector('.mn').textContent = (sel ? 'Area' : 'Shop') + ' · ' + f0(hc) + ' people';
+      kw.querySelector('.kl').textContent = lab + ' · ' + per; const kv = kw.querySelector('.kv'); kv.textContent = v == null ? '—' : f1(v) + '%'; kv.style.color = colr; kw.querySelector('.ks').textContent = sub; });
+  };
+  window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf);
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
       if (c[1].textContent === '—') { last.textContent = 'Not in sheet'; last.title = 'This shop has no area in the SharePoint attendance sheet'; }
       else if (c[2].textContent === '0') { last.textContent = 'Overtime only'; last.style.color = '#5A6670'; last.style.fontWeight = ''; last.title = 'Only the Overtime sheet uses this section; these people\'s attendance sits under their own sections'; }
       const miss = /^Not /.test(last.textContent); tr.style.background = miss ? '#FDECEC' : ''; tr.title = miss ? 'No attendance entered for this ' + (c[1].textContent === '—' ? 'shop' : 'section') + ' so far' : ''; });
     /* a Clear filter button on both "by Area" charts while a bar is selected */
     ['c-w-abs', 'c-w-ot'].forEach(id => { const h = document.querySelector('#' + id + ' h3'); if (!h) return; let b = h.querySelector('.wfclr');
-      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'qclr fon wfclr'; b.textContent = 'Clear filter'; b.style.cssText = 'margin-left:auto;font-size:11.5px;padding:3px 10px'; b.addEventListener('click', () => dash.setParams({ wfa: 0 })); h.appendChild(b); }
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'qclr fon wfclr'; b.textContent = 'Clear filter'; b.style.cssText = 'margin-left:6px;font-size:11.5px;padding:3px 10px'; b.addEventListener('click', () => dash.setParams({ wfa: 0 })); h.appendChild(b); }
       b.hidden = !sel; b.title = sel ? 'Showing ' + sel + ' only: click to show all areas' : ''; });
     if (tbl._wf) return; tbl._wf = 1;
     tbl.addEventListener('mouseover', ev => { const td = ev.target.closest('td'); if (!td || !td.closest('tbody') || td.cellIndex > 1 || td.parentElement.children.length < 3) return;
