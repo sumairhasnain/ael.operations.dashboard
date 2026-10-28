@@ -7,9 +7,10 @@ import pandas as pd
 
 RCV, CONS, MB52, OUT = sys.argv[1:5]
 STOCK_ASOF = sys.argv[5] if len(sys.argv) > 5 else dt.date.today().isoformat()   # date the MB52 was taken
-DATA = __import__('os').path.join(__import__('os').path.dirname(__file__), '..', 'data') + '/'
+DATA = '/home/claude/ael.operations.dashboard/data/'
 TXT = {'Material': str, 'Storage Location': str, 'Cost Center': str, 'Supplier': str, 'Movement Type': str, 'Material Group': str}
-r = pd.read_excel(RCV, dtype=TXT); c = pd.read_excel(CONS, dtype=TXT); s = pd.read_excel(MB52, dtype=TXT)
+rd = lambda f: pd.read_pickle(f) if f.endswith('.pkl') else pd.read_excel(f, dtype=TXT)   # .pkl: the same export already read once
+r = rd(RCV); c = rd(CONS); s = rd(MB52)
 s = s[s['Material'].notna()].copy()                      # MB52 export carries subtotal rows with no material
 r = r[r['Material'].notna() & (r['Material'].str.strip() != '')].copy()   # service POs have no material: not inventory
 c = c[c['Material'].notna()].copy()
@@ -100,7 +101,7 @@ def cat2(code, g, d):
     """Umair's rule (27 Oct, Raw Material added 28 Oct): codes 10.. and 15.. are Consumables, 20.. Tools, 25.. Spares; lubricants are their own category and never counted
     in the other three. Other codes (30.., 50.., 60.., 65.., 90.., 91..) are production parts."""
     d = str(d or '').upper(); c = str(code)
-    if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d)): return 'Lubricants'
+    if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d) and c[:2] in ('10', '15', '20', '25')): return 'Lubricants'   # 28 Oct: an 'OIL' word in a production part's name (oil seal, collar oil lock) is not a lubricant
     # 28 Oct: Raw Material is its own category: 10../15.. codes in the SAP raw-material groups, or held as a shop's bought-in
     # input (e.g. brass / steel rods for Carburetor child parts, plastic resin for Polymer) rather than its general stores
     if c[:2] in ('10', '15') and (g in RAW or (any(g.startswith(p) for p, _ in PFX) and not re.search(r'GEN$|-GE$|-G$', g))): return 'Raw Material'
@@ -139,7 +140,7 @@ CCR = [{'month': m, 'cc': cc, 'category': cat, 'shop': CC.get(cc, ''), 'label': 
         'value_pkr': round(v), 'lines': n, 'asof': ASOF_FLOW} for (m, cc, cat), (v, n) in ccr.items() if abs(v) >= 1]
 
 # ---- purchase receipts by supplier, last 3 months ----
-vn = json.load(open(__import__('os').path.join(__import__('os').path.dirname(__file__), 'sap_vendor_names.json')))
+vn = json.load(open('/home/claude/inv/vendor_names.json'))
 for q in json.load(open(DATA + 'atlas_vendors.json')): vn.setdefault(str(q['vendor_code']).lstrip('0'), q['vendor'].strip())
 p3 = months[-3:]
 sup = {}
@@ -154,22 +155,82 @@ ag = s.groupby('Material').agg(qty=('Unrestricted', 'sum'), qi=('Quality Inspect
 ag = ag[(ag['qty'] > 0) | (ag['qi'] > 0) | (ag['blocked'] > 0) | (ag['transit'] > 0)]
 r1 = r[r['Movement Type'] == '101']; lr = r1.groupby('Material')['Posting Date'].max()
 li = c[c['Movement Type'] == '201'].groupby('Material')['Posting Date'].max()
-d90 = today - pd.Timedelta(days=89)
+d90 = today - pd.Timedelta(days=89); d182 = today - pd.Timedelta(days=181)
 i90 = c[c['Posting Date'] >= d90].groupby('Material')['qty'].sum()
 r90 = r[r['Posting Date'] >= d90].groupby('Material')['Qty in unit of entry'].sum()
+i182 = c[c['Posting Date'] >= d182].groupby('Material')['qty'].sum()
+r182 = r[r['Posting Date'] >= d182].groupby('Material')['Qty in unit of entry'].sum()
+rv182 = r[r['Posting Date'] >= d182].groupby('Material')['amt'].sum()
+# 28 Oct (Umair): shortage, excess and slow-moving views. Rate of use per material, by the best record we have:
+#  consumables, tools, spares -> issues to cost centres (201 less 202) over the last 6 months; lubricants -> the larger of issues and receipts;
+#  bought-in production parts -> Atlas vendor schedule for the stock month (in-house and finished parts are outputs, not inputs: their
+#  use goes to production orders, 261, so it is 'not recorded' unless they were issued);
+#  raw material (and production parts with nothing else) -> receipts over the last 6 months as a stand-in (its use goes to
+#  production orders, 261, which these exports do not hold).
+SM = STOCK_ASOF[:7]; need = {}
+try:
+    for q in json.load(open(DATA + 'atlas_vendor_supply.json')):
+        if str(q['date'])[:7] == SM: need[str(q['code'])] = need.get(str(q['code']), 0) + float(q.get('scheduled') or 0)
+except Exception as e: print('atlas need skipped:', e)
+# Atlas's stock feed for production child parts: MB52 here can miss shop stores, so for parts Atlas tracks its stock is used for cover
+ast = {}
+try:
+    for q in json.load(open(DATA + 'atlas_child_stock.json')): ast[str(q['code'])] = float(q.get('stock') or 0)
+except Exception as e: print('atlas stock skipped:', e)
+i6 = c[(c['Posting Date'] >= d182) & (c['Movement Type'] == '201')]; umo = i6.groupby('Material')['m'].nunique()   # months with issues, of the last 6
+COVB = [(0, 'Out of stock'), (15, 'Under 15 days'), (30, '15–30 days'), (90, '30–90 days'), (180, '90–180 days'), (1e18, 'Over 180 days')]   # upper bounds, days of use
+def use_of(code, cat):
+    iq = float(i182.get(code, 0)); rq = float(r182.get(code, 0)); nd = float(need.get(code, 0))
+    if cat in ('Consumables', 'Tools', 'Spares'): return (iq / 6, 'issues') if iq > 0 else (0, None)
+    if cat == 'Lubricants':   # oils also leave by sale and lube filling, not only by 201: take the larger of issues and receipts
+        u = max(iq, rq); return (u / 6, 'issues' if iq >= rq else 'receipts') if u > 0 else (0, None)
+    if cat == 'Production parts':   # their use goes to production orders (261); a few 201 issues are not their real use
+        return (nd, 'Atlas plan') if nd > 0 else (0, 'not recorded' if (iq > 0 or rq > 0) else None)
+    return (rq / 6, 'receipts') if rq > 0 else (0, None)
+def moved(code, cat, lrd, lid):
+    """last movement: last issue; for raw material and production parts also the last receipt or this month's Atlas need;
+    a material never issued counts from its last receipt (time it has sat since arriving)"""
+    ds = [x for x in (lid,) if x is not None and not pd.isna(x)]
+    if cat in ('Raw Material', 'Production parts') or not ds: ds += [x for x in (lrd,) if x is not None and not pd.isna(x)]
+    if cat == 'Production parts' and need.get(code, 0) > 0: ds.append(today)
+    return max(ds) if ds else None
 STK = []
-for code, a in ag.iterrows():
-    g, d, cat, st, sh, how = inf.get(code) or info(code)
+def row_of(code, cat, st, sh, how, g, d, qty, qi, bl, tr, val, uom, slocs, unit=None):
     lrd = lr.get(code); lid = li.get(code); iq = float(i90.get(code, 0)); rq = float(r90.get(code, 0))
     age = (today - lrd).days if lrd is not None and not pd.isna(lrd) else None
     bucket = 'Not received since Jan 2024' if age is None else '0–90 days' if age <= 90 else '91–180 days' if age <= 180 else '181–365 days' if age <= 365 else 'Over 1 year'
-    rate = iq / 90 if iq > 0 else 0
-    STK.append({'code': code, 'part': str(d or '').strip(' *'), 'group': g, 'category': cat, 'stage': st, 'shop': sh, 'shop_by': how, 'models': models_of(d),
-                'uom': a['uom'], 'stock': round(float(a['qty']), 2), 'qi': round(float(a['qi']), 2), 'blocked': round(float(a['blocked']), 2), 'transit': round(float(a['transit']), 2),
-                'value_pkr': round(float(a['value'])), 'unit_pkr': round(float(a['value']) / float(a['qty']), 2) if a['qty'] else None, 'slocs': a['slocs'],
-                'last_rcv': lrd.strftime('%Y-%m-%d') if age is not None else None, 'last_issue': lid.strftime('%Y-%m-%d') if lid is not None and not pd.isna(lid) else None,
-                'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'cover_days': round(float(a['qty']) / rate) if rate else None,
-                'age_days': age, 'age_bucket': bucket, 'asof': STOCK_ASOF})
+    um, basis = use_of(code, cat); daily = um / 30.4 if um > 0 else 0
+    cq = ast[code] if basis == 'Atlas plan' and code in ast else qty   # stock used for cover
+    cx = cq / daily if daily else None; cover = round(cx) if daily else None
+    cb = next(n for t, n in COVB[1:] if cx < t) if daily else ('Use not recorded' if basis == 'not recorded' else 'No use in 6 months')
+    if daily and cq <= 0: cb = 'Out of stock'
+    up = unit if unit is not None else (val / qty if qty else None)
+    exc = 0 if basis == 'not recorded' else max(0.0, val - (180 * daily * up if (daily and up) else 0)) if val > 0 else 0   # excess: value above 6 months of use
+    mv = moved(code, cat, lrd, lid); md = (today - mv).days if mv is not None else None
+    mb = 'No movement since Jan 2024' if md is None else 'Moved in last 90 days' if md <= 90 else '91–365 days' if md <= 365 else 'Over 1 year'
+    return {'code': code, 'part': str(d or '').strip(' *'), 'group': g, 'category': cat, 'stage': st, 'shop': sh, 'shop_by': how, 'models': models_of(d),
+            'uom': uom, 'stock': round(qty, 2), 'qi': round(qi, 2), 'blocked': round(bl, 2), 'transit': round(tr, 2),
+            'value_pkr': round(val), 'unit_pkr': round(up, 2) if up is not None else None, 'slocs': slocs,
+            'last_rcv': lrd.strftime('%Y-%m-%d') if age is not None else None, 'last_issue': lid.strftime('%Y-%m-%d') if lid is not None and not pd.isna(lid) else None,
+            'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'use_month': round(um, 2), 'use_basis': basis, 'use_months': int(umo.get(code, 0)), 'cover_stock': round(cq, 2) if cq != qty else None, 'cover_days': cover, 'cover_bucket': cb,
+            'excess_pkr': round(exc), 'move_days': md, 'move_bucket': mb, 'age_days': age, 'age_bucket': bucket, 'asof': STOCK_ASOF}
+for code, a in ag.iterrows():
+    g, d, cat, st, sh, how = inf.get(code) or info(code)
+    STK.append(row_of(code, cat, st, sh, how, g, d, float(a['qty']), float(a['qi']), float(a['blocked']), float(a['transit']), float(a['value']), a['uom'], a['slocs']))
+# materials in use but with nothing on hand (MB52 lists only what is in stock): out of stock
+uom_of = pd.concat([r.drop_duplicates('Material').set_index('Material')['Base Unit of Measure'], c.drop_duplicates('Material').set_index('Material')['Base Unit of Measure']])
+uom_of = uom_of[~uom_of.index.duplicated()]
+oos = 0
+for code in (set(i90.index) | set(r90.index) | {k for k, v in need.items() if v > 0}) - set(ag.index):
+    g, d, cat, st, sh, how = inf.get(code) or info(code)
+    um, basis = use_of(code, cat)
+    if not um: continue
+    # only regular users count as out of stock: issued in 3 or more of the last 6 months, an Atlas part with no stock in Atlas either, or raw material received lately
+    recent = (basis == 'Atlas plan' and ast.get(code, 0) <= 0) or (basis == 'issues' and int(umo.get(code, 0)) >= 3) or (basis == 'receipts' and cat == 'Raw Material' and float(r90.get(code, 0)) > 0)
+    if not recent or not str(d or '').strip(): continue
+    rq = float(r182.get(code, 0)); unit = float(rv182.get(code, 0)) / rq if rq > 0 else None
+    row = row_of(code, cat, st, sh, how, g, d, 0.0, 0.0, 0.0, 0.0, 0.0, uom_of.get(code, ''), '', unit); row['oos'] = 1; STK.append(row); oos += 1
+print('out-of-stock rows added:', oos)
 
 def dump(n, rows):
     json.dump(rows, open(OUT + '/' + n + '.json', 'w'), ensure_ascii=False, separators=(',', ':'))

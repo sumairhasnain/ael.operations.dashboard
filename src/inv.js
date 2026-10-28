@@ -20,6 +20,16 @@
   const STN = s => s || 'Other';
   const AGES = ['0–90 days', '91–180 days', '181–365 days', 'Over 1 year', 'Not received since Jan 2024'];
   const AGEC = { '0–90 days': '#051C2C', '91–180 days': '#2251FF', '181–365 days': '#E0A100', 'Over 1 year': '#D0312D', 'Not received since Jan 2024': '#8B1E1B' };
+  /* 28 Oct: cover against use, excess and movement (fields built by tools/sap_inventory.py) */
+  const COVK = ['Out of stock', 'Under 15 days', '15–30 days', '30–90 days', '90–180 days', 'Over 180 days', 'No use in 6 months', 'Use not recorded'];
+  const COVC = { 'Out of stock': '#8B1E1B', 'Under 15 days': '#D0312D', '15–30 days': '#E0A100', '30–90 days': '#1E8C5A', '90–180 days': '#00A9F4', 'Over 180 days': '#2251FF', 'No use in 6 months': '#051C2C', 'Use not recorded': '#D5DCE3' };
+  const COVT = { 'Out of stock': 'In regular use but nothing on hand', 'Under 15 days': 'Shortage risk: less than 15 days of use on hand', '15–30 days': 'Low: 15 to 30 days of use on hand', '30–90 days': 'Healthy: one to three months of use',
+    '90–180 days': 'High: three to six months of use', 'Over 180 days': 'Excess: more than six months of use on hand', 'No use in 6 months': 'Stock with no use recorded in the last 6 months',
+    'Use not recorded': 'In-house and finished production parts: their use goes to production orders (261), which these SAP files do not hold' };
+  const SHORT = ['Out of stock', 'Under 15 days', '15–30 days'];
+  const MOVK = ['Moved in last 90 days', '91–365 days', 'Over 1 year', 'No movement since Jan 2024'];
+  const BAS = { issues: 'Issues (201)', 'Atlas plan': 'Atlas plan', receipts: 'Receipts', 'not recorded': '—' };
+  let covMode = 'n';
   const SH = { 'Carb Child Parts': 'Carburetor' };   // the SAP groups do not split Carburetor from its child parts
   const shopOk = (sh, g) => g.shop === 'All' || sh === g.shop || SH[sh] === g.shop || SH[g.shop] === sh;
 
@@ -66,13 +76,21 @@
 <div class="card" id="c-iv-cons"><h3>Shop Consumption by Month</h3><div class="ivsub">Issues to cost centres (SAP 201 less 202 returns), raw material excluded</div><div class="chart" id="iv-cons"></div></div>
 <div class="card" id="c-iv-cc"><h3>Consumption by Cost Centre</h3><div class="ivsub" id="iv-cc-sub"></div><div class="chart" id="iv-cc"></div></div>
 <div class="card" id="c-iv-sup"><h3>Top Suppliers Received</h3><div class="ivsub" id="iv-sup-sub"></div><div class="chart" id="iv-sup"></div></div>
+<div class="ivsep">Shortage against use</div>
+<div class="card wide" id="c-iv-cov"><div class="ivh"><h3>Stock Cover against Use, by Category</h3><div class="ivtog" id="iv-covm" role="group" aria-label="Count materials or value"></div></div><div class="ivsub" id="iv-cov-sub"></div><div class="chart" id="iv-cov"></div></div>
+<div class="card wide" id="c-iv-short"><h3>Shortage Watch</h3><div class="ivsub" id="iv-short-sub"></div><input class="q" id="q-ivs" placeholder="Search material, code or shop" aria-label="Search shortages"><div class="tbox"><table class="tb" id="tb-ivs"><thead><tr><th data-k="part">Material</th><th data-k="code">Code</th><th data-k="category">Category</th><th data-k="shop">Shop</th><th data-k="cstock" class="n">On hand</th><th data-k="uom">UoM</th><th data-k="use_month" class="n">Use / month</th><th data-k="cover_days" class="n">Cover (days)</th><th data-k="use_months" class="n">Months used (of 6)</th><th data-k="use_basis">Use from</th><th data-k="last_rcv">Last received</th></tr></thead><tbody></tbody></table></div></div>
+<div class="ivsep">Excess and slow-moving stock</div>
+<div class="card" id="c-iv-exc"><h3>Excess Stock by Category</h3><div class="ivsub">Value above 6 months of use, and stock with no use in the last 6 months</div><div class="chart" id="iv-exc"></div></div>
+<div class="card" id="c-iv-exl"><h3>Largest Excess Items</h3><div class="ivsub">Value on hand above 6 months of use, items in use</div><div class="chart" id="iv-exl"></div></div>
+<div class="card" id="c-iv-mov"><h3>Slow &amp; Non-moving Stock</h3><div class="ivsub">Value on hand by time since the material last moved (issued; for raw material and production parts also received or planned). Click a bar to filter</div><div class="chart" id="iv-mov"></div></div>
+<div class="card" id="c-iv-nm"><h3>Largest Non-moving Stock (over 1 year)</h3><div class="ivsub">Nothing moved in over a year, by value on hand</div><div class="chart" id="iv-nm"></div></div>
 <div class="card" id="c-iv-age"><h3>Stock Age since Last Receipt</h3><div class="ivsub">Value on hand, by days since the material was last received. Click a bar to filter</div><div class="chart" id="iv-age"></div></div>
 <div class="card" id="c-iv-slow"><h3>Largest Aged Stock (over 180 days)</h3><div class="ivsub">No receipt in the last 180 days, by value on hand</div><div class="chart" id="iv-slow"></div></div>
-<div class="card wide" id="c-iv-reg"><h3>Stock Register</h3><input class="q" id="q-iv" placeholder="Search material, code, group or location" aria-label="Search stock"><div class="tbox"><table class="tb" id="tb-iv"><thead><tr><th data-k="code">Code</th><th data-k="part">Material</th><th data-k="shop">Shop</th><th data-k="category">Category</th><th data-k="stage">Stage</th><th data-k="stock" class="n">Stock</th><th data-k="uom">UoM</th><th data-k="value_pkr" class="n">Value (Rs)</th><th data-k="qi" class="n">QI / Blocked</th><th data-k="last_rcv">Last received</th><th data-k="last_issue">Last issued</th><th data-k="issue_90d" class="n">Issued 90 d</th><th data-k="cover_days" class="n">Cover (days)</th><th data-k="slocs">Store loc.</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card wide" id="c-iv-reg"><h3>Stock Register</h3><input class="q" id="q-iv" placeholder="Search material, code, group or location" aria-label="Search stock"><div class="tbox"><table class="tb" id="tb-iv"><thead><tr><th data-k="code">Code</th><th data-k="part">Material</th><th data-k="shop">Shop</th><th data-k="category">Category</th><th data-k="stage">Stage</th><th data-k="stock" class="n">Stock</th><th data-k="uom">UoM</th><th data-k="value_pkr" class="n">Value (Rs)</th><th data-k="qi" class="n">QI / Blocked</th><th data-k="last_rcv">Last received</th><th data-k="last_issue">Last issued</th><th data-k="use_month" class="n">Use / month</th><th data-k="cover_days" class="n">Cover (days)</th><th data-k="slocs">Store loc.</th></tr></thead><tbody></tbody></table></div></div>
 <div class="ivsep">Atlas: safety stock and vendor supply</div>
 </div>`;
-    const qi = q('#q-iv'); if (qi) qi.addEventListener('input', () => window.__draw());
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
+    ['#q-iv', '#q-ivs'].forEach(s => { const qi = q(s); if (qi) qi.addEventListener('input', () => window.__draw()); });
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
@@ -80,7 +98,7 @@
   const load = () => { const s = rows('sap_stock'), f = rows('sap_flow'), c = rows('sap_cc'), u = rows('sap_rcv_sup');
     if (_c.s === s && _c.f === f && _c.c === c && _c.u === u) return _c;
     _c = { s, f, c, u,
-      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days'])) : null,
+      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days'])) : null,
       F: f ? f.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, CC: c ? c.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, U: u ? u.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null };
     return _c; };
 
@@ -129,7 +147,8 @@
     { const tg = q('#iv-tog'); tg.replaceChildren(); CATS.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c; b.style.setProperty('--c', CATC[c]); b.className = on(c) ? '' : 'off';
       b.setAttribute('aria-pressed', on(c)); b.title = (on(c) ? 'Included. Click to leave ' : 'Left out. Click to include ') + c + ' across this tab'; b.addEventListener('click', () => togg(c)); tg.appendChild(b); }); }
     const mOk = r => g.model === 'All' || String(r.models || '').split('/').includes(g.model);
-    const base = D.S.filter(r => shopOk(r.shop, g) && mOk(r));
+    const baseAll = D.S.filter(r => shopOk(r.shop, g) && mOk(r)), base = baseAll.filter(r => !r.oos);
+    const cov = COVK.includes(p.invcov) ? p.invcov : '', mov = MOVK.includes(p.invmov) ? p.invmov : '';
     const pass = (r, skip) => (skip === 'cat' || on(r.category)) && (skip === 'age' || !age || r.age_bucket === age);
     const S = base.filter(r => pass(r));
     const stockAsOf = (D.S.find(r => r.asof) || {}).asof || '', flowTo = (D.F.find(r => r.asof) || {}).asof || '';
@@ -157,7 +176,11 @@
     tile('Received from suppliers', fRs(pr), mon(M) + (part ? ' to date' : '') + vs(pr, avg3('Purchase')), C.blue, ['Purchase receipts (101 less 102)', mon(M) + ': ' + fRs(pr), prev3.length ? 'Average of ' + prev3.map(mon).join(', ') + ': ' + fRs(avg3('Purchase')) : '']);
     tile('Production into stock', fRs(pd), mon(M) + (part ? ' to date' : '') + vs(pd, avg3('Production')), C.cyan, ['Goods receipts without a supplier: production put into stock', mon(M) + ': ' + fRs(pd)]);
     tile('Shop consumption', fRs(cs), mon(M) + (part ? ' to date' : '') + vs(cs, avg3('Consumption')), C.teal, ['Issues to cost centres (201 less 202), raw material left out', mon(M) + ': ' + fRs(cs), prev3.length ? (part ? '3-month average, same share of the month: ' : '3-month average: ') + fRs(avg3('Consumption')) : '']);
-    tile('Aged over 180 days', fRs(aged), tv ? d3.format('.0%')(aged / tv) + ' of stock value' : '', aged / (tv || 1) > .15 ? C.bad : C.warn, ['No receipt in the last 180 days (or none since Jan 2024)', fRs(aged)]);
+    const SA = baseAll.filter(r => pass(r)), nOut = SA.filter(r => r.cover_bucket === 'Out of stock').length, nU15 = SA.filter(r => r.cover_bucket === 'Under 15 days').length;
+    tile('Shortage risk', nf(nOut + nU15), `${nf(nOut)} out of stock · ${nf(nU15)} under 15 days of use`, nOut + nU15 ? C.bad : C.navy, ['Materials in regular use with nothing on hand, or less than 15 days of use on hand', 'See Stock Cover and Shortage Watch below']);
+    const exc = d3.sum(S, r => r.excess_pkr || 0), nmv = d3.sum(S.filter(r => r.move_bucket === 'Over 1 year' || r.move_bucket === 'No movement since Jan 2024'), r => r.value_pkr);
+    tile('Excess stock', fRs(exc), tv ? d3.format('.0%')(exc / tv) + ' of stock value: above 6 months of use or unused' : '', exc / (tv || 1) > .3 ? C.bad : C.warn, ['Stock value above 6 months of use, plus stock with no use in the last 6 months', fRs(exc)]);
+    tile('Non-moving over 1 year', fRs(nmv), tv ? d3.format('.0%')(nmv / tv) + ' of stock value' : '', nmv / (tv || 1) > .15 ? C.bad : C.warn, ['Nothing issued (or, for raw material and production parts, received or planned) for over a year', fRs(nmv), 'Aged since last receipt over 180 days: ' + fRs(aged)]);
 
     /* category donut */
     const Sc = base.filter(r => pass(r, 'cat'));
@@ -193,6 +216,50 @@
     q('#iv-sup-sub').textContent = `Purchase receipts in ${mon(M)}${part ? ' to date' : ''}` + (g.shop !== 'All' ? ' for ' + g.shop + ' materials' : '') + (U.length ? '' : ' (supplier detail kept for the last 3 months)');
     hrank(q('#iv-sup'), us.map(([k, o]) => ({ label: o.name.length > 30 ? o.name.slice(0, 29) + '…' : o.name, sub: `${k} · ${nf(o.n)} receipt lines`, value: o.v, tip: [o.name, 'Supplier ' + k, fRs(o.v), nf(o.n) + ' receipt lines'] })), { fmt: fM, rh: 34, emptyMsg: 'No supplier receipts for this selection' });
 
+    /* cover against use, by category (100% bars, count or value); a click lists that band in Shortage Watch and the register */
+    { const mt = q('#iv-covm'); mt.replaceChildren(); [['n', 'Materials'], ['v', 'Value']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.setProperty('--c', C.navy); b.className = covMode === k ? '' : 'off';
+      b.setAttribute('aria-pressed', covMode === k); b.addEventListener('click', () => { covMode = k; window.__draw(); }); mt.appendChild(b); }); }
+    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = issues to cost centres over the last 6 months for consumables, tools and spares; the larger of issues and receipts for lubricants; receipts over 6 months as a stand-in for raw material; Atlas vendor schedule for bought-in production parts (stock from Atlas). Click a band to list it below';
+    { const el = q('#iv-cov'), cats = CATS.filter(c => on(c) && SA.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SA.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
+      if (!cats.length) empty(el, 'No stock for this selection'); else {
+        const get = (c, k) => M2.get(c).get(k) || { n: 0, v: 0 }, mv = o => covMode === 'n' ? o.n : o.v;
+        const rh = 32, h = cats.length * rh + 8, { svg, w } = box(el, h), x0 = 128, x1 = w - 84;
+        cats.forEach((c, i) => { const y = 4 + i * rh, tot = d3.sum(COVK, k => mv(get(c, k))) || 1; let acc = 0;
+          svg.append('text').attr('x', 0).attr('y', y + rh / 2 + 4).attr('font-size', 11.5).style('fill', C.navy).style('font-weight', 600).text(c);
+          COVK.forEach(k => { const o = get(c, k), m = mv(o); if (!m) return; const xa = x0 + (x1 - x0) * acc / tot, wd = (x1 - x0) * m / tot;
+            const gg = svg.append('g').style('cursor', 'pointer').style('opacity', cov && cov !== k ? .35 : 1);
+            gg.append('rect').attr('x', xa).attr('y', y + 4).attr('width', Math.max(.5, wd - 1)).attr('height', rh - 8).attr('fill', COVC[k]);
+            const lab = covMode === 'n' ? nf(o.n) : d3.format('.0%')(m / tot); if (wd > lab.length * 6.5 + 6) gg.append('text').attr('x', xa + wd / 2).attr('y', y + rh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', k === 'Use not recorded' || k === '15–30 days' ? C.navy : '#fff').style('pointer-events', 'none').text(lab);
+            gg.on('mousemove', ev => tip.show(ev, [c + ' · ' + k, `${nf(o.n)} materials · ${fRs(o.v)}`, d3.format('.0%')(m / tot) + ' of the category by ' + (covMode === 'n' ? 'count' : 'value'), COVT[k], cov === k ? 'Click to clear' : 'Click to list these below']))
+              .on('mouseleave', tip.hide).on('click', () => { tip.hide(); set({ invcov: cov === k ? 0 : k }); }); acc += m; });
+          const sh = get(c, 'Out of stock').n + get(c, 'Under 15 days').n;
+          svg.append('text').attr('x', x1 + 8).attr('y', y + rh / 2 + 4).attr('font-size', 11).style('fill', sh ? C.bad : '#5A6670').style('font-weight', 600).text(sh ? nf(sh) + ' short' : 'none short'); });
+        const lg = document.createElement('div'); lg.className = 'legend'; COVK.forEach(k => { if (!cats.some(c => get(c, k).n)) return; const s2 = document.createElement('span'), i2 = document.createElement('i'); i2.style.background = COVC[k]; s2.title = COVT[k]; s2.append(i2, document.createTextNode(k)); lg.appendChild(s2); }); el.appendChild(lg); } }
+
+    /* shortage watch: out of stock, under 15 and 15-30 days (or the band clicked above), lowest cover first, then highest use value */
+    { const bands = cov ? [cov] : SHORT, rs = SA.filter(r => bands.includes(r.cover_bucket)).map(r => ({ ...r, cstock: r.cover_stock != null ? r.cover_stock : r.stock, uv: (r.use_month || 0) * (r.unit_pkr || 0) }))
+        .sort((a, b) => (a.cover_days ?? 1e9) - (b.cover_days ?? 1e9) || b.uv - a.uv);
+      q('#iv-short-sub').textContent = (cov ? `Showing “${cov}” (click the band again to go back). ` : `${nf(rs.length)} materials with under 30 days of use on hand, lowest cover first. `) + '“Months used” counts the last 6 months with an issue; regular users are the real risk.';
+      table(q('#tb-ivs'), rs, [{ k: 'part', fmt: v => v || '—' }, { k: 'code' }, { k: 'category', render: (td, v) => { const sp = document.createElement('span'); sp.className = 'ivcat'; sp.style.background = CATC[v] || '#B9C1C9'; sp.textContent = v; td.appendChild(sp); } }, { k: 'shop', fmt: v => v || '—' },
+        { k: 'cstock', n: 1, fmt: (v, r) => n2(v) + (r.cover_stock != null ? ' *' : ''), color: v => v <= 0 ? C.bad : null }, { k: 'uom' }, { k: 'use_month', n: 1, fmt: v => v ? n2(v) : '—' },
+        { k: 'cover_days', n: 1, fmt: (v, r) => r.cover_bucket === 'Out of stock' ? 'Out' : v == null ? '—' : v === 0 ? '<1' : nf(v), color: (v, r) => r.cover_bucket === 'Out of stock' || (v != null && v < 15) ? C.bad : v != null && v < 30 ? C.warn : null },
+        { k: 'use_months', n: 1, fmt: (v, r) => r.use_basis === 'issues' ? nf(v || 0) : '—' }, { k: 'use_basis', fmt: v => BAS[v] || '—' }, { k: 'last_rcv', fmt: dmy }], { q: q('#q-ivs'), sort: 'cover_days', dir: 1 }); }
+
+    /* excess: value above 90 days of use, by category; the largest items */
+    { const ex = CATS.filter(c => on(c) && S.some(r => r.category === c && r.excess_pkr > 0)), xs = k => (c, kk) => d3.sum(S.filter(r => r.category === c && (kk === 'none' ? !r.use_month : r.use_month > 0)), r => r.excess_pkr || 0);
+      vbar(q('#iv-exc'), ex, [{ key: 'over', name: 'Above 6 months of use', color: '#2251FF' }, { key: 'none', name: 'No use in 6 months', color: '#051C2C' }], xs(), { stack: 1, h: 250, rot: 1, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, emptyMsg: 'No excess stock for this selection' });
+      const top = S.filter(r => r.excess_pkr > 0 && r.use_month > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 10);
+      hrank(q('#iv-exl'), top.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)} days of cover`, value: r.excess_pkr,
+        tip: [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover`, `Above 6 months of use: ${fRs(r.excess_pkr)}`] })), { fmt: fM, rh: 34, emptyMsg: 'No excess on items in use' }); }
+
+    /* slow and non-moving: value by time since last movement, by category; the largest non-moving items */
+    { const Sm = base.filter(r => pass(r));
+      vbar(q('#iv-mov'), MOVK, CATS.filter(c => Sm.some(r => r.category === c)).map(c => ({ key: c, name: c, color: CATC[c] })), (a, c) => d3.sum(Sm.filter(r => r.move_bucket === a && r.category === c), r => r.value_pkr),
+        { stack: 1, h: 250, xFmt: a => ({ 'Moved in last 90 days': 'Within 90 days', 'No movement since Jan 2024': 'None since Jan 24' })[a] || a, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: mov || null, onClick: a => set({ invmov: mov === a ? 0 : a }), emptyMsg: 'No stock for this selection' });
+      const nm = Sm.filter(r => r.move_bucket === 'Over 1 year' || r.move_bucket === 'No movement since Jan 2024').sort((a, b) => b.value_pkr - a.value_pkr).slice(0, 10);
+      hrank(q('#iv-nm'), nm.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.move_days == null ? 'no movement since Jan 2024' : 'last moved ' + nf(r.move_days) + ' days ago'}${r.shop ? ' · ' + r.shop : ''}`, value: r.value_pkr,
+        tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue since Jan 2024', r.last_rcv ? 'Last received ' + dmy(r.last_rcv) : 'No receipt since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No non-moving stock for this selection' }); }
+
     /* ageing */
     const Sa = base.filter(r => pass(r, 'age'));
     vbar(q('#iv-age'), AGES, CATS.filter(c => Sa.some(r => r.category === c)).map(c => ({ key: c, name: c, color: CATC[c] })), (a, c) => d3.sum(Sa.filter(r => r.age_bucket === a && r.category === c), r => r.value_pkr),
@@ -202,10 +269,11 @@
       tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_rcv ? 'Last received ' + dmy(r.last_rcv) + ` (${r.age_days} days)` : 'No receipt since Jan 2024', r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue on record'] })), { fmt: fM, rh: 34, emptyMsg: 'No aged stock for this selection' });
 
     /* register */
-    table(q('#tb-iv'), S, [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: v => v || '—' }, { k: 'category', render: (td, v) => { const s = document.createElement('span'); s.className = 'ivcat'; s.style.background = CATC[v] || '#B9C1C9'; s.textContent = v; td.appendChild(s); } },
+    const Sr = baseAll.filter(r => pass(r) && (!cov || r.cover_bucket === cov) && (!mov || r.move_bucket === mov) && (!r.oos || cov === 'Out of stock'));
+    table(q('#tb-iv'), Sr, [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: v => v || '—' }, { k: 'category', render: (td, v) => { const s = document.createElement('span'); s.className = 'ivcat'; s.style.background = CATC[v] || '#B9C1C9'; s.textContent = v; td.appendChild(s); } },
       { k: 'stage', fmt: v => v || '—' }, { k: 'stock', n: 1, fmt: v => n2(v) }, { k: 'uom' }, { k: 'value_pkr', n: 1, fmt: v => nf(Math.round(v)) },
       { k: 'qi', n: 1, fmt: (v, r) => (r.qi || r.blocked) ? n2(r.qi || 0) + ' / ' + n2(r.blocked || 0) : '—', color: (v, r) => r.qi || r.blocked ? C.warn : null },
-      { k: 'last_rcv', fmt: dmy, color: (v, r) => r.age_days == null || r.age_days > 365 ? C.bad : r.age_days > 180 ? C.warn : null }, { k: 'last_issue', fmt: dmy }, { k: 'issue_90d', n: 1, fmt: v => v > 0 ? n2(v) : v < 0 ? 'net return' : '—' },
-      { k: 'cover_days', n: 1, fmt: v => v == null ? '—' : nf(v), color: v => v != null && v < 15 ? C.bad : null }, { k: 'slocs' }], { q: q('#q-iv'), sort: 'value_pkr', dir: -1 });
+      { k: 'last_rcv', fmt: dmy, color: (v, r) => r.age_days == null || r.age_days > 365 ? C.bad : r.age_days > 180 ? C.warn : null }, { k: 'last_issue', fmt: dmy }, { k: 'use_month', n: 1, fmt: (v, r) => v > 0 ? n2(v) + (r.use_basis !== 'issues' ? ' ' + ({ 'Atlas plan': '(plan)', receipts: '(rcpt)' })[r.use_basis] : '') : '—' },
+      { k: 'cover_days', n: 1, fmt: (v, r) => r.cover_bucket === 'Out of stock' ? 'Out' : v == null ? '—' : nf(v), color: (v, r) => r.cover_bucket === 'Out of stock' || (v != null && v < 15) ? C.bad : v != null && v > 180 ? C.blue : null }, { k: 'slocs' }], { q: q('#q-iv'), sort: 'value_pkr', dir: -1 });
   };
 })();
