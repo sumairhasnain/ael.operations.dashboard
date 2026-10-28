@@ -50,22 +50,29 @@
     if (!sel) { const cov = new Set([...att, ...ppl].map(r => r.shop)); PSH.forEach(s => { if (!cov.has(s) && (p.shop === 'All' || p.shop === s)) out.push({ key: s + '|', area: s, section: null, shop: s, hc: null }); }); }
     return out;
   };
-  /* KPI corner on the two "by Area" charts while a shop (top filter) or an area (bar click) is picked, styled like the
-     Production tab's Daily Production card: the name on the left, the period's absenteeism / overtime % on the right.
-     Overtime % = overtime hours against present man-days at 8 hours each. */
+  /* KPI corner, top right of each Manpower chart, while a shop (top filter) or an area (bar click) is picked. Styled like the
+     Production tab's Daily Production card: the name on the left, the figure on the right. The two "by Area" charts show the
+     period's absenteeism % and overtime % (overtime hours against present man-days at 8 hours each); the two daily charts
+     show the last day entered. */
   const kpis = (p, sel, rf) => {
     const on = !!(rf && rf.length && (sel || p.shop !== 'All')), sun = r => new Date(r.date + 'T00:00:00Z').getUTCDay() === 0, w = (rf || []).filter(r => !sun(r));
-    const pres = d3.sum(w, r => r.present), abs = d3.sum(w, r => r.absent), ot = d3.sum(rf || [], r => r.ot_hours), f0 = d3.format(','), f1 = d3.format(',.1f');
-    const dd = s => +s.slice(8) + ' ' + MON[+s.slice(5, 7) - 1], per = p.day ? dd(p.day) : +(p.start || '01').slice(-2) + '–' + dd(p.actEnd || p.end), hc = d3.sum(d3.rollups(rf || [], v => d3.max(v, r => r.headcount), r => r.area + '|' + r.section), d => d[1]);
-    const ap = pres + abs ? abs / (pres + abs) * 100 : null, op = pres ? ot / (pres * 8) * 100 : null;
-    [['c-w-abs', 'Absenteeism', ap, `absent ${d3.format(',.1~f')(abs)} of ${d3.format(',.1~f')(pres + abs)} man-days · target 5%`, ap > 10 ? '#D0312D' : ap > 5 ? '#E0A100' : '#051C2C'],
-     ['c-w-ot', 'Overtime', op, `${f0(Math.round(ot))} OT hours on ${d3.format(',.1~f')(pres)} present days (8-h shift)`, '#051C2C']].forEach(([id, lab, v, sub, colr]) => {
+    const f0 = d3.format(','), f1 = d3.format(',.1f'), fx = d3.format(',.1~f'), pres = d3.sum(w, r => r.present), abs = d3.sum(w, r => r.absent), ot = d3.sum(rf || [], r => r.ot_hours);
+    const dd = s => +s.slice(8) + ' ' + MON[+s.slice(5, 7) - 1], wd = s => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(s + 'T00:00:00Z').getUTCDay()] + ' ' + dd(s);
+    const per = p.day ? dd(p.day) : +(p.start || '01').slice(-2) + '–' + dd(p.actEnd || p.end), hc = d3.sum(d3.rollups(rf || [], v => d3.max(v, r => r.headcount), r => r.area + '|' + r.section), d => d[1]);
+    const ap = pres + abs ? abs / (pres + abs) * 100 : null, op = pres ? ot / (pres * 8) * 100 : null, acol = v => v > 10 ? '#D0312D' : v > 5 ? '#E0A100' : '#051C2C';
+    const la = d3.max(w.filter(r => r.present + r.absent > 0), r => r.date), lw = la ? w.filter(r => r.date === la) : [], lp = d3.sum(lw, r => r.present), lab = d3.sum(lw, r => r.absent), lap = lp + lab ? lab / (lp + lab) * 100 : null;
+    const lo = d3.max((rf || []).filter(r => r.ot_hours > 0), r => r.date), lr = lo ? rf.filter(r => r.date === lo) : [], loh = d3.sum(lr, r => r.ot_hours), lon = d3.sum(lr, r => r.ot_people);
+    [['c-w-abs', 'Absenteeism · ' + per, ap == null ? '—' : f1(ap) + '%', `absent ${fx(abs)} of ${fx(pres + abs)} man-days · target 5%`, acol(ap)],
+     ['c-w-ot', 'Overtime · ' + per, op == null ? '—' : f1(op) + '%', `${f0(Math.round(ot))} OT hours on ${fx(pres)} present days (8-h shift)`, '#051C2C'],
+     ['c-w-dabs', la ? 'Last day entered · ' + wd(la) : 'Last day entered', lap == null ? '—' : f1(lap) + '%', la ? `absent ${fx(lab)} of ${fx(lp + lab)} marked · target 5%` : 'no attendance marked', acol(lap)],
+     ['c-w-dot', lo ? 'Last overtime day · ' + wd(lo) : 'Last overtime day', lo ? f0(Math.round(loh)) + ' h' : '—', lo ? `${f0(lon)} people · ${fx(lon ? loh / lon : 0)} h each` : 'no overtime entered', '#051C2C']].forEach(([id, kl, kv, ks, colr]) => {
       const card = document.getElementById(id); if (!card) return; let hd = card.querySelector('.chd');
       if (!hd) { const h3 = card.querySelector('h3'); if (!h3) return; hd = document.createElement('div'); hd.className = 'chd'; h3.before(hd); hd.appendChild(h3);
-        const kw = document.createElement('div'); kw.className = 'kwrap'; kw.innerHTML = '<div class="ksel"><div class="sn"></div><div class="mn"></div></div><div class="kmini"><div class="kl"></div><div class="kv"></div><div class="ks"></div></div>'; hd.appendChild(kw); }
-      const kw = hd.querySelector('.kwrap'); kw.style.display = on ? '' : 'none'; if (!on) return;
-      kw.querySelector('.sn').textContent = sel || p.shop; kw.querySelector('.mn').textContent = (sel ? 'Area' : 'Shop') + ' · ' + f0(hc) + ' people';
-      kw.querySelector('.kl').textContent = lab + ' · ' + per; const kv = kw.querySelector('.kv'); kv.textContent = v == null ? '—' : f1(v) + '%'; kv.style.color = colr; kw.querySelector('.ks').textContent = sub; });
+        const k = document.createElement('div'); k.className = 'kwrap'; k.style.marginLeft = 'auto';
+        k.innerHTML = '<div class="ksel"><div class="sn"></div><div class="mn"></div></div><div class="kmini" style="min-width:0"><div class="kl"></div><div class="kv"></div><div class="ks"></div></div>'; hd.appendChild(k); }
+      const k = hd.querySelector('.kwrap'); k.style.display = on ? '' : 'none'; if (!on) return;
+      k.querySelector('.sn').textContent = sel || p.shop; k.querySelector('.mn').textContent = (sel ? 'Area' : 'Shop') + ' · ' + f0(hc) + ' people';
+      k.querySelector('.kl').textContent = kl; const v = k.querySelector('.kv'); v.textContent = kv; v.style.color = colr; k.querySelector('.ks').textContent = ks; });
   };
   window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf);
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
