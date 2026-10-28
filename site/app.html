@@ -2450,12 +2450,12 @@ window.addEventListener('resize', () => window.__draw());
     const by = d3.group(mine.filter(r => w.includes(r.month)), r => r.emp_id + '|' + r.name);
     const have = w.filter(x => mine.some(r => r.month === x));
     const rows = [...by.values()].filter(v => v.some(r => r.month === m)).map(v => { const c = v.find(r => r.month === m), pa = d3.sum(v, r => r.present + r.absent);
-      return { n: c.name, id: c.emp_id, s: c.section, g: c.grade, a: c.absent, ap: pa ? d3.sum(v, r => r.absent) / pa * 100 : null, ot: c.ot_hours, ot3: d3.sum(v, r => r.ot_hours) }; })
+      return { n: c.name, id: c.emp_id, s: c.section, g: c.grade, a: c.absent, am: c.present + c.absent ? c.absent / (c.present + c.absent) * 100 : null, ap: pa ? d3.sum(v, r => r.absent) / pa * 100 : null, ot: c.ot_hours, ot3: d3.sum(v, r => r.ot_hours) }; })
       .sort((x, y) => y.a - x.a || y.ot - x.ot || x.n.localeCompare(y.n));
     const col = v => v == null ? '' : v > 10 ? 'color:#D0312D;font-weight:600' : v > 5 ? 'color:#E0A100;font-weight:600' : '';
     const sec = !section;
-    pop.innerHTML = `<div class="hd">${esc(area)}${section ? ' · ' + esc(section) : ''} <span>— ${rows.length} people · ${mon(m)}</span></div>` + (rows.length ? `<table><thead><tr><th>Name</th><th>EMP ID</th>${sec ? '<th>Section</th>' : ''}<th class="n">Absent days</th><th class="n">Absent % (3-mo avg)</th><th class="n">OT h (${mon(m)})</th><th class="n">OT h (3 mo)</th></tr></thead><tbody>` +
-      rows.map(r => `<tr><td>${esc(r.n)}</td><td>${esc(r.id)}</td>${sec ? `<td>${esc(r.s)}</td>` : ''}<td class="n">${nf(r.a)}</td><td class="n" style="${col(r.ap)}">${r.ap == null ? '—' : d3.format('.1f')(r.ap) + '%'}</td><td class="n">${nf(r.ot)}</td><td class="n">${nf(r.ot3)}</td></tr>`).join('') + '</tbody></table>'
+    pop.innerHTML = `<div class="hd">${esc(area)}${section ? ' · ' + esc(section) : ''} <span>— ${rows.length} people · ${mon(m)}</span></div>` + (rows.length ? `<table><thead><tr><th>Name</th><th>EMP ID</th>${sec ? '<th>Section</th>' : ''}<th class="n">Absent days</th><th class="n">Absent % (${mon(m)})</th><th class="n">Absent % (3-mo avg)</th><th class="n">OT h (${mon(m)})</th><th class="n">OT h (3 mo)</th></tr></thead><tbody>` +
+      rows.map(r => `<tr><td>${esc(r.n)}</td><td>${esc(r.id)}</td>${sec ? `<td>${esc(r.s)}</td>` : ''}<td class="n">${nf(r.a)}</td><td class="n" style="${col(r.am)}">${r.am == null ? '—' : d3.format('.1f')(r.am) + '%'}</td><td class="n" style="${col(r.ap)}">${r.ap == null ? '—' : d3.format('.1f')(r.ap) + '%'}</td><td class="n">${nf(r.ot)}</td><td class="n">${nf(r.ot3)}</td></tr>`).join('') + '</tbody></table>'
       : `<div class="ft">No person-level attendance for ${mon(m)}.</div>`) +
       `<div class="ft">Absent days count working days only (Sundays skipped). 3-month figures cover ${have.length ? have.map(mon).join(', ') : '—'}${have.length < 3 ? ' so far' : ''}.</div>`;
     pop.style.display = 'block'; pop.scrollTop = 0;
