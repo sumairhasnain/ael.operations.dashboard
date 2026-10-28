@@ -698,7 +698,7 @@ sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new O
 sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
 const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: window.__TODAY.slice(0, 7), asof: window.__TODAY, shift: 'All' }); };
 setDefaults();
-sShop.addEventListener('change', () => { window.__autoShop = false; dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }); });
+sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
 sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
 /* Part filter: type part of a name or code, pick from the suggestions (like a search box) */
 const pList = document.getElementById('f-part-list'), pX = document.getElementById('f-part-x'); let _ps = [], _pi = -1, _pL = [];
@@ -755,7 +755,7 @@ on(sShop, p.shop !== 'All'); on(sModel, p.model !== 'All'); on(sPart, !!p.pf); o
 parameter, including ones added later), a search box with text, or a table view switch away from its default */
 const NOT_FILTER = new Set(['month', 'asof', '_day', 'capsh', 'shop', 'model', 'shift']);
 window.__clearState = () => { const btn = document.getElementById('f-clear'); if (!btn) return; const root = document.getElementById('ael');
-const dd = [...root.querySelectorAll('.filters .fon:not(#f-clear)')].some(e => !(e.id === 'f-shop' && window.__autoShop)), pr = Object.entries(dash.params() || {}).some(([k, v]) => !NOT_FILTER.has(k) && !(k === 'invoff' && String(v).split('|').every(c => ['Raw Material', 'Lubricants', 'Production parts'].includes(c))) && v !== 0 && v !== '0' && v !== '' && v != null && v !== false && v !== 'All' && v !== 'all');
+const dd = !!root.querySelector('.filters .fon:not(#f-clear)'), pr = Object.entries(dash.params() || {}).some(([k, v]) => !NOT_FILTER.has(k) && !(k === 'invoff' && String(v).split('|').every(c => ['Raw Material', 'Lubricants', 'Production parts'].includes(c))) && v !== 0 && v !== '0' && v !== '' && v != null && v !== false && v !== 'All' && v !== 'all');
 const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw = [...root.querySelectorAll('select[data-default]')].some(e => e.value !== e.dataset.default) || ((document.getElementById('s-bomv') || {}).value || 'all') !== 'all';
 const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); root.querySelectorAll('button.qclr').forEach(b => b.classList.toggle('fon', act)); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
 document.getElementById('ael').addEventListener('input', ev => { if (ev.target.matches('input.q')) window.__clearState(); });
@@ -770,9 +770,7 @@ window.__show = p => show(p, true);
 window.__setShifts = async (machine, n, base) => { if (window.__PORTAL && window.__PORTAL.saveShifts) { await window.__PORTAL.saveShifts(machine, n); return; }
 let m = {}; try { m = JSON.parse(dash.params().capsh || '{}') || {}; } catch (e) { m = {}; } if (n === base) delete m[machine]; else m[machine] = n; dash.setParams({ capsh: Object.keys(m).length ? JSON.stringify(m) : 0 }); };
 window.__resetShifts = async machines => { if (window.__PORTAL && window.__PORTAL.saveShifts) { for (const mc of machines) await window.__PORTAL.saveShifts(mc, null); return; } dash.setParams({ capsh: 0 }); };
-document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return;
-/* leaving Products: drop the Clutch it picked by itself */ if (b.dataset.p !== 'product' && window.__autoShop) { window.__autoShop = false; if (window.__P().shop === 'Clutch') dash.setParams({ shop: 'All', sf: 0, pf: 0 }); } show(b.dataset.p, true);
-/* Products tab opens on the Clutch shop when no shop is picked yet */ if (b.dataset.p === 'product' && window.__P().shop === 'All' && (window.__SHOPS || []).includes('Clutch')) { window.__autoShop = true; dash.setParams({ shop: 'Clutch', sf: 0, pf: 0 }); } });
+document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; show(b.dataset.p, true); });
 show(location.hash.slice(1) || 'overview', false);
 [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
 ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm','q-fih','q-fv','q-fs'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
