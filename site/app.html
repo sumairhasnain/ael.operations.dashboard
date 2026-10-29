@@ -2762,18 +2762,13 @@ window.addEventListener('resize', () => window.__draw());
 })();
 
 /* Production tab (29 Oct, Umair): Daily Production (with its KPI) shows only when a shop is picked, by clicking its bar in
-   Plan vs Actual - By Shop or in the Shop filter. It then sits under By Shop (which shows just that shop), with By Model / By Part
-   on the right of both. With all shops it is hidden. */
+   Plan vs Actual - By Shop or in the Shop filter. It then runs the full width under By Shop (which shows just that shop) and By Model / By Part. With all shops it is hidden. */
 (() => {
   const css = document.createElement('style');
   css.textContent = `#production .grid > #c-p-daily{display:none}
 #production.shf .grid > #c-p-daily{display:block}
 #production.shf #c-p-shop .chart{min-height:0}
-#c-p-model .legend{display:none} /* By Model / By Part: same legend as By Shop on the left */ /* same legend as the chart on the right */
-@media (min-width: 960px){#production.shf .grid{grid-template-rows:auto 1fr}
-#production.shf .grid > #c-p-shop{grid-column:1;grid-row:1;align-self:start}
-#production.shf .grid > #c-p-daily{grid-column:1;grid-row:2}
-#production.shf .grid > #c-p-model{grid-column:2;grid-row:1 / span 2}}`;
+#c-p-model .legend{display:none} /* By Model / By Part: same legend as By Shop on the left */`;
   document.head.appendChild(css);
   const d0 = window.__draw; if (!d0) return;
   window.__draw = (...a) => { const pg = document.getElementById('production'); let s = 'All'; try { s = window.__P().shop; } catch (e) {}
