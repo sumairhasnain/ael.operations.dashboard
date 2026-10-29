@@ -2768,7 +2768,8 @@ window.addEventListener('resize', () => window.__draw());
   const css = document.createElement('style');
   css.textContent = `#production .grid > #c-p-daily{display:none}
 #production.shf .grid > #c-p-daily{display:block}
-#production.shf #c-p-shop .legend{display:none} #production.shf #c-p-shop .chart{min-height:0} /* same legend as the chart on the right */
+#production.shf #c-p-shop .chart{min-height:0}
+#c-p-model .legend{display:none} /* By Model / By Part: same legend as By Shop on the left */ /* same legend as the chart on the right */
 @media (min-width: 960px){#production.shf .grid{grid-template-rows:auto 1fr}
 #production.shf .grid > #c-p-shop{grid-column:1;grid-row:1;align-self:start}
 #production.shf .grid > #c-p-daily{grid-column:1;grid-row:2}
