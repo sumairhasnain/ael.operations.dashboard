@@ -119,7 +119,7 @@
   css.textContent = `#production .grid > #c-p-daily{display:none}
 #production.shf .grid > #c-p-daily{display:block}
 #production.shf #c-p-shop .chart{min-height:0}
-#c-p-shop > .kwrap{margin-top:12px;justify-content:flex-start}
+#production.shf #c-p-shop{display:flex;flex-direction:column;padding-bottom:4px} #c-p-shop > .kwrap{margin-top:auto;padding-top:12px;justify-content:flex-start} /* KPI card at the bottom edge */
 #production.shf #c-p-daily .chart{min-height:0} #production.shf #c-p-daily h3{margin-bottom:0}
 #c-p-model .legend{display:none} /* By Model / By Part: same legend as By Shop on the left */`;
   document.head.appendChild(css);
