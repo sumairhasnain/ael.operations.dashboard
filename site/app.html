@@ -2547,7 +2547,7 @@ window.addEventListener('resize', () => window.__draw());
     return out;
   };
   /* KPI corner, top right of each Manpower chart, while a shop (top filter) or an area (bar click) is picked. Styled like the
-     Production tab's Daily Production card: the name on the left, the figure on the right. The two "by Area" charts show the
+     Production tab's Daily Production card: the name on the left, level with the figure on the right. The two "by Area" charts show the
      period's absenteeism % and overtime % (overtime hours against present man-days at 8 hours each); the two daily charts
      show the last day entered. */
   const kpis = (p, sel, rf) => {
@@ -2565,7 +2565,7 @@ window.addEventListener('resize', () => window.__draw());
       const card = document.getElementById(id); if (!card) return; let hd = card.querySelector('.chd');
       if (!hd) { const h3 = card.querySelector('h3'); if (!h3) return; hd = document.createElement('div'); hd.className = 'chd'; h3.before(hd); hd.appendChild(h3);
         const k = document.createElement('div'); k.className = 'kwrap'; k.style.marginLeft = 'auto';
-        k.innerHTML = '<div class="ksel"><div class="sn"></div><div class="mn"></div></div><div class="kmini" style="min-width:0"><div class="kl"></div><div class="kv"></div><div class="ks"></div></div>'; hd.appendChild(k); }
+        k.innerHTML = '<div class="ksel" style="justify-content:flex-start;padding-top:17px"><div class="sn"></div><div class="mn"></div></div><div class="kmini" style="min-width:0"><div class="kl"></div><div class="kv"></div><div class="ks"></div></div>'; hd.appendChild(k); }
       const k = hd.querySelector('.kwrap'); k.style.display = on ? '' : 'none'; if (!on) return;
       k.querySelector('.sn').textContent = sel || p.shop; k.querySelector('.mn').textContent = (sel ? 'Area' : 'Shop') + ' · ' + f0(hc) + ' people';
       k.querySelector('.kl').textContent = kl; const v = k.querySelector('.kv'); v.textContent = kv; v.style.color = colr; k.querySelector('.ks').textContent = ks; });
