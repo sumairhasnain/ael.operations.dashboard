@@ -111,3 +111,19 @@
     T.addEventListener('mouseleave', () => { const vp = document.getElementById('vpop'); if (vp) { vp.style.display = 'none'; vp.style.flexDirection = vp.style.alignItems = ''; vp.dataset.rw = ''; vp.dataset.code = ''; vp.replaceChildren(); } });
   };
 })();
+
+/* Production tab (29 Oct, Umair): Daily Production (with its KPI) shows only when a shop is picked, by clicking its bar in
+   Plan vs Actual - By Shop or in the Shop filter. It then sits under By Shop (which shows just that shop), with By Model / By Part
+   on the right of both. With all shops it is hidden. */
+(() => {
+  const css = document.createElement('style');
+  css.textContent = `#production .grid > #c-p-daily{display:none}
+#production.shf .grid > #c-p-daily{display:block}
+@media (min-width: 960px){#production.shf .grid > #c-p-shop{grid-column:1;grid-row:1}
+#production.shf .grid > #c-p-daily{grid-column:1;grid-row:2}
+#production.shf .grid > #c-p-model{grid-column:2;grid-row:1 / span 2}}`;
+  document.head.appendChild(css);
+  const d0 = window.__draw; if (!d0) return;
+  window.__draw = (...a) => { const pg = document.getElementById('production'); let s = 'All'; try { s = window.__P().shop; } catch (e) {}
+    if (pg) pg.classList.toggle('shf', !!s && s !== 'All'); return d0(...a); };
+})();

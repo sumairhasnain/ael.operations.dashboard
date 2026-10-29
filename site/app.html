@@ -1030,7 +1030,7 @@ const d = document.createElement('div'); d.className = 'issue'; if (r.priority !
 },
 _shopPva(el, stream, p) {
 if (sA(el)) return;
-const pq = p.sf ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
+const pq = p.sf && !p.one ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
 const pEnd = planTo(p, p.asof), pl = byKey(rows.filter(r => r.date <= pEnd), 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
 const rowsM = SR(p).filter(r => r.stream === stream && r.date >= p.month + '-01' && r.date <= window.__mEnd(p.month) && (inShop(r, pq) || (pq.shop === 'All' && r.sec))), mp = byKey(rowsM, 'shop', r => r.plan);
 const prj = new Map(); if (stream !== 'Dispatch' && !p.future) { const cs = d3.group(rows.filter(r => r.date <= p.actEnd || true), r => r.shop); cs.forEach((v, sh) => { const ps = projSum(p, v.map(r => r.code)); if (ps) prj.set(sh, ps); }); }
@@ -1117,7 +1117,7 @@ const sub = add('ks', 'vs plan ' + d3.format(',')(Math.round(pv)) + (pc == null 
 else { add('kl', 'Last day produced'); add('kv', '—'); } } }
 if (!sA(el)) { const pF = p.full || p, f = flow('Production', pF), nx = c => d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(c + 'T00:00:00Z'), 1)), acP = c => nx(c) <= pF.actEnd ? (f.ac.get(nx(c)) || 0) : null; /* production recorded on a day was made the day before: show it on that day */ if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
 else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual (produced)', color: c => { const pv = f.pl.get(c) || 0, av = acP(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : acP(c), { xFmt: d => +d.slice(8), marker: pF.asof, vals: 1, h: 300, focus: p.day, clickKey: 'a', onClick: c => dash.setParams({ day: p.day === c ? 0 : c }) }); }
-draw._shopPva(ch('c-p-shop'), 'Production', p);
+draw._shopPva(ch('c-p-shop'), 'Production', { ...p, one: 1 }); /* only the chosen shop here; Daily Production shows below it */
 const em = ch('c-p-model'), hubP = ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer'].includes(p.shop), emH = q('#c-p-model h3'); if (emH) emH.textContent = hubP ? 'Production Plan Vs Actual - By Part' : 'Production Plan Vs Actual - By Model';
 if (!sA(em) && hubP) { const pl = new Map(), ac = new Map(), md = new Map(), kc = new Map(), pq = { ...p, pf: null };
 const allIH = p.shop === 'HPDC / Die Cast', fin = new Map(); partAgg(pq, p.start, p.asof).filter(r => allIH || r.type === 'Finished' || /MACH/i.test(r.part || '')).forEach(r => { const k = r.part || r.code; kc.set(k, r.code); md.set(k, r.model); fin.set(k, r.type === 'Finished' ? 0 : 1); pl.set(k, (pl.get(k) || 0) + r.pp); ac.set(k, (ac.get(k) || 0) + r.pa); });
@@ -2759,6 +2759,22 @@ window.addEventListener('resize', () => window.__draw());
       vp.style.left = x + 'px'; vp.style.top = y + 'px'; });
     T.addEventListener('mouseleave', () => { const vp = document.getElementById('vpop'); if (vp) { vp.style.display = 'none'; vp.style.flexDirection = vp.style.alignItems = ''; vp.dataset.rw = ''; vp.dataset.code = ''; vp.replaceChildren(); } });
   };
+})();
+
+/* Production tab (29 Oct, Umair): Daily Production (with its KPI) shows only when a shop is picked, by clicking its bar in
+   Plan vs Actual - By Shop or in the Shop filter. It then sits under By Shop (which shows just that shop), with By Model / By Part
+   on the right of both. With all shops it is hidden. */
+(() => {
+  const css = document.createElement('style');
+  css.textContent = `#production .grid > #c-p-daily{display:none}
+#production.shf .grid > #c-p-daily{display:block}
+@media (min-width: 960px){#production.shf .grid > #c-p-shop{grid-column:1;grid-row:1}
+#production.shf .grid > #c-p-daily{grid-column:1;grid-row:2}
+#production.shf .grid > #c-p-model{grid-column:2;grid-row:1 / span 2}}`;
+  document.head.appendChild(css);
+  const d0 = window.__draw; if (!d0) return;
+  window.__draw = (...a) => { const pg = document.getElementById('production'); let s = 'All'; try { s = window.__P().shop; } catch (e) {}
+    if (pg) pg.classList.toggle('shf', !!s && s !== 'All'); return d0(...a); };
 })();
 
 </script>
