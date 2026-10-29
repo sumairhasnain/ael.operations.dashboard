@@ -2647,7 +2647,7 @@ window.addEventListener('resize', () => window.__draw());
 
 </script>
 <script>
-/* Stock runway hover (29 Oct, Umair): on "Part Compliance - Other Parts", hovering a part name shows how long the part
+/* Stock runway hover (29 Oct, Umair): on "Part Compliance - Other Parts", the row tooltip shows, beside the vendor panel, how long the part
    and its BOM components (in-house made and vendor supplied) will last at the current month's plan, against the next delivery.
    Bar = today to projected run-out (Atlas stock / average daily need). Dot = next delivery: in-house = next planned
    production day in Atlas; vendor = expected from the last 30 days' delivery pattern (Atlas has no booked delivery dates). */
@@ -2738,15 +2738,27 @@ window.addEventListener('resize', () => window.__draw());
     pop.style.left = x + 'px'; pop.style.top = Math.max(8, Math.min(ev.clientY + 12, innerHeight - ph - 8)) + 'px'; return true;
   };
   window.__rwH = () => { pop.style.display = 'none'; cur = null; };
-  /* Part Compliance - Other Parts: the Part cell (2nd column; code in the 1st). Runs before the row's vendor-receiving card and replaces it while on the name. */
-  const T2 = document.getElementById('tb-parts2');
-  if (T2) {
-    const css2 = document.createElement('style'); css2.textContent = '#tb-parts2 tbody td:nth-child(2){cursor:help;text-decoration:underline dotted #9AA5B1}'; document.head.appendChild(css2);
-    T2.addEventListener('mousemove', ev => { const td = ev.target.closest('tbody td'), tr = td && td.parentElement;
-      if (!td || td.cellIndex !== 1 || !tr.cells[0]) return window.__rwH();
-      if (window.__rw(ev, { code: tr.cells[0].textContent.trim(), part: td.textContent.trim() })) { ev.stopImmediatePropagation(); const vp = document.getElementById('vpop'); if (vp) { vp.style.display = 'none'; vp.dataset.code = ''; } } }, true);
-    T2.addEventListener('mouseleave', () => window.__rwH());
-  }
+  /* Part Compliance - Other Parts (29 Oct, Umair): the runway sits beside the vendor-receiving panel in the same row tooltip
+     (#vpop, built by __vendHover). Rows with no vendor panel show the runway on its own. */
+  window.__rwHTML = build;
+  const orig = window.__vendHover;
+  if (orig) window.__vendHover = tables => { orig(tables);
+    const T = tables.find(t => t && t.id === 'tb-parts2'); if (!T || T.__rwh) return; T.__rwh = 1;
+    T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'); if (!tr || !tr.cells[1] || !vp) return;
+      const code = tr.cells[0].textContent.trim(), shown = vp.style.display !== 'none' && vp.dataset.code === code;
+      if (vp.dataset.rw !== code || (shown && !vp.querySelector('.rwpop'))) {
+        const h = build(code, tr.cells[1].textContent.trim());
+        if (!shown) { vp.replaceChildren(); vp.dataset.code = code; }
+        else { const col = document.createElement('div'); col.style.cssText = 'display:flex;flex-direction:column;gap:8px'; col.append(...vp.children); vp.replaceChildren(col); }
+        if (h) { const b = document.createElement('div'); b.className = 'rwpop'; b.style.cssText = 'position:static;display:block;flex:none'; b.innerHTML = h; vp.appendChild(b); }
+        vp.dataset.rw = code; if (!vp.children.length) return; }
+      if (!vp.children.length) return;
+      vp.style.display = 'flex'; vp.style.flexDirection = 'row'; vp.style.alignItems = 'flex-start';
+      const w = vp.offsetWidth, hgt = vp.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12;
+      if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + hgt > innerHeight - 8) y = Math.max(8, innerHeight - hgt - 8);
+      vp.style.left = x + 'px'; vp.style.top = y + 'px'; });
+    T.addEventListener('mouseleave', () => { const vp = document.getElementById('vpop'); if (vp) { vp.style.display = 'none'; vp.style.flexDirection = vp.style.alignItems = ''; vp.dataset.rw = ''; vp.dataset.code = ''; vp.replaceChildren(); } });
+  };
 })();
 
 </script>
