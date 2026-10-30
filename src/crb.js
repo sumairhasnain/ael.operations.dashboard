@@ -23,7 +23,7 @@
 #crb table.tb td.pos{color:#1E8C5A;font-weight:600}#crb table.tb td.neg{color:#B02622;font-weight:600}#crb table.tb td.sub{color:var(--mut)}#crb table.tb tr.tot td{font-weight:600;border-top:1px solid var(--line)}
 #crb .crbleg{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin:4px 0 6px}#crb .crbleg i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 #crb-gap{border:1px dashed #E0A100;background:#FFFCF3}#crb-gap h3 .pill{margin-left:8px;font-size:10.5px;vertical-align:middle}#crb-gap h4{margin:16px 0 4px;font-size:13.5px;color:var(--navy)}#crb-gap p.crsub{margin:2px 0 8px}
-#crb-tog{display:flex;justify-content:flex-start;margin:0 0 12px}#crb-tog button{font-size:13px;padding:7px 16px}#savings.crb-on>:not(#crb):not(#crb-tog){display:none!important}#savings:not(.crb-on)>#crb{display:none}#crb .crbh:first-child{margin-top:4px}
+#crb-tog{display:flex;margin-left:auto;align-self:center}#crb-tog button{font-size:13px;padding:7px 16px}#savings .crhead{align-items:center}#crb .crbh{align-items:center}#savings.crb-on>:not(#crb){display:none!important}#savings:not(.crb-on)>#crb{display:none}#crb .crbh:first-child{margin-top:4px}
 #crb .crbnote{font-size:11.5px;color:var(--mut);margin-top:6px}`; document.head.appendChild(st); }
 
   const tbl = (head, rows, o = {}) => `<div class="tbox"${o.h ? ` style="max-height:${o.h}px"` : ''}><table class="tb"><thead><tr>${head.map(h => `<th${h.n ? ' class="n"' : ''}>${esc(h.t)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
@@ -42,7 +42,7 @@
 <div class="card wide" id="crb-gap"><h3>Gaps &amp; errors: Finance budget vs this tab<span class="pill warn">Temporary</span></h3><p class="crsub">Shown for review; to be removed once fixed</p><div id="crb-gapbody"></div></div></div>`;
     const tg = document.createElement('div'); tg.id = 'crb-tog'; tg.innerHTML = '<span class="crmt" role="group" aria-label="VA/CR view"><button type="button" data-v="bc">Budget Compliance</button><button type="button" data-v="cc">Cost Competitiveness</button></span>';
     tg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { mode = b.dataset.v; window.__draw && window.__draw(); }));
-    sec.insertBefore(w, sec.firstChild); sec.insertBefore(tg, w);
+    sec.insertBefore(w, sec.firstChild); w.querySelector('.crbh').appendChild(tg);
     const qi = w.querySelector('#crb-q'); qi.addEventListener('input', () => lines(qi.value));
     return w;
   }
@@ -137,7 +137,8 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   }
 
   let done = 0, lastW = 0, mode = 'cc', lastPage = null; /* Cost Competitiveness (the ideas visuals) is the default each time the tab is opened */
-  function applyMode(sec) { sec.classList.toggle('crb-on', mode === 'bc'); document.querySelectorAll('#crb-tog button').forEach(b => { const on = b.dataset.v === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
+  function applyMode(sec) { sec.classList.toggle('crb-on', mode === 'bc');
+    { const tg = document.getElementById('crb-tog'), home = mode === 'bc' ? document.querySelector('#crb .crbh') : sec.querySelector('.crhead'); if (tg && home && tg.parentNode !== home) home.appendChild(tg); } /* buttons sit at the right end of whichever page title is showing */ document.querySelectorAll('#crb-tog button').forEach(b => { const on = b.dataset.v === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
   function render() {
     const sec = document.getElementById('savings'); if (!sec || !document.getElementById('cr-bar')) return;
     let w = document.getElementById('crb'); if (!w) { w = skeleton(sec); done = 0; }
