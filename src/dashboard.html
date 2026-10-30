@@ -832,7 +832,7 @@ const projNote = (P, lim) => (P.NR ? `Projection: ${P.NR} working days left at t
 window.__PROJ = PROJ;
 // flow: plan/actual by day for a stream at shop level
 function flow(stream, p) {
-const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.end && inShop(r, p));
+const rows = SR(p).filter(r => (r.stream === stream || (stream === 'Production' && r.sec && r.shop === p.shop && p.shop === 'HPDC / Die Cast')) && r.date >= p.start && r.date <= p.end && inShop(r, p));
 const ds = datesOf(p); const pl = new Map(), ac = new Map();
 rows.forEach(r => { pl.set(r.date, (pl.get(r.date) || 0) + r.plan); if (r.actual != null) ac.set(r.date, (ac.get(r.date) || 0) + r.actual); });
 let cp = 0, ca = 0; const cumP = [], cumA = [];
