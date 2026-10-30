@@ -1492,10 +1492,11 @@
    "Clutch"
   ],
   "priority": "Critical",
-  "problem": "All SPD dues are complete except Pressure Plate Pridor: lots from vendor SPL Karachi (about 1,000, then 800 and 900 pcs) were rejected three times for burr in the cavity where the center seats. Vendor is slow and wants to cast 5,000 pcs in one lot rather than small orders. Next lot to be properly checked before supply.",
+  "problem": "Pressure Plate Pridor SPD occurred multiple times this month. Supplies are not compliant for Oct-26. Need countermeasure for improvement from Vendor.",
   "status": "open",
   "last_meeting": "2026-10-30",
   "status_note": "",
-  "source": "Meeting (Claude)"
+  "source": "Meeting (Claude)",
+  "owner": "Supply Chain"
  }
 ]
