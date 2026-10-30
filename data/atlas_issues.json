@@ -1318,7 +1318,7 @@
   ],
   "priority": "Critical",
   "owner": "Clutch / Clutch Press Shop",
-  "problem": "Closing stock of Drive Plates and Clutch Press Plates is very low for next month’s production. Review the strategy; Supply Chain, Production and PPC to work together so closing stock is at safety level.",
+  "problem": "Closing stock of Drive Plates and Clutch Press Plates is very low for next month\u2019s production. Review the strategy; Supply Chain, Production and PPC to work together so closing stock is at safety level.",
   "status": "open",
   "last_meeting": "2026-10-28",
   "status_note": "",
@@ -1334,7 +1334,7 @@
   ],
   "priority": "Non-critical",
   "owner": "Supply Chain",
-  "problem": "Supply Chain to share Alsons’ part-wise schedule for Carburetor parts so in-house production can be planned.",
+  "problem": "Supply Chain to share Alsons\u2019 part-wise schedule for Carburetor parts so in-house production can be planned.",
   "status": "closed",
   "last_meeting": "2026-10-28",
   "status_note": "",
@@ -1351,7 +1351,7 @@
   ],
   "priority": "Critical",
   "owner": "Muneeb Siddiqui",
-  "problem": "Shop to share next month’s in-house plan for Stop Screw CG125. Joint CD critical stock to be evaluated with PPC.",
+  "problem": "Shop to share next month\u2019s in-house plan for Stop Screw CG125. Joint CD critical stock to be evaluated with PPC.",
   "status": "closed",
   "last_meeting": "2026-10-28",
   "status_note": "",
@@ -1379,7 +1379,7 @@
  },
  {
   "id": 107,
-  "item": "Boss Center Clutch Pridor – incoming inspection",
+  "item": "Boss Center Clutch Pridor \u2013 incoming inspection",
   "shop": "Clutch",
   "shops": [
    "Clutch",
@@ -1396,7 +1396,7 @@
  },
  {
   "id": 108,
-  "item": "Piston shortfall – Aluminium Foundry overhead crane",
+  "item": "Piston shortfall \u2013 Aluminium Foundry overhead crane",
   "shop": "Piston",
   "shops": [
    "Piston"
@@ -1432,11 +1432,12 @@
    "Clutch"
   ],
   "priority": "Critical",
-  "problem": "Local casting for Center Clutch Pridor is short of what is needed to finish the 9,000 Pridor plan (SPD daily casting of 1,200 is being tracked). PPC/shop to work out the expected OK quantity after rejection and cover the remainder from import stock; raise a flag if the import need goes above 1,500 (about 1,460 is the maximum while keeping the import set).",
+  "problem": "InHouse Casting for Center Clutch Pridor is 7,700 pcs against 9,000 Ok Part. Boss Clutch 2,500 pcs ( 1,000 Rework + 1,500 ) pcs will be received from NK on 30th Oct. Shop to confirm requirement of Import Center Clutch to complete the gap of 1,500 pcs.",
   "status": "open",
   "last_meeting": "2026-10-30",
   "status_note": "",
-  "source": "Meeting (Claude)"
+  "source": "Meeting (Claude)",
+  "owner": "Mirza Irfan"
  },
  {
   "id": 111,
