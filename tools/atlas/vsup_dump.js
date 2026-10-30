@@ -15,7 +15,8 @@ for (const m of months) {
     const x = await bapiFetch(u + '?FDate=' + m.split('-').join('') + '01&TDate=' + td + '&Company=AEL'); const li = (x && x.Items) ? x.Items : (Array.isArray(x) ? x : []); if (li.length >= rItems.length * 0.9) { rItems = li; window.__VS_LIVE = li.length; } } catch (e) { window.__VS_LIVE = 'err ' + e; } }
   rItems.forEach(x => { const v = strip(x.VendorCode); if (x.VendorName) vn[v] = vn[v] || clean(x.VendorName);
     const r = Math.round(+x.Receipt || 0), s = Math.round(+x.Schedule || 0); if (r || s) R.push([x.Date, v, strip(x.Material), r, s].join('|')); });
-  if (m === cur) { stockItems = F.feeds.stock.items || []; stockAsOf = String((F.feeds.stock.info || {}).asOf || ''); }
+  if (m === cur) { stockItems = F.feeds.stock.items || []; stockAsOf = String((F.feeds.stock.info || {}).asOf || '');
+    /* 30 Oct: prefer the stock from Atlas's BAPI refresh (bapi_refresh.js). */ if (window.__BAPI_STOCK && window.__BAPI_STOCK.length) { stockItems = window.__BAPI_STOCK; stockAsOf = cur === new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 7) ? new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10).split('-').join('') : stockAsOf; } }
   ((S.schedule[m] || {}).rows || []).forEach(r => { const q = Math.round(+r.qty || 0); if (q) SC.push([m, strip(r.vendor), strip(r.part), q].join('|')); });
 }
 const st = {}; stockItems.forEach(x => { st[strip(x.Material)] = x; });
