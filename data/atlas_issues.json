@@ -1441,13 +1441,13 @@
  },
  {
   "id": 111,
-  "item": "Clutch CD70 plan (about 10K remaining)",
+  "item": "Clutch CD70 production pace (Nov opening)",
   "shop": "Clutch",
   "shops": [
    "Clutch"
   ],
   "priority": "Non-critical",
-  "problem": "About 10K of the CD70 clutch plan is still pending and working days are fewer. Pridor stays top priority, but the CD70 line must keep running at its current pace to complete the plan.",
+  "problem": "Continue with current pace for Clutch CD70 Production to build opening of 10k to support Nov-26 Plan of 120k.",
   "status": "open",
   "last_meeting": "2026-10-30",
   "status_note": "",
