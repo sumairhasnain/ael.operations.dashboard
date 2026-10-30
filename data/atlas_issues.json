@@ -1461,11 +1461,12 @@
    "Piston"
   ],
   "priority": "Critical",
-  "problem": "Piston expected to close at about 220K against the 238K plan. Shop to confirm the remaining quantity and status by 11:00 tomorrow.",
+  "problem": "Piston compliance now expected to be 220k against plan of 238k. Now shortfall expected to impact CG125 as well. Shop to confirm the final numbers model-wise.",
   "status": "open",
   "last_meeting": "2026-10-30",
   "status_note": "",
-  "source": "Meeting (Claude)"
+  "source": "Meeting (Claude)",
+  "owner": "Ahmed Jawad"
  },
  {
   "id": 113,
