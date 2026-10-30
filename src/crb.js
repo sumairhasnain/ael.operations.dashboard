@@ -23,7 +23,7 @@
 #crb table.tb td.pos{color:#1E8C5A;font-weight:600}#crb table.tb td.neg{color:#B02622;font-weight:600}#crb table.tb td.sub{color:var(--mut)}#crb table.tb tr.tot td{font-weight:600;border-top:1px solid var(--line)}
 #crb .crbleg{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin:4px 0 6px}#crb .crbleg i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 #crb-gap{border:1px dashed #E0A100;background:#FFFCF3}#crb-gap h3 .pill{margin-left:8px;font-size:10.5px;vertical-align:middle}#crb-gap h4{margin:16px 0 4px;font-size:13.5px;color:var(--navy)}#crb-gap p.crsub{margin:2px 0 8px}
-#crb-tog{display:flex;margin-left:auto;align-self:center}#crb-tog button{font-size:13px;padding:7px 16px}#savings .crhead{align-items:center}#crb .crbh{align-items:center}#savings.crb-on>:not(#crb){display:none!important}#savings:not(.crb-on)>#crb{display:none}#crb .crbh:first-child{margin-top:4px}
+#crb-tog{display:flex;margin-left:auto;align-self:center}#crb-tog button{font-size:13px;padding:7px 16px}#savings .crhead{align-items:center}#crb .crbh{align-items:center}#savings.crb-on>:not(#crb):not(#cr-bar):not(#cr-crumbs){display:none!important}#savings:not(.crb-on)>#crb{display:none}#crb .crbh:first-child{margin-top:4px}
 #crb .crbnote{font-size:11.5px;color:var(--mut);margin-top:6px}`; document.head.appendChild(st); }
 
   const tbl = (head, rows, o = {}) => `<div class="tbox"${o.h ? ` style="max-height:${o.h}px"` : ''}><table class="tb"><thead><tr>${head.map(h => `<th${h.n ? ' class="n"' : ''}>${esc(h.t)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
@@ -33,7 +33,7 @@
     const w = document.createElement('div'); w.id = 'crb';
     w.innerHTML = `<div class="crbh"><h2>Budget Compliance</h2><span>Finance CR Summary Sheet 2026-27 (Annexure N budget and monthly actuals) · Rs per bike · actuals posted to ${M[LAST] || '—'} 26</span></div>
 <div class="grid"><div class="card wide kpicard"><div class="crbk" id="crb-kpi"></div></div>
-<div class="card wide"><h3>Cumulative CR · Budget vs Actual vs Forecast</h3><p class="crsub">Solid: Finance actual · dashed: Annexure N budget · dotted: actual plus the in-progress and pending ideas on this tab, by target month</p><div class="crbleg" id="crb-leg"></div><div class="chart" id="crb-cum" style="min-height:260px"></div></div>
+<div class="card wide"><h3>Cumulative CR · Budget vs Actual vs Forecast</h3><p class="crsub">Solid: Finance actual · dashed: Annexure N budget · dotted: actual plus the in-progress and pending ideas on this tab, by target month (the forecast follows the Shop, Category, Status, Target quarter and Source filters)</p><div class="crbleg" id="crb-leg"></div><div class="chart" id="crb-cum" style="min-height:260px"></div></div>
 <div class="card wide"><h3>Monthly Budget vs Actual</h3><p class="crsub">Rs per bike by month · green = ahead of budget, red = behind</p><div id="crb-mon"></div></div>
 <div class="card"><h3>By Activity Type</h3><p class="crsub">Finance's three budget heads · to date = Jul to ${M[LAST]}</p><div id="crb-cat"></div></div>
 <div class="card"><h3>Shop × Model</h3><p class="crsub">From Finance's Plan vs Actual sheet (Q1). Its plan column mixes periods, see the errors below</p><div id="crb-shop"></div></div>
@@ -42,7 +42,7 @@
 <div class="card wide" id="crb-gap"><h3>Gaps &amp; errors: Finance budget vs this tab<span class="pill warn">Temporary</span></h3><p class="crsub">Shown for review; to be removed once fixed</p><div id="crb-gapbody"></div></div></div>`;
     const tg = document.createElement('div'); tg.id = 'crb-tog'; tg.innerHTML = '<span class="crmt" role="group" aria-label="VA/CR view"><button type="button" data-v="bc">Budget Compliance</button><button type="button" data-v="cc">Cost Competitiveness</button></span>';
     tg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { mode = b.dataset.v; window.__draw && window.__draw(); }));
-    sec.insertBefore(w, sec.firstChild); w.querySelector('.crbh').appendChild(tg);
+    sec.insertBefore(w, sec.querySelector('.crhead') || sec.firstChild); w.querySelector('.crbh').appendChild(tg);
     const qi = w.querySelector('#crb-q'); qi.addEventListener('input', () => lines(qi.value));
     return w;
   }
@@ -57,7 +57,9 @@
   function pipeline() {
     const r = dash.data('cr_ideas'); const out = {}; MODS.forEach(m => { out[m] = Array(12).fill(0); });
     if (!r || r.status !== 'ok') return out;
-    r.data.filter(x => x.status === 'In Progress' || x.status === 'Pending').forEach(x => {
+    const g = window.__P ? window.__P() : {}, p = dash.params() || {}, src = x => /VA\/CR sheet/.test(x.source) ? 'VA/CR sheets' : 'Shop CR plans';
+    r.data.filter(x => (x.status === 'In Progress' || x.status === 'Pending') && (!g.shop || g.shop === 'All' || x.dash_shop === g.shop) && (!p.crcat || x.category === p.crcat) && (!p.crshop || x.shop === p.crshop)
+      && (!p.crst || x.status === p.crst) && (!p.crq || x.quarter === p.crq) && (!p.crsrc || src(x) === p.crsrc)).forEach(x => {
       const [y, mo] = String(x.target || '').split('-').map(Number); if (!y) return; let i = (y - 2026) * 12 + mo - 7; if (i < 0 || i > 11) return; if (i <= LAST) i = LAST + 1; if (i > 11) return;
       const ms = MODS.includes(x.model) ? [x.model] : x.model === 'All models' ? MODS : []; ms.forEach(m => { out[m][i] += +x.cr_unit || 0; }); });
     return out;
@@ -144,7 +146,8 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     let w = document.getElementById('crb'); if (!w) { w = skeleton(sec); done = 0; }
     applyMode(sec); if (mode !== 'bc') return;
     if (!done) { kpis(); monthly(); cats(); shops(); brk(); lines(''); gaps(); done = 1; }
-    const cw = document.getElementById('crb-cum').clientWidth; if (cw !== lastW || !document.querySelector('#crb-cum svg') || render._ideas !== (dash.data('cr_ideas') || {}).data) { lastW = cw; render._ideas = (dash.data('cr_ideas') || {}).data; chart(); }
+    document.querySelectorAll('#cr-metric button').forEach(b => { b.disabled = true; b.title = 'Budget Compliance is in Rs per bike; these measures apply to Cost Competitiveness'; });
+    const fk = JSON.stringify([dash.params(), window.__P ? window.__P().shop : '']), cw = document.getElementById('crb-cum').clientWidth; if (cw !== lastW || fk !== render._fk || !document.querySelector('#crb-cum svg') || render._ideas !== (dash.data('cr_ideas') || {}).data) { lastW = cw; render._fk = fk; render._ideas = (dash.data('cr_ideas') || {}).data; chart(); }
   }
   const od = window.__draw; window.__draw = function () { const r = od && od.apply(this, arguments); try { if (window.__page === 'savings') { if (lastPage !== 'savings') mode = 'cc'; render(); } lastPage = window.__page; } catch (e) { console.warn('crb', e); } return r; };
   if (window.__page === 'savings') { lastPage = 'savings'; render(); }
