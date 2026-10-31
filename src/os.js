@@ -3,7 +3,7 @@
    OS.blob is the uploaded snapshot (row layout above toRow); OS.at is when it was read.
    OS.trial marks a temporary trial read that Umair will ask to remove before the 23:30 snapshot. */
 (() => {
-  const OS = { blob: '85ace66ebc6c569a1004960b7e550774', at: '31 Oct 19:14', trial: false, label: 'Oct 2026 closing stock' };
+  const OS = { blob: 'fdcd117288c0da1d2b011c410da43aff', at: '31 Oct 23:57, after the 23:30 refresh', trial: false, label: 'Oct 2026 closing stock' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let rows = null, loading = false, built = false;
   const css = document.createElement('style'); css.textContent = `#openstock .oshd{display:flex;align-items:baseline;gap:12px;margin:2px 0 12px;flex-wrap:wrap}#openstock .oshd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;color:var(--navy);margin:0}#openstock .oshd span{font-size:12px;color:var(--mut)}
