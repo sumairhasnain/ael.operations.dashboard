@@ -217,3 +217,9 @@
   };
   window.__draw = (...a) => { const r = d0(...a); try { run(); } catch (e) { console.warn('prtrend', e); } return r; };
 })();
+
+/* Product tab, Vendor / In-house Supply Trend (31 Oct, Umair): the selected parent product's own cumulative production
+   compliance, drawn as a thick dotted red line on both charts so each component can be read against its parent. */
+window.__ptr = (sel, ds, end) => { const rs = ((window.dash && dash.data('atlas_parts_daily')) || {}).data || [], by = new Map(); rs.forEach(r => { if (String(r.code) === String(sel.code)) by.set(r.date, r); });
+  let cp = 0, ca = 0; const nm = sel.part || sel.code;
+  return { name: 'Parent · ' + (nm.length > 14 ? nm.slice(0, 13) + '…' : nm), color: '#D0312D', dash: '1 6', w: 3.4, values: ds.map(d => { const r = by.get(d) || {}; cp += r.prod_plan || 0; ca += r.prod_actual || 0; return d <= end && cp ? ca / cp * 100 : null; }) }; };

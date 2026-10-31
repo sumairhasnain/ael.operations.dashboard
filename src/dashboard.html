@@ -1218,10 +1218,10 @@ else { const rs = pdly.get(b.code) || []; const byD = new Map(rs.map(r => [r.dat
 const st = stock.get(b.code); const comp = plan ? act / plan * 100 : null;
 const shortStock = st && st.stock < st.safety_stock; const short = (comp != null && comp < 95) || shortStock;
 return { ...b, plan, act, comp, stock: st ? st.stock : null, safety_stock: st ? st.safety_stock : (b.safety || null), short, status: short ? (comp != null && comp < 95 ? 'Behind plan' : 'Below safety') : (comp == null ? 'No data' : 'On track'), trend }; });
-const pal = [C.bad, C.blue, C.warn, C.teal, C.navy, '#8C6BD8', C.cyan, '#7C8A97'];
+const pal = [C.blue, C.warn, C.teal, C.navy, '#8C6BD8', C.cyan, '#7C8A97', '#B5651D'];
 const plot = (el, rs, emptyMsg) => { const sh = rs.filter(r => r.short && r.trend && r.trend.some(v => v != null)).sort((a, b) => (a.comp ?? 999) - (b.comp ?? 999)).slice(0, 8);
 if (!sh.length) return empty(el, emptyMsg);
-lines(el, ds, sh.map((r, i) => ({ name: r.part.length > 15 ? r.part.slice(0, 14) + '…' : r.part, color: pal[i % pal.length], values: r.trend })), { xFmt: day, yFmt: v => v + '%', fmt: v => d3.format('.0f')(v) + '%', refs: [{ v: 100, label: 'Plan', color: '#8C96A0' }], min: 0, noDots: 1, h: 260 }); };
+lines(el, ds, [...sh.map((r, i) => ({ name: r.part.length > 15 ? r.part.slice(0, 14) + '…' : r.part, color: pal[i % pal.length], values: r.trend })), window.__ptr(sel, ds, end)], { xFmt: day, yFmt: v => v + '%', fmt: v => d3.format('.0f')(v) + '%', refs: [{ v: 100, label: 'Plan', color: '#8C96A0' }], min: 0, noDots: 1, h: 260 }); };
 const vr = rows.filter(r => r.source === 'Vendor'), ir = rows.filter(r => r.source === 'In-house');
 if (!vr.length) empty(ev, 'No vendor parts linked to this product in Atlas');
 else if (!vendMonth) empty(ev, 'Vendor receipts are loaded for Oct 2026 only');

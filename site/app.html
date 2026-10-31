@@ -1235,10 +1235,10 @@ else { const rs = pdly.get(b.code) || []; const byD = new Map(rs.map(r => [r.dat
 const st = stock.get(b.code); const comp = plan ? act / plan * 100 : null;
 const shortStock = st && st.stock < st.safety_stock; const short = (comp != null && comp < 95) || shortStock;
 return { ...b, plan, act, comp, stock: st ? st.stock : null, safety_stock: st ? st.safety_stock : (b.safety || null), short, status: short ? (comp != null && comp < 95 ? 'Behind plan' : 'Below safety') : (comp == null ? 'No data' : 'On track'), trend }; });
-const pal = [C.bad, C.blue, C.warn, C.teal, C.navy, '#8C6BD8', C.cyan, '#7C8A97'];
+const pal = [C.blue, C.warn, C.teal, C.navy, '#8C6BD8', C.cyan, '#7C8A97', '#B5651D'];
 const plot = (el, rs, emptyMsg) => { const sh = rs.filter(r => r.short && r.trend && r.trend.some(v => v != null)).sort((a, b) => (a.comp ?? 999) - (b.comp ?? 999)).slice(0, 8);
 if (!sh.length) return empty(el, emptyMsg);
-lines(el, ds, sh.map((r, i) => ({ name: r.part.length > 15 ? r.part.slice(0, 14) + '…' : r.part, color: pal[i % pal.length], values: r.trend })), { xFmt: day, yFmt: v => v + '%', fmt: v => d3.format('.0f')(v) + '%', refs: [{ v: 100, label: 'Plan', color: '#8C96A0' }], min: 0, noDots: 1, h: 260 }); };
+lines(el, ds, [...sh.map((r, i) => ({ name: r.part.length > 15 ? r.part.slice(0, 14) + '…' : r.part, color: pal[i % pal.length], values: r.trend })), window.__ptr(sel, ds, end)], { xFmt: day, yFmt: v => v + '%', fmt: v => d3.format('.0f')(v) + '%', refs: [{ v: 100, label: 'Plan', color: '#8C96A0' }], min: 0, noDots: 1, h: 260 }); };
 const vr = rows.filter(r => r.source === 'Vendor'), ir = rows.filter(r => r.source === 'In-house');
 if (!vr.length) empty(ev, 'No vendor parts linked to this product in Atlas');
 else if (!vendMonth) empty(ev, 'Vendor receipts are loaded for Oct 2026 only');
@@ -2866,6 +2866,12 @@ window.addEventListener('resize', () => window.__draw());
   };
   window.__draw = (...a) => { const r = d0(...a); try { run(); } catch (e) { console.warn('prtrend', e); } return r; };
 })();
+
+/* Product tab, Vendor / In-house Supply Trend (31 Oct, Umair): the selected parent product's own cumulative production
+   compliance, drawn as a thick dotted red line on both charts so each component can be read against its parent. */
+window.__ptr = (sel, ds, end) => { const rs = ((window.dash && dash.data('atlas_parts_daily')) || {}).data || [], by = new Map(); rs.forEach(r => { if (String(r.code) === String(sel.code)) by.set(r.date, r); });
+  let cp = 0, ca = 0; const nm = sel.part || sel.code;
+  return { name: 'Parent · ' + (nm.length > 14 ? nm.slice(0, 13) + '…' : nm), color: '#D0312D', dash: '1 6', w: 3.4, values: ds.map(d => { const r = by.get(d) || {}; cp += r.prod_plan || 0; ca += r.prod_actual || 0; return d <= end && cp ? ca / cp * 100 : null; }) }; };
 
 </script>
 <script>
