@@ -50,11 +50,22 @@
     const gap = days < 30 && (nxd == null || nxd > days), lvl = gap ? 'bad' : days < 7 ? 'warn' : 'ok';
     return { c, part: s.part || (M.info.get(c) || {}).part || c, src, stock, vstock: +s.vendor_stock || 0, need, days, out: isFinite(days) ? addWd(T, Math.floor(days)) : null, nx, nxd, how, lvl, vendors: s.vendors || '' };
   };
+  /* 31 Oct (Umair): alternate codes of one part share one stock pool. Hovering any of them shows a single bar on the
+     combined closing stock of all the codes, against the one daily need; the vendor panel beside it is unchanged. */
+  const ALTG = [{ name: 'Drive Plate CD70 · all codes', codes: ['6510213002', '6510213011', '6510213012', '6010213013'] }];
+  const grpItem = (M, c) => { const G = ALTG.find(g => g.codes.includes(c)); if (!G) return null;
+    const its = G.codes.map(k => item(M, k)).filter(Boolean); if (!its.length) return null;
+    const stock = d3.sum(its, r => r.stock), vstock = d3.sum(its, r => r.vstock), need = d3.max(its, r => r.need) || 0, T = M.T;
+    const nx = its.map(r => r.nx).filter(Boolean).sort()[0] || null, how = nx ? (its.find(r => r.nx === nx) || {}).how || '' : '';
+    const days = need > 0 ? stock / need : Infinity, nxd = nx ? wdBetween(T, nx) : null, gap = days < 30 && (nxd == null || nxd > days);
+    return { c, part: G.name, src: its.every(r => r.src === its[0].src) ? its[0].src : 'In-house + vendor', stock, vstock, need, days, out: isFinite(days) ? addWd(T, Math.floor(days)) : null, nx, nxd, how, lvl: gap ? 'bad' : days < 7 ? 'warn' : 'ok',
+      note: 'Combined stock: ' + its.map(r => r.c + ' ' + nf(r.stock)).join(' + ') + ' = ' + nf(stock) + '.' };
+  };
   const COL = { bad: '#D0312D', warn: '#E0A100', ok: '#1E8C5A' };
   const build = (code, part) => {
     const M = model(), c = String(code || ''), set = new Set([c]);
     (M.kids.get(c) || []).forEach(k => set.add(k));
-    let rows = [...set].map(k => item(M, k)).filter(Boolean);
+    let rows = [...set].map(k => (k === c && grpItem(M, k)) || item(M, k)).filter(Boolean);
     if (!rows.length) return null;
     rows.sort((a, b) => (a.c === c ? -1 : b.c === c ? 1 : 0) || ({ bad: 0, warn: 1, ok: 2 }[a.lvl] - { bad: 0, warn: 1, ok: 2 }[b.lvl]) || a.days - b.days);
     const more = rows.length > 12 ? rows.length - 12 : 0; rows = rows.slice(0, 12);
@@ -78,7 +89,7 @@
     return `<div class="hd">${esc(part || c)} <span>— Stock runway · run-out vs next delivery</span></div>`
       + (nBad ? `<div class="fl">${nBad > 1 ? nBad + ' items run' : '1 item runs'} out before the next delivery</div>` : '')
       + `<svg viewBox="-10 0 ${W + 10} ${H}" width="100%" height="${H}" style="margin-top:6px">${g}</svg>`
-      + `<div class="ft">Bar: Atlas stock ÷ average daily need at this month's plan (working days, Sundays off). Dot: next delivery. In-house = next planned production day in Atlas; vendor = expected from the last 30 days' receipts (Atlas has no booked delivery dates).${more ? ` ${more} more components not shown.` : ''}</div>`;
+      + `<div class="ft">${rows[0] && rows[0].note ? esc(rows[0].note) + ' ' : ''}Bar: Atlas stock ÷ average daily need at this month's plan (working days, Sundays off). Dot: next delivery. In-house = next planned production day in Atlas; vendor = expected from the last 30 days' receipts (Atlas has no booked delivery dates).${more ? ` ${more} more components not shown.` : ''}</div>`;
   };
   let cur = null;
   window.__rw = (ev, o) => {
