@@ -154,7 +154,7 @@
       const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null];
       cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
         td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
-        if (i === 1) { td.style.fontStyle = 'italic'; td.title = `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`; td.textContent = v + ' · vendor, alt. of ' + a.of; }
+        if (i === 1) td.title = `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`;
         if (i === 5 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
         if (i === 9 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
         if (i === 8) td.title = 'Received from vendors this month to date';
