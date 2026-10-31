@@ -2781,6 +2781,40 @@ window.addEventListener('resize', () => window.__draw());
     return d0(...a); };
 })();
 
+/* Part Compliance - Other Parts (31 Oct, Umair): vendor-supplied alternate codes are not Atlas production parts, so the table
+   never listed them. Each one now shows directly under the in-house code it replaces: Month plan / Plan MTD = vendor schedule,
+   Produced = received from vendors (atlas_vendor_supply), stock and safety level from SAP. Add more pairs to ALT as needed. */
+(() => {
+  const ALT = { '6010213013': { of: '6510213011', part: 'DRIVE PLATE CD70 SEMI MACH (VEN)', shop: 'Clutch', models: 'CD70' } };
+  const AK = window.AK, d0 = window.__draw; if (!AK || !d0) return;
+  const nf = AK.nf, C = AK.C;
+  const add = () => { const T = document.getElementById('tb-parts2'); if (!T || !T.tBodies[0]) return; const tb = T.tBodies[0];
+    let p; try { p = window.__P(); } catch (e) { return; }
+    const VS = dash.data('atlas_vendor_supply'), PS = dash.data('atlas_part_stock'); if (!VS || VS.status !== 'ok') return;
+    const q = ((document.getElementById('q-parts2') || {}).value || '').toLowerCase();
+    tb.querySelectorAll('tr.altv').forEach(r => r.remove());
+    Object.entries(ALT).forEach(([code, a]) => {
+      if (p.shop && p.shop !== 'All' && p.shop !== a.shop) return; if (p.model && p.model !== 'All' && !a.models.split(/[\/,]\s*/).includes(p.model)) return;
+      if (q && ![code, a.part, a.shop, a.models].join(' ').toLowerCase().includes(q)) return;
+      let pt = 0, pp = 0, pa = 0; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
+      const st = PS && PS.status === 'ok' ? (PS.data || []).find(r => String(r.code) === code) : null, stk = st && st.stock != null ? +st.stock : null, ss = st && +st.safety > 0 ? +st.safety : null;
+      const pc = pp ? Math.round(pa / pp * 100) : null;
+      const tr = document.createElement('tr'); tr.className = 'altv'; tr.style.background = '#FAFBFC';
+      const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null];
+      cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
+        td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
+        if (i === 1) { td.style.fontStyle = 'italic'; td.title = `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`; td.textContent = v + ' · vendor, alt. of ' + a.of; }
+        if (i === 5 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
+        if (i === 9 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
+        if (i === 8) td.title = 'Received from vendors this month to date';
+        tr.appendChild(td); });
+      const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
+      if (anchor) anchor.after(tr); else tb.appendChild(tr); });
+  };
+  window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
+  const qi = document.getElementById('q-parts2'); if (qi) qi.addEventListener('input', () => setTimeout(add, 0));
+})();
+
 </script>
 <script>
 /* VA/CR tab: "Budget vs Actual" section from Finance's CR Summary Sheet 2026-27 (Rs per bike), plus a TEMPORARY
