@@ -177,5 +177,8 @@
   ],
   "opening_stock": [
     "openstock"
+  ],
+  "fom": [
+    "fom"
   ]
 }

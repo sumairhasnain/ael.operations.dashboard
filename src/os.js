@@ -73,4 +73,6 @@
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'openstock') { try { render(); } catch (e) {} } return r; };
   init();
+  /* the F.O.M tab lives in fom.js; the Claude artifact loads it from here (the portal build inlines it) */
+  if (!window.__PORTAL && !document.getElementById('fom-js')) { const s = document.createElement('script'); s.id = 'fom-js'; s.src = 'fom.js'; document.body.appendChild(s); }
 })();

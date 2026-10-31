@@ -26,7 +26,8 @@ PATCHES = [
 ]
 out = src
 # The VA/CR Activities and Inventory (SAP) scripts live in their own files on the Claude dashboard (files/vacr.js, files/inv.js); inline them here.
-for _js in ('vacr.js', 'conv.js', 'anim.js', 'inv.js', 'wf.js', 'runway.js', 'crb.js', 'os.js'):
+out = out.replace('<script src="os.js"></script>', '<script src="os.js"></script><script src="fom.js"></script>')   # F.O.M tab: loaded by os.js in the artifact, inlined here
+for _js in ('vacr.js', 'conv.js', 'anim.js', 'inv.js', 'wf.js', 'runway.js', 'crb.js', 'os.js', 'fom.js'):
     _f = ROOT / 'src' / _js
     if f'<script src="{_js}"></script>' in out:
         if not _f.exists():
