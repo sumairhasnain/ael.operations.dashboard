@@ -672,14 +672,14 @@ return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pva
 const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Fuel Cock','Cushion','Hubs','Carb Child Parts'];
 const MONTHS = ['2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
 const MODELS = ['CD70','CD-Dream','CG125','CG125S','Pridor','CB125F','CB150F','K4AA'];
-window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; window.__TODAY = '2026-10-30';
+window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; window.__TODAY = '2026-10-31';
 const mEnd = m => { const [y, mm] = m.split('-').map(Number); return `${m}-${String(new Date(Date.UTC(y, mm, 0)).getUTCDate()).padStart(2, '0')}`; };
 window.__mEnd = mEnd;
 const sShop = document.getElementById('f-shop'), sMonth = document.getElementById('f-month'), iDate = document.getElementById('f-date'), sShift = document.getElementById('f-shift'), sModel = document.getElementById('f-model'), sPart = document.getElementById('f-part');
 sShop.replaceChildren(new Option('All shops', 'All'), ...SHOPS.map(s => new Option(s, s)));
 sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new Option(s, s)));
 sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
-const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: '2026-10', asof: '2026-10-30', shift: 'All' }); };
+const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: '2026-10', asof: '2026-10-31', shift: 'All' }); };
 setDefaults();
 sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
 sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
