@@ -3033,7 +3033,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
 </script>
 <script>
 /* Opening Stock tab (31 Oct, Umair): stock read from the Atlas stock feed for every Atlas portal code plus every MB52 code.
-   Shown in the claude.ai artifact only (never on the public portal), and hidden there from viewers who are neither owner nor editor.
+   Shown to everyone in the Claude artifact; on the portal, to whoever has the "Opening Stock" tab ticked in Users.
    OS.blob is the uploaded snapshot (a JSON list of [material, description, stock, source]); OS.at is when it was read.
    OS.trial marks a temporary trial read that Umair will ask to remove before the 23:30 snapshot. */
 (() => {
@@ -3046,20 +3046,12 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
 #openstock .osk .tl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}#openstock .osk .tv{font-family:var(--font-anthropic-serif);font-size:28px;color:var(--navy);margin-top:4px}#openstock .osk .ts{font-size:11.5px;color:var(--mut)}
 #openstock .osbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}#openstock select,#openstock input{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid #D5DBE1;border-radius:4px}#openstock input{min-width:260px}`;
   document.head.appendChild(css);
-  const onPortal = () => !!window.__PORTAL || /pages\.dev$|github\.io$/.test(location.hostname);
-  let tries = 0;
-  async function allowed() {
-    if (onPortal()) return false;
-    const c = window.claude && window.claude.use ? window.claude : null;
-    if (!c) { if (tries++ < 20) return null; return true; } // artifact with no runtime: the page is private to its owner
-    try { const u = await c.use('user'); if (!u) return true; let own = false, ed = false;
-      try { own = !!(await u.isOwner()); } catch (e) {} try { ed = u.canEdit ? !!(await u.canEdit()) : false; } catch (e) {}
-      return own || ed; } catch (e) { return true; }
-  }
+  /* No viewer restriction here (Umair, 31 Oct): on the portal the tab follows the per-user tab ticks in Users (id "openstock"). */
+  const portal = () => window.__PORTAL;
   async function init() {
-    const ok = await allowed(); if (ok === null) { setTimeout(init, 500); return; } if (!ok) return;
+    const P = portal(); if (P && P.canTab && !P.canTab('openstock')) return;
     const tabs = document.getElementById('tabs'), root = document.getElementById('ael') || document.body; if (!tabs || document.getElementById('t-openstock')) return;
-    const b = document.createElement('button'); b.className = 'tab'; b.id = 't-openstock'; b.setAttribute('role', 'tab'); b.dataset.p = 'openstock'; b.textContent = OS.trial ? 'Opening Stock (trial)' : 'Opening Stock'; b.title = 'Visible only to you';
+    const b = document.createElement('button'); b.className = 'tab'; b.id = 't-openstock'; b.setAttribute('role', 'tab'); b.dataset.p = 'openstock'; b.textContent = OS.trial ? 'Opening Stock (trial)' : 'Opening Stock'; b.title = 'Month-opening stock read from the Atlas stock feed';
     b.addEventListener('click', ev => { ev.stopPropagation(); open(); }, true); tabs.appendChild(b);
     const sec = document.createElement('section'); sec.className = 'page'; sec.id = 'openstock'; const last = [...root.querySelectorAll('section.page')].pop(); if (last) last.after(sec); else root.appendChild(sec);
     if (location.hash === '#openstock') open();
@@ -3067,15 +3059,21 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   function open() { window.__page = 'openstock'; document.querySelectorAll('#ael .page, section.page').forEach(s => s.classList.toggle('on', s.id === 'openstock'));
     document.querySelectorAll('#tabs .tab').forEach(t => t.setAttribute('aria-selected', t.id === 't-openstock' ? 'true' : 'false')); render(); }
   const SRC = ['Atlas portal', 'MB52 list', 'Both'];
+  /* Portal: the opening_stock dataset in Supabase (database rules allow it only to users with this tab). Claude artifact: the uploaded file. */
+  async function load() {
+    const Pt = window.Portal;
+    if (portal() && Pt && Pt.sb) { const { data, error } = await Pt.sb.from('datasets').select('data').eq('name', 'opening_stock').maybeSingle(); if (error || !data) throw new Error('no data'); return data.data; }
+    return (await fetch('/_blob/' + OS.blob)).json();
+  }
   async function render() {
     const sec = document.getElementById('openstock'); if (!sec) return;
     if (!built) { built = true; sec.innerHTML = `<div class="oshd"><h2>Opening Stock</h2>${OS.trial ? '<span class="ostr">Temporary trial</span>' : ''}<span id="os-sub"></span></div><div class="grid"><div class="card wide kpicard"><div class="osk" id="os-k"></div></div>
 <div class="card wide"><h3>By Code Source</h3><div class="tbox" id="os-g"></div></div><div class="card wide"><h3>Materials</h3><div class="osbar"><input id="os-q" placeholder="Search material or description" aria-label="Search"><select id="os-src" aria-label="Code source"><option value="">All sources</option>${SRC.map(s => `<option>${s}</option>`).join('')}</select><label style="font-size:12.5px"><input type="checkbox" id="os-nz" checked style="min-width:0"> Only with stock</label><span id="os-n" style="font-size:12px;color:var(--mut)"></span></div><div class="tbox" id="os-t" style="max-height:560px"></div></div></div>`;
       ['os-q', 'os-src', 'os-nz'].forEach(id => sec.querySelector('#' + id).addEventListener('input', table)); }
     const sub = sec.querySelector('#os-sub');
-    if (!OS.blob) { sub.textContent = 'The Nov 2026 opening stock is read on 31 Oct at 23:30 and appears here after that. Visible only to you.'; sec.querySelector('#os-k').innerHTML = '<div><div class="tl">Status</div><div class="tv" style="font-size:20px">Waiting for snapshot</div></div>'; return; }
-    sub.textContent = `${OS.trial ? 'Trial read' : OS.label} · Atlas stock feed read ${OS.at} · Atlas portal and MB52 codes · visible only to you`;
-    if (!rows && !loading) { loading = true; try { rows = (await (await fetch('/_blob/' + OS.blob)).json()).map(([mat, desc, q, s]) => ({ mat, desc, q: +q || 0, src: SRC[s] || s })); } catch (e) { sub.textContent = 'Could not load the snapshot'; } loading = false; }
+    if (!OS.blob) { sub.textContent = 'The Nov 2026 opening stock is read on 31 Oct at 23:30 and appears here after that.'; sec.querySelector('#os-k').innerHTML = '<div><div class="tl">Status</div><div class="tv" style="font-size:20px">Waiting for snapshot</div></div>'; return; }
+    sub.textContent = `${OS.trial ? 'Trial read' : OS.label} · Atlas stock feed read ${OS.at} · Atlas portal and MB52 codes`;
+    if (!rows && !loading) { loading = true; try { rows = (await load()).map(([mat, desc, q, s]) => ({ mat, desc, q: +q || 0, src: SRC[s] || s })); } catch (e) { sub.textContent = 'Could not load the snapshot'; } loading = false; }
     if (!rows) return;
     const st = rows.filter(r => r.q > 0), neg = rows.filter(r => r.q < 0), nod = rows.filter(r => r.desc === '' && r.q === 0);
     sec.querySelector('#os-k').innerHTML = [['Codes read', nf(rows.length), 'Atlas portal plus MB52, no duplicates'], ['Codes with stock', nf(st.length), nf(d3.sum(st, r => r.q)) + ' units in total'], ['Zero stock', nf(rows.length - st.length - neg.length), nf(nod.length) + ' not found in the feed'], ['Negative stock', nf(neg.length), 'worth checking in SAP']].map(([a, b, c]) => `<div><div class="tl">${a}</div><div class="tv">${b}</div><div class="ts">${c}</div></div>`).join('');

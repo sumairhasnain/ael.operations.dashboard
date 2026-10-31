@@ -5,7 +5,7 @@
     ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
     ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'],
-    ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M']
+    ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M'], ['openstock', 'Opening Stock']
   ].map(([id, name]) => ({ id, name }));
   const RESTRICTED = ['cost', 'savings'];
   const OPEN = ['workforce']; /* Manpower: open to every signed-in user (Umair, 28 Oct) */

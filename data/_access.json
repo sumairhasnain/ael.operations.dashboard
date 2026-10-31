@@ -174,5 +174,8 @@
     "issues",
     "projects",
     "bom"
+  ],
+  "opening_stock": [
+    "openstock"
   ]
 }
