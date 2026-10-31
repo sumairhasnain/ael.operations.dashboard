@@ -1,9 +1,9 @@
 /* Opening Stock tab (31 Oct, Umair): stock read from the Atlas stock feed for every Atlas portal code plus every MB52 code.
    Shown to everyone in the Claude artifact; on the portal, to whoever has the "Opening Stock" tab ticked in Users.
-   OS.blob is the uploaded snapshot (a JSON list of [material, description, stock, source]); OS.at is when it was read.
+   OS.blob is the uploaded snapshot (row layout above toRow); OS.at is when it was read.
    OS.trial marks a temporary trial read that Umair will ask to remove before the 23:30 snapshot. */
 (() => {
-  const OS = { blob: 'ae8a94eb39b1e937be52e4289c03f5ec', at: '31 Oct 16:55', trial: true, label: 'Nov 2026 opening stock' };
+  const OS = { blob: '85ace66ebc6c569a1004960b7e550774', at: '31 Oct 19:14', trial: true, label: 'Nov 2026 opening stock' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let rows = null, loading = false, built = false;
   const css = document.createElement('style'); css.textContent = `#openstock .oshd{display:flex;align-items:baseline;gap:12px;margin:2px 0 12px;flex-wrap:wrap}#openstock .oshd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;color:var(--navy);margin:0}#openstock .oshd span{font-size:12px;color:var(--mut)}
@@ -31,28 +31,45 @@
     if (portal() && Pt && Pt.sb) { const { data, error } = await Pt.sb.from('datasets').select('data').eq('name', 'opening_stock').maybeSingle(); if (error || !data) throw new Error('no data'); return data.data; }
     return (await fetch('/_blob/' + OS.blob)).json();
   }
+  /* Row: [material, description, stock, source, opening, incoming, safety stock, vendor stock, schedule MTD, receipt MTD, production MTD, {day: [schedule, receipt]}] */
+  const toRow = a => ({ mat: a[0], desc: a[1], q: +a[2] || 0, src: SRC[a[3]] || a[3], op: +a[4] || 0, inc: +a[5] || 0, ss: +a[6] || 0, vs: +a[7] || 0, sch: +a[8] || 0, rcv: +a[9] || 0, prd: +a[10] || 0, days: a[11] || null });
+  const SHOW = [['', 'All codes'], ['stock', 'With stock'], ['sch', 'Vendor scheduled this month'], ['prd', 'Produced this month'], ['below', 'Stock below safety stock']];
+  let pick = null;
   async function render() {
     const sec = document.getElementById('openstock'); if (!sec) return;
     if (!built) { built = true; sec.innerHTML = `<div class="oshd"><h2>Opening Stock</h2>${OS.trial ? '<span class="ostr">Temporary trial</span>' : ''}<span id="os-sub"></span></div><div class="grid"><div class="card wide kpicard"><div class="osk" id="os-k"></div></div>
-<div class="card wide"><h3>By Code Source</h3><div class="tbox" id="os-g"></div></div><div class="card wide"><h3>Materials</h3><div class="osbar"><input id="os-q" placeholder="Search material or description" aria-label="Search"><select id="os-src" aria-label="Code source"><option value="">All sources</option>${SRC.map(s => `<option>${s}</option>`).join('')}</select><label style="font-size:12.5px"><input type="checkbox" id="os-nz" checked style="min-width:0"> Only with stock</label><span id="os-n" style="font-size:12px;color:var(--mut)"></span></div><div class="tbox" id="os-t" style="max-height:560px"></div></div></div>`;
-      ['os-q', 'os-src', 'os-nz'].forEach(id => sec.querySelector('#' + id).addEventListener('input', table)); }
+<div class="card wide"><h3>Materials</h3><div class="osbar"><input id="os-q" placeholder="Search material or description" aria-label="Search"><select id="os-show" aria-label="Show">${SHOW.map(([v, t]) => `<option value="${v}"${v === 'stock' ? ' selected' : ''}>${t}</option>`).join('')}</select><select id="os-src" aria-label="Code source"><option value="">All sources</option>${SRC.map(s => `<option>${s}</option>`).join('')}</select><span id="os-n" style="font-size:12px;color:var(--mut)"></span></div><div class="tbox" id="os-t" style="max-height:560px"></div><p class="small" style="font-size:11.5px;color:var(--mut);margin:8px 0 0">Stock, Opening, Incoming, Safety Stock and Vendor Stock come from the Atlas stock feed for every code. Vendor schedule and receipt come from the Atlas receiving feed and production from the Atlas production feed, so they exist only for the codes Atlas tracks. Click a vendor-scheduled code to see its receipts by day.</p></div>
+<div class="card wide" id="os-dcard" style="display:none"><h3 id="os-dh"></h3><div class="tbox" id="os-d"></div></div></div>`;
+      ['os-q', 'os-src', 'os-show'].forEach(id => sec.querySelector('#' + id).addEventListener('input', table));
+      sec.querySelector('#os-t').addEventListener('click', ev => { const tr = ev.target.closest('tr[data-m]'); if (!tr) return; pick = tr.dataset.m; detail(); }); }
     const sub = sec.querySelector('#os-sub');
     if (!OS.blob) { sub.textContent = 'The Nov 2026 opening stock is read on 31 Oct at 23:30 and appears here after that.'; sec.querySelector('#os-k').innerHTML = '<div><div class="tl">Status</div><div class="tv" style="font-size:20px">Waiting for snapshot</div></div>'; return; }
-    sub.textContent = `${OS.trial ? 'Trial read' : OS.label} · Atlas stock feed read ${OS.at} · Atlas portal and MB52 codes`;
-    if (!rows && !loading) { loading = true; try { rows = (await load()).map(([mat, desc, q, s]) => ({ mat, desc, q: +q || 0, src: SRC[s] || s })); } catch (e) { sub.textContent = 'Could not load the snapshot'; } loading = false; }
+    sub.textContent = `${OS.trial ? 'Trial read' : OS.label} · Atlas feeds read ${OS.at} · Atlas portal and MB52 codes`;
+    if (!rows && !loading) { loading = true; try { rows = (await load()).map(toRow); } catch (e) { sub.textContent = 'Could not load the snapshot'; } loading = false; }
     if (!rows) return;
-    const st = rows.filter(r => r.q > 0), neg = rows.filter(r => r.q < 0), nod = rows.filter(r => r.desc === '' && r.q === 0);
-    sec.querySelector('#os-k').innerHTML = [['Codes read', nf(rows.length), 'Atlas portal plus MB52, no duplicates'], ['Codes with stock', nf(st.length), nf(d3.sum(st, r => r.q)) + ' units in total'], ['Zero stock', nf(rows.length - st.length - neg.length), nf(nod.length) + ' not found in the feed'], ['Negative stock', nf(neg.length), 'worth checking in SAP']].map(([a, b, c]) => `<div><div class="tl">${a}</div><div class="tv">${b}</div><div class="ts">${c}</div></div>`).join('');
-    const g = SRC.map(s => { const v = rows.filter(r => r.src === s); return [s, v.length, v.filter(r => r.q > 0).length, d3.sum(v, r => Math.max(0, r.q))]; });
-    sec.querySelector('#os-g').innerHTML = `<table class="tb"><thead><tr><th>Source</th><th class="n">Codes</th><th class="n">With stock</th><th class="n">Stock units</th></tr></thead><tbody>${g.map(([s, n, k, q]) => `<tr><td>${s}</td><td class="n">${nf(n)}</td><td class="n">${nf(k)}</td><td class="n">${nf(q)}</td></tr>`).join('')}</tbody></table>`;
+    const st = rows.filter(r => r.q > 0), sc = rows.filter(r => r.sch > 0), pr = rows.filter(r => r.prd > 0), bl = rows.filter(r => r.ss > 0 && r.q < r.ss), nod = rows.filter(r => r.desc === '' && r.q === 0);
+    const ssum = d3.sum(sc, r => r.sch), rsum = d3.sum(sc, r => Math.min(r.rcv, r.sch));
+    sec.querySelector('#os-k').innerHTML = [['Codes read', nf(rows.length), nf(nod.length) + ' not found in the stock feed'], ['Codes with stock', nf(st.length), nf(d3.sum(st, r => r.q)) + ' units in total'], ['Below safety stock', nf(bl.length), 'codes with a safety stock set'], ['Vendor scheduled', nf(sc.length), (ssum ? Math.round(rsum / ssum * 100) : 0) + '% of schedule received MTD'], ['Produced this month', nf(pr.length), nf(d3.sum(pr, r => r.prd)) + ' units MTD']].map(([a, b, c]) => `<div><div class="tl">${a}</div><div class="tv">${b}</div><div class="ts">${c}</div></div>`).join('');
     table();
   }
+  const cell = v => v ? nf(v) : '<span style="color:#B8C0C8">—</span>';
   function table() {
     const sec = document.getElementById('openstock'); if (!rows || !sec) return;
-    const q = sec.querySelector('#os-q').value.toLowerCase(), sr = sec.querySelector('#os-src').value, nz = sec.querySelector('#os-nz').checked;
-    const rs = rows.filter(r => (!sr || r.src === sr) && (!nz || r.q !== 0) && (!q || (r.mat + ' ' + r.desc).toLowerCase().includes(q))).sort((a, b) => b.q - a.q);
-    sec.querySelector('#os-n').textContent = `${nf(rs.length)} codes` + (rs.length > 500 ? ' · top 500 by stock shown, search to narrow' : '');
-    sec.querySelector('#os-t').innerHTML = `<table class="tb"><thead><tr><th>Material</th><th>Material Description</th><th class="n">Opening Stock</th><th>Source</th></tr></thead><tbody>${rs.slice(0, 500).map(r => `<tr><td>${esc(r.mat)}</td><td>${esc(r.desc)}</td><td class="n">${nf(r.q)}</td><td>${r.src}</td></tr>`).join('')}</tbody></table>`;
+    const q = sec.querySelector('#os-q').value.toLowerCase(), sr = sec.querySelector('#os-src').value, sh = sec.querySelector('#os-show').value;
+    const f = { '': () => true, stock: r => r.q !== 0, sch: r => r.sch > 0 || r.rcv > 0, prd: r => r.prd > 0, below: r => r.ss > 0 && r.q < r.ss }[sh] || (() => true);
+    const key = sh === 'sch' ? (r => r.sch) : sh === 'prd' ? (r => r.prd) : sh === 'below' ? (r => r.ss - r.q) : (r => r.q);
+    const rs = rows.filter(r => (!sr || r.src === sr) && f(r) && (!q || (r.mat + ' ' + r.desc).toLowerCase().includes(q))).sort((a, b) => key(b) - key(a));
+    sec.querySelector('#os-n').textContent = `${nf(rs.length)} codes` + (rs.length > 500 ? ' · top 500 shown, search to narrow' : '');
+    sec.querySelector('#os-t').innerHTML = `<table class="tb"><thead><tr><th>Material</th><th>Material Description</th><th class="n">Stock</th><th class="n">Opening</th><th class="n">Incoming</th><th class="n">Safety Stock</th><th class="n">Vendor Stock</th><th class="n">Vendor Schedule MTD</th><th class="n">Vendor Receipt MTD</th><th class="n">Production MTD</th><th>Source</th></tr></thead><tbody>${rs.slice(0, 500).map(r => `<tr${r.days ? ` data-m="${esc(r.mat)}" style="cursor:pointer" title="Click for receipts by day"` : ''}><td>${esc(r.mat)}</td><td>${esc(r.desc)}</td><td class="n">${nf(r.q)}</td><td class="n">${cell(r.op)}</td><td class="n">${cell(r.inc)}</td><td class="n">${cell(r.ss)}</td><td class="n">${cell(r.vs)}</td><td class="n">${cell(r.sch)}</td><td class="n">${cell(r.rcv)}</td><td class="n">${cell(r.prd)}</td><td>${r.src}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function detail() {
+    const sec = document.getElementById('openstock'), r = rows && rows.find(x => x.mat === pick); const card = sec.querySelector('#os-dcard');
+    if (!r || !r.days) { card.style.display = 'none'; return; }
+    const ds = Object.keys(r.days).sort(); let cs = 0, cr = 0;
+    const lines = ds.map(d => { const [s, v] = r.days[d]; cs += s; cr += v; return [d, s, v, cs, cr]; });
+    sec.querySelector('#os-dh').textContent = `${r.mat} · ${r.desc} · vendor schedule and receipt by day`;
+    sec.querySelector('#os-d').innerHTML = `<table class="tb"><thead><tr><th>Date</th><th class="n">Schedule</th><th class="n">Receipt</th><th class="n">Cum. schedule</th><th class="n">Cum. receipt</th><th class="n">Gap</th></tr></thead><tbody>${lines.map(([d, s, v, a, b]) => `<tr><td>${d}</td><td class="n">${cell(s)}</td><td class="n">${cell(v)}</td><td class="n">${nf(a)}</td><td class="n">${nf(b)}</td><td class="n" style="color:${b < a ? '#D0312D' : 'inherit'}">${nf(b - a)}</td></tr>`).join('')}</tbody></table>`;
+    card.style.display = ''; card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'openstock') { try { render(); } catch (e) {} } return r; };
   init();
