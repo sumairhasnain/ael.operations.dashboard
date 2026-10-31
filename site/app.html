@@ -3107,11 +3107,10 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'openstock') { try { render(); } catch (e) {} } return r; };
   init();
-  /* the F.O.M tab lives in fom.js; the Claude artifact loads it from here (the portal build inlines it) */
-  if (!window.__PORTAL && !document.getElementById('fom-js')) { const s = document.createElement('script'); s.id = 'fom-js'; s.src = 'fom.js'; document.body.appendChild(s); }
 })();
 
-</script><script>
+</script>
+<script>
 /* F.O.M tab (1 Nov, Umair): month report in the layout of the AEL "Manufacturing Sales" sheet, on a 16:9 page.
    Actuals come from Atlas: sales (dispatch) month to date for finished parts, production for in-house castings and
    piston SPD (Atlas has no dispatch for those). Lines Atlas does not cover show a dash until a source is linked.
