@@ -1,9 +1,9 @@
-/* Opening Stock tab (31 Oct, Umair): stock read from the Atlas stock feed for every Atlas portal code plus every MB52 code.
+/* Closing Stock tab (renamed from Opening Stock, 31 Oct, Umair; tab id stays "openstock" so user tab ticks keep working): stock read from the Atlas stock feed for every Atlas portal code plus every MB52 code.
    Shown to everyone in the Claude artifact; on the portal, to whoever has the "Opening Stock" tab ticked in Users.
    OS.blob is the uploaded snapshot (row layout above toRow); OS.at is when it was read.
    OS.trial marks a temporary trial read that Umair will ask to remove before the 23:30 snapshot. */
 (() => {
-  const OS = { blob: '85ace66ebc6c569a1004960b7e550774', at: '31 Oct 19:14', trial: true, label: 'Nov 2026 opening stock' };
+  const OS = { blob: '85ace66ebc6c569a1004960b7e550774', at: '31 Oct 19:14', trial: false, label: 'Oct 2026 closing stock' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let rows = null, loading = false, built = false;
   const css = document.createElement('style'); css.textContent = `#openstock .oshd{display:flex;align-items:baseline;gap:12px;margin:2px 0 12px;flex-wrap:wrap}#openstock .oshd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;color:var(--navy);margin:0}#openstock .oshd span{font-size:12px;color:var(--mut)}
@@ -17,7 +17,7 @@
   async function init() {
     const P = portal(); if (P && P.canTab && !P.canTab('openstock')) return;
     const tabs = document.getElementById('tabs'), root = document.getElementById('ael') || document.body; if (!tabs || document.getElementById('t-openstock')) return;
-    const b = document.createElement('button'); b.className = 'tab'; b.id = 't-openstock'; b.setAttribute('role', 'tab'); b.dataset.p = 'openstock'; b.textContent = OS.trial ? 'Opening Stock (trial)' : 'Opening Stock'; b.title = 'Month-opening stock read from the Atlas stock feed';
+    const b = document.createElement('button'); b.className = 'tab'; b.id = 't-openstock'; b.setAttribute('role', 'tab'); b.dataset.p = 'openstock'; b.textContent = 'Closing Stock'; b.title = 'Month-end closing stock read from the Atlas feeds';
     b.addEventListener('click', ev => { ev.stopPropagation(); open(); }, true); tabs.appendChild(b);
     const sec = document.createElement('section'); sec.className = 'page'; sec.id = 'openstock'; const last = [...root.querySelectorAll('section.page')].pop(); if (last) last.after(sec); else root.appendChild(sec);
     if (location.hash === '#openstock') open();
@@ -37,13 +37,13 @@
   let pick = null;
   async function render() {
     const sec = document.getElementById('openstock'); if (!sec) return;
-    if (!built) { built = true; sec.innerHTML = `<div class="oshd"><h2>Opening Stock</h2>${OS.trial ? '<span class="ostr">Temporary trial</span>' : ''}<span id="os-sub"></span></div><div class="grid"><div class="card wide kpicard"><div class="osk" id="os-k"></div></div>
+    if (!built) { built = true; sec.innerHTML = `<div class="oshd"><h2>Closing Stock</h2>${OS.trial ? '<span class="ostr">Temporary trial</span>' : ''}<span id="os-sub"></span></div><div class="grid"><div class="card wide kpicard"><div class="osk" id="os-k"></div></div>
 <div class="card wide"><h3>Materials</h3><div class="osbar"><input id="os-q" placeholder="Search material or description" aria-label="Search"><select id="os-show" aria-label="Show">${SHOW.map(([v, t]) => `<option value="${v}"${v === 'stock' ? ' selected' : ''}>${t}</option>`).join('')}</select><select id="os-src" aria-label="Code source"><option value="">All sources</option>${SRC.map(s => `<option>${s}</option>`).join('')}</select><span id="os-n" style="font-size:12px;color:var(--mut)"></span></div><div class="tbox" id="os-t" style="max-height:560px"></div><p class="small" style="font-size:11.5px;color:var(--mut);margin:8px 0 0">Stock, Opening, Incoming, Safety Stock and Vendor Stock come from the Atlas stock feed for every code. Vendor schedule and receipt come from the Atlas receiving feed and production from the Atlas production feed, so they exist only for the codes Atlas tracks. Click a vendor-scheduled code to see its receipts by day.</p></div>
 <div class="card wide" id="os-dcard" style="display:none"><h3 id="os-dh"></h3><div class="tbox" id="os-d"></div></div></div>`;
       ['os-q', 'os-src', 'os-show'].forEach(id => sec.querySelector('#' + id).addEventListener('input', table));
       sec.querySelector('#os-t').addEventListener('click', ev => { const tr = ev.target.closest('tr[data-m]'); if (!tr) return; pick = tr.dataset.m; detail(); }); }
     const sub = sec.querySelector('#os-sub');
-    if (!OS.blob) { sub.textContent = 'The Nov 2026 opening stock is read on 31 Oct at 23:30 and appears here after that.'; sec.querySelector('#os-k').innerHTML = '<div><div class="tl">Status</div><div class="tv" style="font-size:20px">Waiting for snapshot</div></div>'; return; }
+    if (!OS.blob) { sub.textContent = 'The month-end closing stock appears here once it is read.'; sec.querySelector('#os-k').innerHTML = '<div><div class="tl">Status</div><div class="tv" style="font-size:20px">Waiting for snapshot</div></div>'; return; }
     sub.textContent = `${OS.trial ? 'Trial read' : OS.label} · Atlas feeds read ${OS.at} · Atlas portal and MB52 codes`;
     if (!rows && !loading) { loading = true; try { rows = (await load()).map(toRow); } catch (e) { sub.textContent = 'Could not load the snapshot'; } loading = false; }
     if (!rows) return;
