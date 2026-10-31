@@ -33,9 +33,12 @@
     cache = { pd, cs, vs, T, daily, par, kids, info, futP, lastA, rc, stock: new Map(cs.map(r => [String(r.code), r])) };
     return cache;
   };
+  /* 31 Oct (Umair): a casting used only for one in-house machined part is covered against that part's machining plan,
+     not the finished-goods plan. */
+  const USEFOR = { '6503800001': '6510213002' };
   const item = (M, c) => {
     const s = M.stock.get(c); if (!s) return null;
-    const ps = M.par.get(c), need = ps && ps.length ? d3.sum(ps, x => x.q * M.daily(x.f)) || M.daily(c) : M.daily(c);
+    const ps = M.par.get(c), need = USEFOR[c] ? M.daily(USEFOR[c]) : ps && ps.length ? d3.sum(ps, x => x.q * M.daily(x.f)) || M.daily(c) : M.daily(c);
     const src = s.source || (M.info.get(c) || {}).source || 'Vendor', T = M.T;
     let nx = null, how = '';
     if (src === 'In-house') {
@@ -48,7 +51,7 @@
     }
     const stock = Math.max(0, +s.stock || 0), days = need > 0 ? stock / need : Infinity, nxd = nx ? wdBetween(T, nx) : null;
     const gap = days < 30 && (nxd == null || nxd > days), lvl = gap ? 'bad' : days < 7 ? 'warn' : 'ok';
-    return { c, part: s.part || (M.info.get(c) || {}).part || c, src, stock, vstock: +s.vendor_stock || 0, need, days, out: isFinite(days) ? addWd(T, Math.floor(days)) : null, nx, nxd, how, lvl, vendors: s.vendors || '' };
+    return { c, part: s.part || (M.info.get(c) || {}).part || c, src, stock, vstock: +s.vendor_stock || 0, need, days, note: USEFOR[c] ? `Need is the ${USEFOR[c]} machining plan in Atlas (${nf(need)} a day), the only part this casting is used for.` : '', out: isFinite(days) ? addWd(T, Math.floor(days)) : null, nx, nxd, how, lvl, vendors: s.vendors || '' };
   };
   /* 31 Oct (Umair): alternate codes of one part share one stock pool. Hovering any of them shows a single bar on the
      combined closing stock of all the codes, against the one daily need; the vendor panel beside it is unchanged. */
