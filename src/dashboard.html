@@ -800,8 +800,7 @@ D('atlas_parts_daily').forEach(r => { if (r.date < from || r.date > to) return; 
 let o = out.get(r.code); if (!o) out.set(r.code, o = { ...dm, pp: 0, pa: 0, dp: 0, da: 0 });
 if (r.date <= pEnd) { o.pp += r.prod_plan || 0; o.dp += r.disp_plan || 0; } if (r.date <= aEnd) { o.pa += r.prod_actual || 0; o.da += r.disp_actual || 0; } });
 return [...out.values()].map(o => ({ ...o, pc: o.pp ? o.pa / o.pp * 100 : null, gap: Math.max(0, o.pp - o.pa), dc: o.dp ? o.da / o.dp * 100 : null, dp: o.type === 'In-house' ? null : o.dp, da: o.type === 'In-house' ? null : o.da })); };
-/* ---- month-end projection: made to date + average daily output of the last 10 working days x working days left,
-capped where a bought-in part linked in Atlas's BOM cannot cover the rest of the month (stock + receipts at the vendor's recent rate) ---- */
+/* month-end projection (see repo history for notes) */
 let _pj = {};
 const PROJ = p => { const src = D('atlas_parts_daily'), m = p.month, T = window.__TODAY, anchor = [p.asof, T].sort()[0], key = [m, anchor, T].join('|');
 if (_pj.src === src && _pj.key === key && _pj.vs === D('atlas_vendor_supply')) return _pj.v;
@@ -1675,6 +1674,7 @@ const sx = v => { const i = SEQ.indexOf(String(v || '').split(', ')[0]); return 
 table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop', cmp: (x, y) => sx(x) - sx(y) || String(x).localeCompare(String(y)) }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good', cmp: (x, y) => (x === 'open' ? 0 : 1) - (y === 'open' ? 0 : 1) }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1, multi: ['status', 'shop'] });
 }
 };
+window.__pa = partAgg; window.__dims = DIMS;
 window.__draw = () => { window.__syncFilters(); const P = window.__P(); projGate(P); const f = draw[window.__page]; if (f) f(P); };
 dash.onData(() => window.__draw());
 window.addEventListener('resize', () => window.__draw());

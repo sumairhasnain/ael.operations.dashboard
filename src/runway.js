@@ -179,3 +179,41 @@
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
   const qi = document.getElementById('q-parts2'); if (qi) qi.addEventListener('input', () => setTimeout(add, 0));
 })();
+
+/* Product tab, Product Compliance (31 Oct, Umair): each product is tagged by the trend of its monthly production compliance
+   over its last three months with a plan (least-squares slope; MTD counts as the latest month): Declining (falling 5+ points
+   a month), Improving (rising 5+ points a month), Stable (in between, or fewer than two months). The buttons at the top right
+   filter the chart; several can be on together, none on = all products. */
+(() => {
+  const AK = window.AK, d0 = window.__draw; if (!AK || !d0) return;
+  const CAT = [{ k: 'dec', t: 'Declining', c: '#B02622', b: 'Compliance falling by 5+ points a month over the last three months' }, { k: 'sta', t: 'Stable', c: '#5A6670', b: 'Compliance within ±5 points a month over the last three months' }, { k: 'imp', t: 'Improving', c: '#1E8C5A', b: 'Compliance rising by 5+ points a month over the last three months' }];
+  const on = new Set(), TH = 0.05;
+  const css = document.createElement('style'); css.textContent = '#c-pr-matrix{position:relative}#pr-trend{position:absolute;top:12px;right:16px;display:flex;gap:4px}#pr-trend button{font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px}#pr-trend i{display:inline-block;width:8px;height:8px;border-radius:50%}#pr-trend b{font-weight:600}';
+  document.head.appendChild(css);
+  const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
+  const run = () => {
+    if (window.__page !== 'product' || !window.__pa || !window.__dims) return;
+    const card = document.getElementById('c-pr-matrix'), el = card && card.querySelector('.chart'); if (!el) return;
+    if (['atlas_parts_daily', 'atlas_parts'].some(id => (dash.data(id) || {}).status !== 'ok')) return;
+    let bar = document.getElementById('pr-trend');
+    if (!bar) { bar = document.createElement('span'); bar.id = 'pr-trend'; bar.className = 'crmt'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Compliance trend');
+      CAT.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.dataset.k = c.k; b.title = c.b; b.innerHTML = `<i style="background:${c.c}"></i>${c.t} <b></b>`;
+        b.addEventListener('click', () => { on.has(c.k) ? on.delete(c.k) : on.add(c.k); window.__draw(); }); bar.appendChild(b); });
+      card.appendChild(bar); }
+    const p = window.__P(), T = window.__TODAY, cm = T.slice(0, 7), months = window.__MONTHS.filter(m => m <= cm);
+    const byM = new Map(months.map(m => [m, new Map(window.__pa(p, m + '-01', m === cm ? T : window.__mEnd(m), 'Finished').map(r => [r.code, r]))]));
+    const dims = window.__dims(), codes = [...new Set([...byM.values()].flatMap(mm => [...mm.values()].filter(r => r.pp > 0).map(r => r.code)))].filter(c => dims.get(c));
+    const tot = c => d3.sum(months, m => (byM.get(m).get(c) || {}).pp || 0);
+    codes.sort((a, b) => dims.get(a).shop.localeCompare(dims.get(b).shop) || tot(b) - tot(a));
+    const val = (c, m) => { const r = byM.get(m).get(c); return r && r.pp ? r.pa / r.pp : null; };
+    const cls = new Map(codes.map(c => { const pts = months.map((m, i) => [i, val(c, m)]).filter(d => d[1] != null).slice(-3);
+      if (pts.length < 2) return [c, 'sta']; const mx = d3.mean(pts, d => d[0]), my = d3.mean(pts, d => d[1]);
+      const sl = d3.sum(pts, d => (d[0] - mx) * (d[1] - my)) / (d3.sum(pts, d => (d[0] - mx) ** 2) || 1);
+      return [c, sl <= -TH ? 'dec' : sl >= TH ? 'imp' : 'sta']; }));
+    bar.querySelectorAll('button').forEach(b => { const k = b.dataset.k, n = codes.filter(c => cls.get(c) === k).length; b.querySelector('b').textContent = n; const a = on.has(k); b.classList.toggle('on', a); b.setAttribute('aria-pressed', String(a)); });
+    if (!on.size) return;
+    const rows = codes.filter(c => on.has(cls.get(c)));
+    AK.heat(el, rows, months, val, { xFmt: m => mon(m) + (m === cm ? ' (MTD)' : ''), yFmt: c => dims.get(c).part, name: 'Production vs plan', dom: [0.6, 0.85, 0.97, 1.1], dark: 1.0, onRow: c => dash.setParams({ product: c }) });
+  };
+  window.__draw = (...a) => { const r = d0(...a); try { run(); } catch (e) { console.warn('prtrend', e); } return r; };
+})();
