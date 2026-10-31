@@ -2837,7 +2837,7 @@ window.addEventListener('resize', () => window.__draw());
   const AK = window.AK, d0 = window.__draw; if (!AK || !d0) return;
   const CAT = [{ k: 'dec', t: 'Declining', c: '#B02622', b: 'Compliance falling by 5+ points a month over the last three months' }, { k: 'sta', t: 'Stable', c: '#5A6670', b: 'Compliance within ±5 points a month over the last three months' }, { k: 'imp', t: 'Improving', c: '#1E8C5A', b: 'Compliance rising by 5+ points a month over the last three months' }];
   const on = new Set(), TH = 0.05;
-  const css = document.createElement('style'); css.textContent = '#c-pr-matrix{position:relative}#pr-trend{position:absolute;top:12px;right:16px;display:flex;gap:4px}#pr-trend button{font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px}#pr-trend i{display:inline-block;width:8px;height:8px;border-radius:50%}#pr-trend b{font-weight:600}';
+  const css = document.createElement('style'); css.textContent = '#c-pr-matrix{position:relative}#pr-trend{position:absolute;top:12px;right:16px;display:flex;gap:4px}#pr-trend button{font:inherit;font-size:12px;font-weight:600;padding:5px 12px;display:inline-flex;align-items:center;gap:6px;border-radius:4px;border:1px solid #D5DBE1;background:#E9EDF1;color:#5A6670;cursor:pointer}#pr-trend button.on{background:#051C2C;border-color:#051C2C;color:#fff}#pr-trend button.on i{box-shadow:0 0 0 1.5px #fff}#pr-trend i{display:inline-block;width:8px;height:8px;border-radius:50%}#pr-trend b{font-weight:600}';
   document.head.appendChild(css);
   const mon = s => d3.utcFormat('%b')(new Date(s.slice(0, 7) + '-01T00:00:00Z'));
   const run = () => {
