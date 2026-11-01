@@ -20,6 +20,8 @@ def load_atlas(path):
 A = load_atlas(atl_p); D, P = A.get('D', {}), A.get('P', {})
 if F.get('source', {}).get(m) == 'sheet':
     print(json.dumps({'month': m, 'skipped': 'official sheet month'})); sys.exit(0)
+if not any(float(x or 0) for x in list(D.values()) + list(P.values())):   # Atlas has nothing for this month yet: don't open its button
+    print(json.dumps({'month': m, 'skipped': 'no sales or production in Atlas yet'})); sys.exit(0)
 v, cov, miss = {}, [], {}
 for lid, codes in (F.get('codes') or {}).items():
     if not codes: continue
