@@ -5,7 +5,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const TABS = ["overview", "production", "product", "vendor", "inhouse", "quality", "maintenance", "oee",
-  "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects", "bom"];
+  "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects", "bom", "fom", "openstock"];
 const ROLES = ["admin", "manager", "viewer"];
 const cors = {
   "Access-Control-Allow-Origin": "*",
