@@ -4,7 +4,7 @@
    Budgets come later from Umair's SharePoint budget file; until then Budget and % show a dash.
    FOM.blob is the uploaded data file (Claude artifact); on the portal the "fom" dataset is read from the database. */
 (() => {
-  const FOM = { blob: '7fd6d1b7e5f8ae06e89987fce9fead0c' };
+  const FOM = { blob: 'a765a4e2999e2de1c021e82d8df717e9' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   let data = null, loading = false, built = false, month = null;
@@ -24,6 +24,7 @@
 #fom tr.tot td{font-weight:700}#fom tr.sub td{background:#D9D9D9;font-weight:700}#fom tr.dt td{background:#EEF3F9;font-weight:700}
 #fom .na{color:#9AA5B1}#fom sup{font-size:.6cqw;color:#5A6670;line-height:0}
 #fom .det{border-collapse:collapse}#fom .det .sec th{text-align:left}#fom .det .hd th{background:#E9E2CF}
+#fom-cmp table{font-size:12.5px}#fom-cmp td.n,#fom-cmp th.n{text-align:right}#fom-cmp .bad{color:var(--bad)}#fom-cmp p{font-size:12px;color:var(--mut);margin:8px 0 0}
 #fom .ft{font-size:.66cqw;color:#5A6670;line-height:1.35;margin-top:auto}`;
   document.head.appendChild(css);
   const portal = () => window.__PORTAL;
@@ -70,7 +71,7 @@
   const tip = id => { const c = (data.codes || {})[id]; if (!c) return 'Not in Atlas yet'; return (PROD.has(id) ? 'Production' : 'Sales (dispatch)') + ' of ' + c.map(x => x[0] + (x[1] === 'P' && !PROD.has(id) ? ' (production)' : '')).join(', '); };
   async function render() {
     const sec = document.getElementById('fom'); if (!sec) return;
-    if (!built) { built = true; sec.innerHTML = `<div class="fombar"><h2>F.O.M</h2><span id="fom-m"></span><span class="fn" id="fom-n"></span></div><div class="pg" id="fom-pg"></div>`;
+    if (!built) { built = true; sec.innerHTML = `<div class="fombar"><h2>F.O.M</h2><span id="fom-m"></span><span class="fn" id="fom-n"></span></div><div class="pg" id="fom-pg"></div><div class="card wide" id="fom-cmp" style="margin-top:16px;max-width:1500px"></div>`;
       sec.querySelector('#fom-m').addEventListener('click', ev => { const b = ev.target.closest('button[data-m]'); if (!b) return; month = b.dataset.m; draw(); }); }
     if (!data && !loading) { loading = true; try { data = await load(); } catch (e) { sec.querySelector('#fom-n').textContent = 'Could not load the report data'; } loading = false; }
     if (!data) return;
@@ -96,7 +97,20 @@ ${AL.map(([id, l]) => `<tr><td title="${esc(tip(id))}">${l}${mark(id)}</td>${dce
     sec.querySelector('#fom-pg').innerHTML = `<div class="ttl">MANUFACTURING SALES · ${MN[+month.slice(5) - 1].toUpperCase()} ${month.slice(0, 4)}</div><div class="cols"><div class="col">
 ${block('TECHNICAL COLLABORATION PARTS (UNITS)', TC, mm, yy, 'TOTAL')}${aci}${block('SPARE PARTS', SP, mm, yy, 'TOTAL', spExtra)}</div><div class="col">
 ${block('POLYMER (UNITS)', PO, mm, yy, 'TOTAL', poExtra)}${det}
-<div class="ft">Actual: Atlas sales (dispatch) for the month; <sup>P</sup> = Atlas production (in-house castings and piston SPD have no dispatch in Atlas). Sleeve adds machined CG125 sleeves supplied in-house (production). — = not available in Atlas yet; totals cover the lines that have data. Budget: to be linked from the SharePoint budget file. Hover a product for the SAP codes behind it.</div></div></div>`;
+<div class="ft">Year = from 1 July. Actual: Atlas sales (dispatch) for the month; <sup>P</sup> = Atlas production (in-house castings and piston SPD have no dispatch in Atlas). Sleeve adds machined CG125 sleeves supplied in-house (production). — = not available in Atlas yet; totals cover the lines that have data. Budget: to be linked from the SharePoint budget file. Hover a product for the SAP codes behind it.</div></div></div>`;
+    cmp();
+  }
+  /* temporary (1 Nov, Umair): year to date from 1 July in Atlas against the year column of the AEL Oct-26 sheet he shared */
+  function cmp() {
+    const el = document.getElementById('fom-cmp'), S = data && data.sheet_ytd; if (!el) return; if (!S) { el.style.display = 'none'; return; }
+    const ms = Object.keys(data.months).sort().filter(m => m <= S.month), jul = fy(S.month), aug = jul.filter(m => m >= S.month.slice(0, 4) + '-08');
+    const L = { ...Object.fromEntries([...TC, ...PO, ...SP].filter(r => r[0] !== '-')), cast: 'Cast iron parts', alu: 'Aluminium parts' };
+    const ids = { cast: CI.filter(r => r[0] !== '-').map(r => r[0]), alu: AL.map(r => r[0]) };
+    const v = (k, mm) => ids[k] ? sum(ids[k], mm, val) : val(mm, k);
+    const rows = Object.keys(S.values).filter(k => v(k, jul) != null);
+    const lab = m => MN[+m.slice(5) - 1];
+    el.innerHTML = `<h3>Year to date check: Atlas from 1 July vs the AEL ${lab(S.month)}-${S.month.slice(2, 4)} sheet (temporary)</h3><div class="tbox"><table class="tb"><thead><tr><th>Product</th>${ms.map(m => `<th class="n">${lab(m)}</th>`).join('')}<th class="n">Atlas Jul–${lab(S.month)}</th><th class="n">Atlas Aug–${lab(S.month)}</th><th class="n">Sheet year</th><th class="n">Sheet vs Atlas Jul–${lab(S.month)}</th><th class="n">Sheet vs Atlas Aug–${lab(S.month)}</th></tr></thead><tbody>${rows.map(k => { const a = v(k, jul), b = v(k, aug), sh = S.values[k], d1 = sh - a, d2 = sh - b;
+      return `<tr><td>${esc(L[k] || k)}</td>${ms.map(m => `<td class="n">${num(v(k, [m]))}</td>`).join('')}<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="n">${nf(sh)}</td><td class="n${Math.abs(d1) > .02 * sh ? ' bad' : ''}">${d1 > 0 ? '+' : ''}${nf(d1)}</td><td class="n${Math.abs(d2) > .02 * sh ? ' bad' : ''}">${d2 > 0 ? '+' : ''}${nf(d2)}</td></tr>`; }).join('')}</tbody></table></div><p>${esc(S.note || '')}</p>`;
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'fom') { try { render(); } catch (e) {} } return r; };
   init();
