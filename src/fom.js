@@ -4,7 +4,7 @@
    Budgets come later from Umair's SharePoint budget file; until then Budget and % show a dash.
    FOM.blob is the uploaded data file (Claude artifact); on the portal the "fom" dataset is read from the database. */
 (() => {
-  const FOM = { blob: 'e01ffdd5a71e5ea633220b4c1ba47f34' };
+  const FOM = { blob: 'ff93fd78f00ec881c859a22e44244002' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   let data = null, loading = false, built = false, month = null;
@@ -24,7 +24,6 @@
 #fom tr.tot td{font-weight:700}#fom tr.sub td{background:#D9D9D9;font-weight:700}#fom tr.dt td{background:#EEF3F9;font-weight:700}
 #fom .na{color:#9AA5B1}#fom sup{font-size:.6cqw;color:#5A6670;line-height:0}
 #fom .det{border-collapse:collapse}#fom .det .sec th{text-align:left}#fom .det .hd th{background:#E9E2CF}
-#fom-cmp table{font-size:12.5px}#fom-cmp td.n,#fom-cmp th.n{text-align:right}#fom-cmp .bad{color:var(--bad)}#fom-cmp p{font-size:12px;color:var(--mut);margin:8px 0 0}
 #fom .ft{font-size:.66cqw;color:#5A6670;line-height:1.35;margin-top:auto}`;
   document.head.appendChild(css);
   const portal = () => window.__PORTAL;
@@ -43,6 +42,8 @@
   async function load() {
     const Pt = window.Portal;
     if (portal() && Pt && Pt.sb) { const { data, error } = await Pt.sb.from('datasets').select('data').eq('name', 'fom').maybeSingle(); if (error || !data) throw new Error('no data'); return one(data.data); }
+    /* Claude artifact: the "fom" dataset (kept current by the F.O.M update task); the uploaded file is the fallback */
+    try { const d = window.dash && dash.data('fom'); if (d && d.status === 'ok' && d.data && d.data.length) { const o = one(d.data); for (const k of ['months', 'budget', 'codes', 'source']) if (typeof o[k] === 'string') o[k] = JSON.parse(o[k]); return o; } } catch (e) {}
     return one(await (await fetch('/_blob/' + FOM.blob)).json());
   }
   /* report layout: [id, label, kind]; kind: '' item, 'tot' total, 'sub' grey sub-heading, 'dt' detail total */
@@ -51,13 +52,12 @@
   const CI = [['ci_sleeve', 'SLEEVE'], ['ci_cyl', 'CYLINDER'], ['-', 'AAL PARTS', 'sub'], ['ci_boss', 'BOSS CLUTCH CENTER'], ['ci_dp', 'DRIVE PLATE'], ['ci_dg', 'DRUM GEAR']];
   const AL = [['al_cyl', 'CYLINDER CG (CASTED)'], ['al_bft', 'BFT'], ['al_hub', 'HUB FRONT / REAR'], ['al_cov', 'COVERS'], ['al_bs', 'BRAKE SHOE'], ['al_hpdc', 'CLUTCH INHOUSE (HPDC)']];
   const SP = [['-', 'INHOUSE', 'sub'], ['sp_piston', 'PISTON SPD'], ['-', 'CUSHION PARTS', 'sub'], ['sp_ff', 'FRONT FORK'], ['sp_rc', 'REAR CUSHION'], ['sp_clutch', 'Clutch SPD'], ['sp_other', 'OTHER PARTS'], ['-', 'VENDOR', 'sub'], ['sp_vendor', 'VENDOR']];
-  const PROD = new Set(['ci_boss', 'ci_dp', 'ci_dg', 'al_hpdc', 'sp_piston']);
   function fy(m) { const s = +(data.fy_start || '07'); const [y, mo] = m.split('-').map(Number); const y0 = mo >= s ? y : y - 1; return Object.keys(data.months).filter(k => { const [ky, km] = k.split('-').map(Number); return (ky > y0 || (ky === y0 && km >= s)) && k <= m; }); }
-  const val = (ms, id) => { if (!(data.codes || {})[id]) return null; return d3.sum(ms, k => (data.months[k] || {})[id] || 0); };
+  const val = (ms, id) => { const v = ms.map(k => (data.months[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
   const bud = (ms, id) => { const B = data.budget; if (!B) return null; const v = ms.map(k => (B[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
-  const num = v => v == null ? '<span class="na">—</span>' : nf(v);
+  const num = v => v == null ? '<span class="na">—</span>' : nf(v), dec = v => v == null ? '<span class="na">—</span>' : d3.format(',.2f')(v);
   const pct = (a, b) => (a == null || !b) ? '<span class="na">—</span>' : Math.round(a / b * 100) + '%';
-  const mark = id => PROD.has(id) ? '<sup>P</sup>' : '';
+  const mark = id => '';
   function cells(id, mm, yy, cls) { const am = val(mm, id), bm = bud(mm, id), ay = val(yy, id), by = bud(yy, id);
     return `<td class="n a">${num(am)}</td><td class="n">${num(bm)}</td><td class="p">${pct(am, bm)}</td><td class="n a">${num(ay)}</td><td class="n">${num(by)}</td><td class="p">${pct(ay, by)}</td>`; }
   function sum(ids, ms, f) { const v = ids.map(id => f(ms, id)); return v.every(x => x == null) ? null : d3.sum(v, x => x || 0); }
@@ -68,10 +68,10 @@
     const ids = rows.filter(r => r[0] !== '-').map(r => r[0]);
     return `<table>${head(title, 30)}<tbody>${rows.map(([id, lab, k]) => k === 'sub' ? `<tr class="sub"><td colspan="7">${esc(lab)}</td></tr>` : `<tr><td title="${esc(tip(id))}">${esc(lab)}${mark(id)}</td>${cells(id, mm, yy)}</tr>`).join('')}<tr class="tot"><td>${totLabel}</td>${totCells(ids, mm, yy)}</tr>${extra}</tbody></table>`;
   }
-  const tip = id => { const c = (data.codes || {})[id]; if (!c) return 'Not in Atlas yet'; return (PROD.has(id) ? 'Production' : 'Sales (dispatch)') + ' of ' + c.map(x => x[0] + (x[1] === 'P' && !PROD.has(id) ? ' (production)' : '')).join(', '); };
+  const tip = id => { const c = (data.codes || {})[id]; if (!c) return id === 'sp_piston' ? 'Typed in the AEL sheet (SPD Demand)' : ''; const n = c.filter(x => x[3] !== 0).length; return `${n} SAP codes with movement (${c.filter(x => x[2] === 'P').length ? 'sales and production' : 'sales'}), same factors as the AEL F.O.M sheet`; };
   async function render() {
     const sec = document.getElementById('fom'); if (!sec) return;
-    if (!built) { built = true; sec.innerHTML = `<div class="fombar"><h2>F.O.M</h2><span id="fom-m"></span><span class="fn" id="fom-n"></span></div><div class="pg" id="fom-pg"></div><div class="card wide" id="fom-cmp" style="margin-top:16px;max-width:1500px"></div>`;
+    if (!built) { built = true; sec.innerHTML = `<div class="fombar"><h2>F.O.M</h2><span id="fom-m"></span><span class="fn" id="fom-n"></span></div><div class="pg" id="fom-pg"></div>`;
       sec.querySelector('#fom-m').addEventListener('click', ev => { const b = ev.target.closest('button[data-m]'); if (!b) return; month = b.dataset.m; draw(); }); }
     if (!data && !loading) { loading = true; try { data = await load(); } catch (e) { sec.querySelector('#fom-n').textContent = 'Could not load the report data'; } loading = false; }
     if (!data) return;
@@ -83,7 +83,7 @@
     const sec = document.getElementById('fom'); if (!data || !sec) return;
     sec.querySelectorAll('#fom-m button').forEach(b => b.classList.toggle('on', b.dataset.m === month));
     const mm = [month], yy = fy(month), lab = m => MN[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
-    sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · Atlas data to ${data.asof}` + (data.budget ? '' : ' · budget not linked yet');
+    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
     const ciIds = CI.filter(r => r[0] !== '-').map(r => r[0]), alIds = AL.map(r => r[0]);
     const aci = `<table>${head('ALUMINIUM AND CAST IRON PARTS (UNITS)', 30)}<tbody><tr><td>CAST IRON PARTS</td>${totCells(ciIds, mm, yy)}</tr><tr><td>ALUMINIUM PARTS</td>${totCells(alIds, mm, yy)}</tr><tr class="tot"><td>TOTAL</td>${totCells(ciIds.concat(alIds), mm, yy)}</tr></tbody></table>`;
     const dcell = id => { const a = val(mm, id), b = bud(mm, id); return `<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="p">${pct(a, b)}</td>`; };
@@ -91,26 +91,14 @@
     const det = `<table class="det"><colgroup><col style="width:40%"><col><col><col></colgroup><thead><tr class="sec"><th>CAST IRON AND ALUMINIUM PARTS DETAILS</th><th colspan="3" style="background:#fff;color:#111;text-align:center;border-color:#9AA5B1">FOR THE MONTH</th></tr><tr class="hd"><th>PRODUCT</th><th>Actual</th><th>Budget</th><th>%</th></tr></thead><tbody>
 ${CI.map(([id, l, k]) => k === 'sub' ? `<tr class="sub"><td colspan="4">${l}</td></tr>` : `<tr><td title="${esc(tip(id))}">${l}${mark(id)}</td>${dcell(id)}</tr>`).join('')}<tr class="dt"><td>CAST IRON PARTS</td>${dtot(ciIds)}</tr>
 ${AL.map(([id, l]) => `<tr><td title="${esc(tip(id))}">${l}${mark(id)}</td>${dcell(id)}</tr>`).join('')}<tr class="dt"><td>ALUMINIUM PARTS</td>${dtot(alIds)}</tr></tbody></table>`;
-    const na = '<td class="n a"><span class="na">—</span></td><td class="n"><span class="na">—</span></td><td class="p"><span class="na">—</span></td>';
-    const poExtra = `<tr class="tot"><td style="font-size:.68cqw">RAW MATERIAL USED (METRIC TONS)</td>${na + na}</tr><tr class="tot"><td>REVENUE (RS. IN MILLION)</td>${na + na}</tr>`;
-    const spExtra = `<tr class="tot"><td>REVENUE (RS. IN MILLION)</td>${na + na}</tr>`;
+    const all = (f, ms, id) => ms.every(k => ((f === bud ? data.budget : data.months)[k] || {})[id] != null) ? f(ms, id) : null;   /* revenue / raw material: a year figure only when every month has one */
+    const xc = (id, mm, yy) => { const am = val(mm, id), bm = bud(mm, id), ay = all(val, yy, id), by = all(bud, yy, id); return `<td class="n a">${dec(am)}</td><td class="n">${dec(bm)}</td><td class="p">${pct(am, bm)}</td><td class="n a">${dec(ay)}</td><td class="n">${dec(by)}</td><td class="p">${pct(ay, by)}</td>`; };
+    const poExtra = `<tr class="tot"><td style="font-size:.68cqw">RAW MATERIAL USED (METRIC TONS)</td>${xc('x_rm', mm, yy)}</tr><tr class="tot"><td>REVENUE (RS. IN MILLION)</td>${xc('x_rev_po', mm, yy)}</tr>`;
+    const spExtra = `<tr class="tot"><td>REVENUE (RS. IN MILLION)</td>${xc('x_rev_sp', mm, yy)}</tr>`;
     sec.querySelector('#fom-pg').innerHTML = `<div class="ttl">MANUFACTURING SALES · ${MN[+month.slice(5) - 1].toUpperCase()} ${month.slice(0, 4)}</div><div class="cols"><div class="col">
 ${block('TECHNICAL COLLABORATION PARTS (UNITS)', TC, mm, yy, 'TOTAL')}${aci}${block('SPARE PARTS', SP, mm, yy, 'TOTAL', spExtra)}</div><div class="col">
 ${block('POLYMER (UNITS)', PO, mm, yy, 'TOTAL', poExtra)}${det}
-<div class="ft">Year = from 1 July. Actual: Atlas sales (dispatch) for the month; <sup>P</sup> = Atlas production (in-house castings and piston SPD have no dispatch in Atlas). Sleeve adds machined CG125 sleeves supplied in-house (production). — = not available in Atlas yet; totals cover the lines that have data. Budget: to be linked from the SharePoint budget file. Hover a product for the SAP codes behind it.</div></div></div>`;
-    cmp();
-  }
-  /* temporary (1 Nov, Umair): year to date from 1 July in Atlas against the year column of the AEL Oct-26 sheet he shared */
-  function cmp() {
-    const el = document.getElementById('fom-cmp'), S = data && data.sheet_ytd; if (!el) return; if (!S) { el.style.display = 'none'; return; }
-    const ms = Object.keys(data.months).sort().filter(m => m <= S.month), jul = fy(S.month), aug = jul.filter(m => m >= S.month.slice(0, 4) + '-08');
-    const L = { ...Object.fromEntries([...TC, ...PO, ...SP].filter(r => r[0] !== '-')), cast: 'Cast iron parts', alu: 'Aluminium parts' };
-    const ids = { cast: CI.filter(r => r[0] !== '-').map(r => r[0]), alu: AL.map(r => r[0]) };
-    const v = (k, mm) => ids[k] ? sum(ids[k], mm, val) : val(mm, k);
-    const rows = Object.keys(S.values).filter(k => v(k, jul) != null);
-    const lab = m => MN[+m.slice(5) - 1];
-    el.innerHTML = `<h3>Year to date check: Atlas from 1 July vs the AEL ${lab(S.month)}-${S.month.slice(2, 4)} sheet (temporary)</h3><div class="tbox"><table class="tb"><thead><tr><th>Product</th>${ms.map(m => `<th class="n">${lab(m)}</th>`).join('')}<th class="n">Atlas Jul–${lab(S.month)}</th><th class="n">Atlas Aug–${lab(S.month)}</th><th class="n">Sheet year</th><th class="n">Sheet vs Atlas Jul–${lab(S.month)}</th><th class="n">Sheet vs Atlas Aug–${lab(S.month)}</th></tr></thead><tbody>${rows.map(k => { const a = v(k, jul), b = v(k, aug), sh = S.values[k], d1 = sh - a, d2 = sh - b;
-      return `<tr><td>${esc(L[k] || k)}</td>${ms.map(m => `<td class="n">${num(v(k, [m]))}</td>`).join('')}<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="n">${nf(sh)}</td><td class="n${Math.abs(d1) > .02 * sh ? ' bad' : ''}">${d1 > 0 ? '+' : ''}${nf(d1)}</td><td class="n${Math.abs(d2) > .02 * sh ? ' bad' : ''}">${d2 > 0 ? '+' : ''}${nf(d2)}</td></tr>`; }).join('')}</tbody></table></div><p>${esc(S.note || '')}</p>`;
+<div class="ft">Year = from 1 July, all months added (Jul–Oct). Jul–Oct actuals: AEL F.O.M sheet, Oct-26 Final (SAP MB51 sales 601/602 and production 101/102, same code lists and factors). From Nov: lines Atlas covers are live from Atlas sales and production with the same code lists; the rest show — until SAP MB51 is linked. Budget: AEL budget 2026-27. Revenue and raw material are shown where the sheet has them. Hover a product for its SAP codes.</div></div></div>`;
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'fom') { try { render(); } catch (e) {} } return r; };
   init();
