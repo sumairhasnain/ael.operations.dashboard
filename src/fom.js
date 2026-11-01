@@ -4,7 +4,7 @@
    Budgets come later from Umair's SharePoint budget file; until then Budget and % show a dash.
    FOM.blob is the uploaded data file (Claude artifact); on the portal the "fom" dataset is read from the database. */
 (() => {
-  const FOM = { blob: 'a765a4e2999e2de1c021e82d8df717e9' };
+  const FOM = { blob: 'e01ffdd5a71e5ea633220b4c1ba47f34' };
   const nf = d3.format(',.0f'), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   let data = null, loading = false, built = false, month = null;
