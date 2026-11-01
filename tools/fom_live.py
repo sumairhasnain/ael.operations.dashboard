@@ -9,7 +9,15 @@ are never overwritten."""
 import json, sys
 fom_p, atl_p, m, out_p = sys.argv[1:5]
 F = json.load(open(fom_p)); one = isinstance(F, list); F = F[0] if one else F
-A = json.load(open(atl_p)); D, P = A.get('D', {}), A.get('P', {})
+def load_atlas(path):
+    """atlas_month.json, or the saved tool-result file of the javascript_tool call that returned '#…#@@FOMATL{...}'"""
+    raw = open(path, errors='ignore').read()
+    if '@@FOMATL' not in raw: return json.loads(raw)
+    try: t = json.loads(raw)[0]['text']
+    except Exception: t = raw
+    if t.startswith('"'): t = json.loads(t[:t.rindex('"') + 1])
+    return json.loads(t.split('@@FOMATL', 1)[1].split('\n\n(captured')[0])
+A = load_atlas(atl_p); D, P = A.get('D', {}), A.get('P', {})
 if F.get('source', {}).get(m) == 'sheet':
     print(json.dumps({'month': m, 'skipped': 'official sheet month'})); sys.exit(0)
 v, cov, miss = {}, [], {}
