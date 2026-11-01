@@ -75,7 +75,7 @@
     const cd = dash.data('cr_conv'), id = dash.data('cr_ideas');
     if (!cd || cd.status !== 'ok' || !id || id.status !== 'ok') { const gr = q('#cc-grid'); if (gr && cd && cd.status === 'error') empty(gr, '● Conversion cost data failed to load'); return; }
     const p = P(), C0 = cd.data.map(r => ({ ...r, rs_unit: +r.rs_unit, cop_pct: r.cop_pct == null || r.cop_pct === '' ? null : +r.cop_pct }));
-    const ideasAll = id.data.map(r => ({ ...r, cr_unit: r.cr_unit == null || r.cr_unit === '' ? null : +r.cr_unit }));
+    const ideasAll = id.data.filter(r => !r.fin_only).map(r => ({ ...r, cr_unit: r.cr_unit == null || r.cr_unit === '' ? null : +r.cr_unit }));
     const mOk = (m, sel) => sel === 'All' || !sel || m === sel || m === 'All models';
     const C = C0.filter(r => (g.shop === 'All' || r.dash_shop === g.shop) && mOk(r.model, g.model) && (!p.crmodel || r.model === p.crmodel || r.model === 'All models' || p.crmodel === 'All models'));
     const prods = [...new Set(C.map(r => r.product))], prod = prods.includes(p.ccprod) ? p.ccprod : '', el = EL.includes(p.ccel) ? p.ccel : '';
