@@ -679,7 +679,7 @@ const sShop = document.getElementById('f-shop'), sMonth = document.getElementByI
 sShop.replaceChildren(new Option('All shops', 'All'), ...SHOPS.map(s => new Option(s, s)));
 sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new Option(s, s)));
 sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
-const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: '2026-10', asof: '2026-11-02', shift: 'All' }); };
+const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: '2026-11', asof: '2026-11-02', shift: 'All' }); };
 setDefaults();
 sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
 sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
@@ -726,7 +726,7 @@ iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.v
 iDate.addEventListener('blur', () => { iDate.value = dash.params().asof || ''; });
 let _dt = { src: null, v: null };
 window.__dataTo = () => { const d = dash.data('atlas_parts_daily'); if (!d || d.status !== 'ok') return window.__TODAY; if (d.data !== _dt.src) { let mx = ''; for (const r of d.data) if ((r.prod_actual != null || r.disp_actual != null) && r.date > mx) mx = r.date; _dt = { src: d.data, v: mx && mx < window.__TODAY ? mx : window.__TODAY }; } return _dt.v; };
-window.__P = () => { const p = dash.params(); const month = p.month || '2026-10', e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
+window.__P = () => { const p = dash.params(); const month = p.month || '2026-11', e = mEnd(month); let asof = p.asof || window.__TODAY; if (asof < month + '-01' || asof > e) asof = e;
 const __pb = { shop: p.shop || 'All', model: MODELS.includes(p.model) ? p.model : 'All', product: p.product || null, ihpart: p.ihpart || null, cp: p.cp ? String(p.cp) : null, dpart: p.dpart || null, month, start: month + '-01', end: e, asof, shift: p.shift || 'All', sf: !!p.sf && (p.shop || 'All') !== 'All', mf: !!p.mf && MODELS.includes(p.model), pf: p.pf ? String(p.pf) : null, actEnd: [asof, window.__TODAY, window.__dataTo()].sort()[0], future: month + '-01' > window.__TODAY };
 const base = __pb; base.full = { ...base }; const dy = String(p.day || '');
 if (/^\d{4}-\d{2}-\d{2}$/.test(dy) && dy >= base.start && dy <= base.end) return { ...base, day: dy, start: dy, end: dy, asof: dy, actEnd: [dy, window.__TODAY, window.__dataTo()].sort()[0], full: base.full };
