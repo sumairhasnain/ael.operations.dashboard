@@ -1,10 +1,13 @@
 import json, copy
 F=json.load(open('../crb_data.json'))['lines']
-I=json.load(open('/home/claude/ael.operations.dashboard/data/cr_ideas.json'))
+I=[r for r in json.load(open('/home/claude/ael.operations.dashboard/data/cr_ideas.json')) if not r.get('fin_only')]
+OLD={}
+for r in json.load(open('/home/claude/ael.operations.dashboard/data/cr_ideas.json')):
+    if r.get('fin_only'): OLD.setdefault((r['item'],r['model'],r['fin_target'],r['fin_unit']),[]).append(r['key'])
 MN=['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun']
 ym=lambda i:('2026-' if i<6 else '2027-')+['07','08','09','10','11','12','01','02','03','04','05','06'][i]
 M={('CL-01','CD70'):[52],('CL-02','CD70'):[56],('CL-03','CD70'):[57],('CL-04','CD70'):[60],('CL-05','CD70'):[53],
- ('PR-01','All models'):[15,20],('PR-03','CD70'):[16,19],
+ ('PR-01','All models'):[15,20],  # PR-03 is a new idea, not in the Finance budget (Umair, 2 Nov); lines 16/19 stay Finance-only
  ('IC-01','All models'):[69,75,81],('IC-02','All models'):[71,77,82],('IC-03','All models'):[72,78],('IC-04','CG125'):[76],
  ('IC-06','CD70'):[70],('IC-06','Pridor'):[84],('IC-07','CD70'):[73],('IC-07','Pridor'):[83],
  ('PI-01','CD70'):[35],('PI-01','CG125'):[43],('PI-01','Pridor'):[50],('PI-02','CD70'):[32],('PI-02','CG125'):[39],('PI-02','Pridor'):[47],
@@ -49,4 +52,10 @@ for j,f in enumerate(F):
       'fin_only':1,'fin_unit':round(f['months'][i],2),'fin_target':ym(i),'fin_detail':'Finance: '+'; '.join(f"{f['model']} Rs {fmt(f['months'][k])} in {MN[k]}" for k in left)})
 print(len(extra), sum(1 for r in I if r.get('fin_unit') is not None),'of',len(I),'matched')
 for e in extra: print(e['key'],e['shop'],e['model'],e['item'][:40],e['fin_unit'],e['fin_target'])
+ALL=[k for v in OLD.values() for k in v]; nx=max(int(k[4:]) for k in ALL); newk=[]
+for e in extra:
+    v=OLD.get((e['item'],e['model'],e['fin_target'],e['fin_unit']))
+    if v: e['key']=v.pop(0)
+    else: nx+=1; e['key']=f'FIN-{nx:02d}'; newk.append(e['key'])
+print('new keys',newk)
 json.dump(I+extra,open('cr_ideas_fin.json','w'),ensure_ascii=False,separators=(',',':'))
