@@ -42,8 +42,9 @@
   };
   const device = ua => !ua ? '' : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows PC' : /Mac OS/.test(ua) ? 'Mac' : 'Other';
   const tabsOf = u => P.tabsFor(u);
-  const chips = u => u.role !== 'viewer' ? '<span class="muted small">All 19 tabs</span>'
-    : `<div class="tabchips">${tabsOf(u).map(t => `<span class="${P.RESTRICTED.includes(t) ? 'r' : ''}">${esc(TN[t] || t)}</span>`).join('')}</div>`;
+  const crChip = u => P.canCrUpload(u) ? ' <span class="crup" title="Can upload CR / CC presentations on the VA/CR Idea Register">CR Upload</span>' : '';
+  const chips = u => (u.role !== 'viewer' ? `<span class="muted small">All ${P.TABS.length} tabs</span>`
+    : `<div class="tabchips">${tabsOf(u).map(t => `<span class="${P.RESTRICTED.includes(t) ? 'r' : ''}">${esc(TN[t] || t)}</span>`).join('')}</div>`) + crChip(u);
   const csvCell = v => /[",\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? '');
   const download = (name, rows) => {
     const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv' });
@@ -96,7 +97,7 @@
   };
 
   const renderLog = el => {
-    const label = { login: 'Signed in', logout: 'Signed out', auto_logout: 'Auto sign-out (idle)', password_changed: 'Changed password', open_dashboard: 'Opened dashboard',
+    const label = { login: 'Signed in', logout: 'Signed out', auto_logout: 'Auto sign-out (idle)', password_changed: 'Changed password', open_dashboard: 'Opened dashboard', cr_upload: 'Uploaded CR presentation',
       admin_create_user: 'Admin: added user', admin_update_user: 'Admin: changed access', admin_disable_user: 'Admin: disabled user', admin_enable_user: 'Admin: enabled user',
       admin_reset_password: 'Admin: reset password', admin_delete_user: 'Admin: deleted user' };
     el.innerHTML = `<div class="acts" style="margin-bottom:10px"><div class="field" style="margin:0;flex:1;min-width:200px"><input id="lq" placeholder="Filter by email or event"></div>
@@ -172,17 +173,20 @@
       </div>
       <div class="field" style="margin-bottom:0"><label>Tabs this person can open</label></div>
       ${tabBoxes(u.tabs || P.DEFAULT_TABS, u.role)}
+      <div class="field" style="margin:10px 0 0"><label class="crbox"><input type="checkbox" id="crup" ${P.canCrUpload(u) ? 'checked' : ''} ${u.role === 'admin' ? 'disabled' : ''}> Can upload CR / CC presentations <span class="muted small">(shows the Upload button on the VA/CR Idea Register; admins always can)</span></label></div>
       ${isNew ? `<div class="field"><label>Temporary password</label><div class="acts" style="flex-wrap:nowrap"><input id="pw" class="creds" value="${P.genPassword()}" style="flex:1"><button type="button" class="btn ghost sm" id="gen">New</button></div></div>` : ''}
       <p class="small muted">Viewer: sees only ticked tabs. Manager: sees every tab. Admin: every tab plus this Users page.</p>`,
       `<button class="btn ghost" value="x" formnovalidate>Cancel</button><button type="button" class="btn" id="save">${isNew ? 'Create user' : 'Save changes'}</button>`);
     wireRole();
+    { const rs = df.querySelector('#role'), cb = df.querySelector('#crup'), prev = rs.onchange; let keep = cb.checked;
+      rs.onchange = () => { prev && prev(); if (rs.value === 'admin') { keep = cb.disabled ? keep : cb.checked; cb.checked = true; cb.disabled = true; } else { if (cb.disabled) cb.checked = keep; cb.disabled = false; } }; }
     if (isNew) df.querySelector('#gen').onclick = () => { df.querySelector('#pw').value = P.genPassword(); };
     df.querySelector('#save').onclick = async ev => {
       const b = ev.target, role = df.querySelector('#role').value, tabs = pickedTabs();
       if (role === 'viewer' && !tabs.length) { dsay('Tick at least one tab.'); return; }
       b.disabled = true;
       try {
-        const base = { full_name: df.querySelector('#fn').value.trim(), designation: df.querySelector('#dg').value.trim(), role, tabs: role === 'viewer' ? tabs : P.TABS.map(t => t.id) };
+        const base = { full_name: df.querySelector('#fn').value.trim(), designation: df.querySelector('#dg').value.trim(), role, tabs: (role === 'viewer' ? tabs : P.TABS.map(t => t.id)).concat(df.querySelector('#crup').checked && role !== 'admin' ? ['cr_upload'] : []) };
         if (isNew) {
           const email = df.querySelector('#em').value.trim().toLowerCase(), password = df.querySelector('#pw').value.trim();
           await call({ action: 'create', email, password, ...base });

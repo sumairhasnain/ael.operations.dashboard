@@ -136,3 +136,6 @@ dialog .df { padding: 12px 20px; border-top: 1px solid var(--line); display: fle
   #dash-root .ael .kmini { min-width: 0; }
   table.t { font-size: 12.5px; }
 }
+.crup { display: inline-block; margin-top: 3px; font-size: 11px; padding: 1px 6px; background: #E8F1FB; border: 1px solid #B9D3EE; color: #0B4A8B; font-weight: 600; }
+.crbox { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.crbox input { width: auto; margin: 0; }

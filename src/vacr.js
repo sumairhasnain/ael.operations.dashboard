@@ -243,7 +243,8 @@
             TG.forEach(([k, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k; b.textContent = lab;
               b.addEventListener('click', () => { const cur = new Set(String(dash.params().crtg || '').split('|').filter(Boolean)); cur.has(k) ? cur.delete(k) : cur.add(k); set({ crtg: cur.size ? [...cur].join('|') : 0 }); }); box.appendChild(b); });
             bar.appendChild(box); const fc = document.getElementById('f-clear'); if (fc && !fc._crtg) { fc._crtg = 1; fc.addEventListener('click', () => set({ crtg: 0 })); } }
-          box.querySelectorAll('button').forEach(b => { const a = on.has(b.dataset.k); b.classList.toggle('on', a); b.setAttribute('aria-pressed', a); }); } };
+          box.querySelectorAll('button').forEach(b => { const a = on.has(b.dataset.k); b.classList.toggle('on', a); b.setAttribute('aria-pressed', a); });
+          if (window.__crUp) window.__crUp(bar); } };
       if (!q('#crtg-css')) { const st = document.createElement('style'); st.id = 'crtg-css'; st.textContent = '.ael .crtg{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}.ael .crtg button{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #D5DBE1;border-radius:4px;background:#EEF1F4;color:#5A6670;cursor:pointer;white-space:nowrap}.ael .crtg button:hover{background:#E2E7EC}.ael .crtg button.on{background:#051C2C;border-color:#051C2C;color:#fff}.ael .crtg button.on:hover{background:#163B57}'; document.head.appendChild(st); }
       const tgOk = r => !on.size || TG.some(([k, , f]) => on.has(k) && f(r));
       table(ti, (fin ? rs.concat(rowsFin().filter(r => pass(r, p, g))) : rs).filter(tgOk), cols,
@@ -253,7 +254,8 @@
          Slides are images: in the artifact they are stored files (/_blob/<id>); on the portal they come from the cr_slides dataset (Savings tab access only). */
       let slP = null, slR = null; const SLD = {"all-10":"95eff09bf8277d1eff819e039801b866","all-15":"51c6d2ce50d30164c047645f8c843bcb","all-19":"1292949b3a2966a58397a40f0ba4be16","all-22":"c18c24368af11168ea60619af5d1b22d","all-23":"7628dd61bd28da5433d886d62dc7c19e","all-24":"54a4d91b4e4530952b98f757cf0f6e8e","all-25":"2eaaff09c437e55fff826da25849c46e","all-26":"d1090bece8c3a6f73d6f0dc479579498","all-27":"44740ad5642245b90763c75346e138e3","all-31":"1327120d8b723a19648e8e479f43332e","all-32":"38d0e8d28e5fef32ff41d09027197636","all-33":"cf13d8691c0672ba3f4ea27a4e8cd9ce","all-38":"4bd21b07f6e479b17c531fe6acd46deb","all-4":"8fa6861174a8b8b7fcab0570d0e909df","all-43":"c4af34b6bb6bb9d5fb1148b34f08d1a9","all-44":"9dc627b082566692d8681269536ffcc4","all-45":"fed783bb4decd545d1520f96c341793f","all-49":"a9ad761707d2dfc3cfe78f2ded11d71c","all-5":"8c18a8b0e1cad8f3a00bb5d14a030e50","cp-13":"190ba73f3fc7499928a50f794602965c","cp-15":"fd1d41b5c55c3a63f6eb4c6403bdb7c9","dp-10":"80fe0293d59def570eb68d4739670225","lc-10":"adfe0a98795c8c510e1cefbca12dae07","all-6":"26e6d00e492807b01818aa53d783b9c4","all-11":"6990be3032d17959df214350d7486389","all-13":"f9aade3eb78a79b74431ebf6df07a582","all-20":"7813d7dc60f0f398c8b93d126dfba813","all-34":"62e89a8b8448a12f8c96741eef2e8ddd","all-39":"5d8b0276b3f03a37e17a44092a1f4c05","all-50":"0089b7817de4cbd12cc6fc8ffdbf3e89"};
       const deckOf = r => /All shops/i.test(r.source || '') ? 'all' : /Clutch C Plate/i.test(r.source || '') ? 'cp' : /Drive Plate/i.test(r.source || '') ? 'dp' : /L Cover/i.test(r.source || '') ? 'lc' : null;
-      const slidesOf = r => { const d = deckOf(r), n = r.slide; if (!d || n == null) return []; if (d !== 'all') return [[d, n, 'VA/CR sheet']];
+      const slidesOf = r => { if (Array.isArray(r.slides) && r.slides.length) return r.slides.map(([nm, t, b]) => { if (b) SLD[nm] = b; return ['up', nm, t || '']; });
+        const d = deckOf(r), n = r.slide; if (!d || n == null) return []; if (d !== 'all') return [[d, n, 'VA/CR sheet']];
         const S = 'Summary', P = 'Idea pictures', L = { 4: [[4, S], [6, P]], 5: [[5, S], [6, P]], 10: [[10, S], [11, P]], 15: [[13, S], [15, P]], 19: [[19, S], [20, P]], 31: [[31, S], [34, P]], 32: [[32, S], [34, P]], 33: [[33, S], [34, P]], 38: [[38, S], [39, P]], 43: [[43, S], [44, P], [45, P]], 44: [[43, S], [44, P]], 45: [[43, S], [45, P]], 49: [[49, S], [50, P]] };
         return (L[n] || (n >= 22 && n <= 27 ? [[19, S], [n, P]] : [[n, '']])).map(([k, t]) => ['all', k, t]); };
       const srcOf = nm => { if (!SLD[nm]) return Promise.resolve(null); if (!window.__PORTAL) return Promise.resolve('/_blob/' + SLD[nm]);
@@ -266,9 +268,9 @@
         const sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = [r.shop, r.model_label || r.model, r.category, r.status, r.target ? 'target ' + mon(r.target) : ''].filter(Boolean).join(' · ');
         const ba = document.createElement('div'); ba.className = 'ba'; [['Before', r.before], ['After', r.after]].forEach(([k, v]) => { const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = k + ': '; d.append(b, document.createTextNode(v || '—')); ba.appendChild(d); });
         w.append(x, h, sub, ba); const sl = slidesOf(r);
-        if (!sl.length) { const d = document.createElement('div'); d.style.cssText = 'margin-top:12px;color:#5A6670'; d.textContent = 'No slide for this idea in the shared decks.'; w.appendChild(d); }
-        sl.forEach(([d, n, t]) => { const f = document.createElement('figure'), c = document.createElement('figcaption'), im = new Image(); c.textContent = (t ? t + ': ' : '') + (d === 'all' ? 'All Shops VA/CR deck' : 'VA/CR sheet') + ', slide ' + n; im.alt = c.textContent; f.append(c, im); w.appendChild(f);
-          srcOf(d + '-' + n).then(src => { if (src) im.src = src; else { im.replaceWith(Object.assign(document.createElement('div'), { textContent: 'Slide not available here.' })); } }); });
+        if (!sl.length) { const d = document.createElement('div'); d.style.cssText = 'margin-top:12px;color:#5A6670'; d.textContent = 'No slide for this idea yet.'; w.appendChild(d); }
+        sl.forEach(([d, n, t]) => { const f = document.createElement('figure'), c = document.createElement('figcaption'), im = new Image(); c.textContent = d === 'up' ? (t || 'Uploaded slide') : (t ? t + ': ' : '') + (d === 'all' ? 'All Shops VA/CR deck' : 'VA/CR sheet') + ', slide ' + n; im.alt = c.textContent; f.append(c, im); w.appendChild(f);
+          srcOf(d === 'up' ? n : d + '-' + n).then(src => { if (src) im.src = src; else { im.replaceWith(Object.assign(document.createElement('div'), { textContent: 'Slide not available here.' })); } }); });
         ov.appendChild(w); document.body.appendChild(ov);
         const close = () => { ov.remove(); document.removeEventListener('keydown', esc); }, esc = e => { if (e.key === 'Escape') close(); };
         ov.addEventListener('click', e => { if (!w.contains(e.target)) close(); }); x.addEventListener('click', close); document.addEventListener('keydown', esc); x.focus(); };
@@ -283,4 +285,75 @@
   document.querySelectorAll('#cr-metric button').forEach(b => b.addEventListener('click', () => { const m = b.dataset.m; if (window.__vacrMetric && window.__vacrMetric !== m) return; window.__vacrMetric = window.__vacrMetric === m ? null : m; window.__draw && window.__draw(); }));
   const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const o = {}; KEYS.forEach(k => { o[k] = 0; }); set(o); });
   if (window.__page === 'savings' && window.__draw) window.__draw();
+})();
+
+/* 3 Nov (Umair): CR / CC presentation upload on the Idea Register. Portal only. The button shows only for admins and for users
+   ticked "Can upload CR / CC presentations" on the Users page; the database checks the same permission before it accepts a file.
+   Files go to the private "cr-uploads" bucket; Claude reads them on the Atlas refresh schedule (07:00, 08:30, 17:00), updates the
+   ideas and their slide window, and writes back which idea it mapped each upload to. */
+(() => {
+  const PT = window.Portal; if (!window.__PORTAL || !PT || !PT.sb || !PT.canCrUpload) return;
+  const ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>';
+  const SHOPS = ['Carburetor', 'Case Bottom Machining', 'CIF Machining', 'Clutch', 'Cushion', 'Drum Gear', 'GDC', 'HPDC / Die Cast', 'Hubs', 'Ignition Coil', 'Oil Pump', 'Piston', 'Polymer', 'Press Shop', 'Other'];
+  const ST = { pending: ['Waiting', '#8A5A00', '#FFF4DB'], fetched: ['Being read', '#0B4A8B', '#E8F1FB'], updated: ['Updated', '#14713A', '#E3F4E8'], held: ['Held', '#B42318', '#FDECEA'] };
+  const e = (t, a = {}, kids = []) => { const n = document.createElement(t); Object.entries(a).forEach(([k, v]) => k === 'text' ? n.textContent = v : k === 'html' ? n.innerHTML = v : n.setAttribute(k, v)); kids.forEach(k => n.appendChild(k)); return n; };
+  const css = () => { if (document.getElementById('crup-css')) return; const st = e('style', { id: 'crup-css' }); st.textContent =
+    '.ael .crup-btn{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #0B4A8B;border-radius:4px;background:#fff;color:#0B4A8B;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}.ael .crup-btn:hover{background:#E8F1FB}' +
+    '.crup-ov{position:fixed;inset:0;z-index:85;background:rgba(5,28,44,.55);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}' +
+    '.crup-win{background:#fff;border-radius:6px;box-shadow:0 18px 50px rgba(0,0,0,.35);width:min(760px,100%);padding:16px 20px 20px;position:relative;color:#051C2C;font-size:13px}' +
+    '.crup-win h4{margin:0 30px 4px 0;font-size:16px}.crup-win .sub{color:#5A6670;margin-bottom:12px}.crup-win .x{position:absolute;top:8px;right:10px;border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:#5A6670}' +
+    '.crup-win label{display:block;font-weight:600;font-size:12px;margin:10px 0 4px}.crup-win input[type=file],.crup-win select,.crup-win textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border:1px solid #C9D1D9;border-radius:4px;background:#fff}' +
+    '.crup-win textarea{min-height:54px;resize:vertical}.crup-win .row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.crup-win .go{margin-top:14px;font:inherit;font-weight:600;padding:7px 18px;border:0;border-radius:4px;background:#051C2C;color:#fff;cursor:pointer}.crup-win .go:disabled{opacity:.5;cursor:default}' +
+    '.crup-win .msg{margin-top:10px;font-size:12.5px}.crup-win .msg.bad{color:#B42318}.crup-win .msg.good{color:#14713A}.crup-win h5{margin:20px 0 6px;font-size:13px}' +
+    '.crup-win table{width:100%;border-collapse:collapse;font-size:12px}.crup-win th,.crup-win td{text-align:left;padding:5px 6px;border-bottom:1px solid #E3E8ED;vertical-align:top}.crup-win th{color:#5A6670;font-weight:600}' +
+    '.crup-win .st{display:inline-block;padding:1px 7px;border-radius:3px;font-weight:600;font-size:11px;white-space:nowrap}';
+    document.head.appendChild(st); };
+  const when = ts => ts ? new Date(ts).toLocaleString('en-GB', { timeZone: 'Asia/Karachi', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+  const safe = n => String(n).normalize('NFKD').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'file';
+
+  const list = async box => {
+    box.textContent = 'Loading…';
+    const { data, error } = await PT.sb.from('cr_uploads').select('id,full_name,email,file_name,shop,note,status,result,uploaded_at,processed_at').order('uploaded_at', { ascending: false }).limit(30);
+    if (error) { box.textContent = 'Could not load uploads: ' + error.message; return; }
+    if (!data.length) { box.textContent = 'No uploads yet.'; return; }
+    const admin = PT.me && PT.me.role === 'admin';
+    const t = e('table'), hr = e('tr'); ['Uploaded', ...(admin ? ['By'] : []), 'File', 'Shop', 'Status', 'Mapped to'].forEach(h => hr.appendChild(e('th', { text: h }))); t.appendChild(e('thead', {}, [hr]));
+    const tb = e('tbody'); data.forEach(u => { const s = ST[u.status] || [u.status, '#5A6670', '#EEF1F4'], tr = e('tr');
+      const sp = e('span', { class: 'st', text: s[0] }); sp.style.color = s[1]; sp.style.background = s[2];
+      [when(u.uploaded_at), ...(admin ? [u.full_name || u.email || ''] : []), u.file_name, u.shop || ''].forEach(v => tr.appendChild(e('td', { text: v })));
+      tr.appendChild(e('td', {}, [sp])); const r = e('td', { text: u.result || (u.status === 'pending' ? 'Picked up at the next 07:00, 08:30 or 17:00 check' : '') }); if (u.processed_at) r.title = 'Processed ' + when(u.processed_at); tr.appendChild(r); tb.appendChild(tr); });
+    t.appendChild(tb); box.replaceChildren(t); };
+
+  const openWin = () => { css(); const old = document.querySelector('.crup-ov'); if (old) old.remove();
+    const ov = e('div', { class: 'crup-ov' }), w = e('div', { class: 'crup-win', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Upload CR / CC presentation' });
+    const x = e('button', { type: 'button', class: 'x', 'aria-label': 'Close', text: '×' });
+    const f = e('input', { type: 'file', accept: '.pptx,.ppt,.pdf' }), sh = e('select'), nt = e('textarea', { maxlength: '400', placeholder: 'Optional, e.g. "Updated status for CL-05 and new idea for Pridor"' });
+    sh.appendChild(e('option', { value: '', text: 'Choose shop (optional)' })); SHOPS.forEach(v => sh.appendChild(e('option', { value: v, text: v })));
+    const go = e('button', { type: 'button', class: 'go', text: 'Upload' }), msg = e('div', { class: 'msg', 'aria-live': 'polite' }), mine = e('div');
+    w.append(x, e('h4', { text: 'Upload CR / CC presentation' }), e('div', { class: 'sub', text: 'PowerPoint (.pptx, .ppt) or PDF, up to 25 MB. Claude reads it at the next 07:00, 08:30 or 17:00 check, updates the matching ideas and their slide window, and notes here which idea # it went to.' }),
+      e('label', { text: 'Presentation file' }), f, e('div', { class: 'row' }, [e('div', {}, [e('label', { text: 'Shop' }), sh]), e('div')]), e('label', { text: 'Note for Claude' }), nt, go, msg,
+      e('h5', { text: PT.me && PT.me.role === 'admin' ? 'Recent uploads (everyone)' : 'Your uploads' }), mine);
+    ov.appendChild(w); document.body.appendChild(ov);
+    const close = () => { ov.remove(); document.removeEventListener('keydown', esc); }, esc = ev => { if (ev.key === 'Escape') close(); };
+    ov.addEventListener('click', ev => { if (!w.contains(ev.target)) close(); }); x.addEventListener('click', close); document.addEventListener('keydown', esc);
+    go.addEventListener('click', async () => { const file = f.files && f.files[0]; msg.className = 'msg';
+      if (!file) { msg.className = 'msg bad'; msg.textContent = 'Choose a file first.'; return; }
+      if (!/\.(pptx|ppt|pdf)$/i.test(file.name)) { msg.className = 'msg bad'; msg.textContent = 'Only .pptx, .ppt or .pdf files.'; return; }
+      if (file.size > 25 * 1024 * 1024) { msg.className = 'msg bad'; msg.textContent = 'The file is over 25 MB. Save it as PDF or compress the pictures, then try again.'; return; }
+      go.disabled = true; msg.textContent = 'Uploading ' + file.name + '…';
+      try { const { data: { session } } = await PT.sb.auth.getSession(); const uid = session && session.user.id; if (!uid) throw new Error('Please sign in again.');
+        const path = uid + '/' + new Date().toISOString().replace(/[:.]/g, '-') + '_' + safe(file.name);
+        const up = await PT.sb.storage.from('cr-uploads').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+        if (up.error) throw up.error;
+        const ins = await PT.sb.from('cr_uploads').insert({ path, file_name: file.name.slice(0, 200), size_bytes: file.size, shop: sh.value, note: nt.value.trim().slice(0, 400) });
+        if (ins.error) throw ins.error;
+        PT.log && PT.log('cr_upload');
+        msg.className = 'msg good'; msg.textContent = 'Uploaded. Claude will read it at the next check and update the register.'; f.value = ''; nt.value = ''; list(mine);
+      } catch (err) { msg.className = 'msg bad'; msg.textContent = 'Upload failed: ' + (err && err.message || err) + (/row-level|security|policy|403|Unauthorized/i.test(String(err && err.message)) ? ' (your login is not allowed to upload; ask Umair)' : ''); }
+      go.disabled = false; });
+    list(mine); f.focus(); };
+
+  window.__crUp = bar => { if (!PT.canCrUpload(PT.me) || bar.querySelector('.crup-btn')) return; css();
+    const b = e('button', { type: 'button', class: 'crup-btn', title: 'Upload a CR / CC presentation for Claude to update the register', html: ICON + '<span>Upload presentation</span>' });
+    b.addEventListener('click', openWin); const box = bar.querySelector('.crtg'); (box || bar).appendChild(b); };
 })();

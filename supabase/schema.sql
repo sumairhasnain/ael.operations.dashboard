@@ -71,7 +71,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare v_email text;
 begin
   if auth.uid() is null then return; end if;
-  if p_event not in ('login', 'logout', 'auto_logout', 'password_changed', 'open_dashboard') then
+  if p_event not in ('login', 'logout', 'auto_logout', 'password_changed', 'open_dashboard', 'cr_upload') then
     raise exception 'unknown event';
   end if;
   select email into v_email from profiles where id = auth.uid();
@@ -188,3 +188,83 @@ end $$;
 revoke all on function public.set_machine_shifts(text, int) from public, anon;
 grant execute on function public.set_machine_shifts(text, int) to authenticated;
 grant select on public.cap_shifts to authenticated;
+
+
+-- ---------- VA/CR presentation uploads (3 Nov 2026) ----------
+-- Users with the "CR Upload" permission (profiles.tabs contains 'cr_upload')
+-- and admins can upload CR / CC presentation files from the Idea Register.
+-- Files go to the private storage bucket "cr-uploads" under <user id>/...;
+-- each upload is logged in cr_uploads. Claude reads them on the Atlas refresh
+-- schedule (via the GitHub "CR inbox" Action), updates the Idea Register and
+-- writes the result back to the log.
+create or replace function public.can_upload_cr()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from profiles p
+    where p.id = auth.uid() and p.active and not p.must_change_password
+      and (p.role = 'admin' or 'cr_upload' = any(p.tabs)));
+$$;
+revoke execute on function public.can_upload_cr() from public, anon;
+grant execute on function public.can_upload_cr() to authenticated;
+
+create table if not exists public.cr_uploads (
+  id           bigint generated always as identity primary key,
+  user_id      uuid not null default auth.uid(),
+  email        text,
+  full_name    text,
+  path         text not null,
+  file_name    text not null,
+  size_bytes   bigint,
+  shop         text not null default '',
+  note         text not null default '',
+  status       text not null default 'pending' check (status in ('pending', 'fetched', 'updated', 'held')),
+  result       text,
+  uploaded_at  timestamptz not null default now(),
+  processed_at timestamptz
+);
+create index if not exists cr_uploads_status_idx on public.cr_uploads (status, uploaded_at);
+
+-- Name and email always come from the uploader's profile, never from the browser.
+create or replace function public.cr_upload_stamp()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  select p.email, p.full_name into new.email, new.full_name from profiles p where p.id = new.user_id;
+  new.status := 'pending'; new.result := null; new.processed_at := null; new.uploaded_at := now();
+  return new;
+end $$;
+revoke execute on function public.cr_upload_stamp() from public, anon, authenticated;
+drop trigger if exists cr_upload_stamp on public.cr_uploads;
+create trigger cr_upload_stamp before insert on public.cr_uploads
+  for each row execute function public.cr_upload_stamp();
+
+alter table public.cr_uploads enable row level security;
+drop policy if exists "uploaders add their own uploads" on public.cr_uploads;
+create policy "uploaders add their own uploads" on public.cr_uploads
+  for insert to authenticated
+  with check (public.can_upload_cr() and user_id = auth.uid() and path like auth.uid()::text || '/%');
+drop policy if exists "see own uploads, admin sees all" on public.cr_uploads;
+create policy "see own uploads, admin sees all" on public.cr_uploads
+  for select to authenticated using (user_id = auth.uid() or public.is_admin());
+revoke all on public.cr_uploads from anon, authenticated;
+grant select, insert on public.cr_uploads to authenticated;
+grant usage on sequence public.cr_uploads_id_seq to authenticated;
+grant all on public.cr_uploads to service_role;
+
+-- Private bucket: .pptx / .ppt / .pdf, 25 MB each.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('cr-uploads', 'cr-uploads', false, 26214400, array[
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint', 'application/pdf', 'application/octet-stream'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "cr uploaders write own folder" on storage.objects;
+create policy "cr uploaders write own folder" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'cr-uploads' and public.can_upload_cr()
+              and (storage.foldername(name))[1] = auth.uid()::text
+              and lower(storage.extension(name)) in ('pptx', 'ppt', 'pdf'));
+drop policy if exists "cr uploaders read own, admin reads all" on storage.objects;
+create policy "cr uploaders read own, admin reads all" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'cr-uploads' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));

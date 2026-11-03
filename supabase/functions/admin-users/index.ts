@@ -6,6 +6,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const TABS = ["overview", "production", "product", "vendor", "inhouse", "quality", "maintenance", "oee",
   "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects", "bom", "fom", "openstock", "insights"];
+// Extra permissions stored alongside tabs (not tabs themselves). Ticked per user on the Users page.
+const PERMS = ["cr_upload"];
 const ROLES = ["admin", "manager", "viewer"];
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +24,7 @@ const serviceKey = () => {
   catch { return undefined; }
 };
 const okPassword = (p: unknown) => typeof p === "string" && p.length >= 10 && /[A-Za-z]/.test(p) && /\d/.test(p);
-const cleanTabs = (t: unknown) => Array.isArray(t) ? TABS.filter((x) => t.includes(x)) : null;
+const cleanTabs = (t: unknown) => Array.isArray(t) ? [...TABS, ...PERMS].filter((x) => t.includes(x)) : null;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });

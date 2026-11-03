@@ -45,6 +45,8 @@
     return { ...data, session };
   };
 
+  /* CR / CC presentation upload on the VA/CR Idea Register: admins, or users ticked "Can upload" on the Users page (3 Nov) */
+  P.canCrUpload = prof => !!prof && (prof.role === 'admin' || (prof.tabs || []).includes('cr_upload'));
   P.tabsFor = prof => prof.role === 'viewer' ? TABS.map(t => t.id).filter(t => OPEN.includes(t) || (prof.tabs || []).includes(t)) : TABS.map(t => t.id);
 
   /* Check the visitor is signed in and allowed here. Redirects otherwise. */
