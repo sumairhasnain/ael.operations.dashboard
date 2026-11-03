@@ -70,8 +70,12 @@ for c in spec['changes']:
     if 'cr_unit' in s and 'monthly_pkr' not in s and old_unit and s['cr_unit'] is not None:
         r['monthly_pkr'] = round(old_monthly / old_unit * s['cr_unit'])
     if 'fy_pkr' not in s and ({'monthly_pkr', 'cr_unit', 'target'} & set(s) or c.get('new')):
-        r['fy_pkr'] = round((r.get('monthly_pkr') or 0) * months_left(r.get('target')))
-    r['annual_pkr'] = r['fy_pkr']
+        if not c.get('new') and 'target' not in s and old_monthly and r.get('fy_pkr'):
+            r['fy_pkr'] = round(r['fy_pkr'] * (r.get('monthly_pkr') or 0) / old_monthly)  # keep the row's own FY phasing
+        else:
+            r['fy_pkr'] = round((r.get('monthly_pkr') or 0) * months_left(r.get('target')))
+    if 'annual_pkr' not in s and ({'monthly_pkr', 'cr_unit'} & set(s) or c.get('new')):
+        r['annual_pkr'] = round((r.get('monthly_pkr') or 0) * 12)  # annual = monthly x 12, as in the register
     r['quarter'] = quarter(r.get('target')) or r.get('quarter')
     if r.get('cr_unit') and r.get('investment_pkr') and r.get('monthly_pkr'): r['payback'] = round(r['investment_pkr'] / r['monthly_pkr'], 1)
     if c.get('slides'):
