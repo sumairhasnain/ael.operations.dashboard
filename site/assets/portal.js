@@ -5,9 +5,9 @@
     ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
     ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'],
-    ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M'], ['fom', 'F.O.M'], ['openstock', 'Closing Stock']
+    ['cost', 'Cost'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M'], ['fom', 'F.O.M'], ['openstock', 'Closing Stock'], ['insights', 'Insights']
   ].map(([id, name]) => ({ id, name }));
-  const RESTRICTED = ['cost', 'savings'];
+  const RESTRICTED = ['cost', 'savings', 'insights']; /* Insights carries cost and CR figures, so it is granted per user (3 Nov) */
   const OPEN = ['workforce']; /* Manpower: open to every signed-in user (Umair, 28 Oct) */
   const DEFAULT_TABS = TABS.map(t => t.id).filter(t => !RESTRICTED.includes(t));
   const configured = C.supabaseUrl && !/YOUR-PROJECT/.test(C.supabaseUrl) && C.supabaseKey && !/PASTE-/.test(C.supabaseKey);
