@@ -1,0 +1,42 @@
+name: CR inbox (fetch uploaded presentations)
+
+# Runs when Claude pushes request.txt on this branch (before each 07:00, 08:30 and 17:00 check),
+# or by hand. Downloads pending CR / CC presentation uploads from the private Supabase bucket
+# into files/<upload id>/ on this branch and marks them "fetched". Main is never touched.
+on:
+  push:
+    branches: [cr-inbox]
+    paths: ['request.txt']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cr-inbox
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cr-inbox
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download pending uploads
+        run: node fetch.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      - name: Commit
+        run: |
+          git config user.name "cr-inbox bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add files status.json
+          if git diff --cached --quiet; then echo "Nothing new"; exit 0; fi
+          git commit -m "CR inbox $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push origin HEAD:cr-inbox
