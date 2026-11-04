@@ -48,7 +48,7 @@
     const mx = d3.max(items, i => Math.max(i.in_transit, i.half_day)) || 1, x = d3.scaleLinear([0, mx], [lw, w - 70]);
     items.forEach((i, k) => { const y0 = mt + k * rh, g = svg.append('g'), col = i.flag === 'red' ? C.bad : C.warn;
       g.append('text').attr('x', 0).attr('y', y0 + rh / 2 - 2).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(lab(i));
-      g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(`${i.code} · posted ${nf(i.posted)} · received ${nf(i.received)}${i.direct ? ' · direct ' + nf(i.direct) : ''}${i.spd ? ' · SPD/dispatch ' + nf(i.spd) : ''}`);
+      g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(i.code);   // 4 Nov 22:14 (Umair, comment): posted / received only in the tooltip
       g.append('rect').attr('x', lw).attr('y', y0 + 8).attr('width', Math.max(1, x(i.in_transit) - lw)).attr('height', rh - 16).attr('fill', col);
       g.append('line').attr('x1', x(i.half_day)).attr('x2', x(i.half_day)).attr('y1', y0 + 4).attr('y2', y0 + rh - 4).attr('stroke', C.navy).attr('stroke-width', 1.5).attr('stroke-dasharray', '3 2');
       g.append('text').attr('x', x(i.in_transit) + 6).attr('y', y0 + rh / 2 + 4).attr('font-size', 12).style('fill', col).style('font-weight', 700).text(nf(i.in_transit));
