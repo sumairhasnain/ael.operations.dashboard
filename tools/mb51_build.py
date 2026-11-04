@@ -51,11 +51,18 @@ def main():
     r2, rm, rh, rk, rn = merge('r.pkl', new, ['101', '102'])
     c2, cm, ch, ck, cn = merge('c.pkl', new, ['201', '202'])
     r2.to_pickle('r2.pkl'); c2.to_pickle('c2.pkl')
+    # 4 Nov (Umair): 261/262 issues to production orders -> u.pkl (by material and day), for cover on real consumption
+    try:
+        u2, um, uh, uk, un = merge('u.pkl', new.assign(amt=new['Amt.in Loc.Cur.']), ['261', '262'])
+        u2 = u2[['Material', 'Posting Date', 'Movement Type', 'Qty in unit of entry', 'amt']]; u2.to_pickle('u2.pkl')
+        print('consumption 261: months refreshed', um, 'hist', uh, '-> kept', uk, '+ new', un, '=', len(u2))
+    except Exception as e: print('consumption 261 skipped:', e)
     print('receiving: months refreshed', rm, 'hist', rh, '-> kept', rk, '+ new', rn, '=', len(r2))
     print('consumption: months refreshed', cm, 'hist', ch, '-> kept', ck, '+ new', cn, '=', len(c2))
     import datetime as dt
     asof = max(r2['Posting Date'].max(), c2['Posting Date'].max()).date().isoformat()
-    subprocess.run(['python3', 'make_inv.py', 'r2.pkl', 'c2.pkl', 's2.pkl', 'out_mb51', asof], check=True)
+    import os
+    subprocess.run(['python3', 'make_inv.py', 'r2.pkl', 'c2.pkl', 's2.pkl', 'out_mb51', asof, 'u2.pkl' if os.path.exists('u2.pkl') else 'u.pkl'], check=True)
 
 if __name__ == '__main__':
     main()

@@ -28,7 +28,7 @@
     'Use not recorded': 'In-house and finished production parts: their use goes to production orders (261), which these SAP files do not hold' };
   const SHORT = ['Out of stock', 'Under 15 days', '15–30 days'];
   const MOVK = ['Moved in last 90 days', '91–365 days', 'Over 1 year', 'No movement since Jan 2024'];
-  const BAS = { issues: 'Issues (201)', 'Atlas plan': 'Atlas plan', receipts: 'Receipts', 'not recorded': '—' };
+  const BAS = { consumption: 'Consumption (201 + 261)', issues: 'Issues (201)', 'Atlas plan': 'Atlas plan', receipts: 'Receipts', 'not recorded': '—' };
   let covMode = 'n';
   const SH = { 'Carb Child Parts': 'Carburetor' };   // the SAP groups do not split Carburetor from its child parts
   const shopOk = (sh, g) => g.shop === 'All' || sh === g.shop || SH[sh] === g.shop || SH[g.shop] === sh;
@@ -99,7 +99,7 @@
 <div class="ivsep">Excess and slow-moving stock</div>
 <div class="card" id="c-iv-exc"><h3>Excess Stock by Category</h3><div class="ivsub">Value above 6 months of use, and stock with no use in the last 6 months</div><div class="chart" id="iv-exc"></div></div>
 <div class="card" id="c-iv-exl"><h3>Largest Excess Items</h3><div class="ivsub">Value on hand above 6 months of use, items in use</div><div class="chart" id="iv-exl"></div></div>
-<div class="card wide" id="c-iv-exb"><h3>Excess Stock still being Bought</h3><div class="ivsub">Items holding more than 6 months of use, or with no use in the last 6 months, that were still received in the last 12 months. <i class="ivsw" style="background:#051C2C"></i>on hand above 6 months of use &nbsp;<i class="ivsw" style="background:#2251FF"></i>received in the last 12 months</div><div class="ivsub" id="iv-exb-sub"></div><div class="chart" id="iv-exb"></div></div>
+<div class="card wide" id="c-iv-exb"><h3>Excess Stock still being Bought</h3><div class="ivsub">Items holding more than 6 months of consumption (last 6 months' issues to cost centres and production orders, SAP MB51), or with no consumption in the last 6 months, that were still received in the last 12 months. <i class="ivsw" style="background:#051C2C"></i>on hand above 6 months of use &nbsp;<i class="ivsw" style="background:#2251FF"></i>received in the last 12 months</div><div class="ivsub" id="iv-exb-sub"></div><div class="chart" id="iv-exb"></div></div>
 <div class="card" id="c-iv-mov"><h3>Slow &amp; Non-moving Stock</h3><div class="ivsub">Value on hand by time since the material last moved (issued; for raw material and production parts also received or planned). Click a bar to filter</div><div class="chart" id="iv-mov"></div></div>
 <div class="card" id="c-iv-nm"><h3>Largest Non-moving Stock (over 1 year)</h3><div class="ivsub">Nothing moved in over a year, by value on hand</div><div class="chart" id="iv-nm"></div></div>
 <div class="card" id="c-iv-age"><h3>Stock Age since Last Receipt</h3><div class="ivsub">Value on hand, by days since the material was last received. Click a bar to filter</div><div class="chart" id="iv-age"></div></div>
@@ -254,7 +254,7 @@
     /* cover against use, by category (100% bars, count or value); a click lists that band in Shortage Watch and the register */
     { const mt = q('#iv-covm'); mt.replaceChildren(); [['n', 'Materials'], ['v', 'Value']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.setProperty('--c', C.navy); b.className = covMode === k ? '' : 'off';
       b.setAttribute('aria-pressed', covMode === k); b.addEventListener('click', () => { covMode = k; window.__draw(); }); mt.appendChild(b); }); }
-    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = issues to cost centres over the last 6 months for consumables, tools and spares; the larger of issues and receipts for lubricants; receipts over 6 months as a stand-in for raw material; Atlas vendor schedule for bought-in production parts (stock from Atlas). Click a band to list it below';
+    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = real consumption over the last 6 months: issues to cost centres (201) plus issues to production orders (261) from SAP MB51, divided by 6. Where that record is clearly incomplete (material moved to the foundry and consumed under another code, or used at plant SKP which the files only carry from Nov 2026) receipts over 6 months stand in; lubricants take the larger of consumption and receipts; Atlas vendor schedule where nothing else is recorded. Click a band to list it below';
     { const el = q('#iv-cov'), cats = CATS.filter(c => on(c) && SA.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SA.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
       if (!cats.length) empty(el, 'No stock for this selection'); else {
         const get = (c, k) => M2.get(c).get(k) || { n: 0, v: 0 }, mv = o => covMode === 'n' ? o.n : o.v;

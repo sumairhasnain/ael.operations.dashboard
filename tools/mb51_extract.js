@@ -12,8 +12,8 @@ const unz=async nm=>{const f=files[nm];const lnl=dv.getUint16(f.lo+26,true),lel=
 const ssx=await unz('xl/sharedStrings.xml');const ss=[...ssx.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m=>[...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x=>x[1]).join(''));
 const sx=await unz('xl/worksheets/sheet1.xml');const cl2=s=>String(s==null?'':s).replace(/[|\n\r]/g,' ').trim();
 const dt=x=>{const v=+x;if(v>20000&&v<90000)return new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5).toISOString().slice(0,10);const s=String(x||'');const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:'';};
-/* 4 Nov: the daily file's column order changed between October and November, so columns are found by their header names, not letters. 601/602 (sales) are kept for the F.O.M. */
-const want=new Set(['101','102','201','202','601','602']);const out=[];let H=null,mon='';const rowRe=/<row[^>]*>([\s\S]*?)<\/row>/g;let m;
+/* 4 Nov: the daily file's column order changed between October and November, so columns are found by their header names, not letters. 601/602 (sales) are kept for the F.O.M, 261/262 (issues to production orders) for consumption-based cover. */
+const want=new Set(['101','102','201','202','601','602','261','262']);const out=[];let H=null,mon='';const rowRe=/<row[^>]*>([\s\S]*?)<\/row>/g;let m;
 while((m=rowRe.exec(sx))){const c={};for(const cm of m[1].matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){const col=cm[1],at=cm[2],inr=cm[3]||'';const v=(inr.match(/<v>([\s\S]*?)<\/v>/)||[])[1];const t=/t="s"/.test(at)?ss[+v]:(/t="inlineStr"/.test(at)?(inr.match(/<t[^>]*>([\s\S]*?)<\/t>/)||[])[1]:v);c[col]=t;}
 if(!H){H={};for(const k in c)H[cl2(c[k])]=k;const need=['Material','Material Description','Qty in unit of entry','Amt.in Loc.Cur.','Movement Type'];const lack=need.filter(x=>!H[x]);if(lack.length){window.__MBST='HDR_MISSING '+lack.join(',');return;}continue;}
 const g=nm=>c[H[nm]];const mt=cl2(g('Movement Type'));if(!want.has(mt))continue;const pd=dt(g('Posting Date')||g('Document Date'));if(pd&&!mon)mon=pd.slice(0,7);

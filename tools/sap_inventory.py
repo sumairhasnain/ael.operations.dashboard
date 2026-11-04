@@ -6,6 +6,8 @@ import sys, json, re, datetime as dt
 import pandas as pd
 
 RCV, CONS, MB52, OUT = sys.argv[1:5]
+import os as _os
+UPK = sys.argv[6] if len(sys.argv) > 6 else _os.path.join(_os.path.dirname(_os.path.abspath(CONS)), 'u.pkl')   # 4 Nov (Umair): 261/262 issues to production orders, from the MB51 files
 STOCK_ASOF = sys.argv[5] if len(sys.argv) > 5 else dt.date.today().isoformat()   # date the MB52 was taken
 DATA = '/home/claude/ael.operations.dashboard/data/'
 TXT = {'Material': str, 'Storage Location': str, 'Cost Center': str, 'Supplier': str, 'Movement Type': str, 'Material Group': str}
@@ -161,6 +163,34 @@ r90 = r[r['Posting Date'] >= d90].groupby('Material')['Qty in unit of entry'].su
 i182 = c[c['Posting Date'] >= d182].groupby('Material')['qty'].sum()
 r182 = r[r['Posting Date'] >= d182].groupby('Material')['Qty in unit of entry'].sum()
 rv182 = r[r['Posting Date'] >= d182].groupby('Material')['amt'].sum()
+# 4 Nov (Umair): cover days on the last 6 months' real consumption = cost-centre issues (201 less 202) plus issues to production
+# orders (261 less 262, which the earlier exports did not carry). u.pkl holds 261/262 by material and day from the MB51 files.
+try:
+    u = pd.read_pickle(UPK); u['Posting Date'] = pd.to_datetime(u['Posting Date'])
+    u6 = u[u['Posting Date'] >= d182]; uq6 = -u6.groupby('Material')['Qty in unit of entry'].sum(); ua6 = -u6.groupby('Material')['amt'].sum()
+    # 261 quantities are in the unit of entry (grams for most polymer raw materials, cm for cord) while stock is in the base unit.
+    # Factors: the explicit entry->base factors read from the MB51 file (tools/mb51_unit_factors.json), else detected from price:
+    # amount per entry unit against the MB52 unit price (x1000 or x100 apart means grams or cm).
+    try: UF = json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'u_factors.json')))
+    except Exception: UF = {}
+    try: UF = {**json.load(open(DATA + '../tools/mb51_unit_factors.json')), **UF}
+    except Exception: pass
+    up0 = (ag['value'] / ag['qty'].where(ag['qty'] > 0)).to_dict()
+    u182 = {}
+    for code, q in uq6.items():
+        if q <= 0: continue
+        f = UF.get(code)
+        if f is None:
+            pe = float(ua6.get(code, 0)) / q; ub = up0.get(code)
+            rr = pe / ub if ub and ub > 0 and pe > 0 else None
+            f = 0.001 if rr is not None and 0.0004 < rr < 0.0025 else 0.01 if rr is not None and 0.004 < rr < 0.025 else 1.0
+            if f != 1.0: UF[code] = f
+        u182[code] = q * f
+    u182 = pd.Series(u182, dtype=float); json.dump(UF, open(OUT + '/u_factors_used.json', 'w'))
+    umo_u = u[(u['Posting Date'] >= d182) & (u['Movement Type'] == '261')].assign(m=lambda d: d['Posting Date'].dt.strftime('%Y-%m')).groupby('Material')['m'].unique()
+    print('consumption (261) loaded:', len(u), 'rows to', u['Posting Date'].max().date())
+except Exception as e:
+    u182 = pd.Series(dtype=float); umo_u = pd.Series(dtype=object); print('consumption (261) not loaded:', e)
 # 4 Nov (Umair): receipts over the last 12 months, to show excess stock that is still being bought
 d365 = today - pd.Timedelta(days=364)
 r365 = r[r['Posting Date'] >= d365].groupby('Material')['Qty in unit of entry'].sum()
@@ -182,9 +212,15 @@ try:
     for q in json.load(open(DATA + 'atlas_child_stock.json')): ast[str(q['code'])] = float(q.get('stock') or 0)
 except Exception as e: print('atlas stock skipped:', e)
 i6 = c[(c['Posting Date'] >= d182) & (c['Movement Type'] == '201')]; umo = i6.groupby('Material')['m'].nunique()   # months with issues, of the last 6
+c6m = i6.groupby('Material')['m'].unique().to_dict()
 COVB = [(0, 'Out of stock'), (15, 'Under 15 days'), (30, '15–30 days'), (90, '30–90 days'), (180, '90–180 days'), (1e18, 'Over 180 days')]   # upper bounds, days of use
 def use_of(code, cat):
-    iq = float(i182.get(code, 0)); rq = float(r182.get(code, 0)); nd = float(need.get(code, 0))
+    iq = float(i182.get(code, 0)); rq = float(r182.get(code, 0)); nd = float(need.get(code, 0)); uq = float(u182.get(code, 0))
+    if cat == 'Lubricants':   # oils also leave by sale and lube filling, not only by issue: take the larger of issues and receipts
+        uu = max(iq + uq, rq); return (uu / 6, 'consumption' if iq + uq >= rq else 'receipts') if uu > 0 else (0, None)
+    if iq + uq > 0:   # 4 Nov (Umair): last 6 months' issues to cost centres and production orders
+        if rq > 4 * (iq + uq): return (rq / 6, 'receipts')   # recorded use clearly incomplete (ingots consumed under another code after transfer; parts used at plant SKP, which the MB51 files only carry from Nov 2026): receipts as the stand-in
+        return ((iq + uq) / 6, 'consumption')
     if cat in ('Consumables', 'Tools', 'Spares'): return (iq / 6, 'issues') if iq > 0 else (0, None)
     if cat == 'Lubricants':   # oils also leave by sale and lube filling, not only by 201: take the larger of issues and receipts
         u = max(iq, rq); return (u / 6, 'issues' if iq >= rq else 'receipts') if u > 0 else (0, None)
@@ -216,7 +252,7 @@ def row_of(code, cat, st, sh, how, g, d, qty, qi, bl, tr, val, uom, slocs, unit=
             'uom': uom, 'stock': round(qty, 2), 'qi': round(qi, 2), 'blocked': round(bl, 2), 'transit': round(tr, 2),
             'value_pkr': round(val), 'unit_pkr': round(up, 2) if up is not None else None, 'slocs': slocs,
             'last_rcv': lrd.strftime('%Y-%m-%d') if age is not None else None, 'last_issue': lid.strftime('%Y-%m-%d') if lid is not None and not pd.isna(lid) else None,
-            'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'rcv_12m': round(float(r365.get(code, 0)), 2), 'rcv_12m_pkr': round(float(rv365.get(code, 0))), 'use_month': round(um, 2), 'use_basis': basis, 'use_months': int(umo.get(code, 0)), 'cover_stock': round(cq, 2) if cq != qty else None, 'cover_days': cover, 'cover_bucket': cb,
+            'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'rcv_12m': round(float(r365.get(code, 0)), 2), 'rcv_12m_pkr': round(float(rv365.get(code, 0))), 'use_month': round(um, 2), 'use_basis': basis, 'use_months': len(set(c6m.get(code, [])) | set(umo_u.get(code, []) if code in umo_u.index else [])), 'cover_stock': round(cq, 2) if cq != qty else None, 'cover_days': cover, 'cover_bucket': cb,
             'excess_pkr': round(exc), 'move_days': md, 'move_bucket': mb, 'age_days': age, 'age_bucket': bucket, 'asof': STOCK_ASOF}
 for code, a in ag.iterrows():
     g, d, cat, st, sh, how = inf.get(code) or info(code)
