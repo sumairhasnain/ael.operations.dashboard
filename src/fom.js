@@ -43,7 +43,7 @@
     const Pt = window.Portal;
     if (portal() && Pt && Pt.sb) { const { data, error } = await Pt.sb.from('datasets').select('data').eq('name', 'fom').maybeSingle(); if (error || !data) throw new Error('no data'); return one(data.data); }
     /* Claude artifact: the "fom" dataset (kept current by the F.O.M update task); the uploaded file is the fallback */
-    try { const d = window.dash && dash.data('fom'); if (d && d.status === 'ok' && d.data && d.data.length) { const o = one(d.data); for (const k of ['months', 'budget', 'codes', 'source']) if (typeof o[k] === 'string') o[k] = JSON.parse(o[k]); return o; } } catch (e) {}
+    try { const d = window.dash && dash.data('fom'); if (d && d.status === 'ok' && d.data && d.data.length) { const o = one(d.data); for (const k of ['months', 'budget', 'codes', 'source', 'flags', 'mb51']) if (typeof o[k] === 'string') o[k] = JSON.parse(o[k]); return o; } } catch (e) {}
     return one(await (await fetch('/_blob/' + FOM.blob)).json());
   }
   /* report layout: [id, label, kind]; kind: '' item, 'tot' total, 'sub' grey sub-heading, 'dt' detail total */
@@ -57,7 +57,8 @@
   const bud = (ms, id) => { const B = data.budget; if (!B) return null; const v = ms.map(k => (B[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
   const num = v => v == null ? '<span class="na">—</span>' : nf(v), dec = v => v == null ? '<span class="na">—</span>' : d3.format(',.2f')(v);
   const pct = (a, b) => (a == null || !b) ? '<span class="na">—</span>' : Math.round(a / b * 100) + '%';
-  const mark = id => '';
+  const FL = { khi: 'Plant KHI only in this month\'s MB51 file; the SKP part of this line is missing', skp: 'Only plant SKP codes: not in this month\'s MB51 file yet' };
+  const mark = id => { const f = ((data.flags || {})[month] || {})[id]; return f ? `<sup title="${esc(FL[f] || f)}" style="color:#E0A100;font-weight:700">*</sup>` : ''; };
   function cells(id, mm, yy, cls) { const am = val(mm, id), bm = bud(mm, id), ay = val(yy, id), by = bud(yy, id);
     return `<td class="n a">${num(am)}</td><td class="n">${num(bm)}</td><td class="p">${pct(am, bm)}</td><td class="n a">${num(ay)}</td><td class="n">${num(by)}</td><td class="p">${pct(ay, by)}</td>`; }
   function sum(ids, ms, f) { const v = ids.map(id => f(ms, id)); return v.every(x => x == null) ? null : d3.sum(v, x => x || 0); }
@@ -83,7 +84,7 @@
     const sec = document.getElementById('fom'); if (!data || !sec) return;
     sec.querySelectorAll('#fom-m button').forEach(b => b.classList.toggle('on', b.dataset.m === month));
     const mm = [month], yy = fy(month), lab = m => MN[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
-    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
+    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : src === 'mb51' ? (`SAP MB51 daily file to ${data.asof}` + ((((data.mb51 || {})[month] || {}).plants || []).length ? ' (plant ' + (((data.mb51 || {})[month] || {}).plants || []).join(' + ') + ')' : '') + (Object.keys((data.flags || {})[month] || {}).length ? ' · * lines missing their SKP part' : '')) : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
     const ciIds = CI.filter(r => r[0] !== '-').map(r => r[0]), alIds = AL.map(r => r[0]);
     const aci = `<table>${head('ALUMINIUM AND CAST IRON PARTS (UNITS)', 30)}<tbody><tr><td>CAST IRON PARTS</td>${totCells(ciIds, mm, yy)}</tr><tr><td>ALUMINIUM PARTS</td>${totCells(alIds, mm, yy)}</tr><tr class="tot"><td>TOTAL</td>${totCells(ciIds.concat(alIds), mm, yy)}</tr></tbody></table>`;
     const dcell = id => { const a = val(mm, id), b = bud(mm, id); return `<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="p">${pct(a, b)}</td>`; };
@@ -98,7 +99,7 @@ ${AL.map(([id, l]) => `<tr><td title="${esc(tip(id))}">${l}${mark(id)}</td>${dce
     sec.querySelector('#fom-pg').innerHTML = `<div class="ttl">MANUFACTURING SALES · ${MN[+month.slice(5) - 1].toUpperCase()} ${month.slice(0, 4)}</div><div class="cols"><div class="col">
 ${block('TECHNICAL COLLABORATION PARTS (UNITS)', TC, mm, yy, 'TOTAL')}${aci}${block('SPARE PARTS', SP, mm, yy, 'TOTAL', spExtra)}</div><div class="col">
 ${block('POLYMER (UNITS)', PO, mm, yy, 'TOTAL', poExtra)}${det}
-<div class="ft">Year = from 1 July, all months added (Jul–Oct). Jul–Oct actuals: AEL F.O.M sheet, Oct-26 Final (SAP MB51 sales 601/602 and production 101/102, same code lists and factors). From Nov: lines Atlas covers are live from Atlas sales and production with the same code lists; the rest show — until SAP MB51 is linked. Budget: AEL budget 2026-27. Revenue and raw material are shown where the sheet has them. Hover a product for its SAP codes.</div></div></div>`;
+<div class="ft">Year = from 1 July, all months added (Jul–Oct). Jul–Oct actuals: AEL F.O.M sheet, Oct-26 Final (SAP MB51 sales 601/602 and production 101/102, same code lists and factors). From Nov: every line from the daily SAP MB51 file in SharePoint (Portal Data/MB51), same code lists and factors, updated each morning; Atlas sales and production fill in only when no MB51 file exists for the month yet. A * marks a line whose plant SKP codes are missing from that month's file. Budget: AEL budget 2026-27. Revenue and raw material are shown where the sheet has them. Hover a product for its SAP codes.</div></div></div>`;
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'fom') { try { render(); } catch (e) {} } return r; };
   init();

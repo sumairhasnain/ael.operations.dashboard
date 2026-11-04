@@ -18,8 +18,8 @@ def load_atlas(path):
     if t.startswith('"'): t = json.loads(t[:t.rindex('"') + 1])
     return json.loads(t.split('@@FOMATL', 1)[1].split('\n\n(captured')[0])
 A = load_atlas(atl_p); D, P = A.get('D', {}), A.get('P', {})
-if F.get('source', {}).get(m) == 'sheet':
-    print(json.dumps({'month': m, 'skipped': 'official sheet month'})); sys.exit(0)
+if F.get('source', {}).get(m) in ('sheet', 'mb51'):   # 4 Nov (Umair): a month built from the daily SAP MB51 file is not overwritten by Atlas
+    print(json.dumps({'month': m, 'skipped': 'official sheet month' if F['source'][m] == 'sheet' else 'month held by the daily SAP MB51 file'})); sys.exit(0)
 if not any(float(x or 0) for x in list(D.values()) + list(P.values())):   # Atlas has nothing for this month yet: don't open its button
     print(json.dumps({'month': m, 'skipped': 'no sales or production in Atlas yet'})); sys.exit(0)
 v, cov, miss = {}, [], {}
