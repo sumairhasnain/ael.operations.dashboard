@@ -68,10 +68,21 @@
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm){max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar{width:8px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
 .ael #inventory .ivsep{grid-column:1/-1;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:8px 0 4px;margin-top:4px}
+.ael #inventory .ivpwrap{position:relative;display:inline-block}
+.ael #inventory .ivpwrap input{font:inherit;font-size:12.5px;letter-spacing:0;text-transform:none;padding:5px 24px 5px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);min-width:230px}
+.ael #inventory .ivpwrap input.fon{background:#FFE8A3;border-color:#E0A100;color:#000;font-weight:600}
+.ael #inventory .ivpwrap input::-webkit-search-cancel-button{display:none}
+.ael #inventory .ivpx{position:absolute;right:3px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mut);font-size:16px;line-height:1;cursor:pointer;padding:0 3px}
+.ael #inventory .ivpx:hover{color:var(--navy)}
+.ael #inventory .ivsug{position:absolute;z-index:40;top:calc(100% + 2px);left:0;min-width:280px;max-height:280px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:0 4px 14px rgba(5,28,44,.15);text-transform:none;letter-spacing:0}
+.ael #inventory .ivsug div{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 9px;cursor:pointer;font-size:12.5px;color:var(--ink);white-space:nowrap}
+.ael #inventory .ivsug div.on,.ael #inventory .ivsug div:hover{background:var(--soft)}
+.ael #inventory .ivsug small{color:var(--mut);font-variant-numeric:tabular-nums}
+.ael #inventory .ivsug .pn{color:var(--mut);cursor:default;justify-content:flex-start}
 `; document.head.appendChild(st); }
 
   { const host = q('#inv-sap'); if (host && !q('#iv-bar')) host.innerHTML = `
-<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
+<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Item<span class="ivpwrap"><input id="iv-f-item" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="iv-f-item-list" autocomplete="off" spellcheck="false" placeholder="All items · type code or name"><button type="button" class="ivpx" id="iv-f-item-x" aria-label="Clear item" hidden>×</button><div class="ivsug" id="iv-f-item-list" role="listbox" hidden></div></span></label><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
 <div class="ivbar" id="iv-bar"><div class="nt" id="iv-note"></div></div>
 <div class="ivk" id="iv-kpi"></div>
 <div class="grid">
@@ -95,7 +106,23 @@
 <div class="ivsep">Atlas: safety stock and vendor supply</div>
 </div>`;
     ['#q-iv', '#q-ivs'].forEach(s => { const qi = q(s); if (qi) qi.addEventListener('input', () => window.__draw()); });
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
+    (() => { const inp = q('#iv-f-item'), list = q('#iv-f-item-list'), xb = q('#iv-f-item-x'); if (!inp || inp.__w) return; inp.__w = 1; let sg = [], ix = -1;
+      const esc = x => String(x).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      const cands = t => { const S = load().S || [], ws = t.toLowerCase().split(/\s+/).filter(Boolean); if (!ws.length) return []; const seen = new Map();
+        for (const r of S) { const hay = (r.code + ' ' + (r.part || '')).toLowerCase(); if (ws.every(w => hay.includes(w)) && !seen.has(r.code)) { seen.set(r.code, { code: r.code, part: r.part || '' }); if (seen.size >= 40) break; } } return [...seen.values()]; };
+      const show = () => { const t = inp.value.trim(); if (!t) { list.hidden = true; return; } sg = cands(t); ix = -1;
+        list.innerHTML = sg.length ? sg.map((o, i) => `<div role="option" data-i="${i}"><span>${esc(o.part || o.code)}</span><small>${esc(o.code)}</small></div>`).join('') : '<div class="pn">No matching item</div>'; list.hidden = false; inp.setAttribute('aria-expanded', 'true'); };
+      const pick = o => { inp.value = (o.part ? o.part + ' · ' : '') + o.code; list.hidden = true; inp.setAttribute('aria-expanded', 'false'); set({ invitem: o.code }); };
+      inp.addEventListener('input', show); inp.addEventListener('focus', () => { if (inp.value.trim()) show(); });
+      inp.addEventListener('keydown', ev => { const it = [...list.querySelectorAll('div[data-i]')];
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); if (list.hidden) { show(); return; } ix = Math.min(it.length - 1, ix + 1); it.forEach((e, i) => e.classList.toggle('on', i === ix)); if (it[ix]) it[ix].scrollIntoView({ block: 'nearest' }); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); ix = Math.max(0, ix - 1); it.forEach((e, i) => e.classList.toggle('on', i === ix)); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); if (sg.length) pick(sg[ix >= 0 ? ix : 0]); else set({ invitem: inp.value.trim() || 0 }); }
+        else if (ev.key === 'Escape') { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); } });
+      list.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pick(sg[+d.dataset.i]); });
+      inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); }, 150));
+      xb.addEventListener('click', () => { inp.value = ''; list.hidden = true; set({ invitem: 0 }); inp.focus(); }); })();
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
@@ -152,7 +179,10 @@
     { const tg = q('#iv-tog'); tg.replaceChildren(); CATS.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c; b.style.setProperty('--c', CATC[c]); b.className = on(c) ? '' : 'off';
       b.setAttribute('aria-pressed', on(c)); b.title = (on(c) ? 'Included. Click to leave ' : 'Left out. Click to include ') + c + ' across this tab'; b.addEventListener('click', () => togg(c)); tg.appendChild(b); }); }
     const mOk = r => g.model === 'All' || String(r.models || '').split('/').includes(g.model);
-    const baseAll = D.S.filter(r => shopOk(r.shop, g) && mOk(r)), base = baseAll.filter(r => !r.oos);
+    const itm = String(p.invitem || '').trim(), itmLc = itm.toLowerCase(), itemOk = r => !itm || String(r.code).toLowerCase() === itmLc || (String(r.code).toLowerCase().includes(itmLc) || String(r.part || '').toLowerCase().includes(itmLc));
+    const sOk = sh => itm ? true : shopOk(sh, g);   /* a searched item is shown across every shop that holds or consumes it, whatever the shop filter */
+    { const ii = q('#iv-f-item'), ixb = q('#iv-f-item-x'); if (ii) { if (document.activeElement !== ii) { const hit = itm ? (D.S.find(r => String(r.code) === itm) || null) : null; ii.value = itm ? (hit && hit.part ? hit.part + ' · ' + itm : itm) : ''; } ii.classList.toggle('fon', !!itm); } if (ixb) ixb.hidden = !itm; }
+    const baseAll = D.S.filter(r => sOk(r.shop) && mOk(r) && itemOk(r)), base = baseAll.filter(r => !r.oos);
     const cov = COVK.includes(p.invcov) ? p.invcov : '', mov = MOVK.includes(p.invmov) ? p.invmov : '';
     const pass = (r, skip) => (skip === 'cat' || on(r.category)) && (skip === 'age' || !age || r.age_bucket === age);
     const S = base.filter(r => pass(r));
@@ -160,7 +190,7 @@
     const months = [...new Set(D.F.map(r => r.month))].sort(), M = months.includes(g.month) ? g.month : months[months.length - 1];
     const prev3 = months.filter(m => m < M).slice(-3), part = M === flowTo.slice(0, 7);
     { const nt = (g.shop !== 'All' ? `Shop ${g.shop}: materials linked to the shop through Atlas, their SAP group or a clear raw-material name. ` : '') + 'Consumption is SAP 201/202 to cost centres; production orders (261) are not in these files.', t = `Stock: SAP MB52, ${dmy(stockAsOf)} · Receipts and issues to ${dmy(flowTo)}` + (g.model !== 'All' ? ` · Model ${g.model} matched on the material description` : ''), e = q('#iv-asof'), h = q('#inventory .ivhead h2');   /* the dates and the consumption note show as the title's tooltip (Umair, 28 Oct) */
-      if (e) { e.textContent = ''; e.hidden = true; } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
+      if (e) { if (itm) { e.textContent = 'Filtered to item ' + itm + ' — the monthly Received, Consumption, Cost Centre and Supplier cards are not held at item level and keep the shop view'; e.hidden = false; } else { e.textContent = ''; e.hidden = true; } } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
     selBox('iv-f-age', 'All ages', AGES.filter(a => base.some(r => r.age_bucket === a && pass(r, 'age'))), 'invage');
 
     /* flows for the shop / category filters */
