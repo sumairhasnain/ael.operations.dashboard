@@ -37,8 +37,8 @@
     const mo = M[m]; const items = (mo.items || []).filter(i => shops.includes(i.shop) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
     const tot = d3.sum(items, i => i.in_transit), red = items.filter(i => i.flag === 'red').length;
     const wd = shops.map(s => (mo.working_days || {})[s] || 0).reduce((a, b) => Math.max(a, b), 0);
-    /* 4 Nov 22:07 (Umair, comment): no explanatory sentence - just the month, the colour key and the total. The definition stays in the tooltip. */
-    sub.innerHTML = `<b>${esc(shops.join(' + '))}</b> · ${MN[+m.slice(5, 7) - 1]} ${m.slice(0, 4)} to ${dmy(mo.to)} · ` +
+    /* 4 Nov 22:07 (Umair, comment): no explanatory sentence and no month/date (22:10) - just the shop, the colour key and the total. The definition stays in the tooltip. */
+    sub.innerHTML = `<b>${esc(shops.join(' + '))}</b> · ` +
       `<i class="trsw" style="background:${C.bad}"></i>over half a day's output <i class="trsw" style="background:${C.warn}"></i>under half a day · ` +
       (items.length ? `<b>${nf(tot)}</b> units on ${items.length} part${items.length === 1 ? '' : 's'}, <b>${red}</b> red` : 'nothing in transit');
     if (!items.length) { empty(el, 'Nothing posted ahead of store receipt for this shop'); return; }
