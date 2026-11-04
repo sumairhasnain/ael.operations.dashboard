@@ -115,7 +115,7 @@ def info(code):
 
 today = pd.Timestamp(ASOF_FLOW)
 months = sorted(set(r['m']) | set(c['eff_m']))
-months = [m for m in months if m >= (today - pd.DateOffset(months=11)).strftime('%Y-%m')]
+months = [m for m in months if m >= '2024-01']   # retain full history from Jan 2024 (Umair, 4 Nov 2026)
 
 # ---- flows by month x shop x category ----
 flow = {}
