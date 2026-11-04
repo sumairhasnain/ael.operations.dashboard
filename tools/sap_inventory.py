@@ -161,6 +161,10 @@ r90 = r[r['Posting Date'] >= d90].groupby('Material')['Qty in unit of entry'].su
 i182 = c[c['Posting Date'] >= d182].groupby('Material')['qty'].sum()
 r182 = r[r['Posting Date'] >= d182].groupby('Material')['Qty in unit of entry'].sum()
 rv182 = r[r['Posting Date'] >= d182].groupby('Material')['amt'].sum()
+# 4 Nov (Umair): receipts over the last 12 months, to show excess stock that is still being bought
+d365 = today - pd.Timedelta(days=364)
+r365 = r[r['Posting Date'] >= d365].groupby('Material')['Qty in unit of entry'].sum()
+rv365 = r[r['Posting Date'] >= d365].groupby('Material')['amt'].sum()
 # 28 Oct (Umair): shortage, excess and slow-moving views. Rate of use per material, by the best record we have:
 #  consumables, tools, spares -> issues to cost centres (201 less 202) over the last 6 months; lubricants -> the larger of issues and receipts;
 #  bought-in production parts -> Atlas vendor schedule for the stock month (in-house and finished parts are outputs, not inputs: their
@@ -212,7 +216,7 @@ def row_of(code, cat, st, sh, how, g, d, qty, qi, bl, tr, val, uom, slocs, unit=
             'uom': uom, 'stock': round(qty, 2), 'qi': round(qi, 2), 'blocked': round(bl, 2), 'transit': round(tr, 2),
             'value_pkr': round(val), 'unit_pkr': round(up, 2) if up is not None else None, 'slocs': slocs,
             'last_rcv': lrd.strftime('%Y-%m-%d') if age is not None else None, 'last_issue': lid.strftime('%Y-%m-%d') if lid is not None and not pd.isna(lid) else None,
-            'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'use_month': round(um, 2), 'use_basis': basis, 'use_months': int(umo.get(code, 0)), 'cover_stock': round(cq, 2) if cq != qty else None, 'cover_days': cover, 'cover_bucket': cb,
+            'rcv_90d': round(rq, 2), 'issue_90d': round(iq, 2), 'rcv_12m': round(float(r365.get(code, 0)), 2), 'rcv_12m_pkr': round(float(rv365.get(code, 0))), 'use_month': round(um, 2), 'use_basis': basis, 'use_months': int(umo.get(code, 0)), 'cover_stock': round(cq, 2) if cq != qty else None, 'cover_days': cover, 'cover_bucket': cb,
             'excess_pkr': round(exc), 'move_days': md, 'move_bucket': mb, 'age_days': age, 'age_bucket': bucket, 'asof': STOCK_ASOF}
 for code, a in ag.iterrows():
     g, d, cat, st, sh, how = inf.get(code) or info(code)
