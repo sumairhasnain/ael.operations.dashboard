@@ -12,14 +12,9 @@ Shops by producing storage location (the shop posts 101 there):
   1006 HPDC / Die Cast · 1022 1023 1024 1025 CIF Casting · 1027 1021 Aluminium Foundry · 1031 Clutch Press
 Parts that never reach the store (intermediate stages: molten metal, casted, fettled) are left out: a part is listed only
 when the store received some of it (315) in the month, or it has a positive in-transit figure and received some last month.
-in_transit = posted (101-102) - received by store (315) - sent to SPD (315 into 0008) - issued directly from the shop
-             location (261-262); never below 0.
-Store locations (Umair, 4 Nov): for Clutch Press only 0003 (main store) counts as received; transfers to any other
-location (1004 clutch shop etc.) stay in transit. 0008 is the dispatch / finished-goods store (SPD spares and OEM sales both post from it): press plates and castings
-received there were made for SPD or direct sale, not for in-house clutch and hub assembly, so they are excluded from
-in-transit and shown separately as 'spd'.
-The casting shops' output is received by other stores (HPDC -> 0015, Aluminium Foundry -> 1020, CIF -> 0023 / 0003), so
-for them every 315 outside 0008 counts as received until Umair narrows it.
+in_transit = posted (101-102) - received anywhere (315) - issued directly from the shop location (261-262); never below 0.
+Store locations (Umair, 4 Nov 18:28): a 315 receipt at ANY storage location (0003, 0008, 0015, 1020, 0023, 1004 ...) counts
+as received; only quantities nobody has received anywhere are in transit. SPD / STORE below are left empty on purpose.
 half_day   = posted / working days elapsed / 2 (days with any 101 for the shop); red when in_transit > half_day, else yellow.
 """
 import json, sys, collections, datetime as dt
@@ -28,8 +23,8 @@ SL = {'1006': 'HPDC / Die Cast', '1022': 'CIF Casting', '1023': 'CIF Casting', '
       '1027': 'Aluminium Foundry', '1021': 'Aluminium Foundry', '1031': 'Clutch Press'}
 # dashboard shop filter values that reveal the card
 DASH = {'HPDC / Die Cast': 'HPDC / Die Cast', 'CIF Casting': 'CIF Machining', 'Aluminium Foundry': 'Aluminium Foundry', 'Clutch Press': 'Clutch'}
-SPD = {'0008'}                                   # dispatch / finished-goods store (SPD and OEM sales post from it): not in transit to the main store
-STORE = {'Clutch Press': {'0003'}}               # locations that count as 'received by store' per shop; shops not listed: any location except SPD
+SPD = set()                                      # locations to report separately as 'spd' (none: every receipt counts as received)
+STORE = {}                                       # per-shop restriction on receiving locations (none: any location counts)
 
 def read(path):
     raw = open(path, encoding='utf-8').read()
