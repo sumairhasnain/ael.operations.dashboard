@@ -2584,7 +2584,7 @@ window.addEventListener('resize', () => window.__draw());
     /* cover against use, by category (100% bars, count or value); a click lists that band in Shortage Watch and the register */
     { const mt = q('#iv-covm'); mt.replaceChildren(); [['n', 'Materials'], ['v', 'Value']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.setProperty('--c', C.navy); b.className = covMode === k ? '' : 'off';
       b.setAttribute('aria-pressed', covMode === k); b.addEventListener('click', () => { covMode = k; window.__draw(); }); mt.appendChild(b); }); }
-    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = real consumption over the last 6 months: issues to cost centres (201) plus issues to production orders (261) from SAP MB51, divided by 6. Where that record is clearly incomplete (material moved to the foundry and consumed under another code, or used at plant SKP which the files only carry from Nov 2026) receipts over 6 months stand in; lubricants take the larger of consumption and receipts; Atlas vendor schedule where nothing else is recorded. Click a band to list it below';
+    q('#iv-cov-sub').textContent = '';   // 4 Nov 22:36 (Umair, comment): no explanatory note under the cover chart
     { const el = q('#iv-cov'), cats = CATS.filter(c => on(c) && SA.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SA.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
       if (!cats.length) empty(el, 'No stock for this selection'); else {
         const get = (c, k) => M2.get(c).get(k) || { n: 0, v: 0 }, mv = o => covMode === 'n' ? o.n : o.v;
