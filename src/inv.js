@@ -102,7 +102,7 @@
 <div class="ivsep">Excess and slow-moving stock</div>
 <div class="card" id="c-iv-exc"><h3>Excess Stock by Category</h3><div class="ivsub">Value above 6 months of use, and stock with no use in the last 6 months</div><div class="chart" id="iv-exc"></div></div>
 <div class="card" id="c-iv-exl"><h3>Largest Excess Items</h3><div class="ivsub">Value on hand above 6 months of use, items in use</div><div class="chart" id="iv-exl"></div></div>
-<div class="card wide" id="c-iv-exb"><h3>Excess Stock still being Bought</h3><div class="ivsub">Items holding more than 6 months of consumption (last 6 months' issues to cost centres and production orders, SAP MB51), or with no consumption in the last 6 months, that were still received in the last 12 months. <i class="ivsw" style="background:#051C2C"></i>on hand above 6 months of use &nbsp;<i class="ivsw" style="background:#2251FF"></i>received in the last 12 months</div><div class="ivsub" id="iv-exb-sub"></div><div class="chart" id="iv-exb"></div></div>
+<div class="card wide" id="c-iv-exb"><h3>Excess Stock still being Bought</h3><div class="ivsub">Items holding more than 6 months of consumption (or with none in the last 6 months) that were still received in the last 6 months. <i class="ivsw" style="background:#CDD3DA"></i>consumed in the last 6 months &nbsp;<i class="ivsw" style="background:#051C2C"></i>received in the last 6 months &nbsp;<i class="ivsw" style="background:#E0A100"></i>received 1.2× consumption or more &nbsp;<i class="ivsw" style="background:#D0312D"></i>1.5× or more</div><div class="ivsub" id="iv-exb-sub"></div><div class="chart" id="iv-exb"></div></div>
 <div class="card" id="c-iv-mov"><h3>Slow &amp; Non-moving Stock</h3><div class="ivsub">Value on hand by time since the material last moved (issued; for raw material and production parts also received or planned). Click a bar to filter</div><div class="chart" id="iv-mov"></div></div>
 <div class="card" id="c-iv-nm"><h3>Largest Non-moving Stock (over 1 year)</h3><div class="ivsub">Nothing moved in over a year, by value on hand</div><div class="chart" id="iv-nm"></div></div>
 <div class="card" id="c-iv-age"><h3>Stock Age since Last Receipt</h3><div class="ivsub">Value on hand, by days since the material was last received. Click a bar to filter</div><div class="chart" id="iv-age"></div></div>
@@ -135,7 +135,7 @@
   const load = () => { const s = rows('sap_stock'), f = rows('sap_flow'), c = rows('sap_cc'), u = rows('sap_rcv_sup');
     if (_c.s === s && _c.f === f && _c.c === c && _c.u === u) return _c;
     _c = { s, f, c, u,
-      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr'])) : null,
+      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr'])) : null,
       F: f ? f.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, CC: c ? c.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, U: u ? u.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null };
     return _c; };
 
@@ -293,23 +293,26 @@
       const top = S.filter(r => r.excess_pkr > 0 && r.use_month > 0).sort((a, b) => b.excess_pkr - a.excess_pkr);   /* all of them; the chart scrolls (Umair, 28 Oct) */
       hrank(q('#iv-exl'), top.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)} days of cover`, value: r.excess_pkr,
         tip: [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover`, `Above 6 months of use: ${fRs(r.excess_pkr)}`, r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : 'No receipt since Jan 2024', r.last_issue ? `Last issued ${dmy(r.last_issue)}` : 'No cost-centre issue since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No excess on items in use' }); const sv = q('#iv-exl svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
-    /* 4 Nov (Umair): excess stock that is still being bought — above 6 months of use (or no use in 6 months) yet received in the last 12 months; paired bars: on hand above 6 months vs received */
-    { const has12 = S.some(r => r.rcv_12m != null);
-      const bt = S.filter(r => r.excess_pkr > 0 && (has12 ? r.rcv_12m > 0 : (r.age_days != null && r.age_days <= 365))).sort((a, b) => b.excess_pkr - a.excess_pkr);
-      const sub = q('#iv-exb-sub'); if (sub) sub.textContent = bt.length ? `${nf(bt.length)} items · ${fRs(d3.sum(bt, r => r.excess_pkr))} on hand above 6 months of use · ${has12 ? fRs(d3.sum(bt, r => r.rcv_12m_pkr || 0)) + ' received in the last 12 months' : 'all received within the last 12 months'}` : '';
-      const el = q('#iv-exb'); if (el) { el.replaceChildren(); if (!bt.length) empty(el, 'No excess stock received in the last 12 months for this selection'); else {
+    /* 4 Nov (Umair): excess stock that is still being bought - above 6 months of use (or no use in 6 months) yet received in the last 6 months.
+       23:32 (comment): paired bars = consumed in the last 6 months (light grey) vs received in the last 6 months (navy; yellow at 1.2x consumption or more, red at 1.5x or more). */
+    { const has6 = S.some(r => r.rcv_6m_pkr != null);
+      const bt = has6 ? S.filter(r => r.excess_pkr > 0 && r.rcv_6m_pkr > 0).sort((a, b) => b.rcv_6m_pkr - a.rcv_6m_pkr) : [];
+      const ratio = r => r.use_6m_pkr > 0 ? r.rcv_6m_pkr / r.use_6m_pkr : Infinity, col = r => ratio(r) >= 1.5 ? C.bad : ratio(r) >= 1.2 ? C.warn : C.navy;
+      const nRed = bt.filter(r => ratio(r) >= 1.5).length, nYel = bt.filter(r => ratio(r) >= 1.2 && ratio(r) < 1.5).length;
+      const sub = q('#iv-exb-sub'); if (sub) sub.textContent = bt.length ? `${nf(bt.length)} items · ${fRs(d3.sum(bt, r => r.rcv_6m_pkr))} received against ${fRs(d3.sum(bt, r => r.use_6m_pkr || 0))} consumed in the last 6 months · ${nf(nRed)} red, ${nf(nYel)} yellow` : '';
+      const el = q('#iv-exb'); if (el) { el.replaceChildren(); if (!has6) empty(el, 'Needs the next inventory build (6-month receipts not in this file yet)'); else if (!bt.length) empty(el, 'No excess stock received in the last 6 months for this selection'); else {
         const rh = 40, mt = 6, h = bt.length * rh + mt + 6; const { svg, w } = box(el, h);
         const lab = r => (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code);
         const lw = Math.min(Math.max(...bt.map(r => lab(r).length)) * 6.6 + 14, (el.clientWidth || 600) * .42);
-        const mx = d3.max(bt, r => Math.max(r.excess_pkr, has12 ? r.rcv_12m_pkr || 0 : 0)) || 1, x = d3.scaleLinear([0, mx], [lw, w - 64]);
-        bt.forEach((r, i) => { const y0 = mt + i * rh, g = svg.append('g'), r12 = has12 ? r.rcv_12m_pkr || 0 : 0;
+        const mx = d3.max(bt, r => Math.max(r.rcv_6m_pkr, r.use_6m_pkr || 0)) || 1, x = d3.scaleLinear([0, mx], [lw, w - 64]);
+        bt.forEach((r, i) => { const y0 = mt + i * rh, g = svg.append('g'), u6 = r.use_6m_pkr || 0, c = col(r), rt = ratio(r);
           g.append('text').attr('x', 0).attr('y', y0 + rh / 2 - 2).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(lab(r));
           g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(`${r.code}${r.last_rcv ? ' · last in ' + dmy(r.last_rcv) : ''}${r.cover_days != null ? ' · ' + (r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)) + ' days of cover' : ' · no use in 6 months'}`);
-          g.append('rect').attr('x', lw).attr('y', y0 + 6).attr('width', Math.max(1, x(r.excess_pkr) - lw)).attr('height', has12 ? 12 : 24).attr('fill', C.navy);
-          g.append('text').attr('x', x(r.excess_pkr) + 5).attr('y', y0 + (has12 ? 16 : 22)).attr('font-size', 11).style('fill', C.navy).style('font-weight', 600).text(fM(r.excess_pkr));
-          if (has12) { g.append('rect').attr('x', lw).attr('y', y0 + 20).attr('width', Math.max(1, x(r12) - lw)).attr('height', 12).attr('fill', '#2251FF');
-            g.append('text').attr('x', x(r12) + 5).attr('y', y0 + 30).attr('font-size', 11).style('fill', '#2251FF').style('font-weight', 600).text(fM(r12)); }
-          g.append('rect').attr('x', 0).attr('y', y0).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.use_month > 0 ? `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover` : 'No use recorded in the last 6 months', `Above 6 months of use: ${fRs(r.excess_pkr)}`, has12 ? `Received in the last 12 months: ${n2(r.rcv_12m)} ${r.uom} · ${fRs(r12)}` : '', r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : ''].filter(Boolean))).on('mouseleave', tip.hide); });
+          g.append('rect').attr('x', lw).attr('y', y0 + 6).attr('width', Math.max(1, x(u6) - lw)).attr('height', 12).attr('fill', '#CDD3DA');
+          g.append('text').attr('x', x(u6) + 5).attr('y', y0 + 16).attr('font-size', 11).style('fill', '#5A6670').style('font-weight', 600).text(u6 ? fM(u6) : 'none');
+          g.append('rect').attr('x', lw).attr('y', y0 + 20).attr('width', Math.max(1, x(r.rcv_6m_pkr) - lw)).attr('height', 12).attr('fill', c);
+          g.append('text').attr('x', x(r.rcv_6m_pkr) + 5).attr('y', y0 + 30).attr('font-size', 11).style('fill', c).style('font-weight', 600).text(fM(r.rcv_6m_pkr) + (isFinite(rt) ? ` · ${rt.toFixed(1)}×` : ''));
+          g.append('rect').attr('x', 0).attr('y', y0).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.use_month > 0 ? `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover` : 'No use recorded in the last 6 months', `Consumed in the last 6 months: ${fRs(u6)}`, `Received in the last 6 months: ${n2(r.rcv_6m)} ${r.uom} · ${fRs(r.rcv_6m_pkr)}` + (isFinite(rt) ? ` (${rt.toFixed(2)}× consumption)` : ' (nothing consumed)'), `Above 6 months of use: ${fRs(r.excess_pkr)}`, r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : ''].filter(Boolean))).on('mouseleave', tip.hide); });
         svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', mt).attr('y2', h).attr('stroke', C.navy); const sv = q('#iv-exb svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); } } }
 
     /* slow and non-moving: value by time since last movement, by category; the largest non-moving items */
