@@ -2358,7 +2358,7 @@ window.addEventListener('resize', () => window.__draw());
     'Use not recorded': 'In-house and finished production parts: their use goes to production orders (261), which these SAP files do not hold' };
   const SHORT = ['Out of stock', 'Under 15 days', '15–30 days'];
   const MOVK = ['Moved in last 90 days', '91–365 days', 'Over 1 year', 'No movement since Jan 2024'];
-  const BAS = { issues: 'Issues (201)', 'Atlas plan': 'Atlas plan', receipts: 'Receipts', 'not recorded': '—' };
+  const BAS = { consumption: 'Consumption (201 + 261)', issues: 'Issues (201)', 'Atlas plan': 'Atlas plan', receipts: 'Receipts', 'not recorded': '—' };
   let covMode = 'n';
   const SH = { 'Carb Child Parts': 'Carburetor' };   // the SAP groups do not split Carburetor from its child parts
   const shopOk = (sh, g) => g.shop === 'All' || sh === g.shop || SH[sh] === g.shop || SH[g.shop] === sh;
@@ -2397,11 +2397,23 @@ window.addEventListener('resize', () => window.__draw());
 .ael #inventory table.tb td.n{text-align:right;font-variant-numeric:tabular-nums}
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm){max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar{width:8px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
+.ael #inventory .ivsw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 4px 0 2px}
 .ael #inventory .ivsep{grid-column:1/-1;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:8px 0 4px;margin-top:4px}
+.ael #inventory .ivpwrap{position:relative;display:inline-block}
+.ael #inventory .ivpwrap input{font:inherit;font-size:12.5px;letter-spacing:0;text-transform:none;padding:5px 24px 5px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);min-width:230px}
+.ael #inventory .ivpwrap input.fon{background:#FFE8A3;border-color:#E0A100;color:#000;font-weight:600}
+.ael #inventory .ivpwrap input::-webkit-search-cancel-button{display:none}
+.ael #inventory .ivpx{position:absolute;right:3px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mut);font-size:16px;line-height:1;cursor:pointer;padding:0 3px}
+.ael #inventory .ivpx:hover{color:var(--navy)}
+.ael #inventory .ivsug{position:absolute;z-index:40;top:calc(100% + 2px);left:0;min-width:280px;max-height:280px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:0 4px 14px rgba(5,28,44,.15);text-transform:none;letter-spacing:0}
+.ael #inventory .ivsug div{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 9px;cursor:pointer;font-size:12.5px;color:var(--ink);white-space:nowrap}
+.ael #inventory .ivsug div.on,.ael #inventory .ivsug div:hover{background:var(--soft)}
+.ael #inventory .ivsug small{color:var(--mut);font-variant-numeric:tabular-nums}
+.ael #inventory .ivsug .pn{color:var(--mut);cursor:default;justify-content:flex-start}
 `; document.head.appendChild(st); }
 
   { const host = q('#inv-sap'); if (host && !q('#iv-bar')) host.innerHTML = `
-<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
+<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Item<span class="ivpwrap"><input id="iv-f-item" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="iv-f-item-list" autocomplete="off" spellcheck="false" placeholder="All items · type code or name"><button type="button" class="ivpx" id="iv-f-item-x" aria-label="Clear item" hidden>×</button><div class="ivsug" id="iv-f-item-list" role="listbox" hidden></div></span></label><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
 <div class="ivbar" id="iv-bar"><div class="nt" id="iv-note"></div></div>
 <div class="ivk" id="iv-kpi"></div>
 <div class="grid">
@@ -2417,6 +2429,7 @@ window.addEventListener('resize', () => window.__draw());
 <div class="ivsep">Excess and slow-moving stock</div>
 <div class="card" id="c-iv-exc"><h3>Excess Stock by Category</h3><div class="ivsub">Value above 6 months of use, and stock with no use in the last 6 months</div><div class="chart" id="iv-exc"></div></div>
 <div class="card" id="c-iv-exl"><h3>Largest Excess Items</h3><div class="ivsub">Value on hand above 6 months of use, items in use</div><div class="chart" id="iv-exl"></div></div>
+<div class="card wide" id="c-iv-exb"><h3>Excess Stock still being Bought</h3><div class="ivsub">Items holding more than 6 months of consumption (last 6 months' issues to cost centres and production orders, SAP MB51), or with no consumption in the last 6 months, that were still received in the last 12 months. <i class="ivsw" style="background:#051C2C"></i>on hand above 6 months of use &nbsp;<i class="ivsw" style="background:#2251FF"></i>received in the last 12 months</div><div class="ivsub" id="iv-exb-sub"></div><div class="chart" id="iv-exb"></div></div>
 <div class="card" id="c-iv-mov"><h3>Slow &amp; Non-moving Stock</h3><div class="ivsub">Value on hand by time since the material last moved (issued; for raw material and production parts also received or planned). Click a bar to filter</div><div class="chart" id="iv-mov"></div></div>
 <div class="card" id="c-iv-nm"><h3>Largest Non-moving Stock (over 1 year)</h3><div class="ivsub">Nothing moved in over a year, by value on hand</div><div class="chart" id="iv-nm"></div></div>
 <div class="card" id="c-iv-age"><h3>Stock Age since Last Receipt</h3><div class="ivsub">Value on hand, by days since the material was last received. Click a bar to filter</div><div class="chart" id="iv-age"></div></div>
@@ -2425,7 +2438,23 @@ window.addEventListener('resize', () => window.__draw());
 <div class="ivsep">Atlas: safety stock and vendor supply</div>
 </div>`;
     ['#q-iv', '#q-ivs'].forEach(s => { const qi = q(s); if (qi) qi.addEventListener('input', () => window.__draw()); });
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
+    (() => { const inp = q('#iv-f-item'), list = q('#iv-f-item-list'), xb = q('#iv-f-item-x'); if (!inp || inp.__w) return; inp.__w = 1; let sg = [], ix = -1;
+      const esc = x => String(x).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      const cands = t => { const S = load().S || [], ws = t.toLowerCase().split(/\s+/).filter(Boolean); if (!ws.length) return []; const seen = new Map();
+        for (const r of S) { const hay = (r.code + ' ' + (r.part || '')).toLowerCase(); if (ws.every(w => hay.includes(w)) && !seen.has(r.code)) { seen.set(r.code, { code: r.code, part: r.part || '' }); if (seen.size >= 40) break; } } return [...seen.values()]; };
+      const show = () => { const t = inp.value.trim(); if (!t) { list.hidden = true; return; } sg = cands(t); ix = -1;
+        list.innerHTML = sg.length ? sg.map((o, i) => `<div role="option" data-i="${i}"><span>${esc(o.part || o.code)}</span><small>${esc(o.code)}</small></div>`).join('') : '<div class="pn">No matching item</div>'; list.hidden = false; inp.setAttribute('aria-expanded', 'true'); };
+      const pick = o => { inp.value = (o.part ? o.part + ' · ' : '') + o.code; list.hidden = true; inp.setAttribute('aria-expanded', 'false'); set({ invitem: o.code }); };
+      inp.addEventListener('input', show); inp.addEventListener('focus', () => { if (inp.value.trim()) show(); });
+      inp.addEventListener('keydown', ev => { const it = [...list.querySelectorAll('div[data-i]')];
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); if (list.hidden) { show(); return; } ix = Math.min(it.length - 1, ix + 1); it.forEach((e, i) => e.classList.toggle('on', i === ix)); if (it[ix]) it[ix].scrollIntoView({ block: 'nearest' }); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); ix = Math.max(0, ix - 1); it.forEach((e, i) => e.classList.toggle('on', i === ix)); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); if (sg.length) pick(sg[ix >= 0 ? ix : 0]); else set({ invitem: inp.value.trim() || 0 }); }
+        else if (ev.key === 'Escape') { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); } });
+      list.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pick(sg[+d.dataset.i]); });
+      inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); }, 150));
+      xb.addEventListener('click', () => { inp.value = ''; list.hidden = true; set({ invitem: 0 }); inp.focus(); }); })();
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
@@ -2433,7 +2462,7 @@ window.addEventListener('resize', () => window.__draw());
   const load = () => { const s = rows('sap_stock'), f = rows('sap_flow'), c = rows('sap_cc'), u = rows('sap_rcv_sup');
     if (_c.s === s && _c.f === f && _c.c === c && _c.u === u) return _c;
     _c = { s, f, c, u,
-      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days'])) : null,
+      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr'])) : null,
       F: f ? f.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, CC: c ? c.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, U: u ? u.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null };
     return _c; };
 
@@ -2482,7 +2511,10 @@ window.addEventListener('resize', () => window.__draw());
     { const tg = q('#iv-tog'); tg.replaceChildren(); CATS.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c; b.style.setProperty('--c', CATC[c]); b.className = on(c) ? '' : 'off';
       b.setAttribute('aria-pressed', on(c)); b.title = (on(c) ? 'Included. Click to leave ' : 'Left out. Click to include ') + c + ' across this tab'; b.addEventListener('click', () => togg(c)); tg.appendChild(b); }); }
     const mOk = r => g.model === 'All' || String(r.models || '').split('/').includes(g.model);
-    const baseAll = D.S.filter(r => shopOk(r.shop, g) && mOk(r)), base = baseAll.filter(r => !r.oos);
+    const itm = String(p.invitem || '').trim(), itmLc = itm.toLowerCase(), itemOk = r => !itm || String(r.code).toLowerCase() === itmLc || (String(r.code).toLowerCase().includes(itmLc) || String(r.part || '').toLowerCase().includes(itmLc));
+    const sOk = sh => itm ? true : shopOk(sh, g);   /* a searched item is shown across every shop that holds or consumes it, whatever the shop filter */
+    { const ii = q('#iv-f-item'), ixb = q('#iv-f-item-x'); if (ii) { if (document.activeElement !== ii) { const hit = itm ? (D.S.find(r => String(r.code) === itm) || null) : null; ii.value = itm ? (hit && hit.part ? hit.part + ' · ' + itm : itm) : ''; } ii.classList.toggle('fon', !!itm); } if (ixb) ixb.hidden = !itm; }
+    const baseAll = D.S.filter(r => sOk(r.shop) && mOk(r) && itemOk(r)), base = baseAll.filter(r => !r.oos);
     const cov = COVK.includes(p.invcov) ? p.invcov : '', mov = MOVK.includes(p.invmov) ? p.invmov : '';
     const pass = (r, skip) => (skip === 'cat' || on(r.category)) && (skip === 'age' || !age || r.age_bucket === age);
     const S = base.filter(r => pass(r));
@@ -2490,7 +2522,7 @@ window.addEventListener('resize', () => window.__draw());
     const months = [...new Set(D.F.map(r => r.month))].sort(), M = months.includes(g.month) ? g.month : months[months.length - 1];
     const prev3 = months.filter(m => m < M).slice(-3), part = M === flowTo.slice(0, 7);
     { const nt = (g.shop !== 'All' ? `Shop ${g.shop}: materials linked to the shop through Atlas, their SAP group or a clear raw-material name. ` : '') + 'Consumption is SAP 201/202 to cost centres; production orders (261) are not in these files.', t = `Stock: SAP MB52, ${dmy(stockAsOf)} · Receipts and issues to ${dmy(flowTo)}` + (g.model !== 'All' ? ` · Model ${g.model} matched on the material description` : ''), e = q('#iv-asof'), h = q('#inventory .ivhead h2');   /* the dates and the consumption note show as the title's tooltip (Umair, 28 Oct) */
-      if (e) { e.textContent = ''; e.hidden = true; } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
+      if (e) { if (itm) { e.textContent = 'Filtered to item ' + itm + ' — the monthly Received, Consumption, Cost Centre and Supplier cards are not held at item level and keep the shop view'; e.hidden = false; } else { e.textContent = ''; e.hidden = true; } } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
     selBox('iv-f-age', 'All ages', AGES.filter(a => base.some(r => r.age_bucket === a && pass(r, 'age'))), 'invage');
 
     /* flows for the shop / category filters */
@@ -2552,7 +2584,7 @@ window.addEventListener('resize', () => window.__draw());
     /* cover against use, by category (100% bars, count or value); a click lists that band in Shortage Watch and the register */
     { const mt = q('#iv-covm'); mt.replaceChildren(); [['n', 'Materials'], ['v', 'Value']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.setProperty('--c', C.navy); b.className = covMode === k ? '' : 'off';
       b.setAttribute('aria-pressed', covMode === k); b.addEventListener('click', () => { covMode = k; window.__draw(); }); mt.appendChild(b); }); }
-    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = issues to cost centres over the last 6 months for consumables, tools and spares; the larger of issues and receipts for lubricants; receipts over 6 months as a stand-in for raw material; Atlas vendor schedule for bought-in production parts (stock from Atlas). Click a band to list it below';
+    q('#iv-cov-sub').textContent = 'Days of stock at the current rate of use. Use = real consumption over the last 6 months: issues to cost centres (201) plus issues to production orders (261) from SAP MB51, divided by 6. Where that record is clearly incomplete (material moved to the foundry and consumed under another code, or used at plant SKP which the files only carry from Nov 2026) receipts over 6 months stand in; lubricants take the larger of consumption and receipts; Atlas vendor schedule where nothing else is recorded. Click a band to list it below';
     { const el = q('#iv-cov'), cats = CATS.filter(c => on(c) && SA.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SA.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
       if (!cats.length) empty(el, 'No stock for this selection'); else {
         const get = (c, k) => M2.get(c).get(k) || { n: 0, v: 0 }, mv = o => covMode === 'n' ? o.n : o.v;
@@ -2584,6 +2616,24 @@ window.addEventListener('resize', () => window.__draw());
       const top = S.filter(r => r.excess_pkr > 0 && r.use_month > 0).sort((a, b) => b.excess_pkr - a.excess_pkr);   /* all of them; the chart scrolls (Umair, 28 Oct) */
       hrank(q('#iv-exl'), top.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)} days of cover`, value: r.excess_pkr,
         tip: [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover`, `Above 6 months of use: ${fRs(r.excess_pkr)}`, r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : 'No receipt since Jan 2024', r.last_issue ? `Last issued ${dmy(r.last_issue)}` : 'No cost-centre issue since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No excess on items in use' }); const sv = q('#iv-exl svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
+    /* 4 Nov (Umair): excess stock that is still being bought — above 6 months of use (or no use in 6 months) yet received in the last 12 months; paired bars: on hand above 6 months vs received */
+    { const has12 = S.some(r => r.rcv_12m != null);
+      const bt = S.filter(r => r.excess_pkr > 0 && (has12 ? r.rcv_12m > 0 : (r.age_days != null && r.age_days <= 365))).sort((a, b) => b.excess_pkr - a.excess_pkr);
+      const sub = q('#iv-exb-sub'); if (sub) sub.textContent = bt.length ? `${nf(bt.length)} items · ${fRs(d3.sum(bt, r => r.excess_pkr))} on hand above 6 months of use · ${has12 ? fRs(d3.sum(bt, r => r.rcv_12m_pkr || 0)) + ' received in the last 12 months' : 'all received within the last 12 months'}` : '';
+      const el = q('#iv-exb'); if (el) { el.replaceChildren(); if (!bt.length) empty(el, 'No excess stock received in the last 12 months for this selection'); else {
+        const rh = 40, mt = 6, h = bt.length * rh + mt + 6; const { svg, w } = box(el, h);
+        const lab = r => (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code);
+        const lw = Math.min(Math.max(...bt.map(r => lab(r).length)) * 6.6 + 14, (el.clientWidth || 600) * .42);
+        const mx = d3.max(bt, r => Math.max(r.excess_pkr, has12 ? r.rcv_12m_pkr || 0 : 0)) || 1, x = d3.scaleLinear([0, mx], [lw, w - 64]);
+        bt.forEach((r, i) => { const y0 = mt + i * rh, g = svg.append('g'), r12 = has12 ? r.rcv_12m_pkr || 0 : 0;
+          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 - 2).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(lab(r));
+          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(`${r.code}${r.last_rcv ? ' · last in ' + dmy(r.last_rcv) : ''}${r.cover_days != null ? ' · ' + (r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)) + ' days of cover' : ' · no use in 6 months'}`);
+          g.append('rect').attr('x', lw).attr('y', y0 + 6).attr('width', Math.max(1, x(r.excess_pkr) - lw)).attr('height', has12 ? 12 : 24).attr('fill', C.navy);
+          g.append('text').attr('x', x(r.excess_pkr) + 5).attr('y', y0 + (has12 ? 16 : 22)).attr('font-size', 11).style('fill', C.navy).style('font-weight', 600).text(fM(r.excess_pkr));
+          if (has12) { g.append('rect').attr('x', lw).attr('y', y0 + 20).attr('width', Math.max(1, x(r12) - lw)).attr('height', 12).attr('fill', '#2251FF');
+            g.append('text').attr('x', x(r12) + 5).attr('y', y0 + 30).attr('font-size', 11).style('fill', '#2251FF').style('font-weight', 600).text(fM(r12)); }
+          g.append('rect').attr('x', 0).attr('y', y0).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [r.part, r.code + ' · ' + r.category + (r.shop ? ' · ' + r.shop : ''), `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.use_month > 0 ? `Use ${n2(r.use_month)} ${r.uom} a month (${BAS[r.use_basis] || '—'}) · ${nf(r.cover_days)} days of cover` : 'No use recorded in the last 6 months', `Above 6 months of use: ${fRs(r.excess_pkr)}`, has12 ? `Received in the last 12 months: ${n2(r.rcv_12m)} ${r.uom} · ${fRs(r12)}` : '', r.last_rcv ? `Last received ${dmy(r.last_rcv)} (${nf(r.age_days)} days ago)` : ''].filter(Boolean))).on('mouseleave', tip.hide); });
+        svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', mt).attr('y2', h).attr('stroke', C.navy); const sv = q('#iv-exb svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); } } }
 
     /* slow and non-moving: value by time since last movement, by category; the largest non-moving items */
     { const Sm = base.filter(r => pass(r));
@@ -3328,6 +3378,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
 })();
 
 </script>
+<script src="transit.js"></script>
 <script>
 /* F.O.M tab (1 Nov, Umair): month report in the layout of the AEL "Manufacturing Sales" sheet, on a 16:9 page.
    Actuals come from Atlas: sales (dispatch) month to date for finished parts, production for in-house castings and
@@ -3374,7 +3425,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     const Pt = window.Portal;
     if (portal() && Pt && Pt.sb) { const { data, error } = await Pt.sb.from('datasets').select('data').eq('name', 'fom').maybeSingle(); if (error || !data) throw new Error('no data'); return one(data.data); }
     /* Claude artifact: the "fom" dataset (kept current by the F.O.M update task); the uploaded file is the fallback */
-    try { const d = window.dash && dash.data('fom'); if (d && d.status === 'ok' && d.data && d.data.length) { const o = one(d.data); for (const k of ['months', 'budget', 'codes', 'source']) if (typeof o[k] === 'string') o[k] = JSON.parse(o[k]); return o; } } catch (e) {}
+    try { const d = window.dash && dash.data('fom'); if (d && d.status === 'ok' && d.data && d.data.length) { const o = one(d.data); for (const k of ['months', 'budget', 'codes', 'source', 'flags', 'mb51']) if (typeof o[k] === 'string') o[k] = JSON.parse(o[k]); return o; } } catch (e) {}
     return one(await (await fetch('/_blob/' + FOM.blob)).json());
   }
   /* report layout: [id, label, kind]; kind: '' item, 'tot' total, 'sub' grey sub-heading, 'dt' detail total */
@@ -3388,7 +3439,8 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   const bud = (ms, id) => { const B = data.budget; if (!B) return null; const v = ms.map(k => (B[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
   const num = v => v == null ? '<span class="na">—</span>' : nf(v), dec = v => v == null ? '<span class="na">—</span>' : d3.format(',.2f')(v);
   const pct = (a, b) => (a == null || !b) ? '<span class="na">—</span>' : Math.round(a / b * 100) + '%';
-  const mark = id => '';
+  const FL = { khi: 'Plant KHI only in this month\'s MB51 file; the SKP part of this line is missing', skp: 'Only plant SKP codes: not in this month\'s MB51 file yet' };
+  const mark = id => { const f = ((data.flags || {})[month] || {})[id]; return f ? `<sup title="${esc(FL[f] || f)}" style="color:#E0A100;font-weight:700">*</sup>` : ''; };
   function cells(id, mm, yy, cls) { const am = val(mm, id), bm = bud(mm, id), ay = val(yy, id), by = bud(yy, id);
     return `<td class="n a">${num(am)}</td><td class="n">${num(bm)}</td><td class="p">${pct(am, bm)}</td><td class="n a">${num(ay)}</td><td class="n">${num(by)}</td><td class="p">${pct(ay, by)}</td>`; }
   function sum(ids, ms, f) { const v = ids.map(id => f(ms, id)); return v.every(x => x == null) ? null : d3.sum(v, x => x || 0); }
@@ -3414,7 +3466,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     const sec = document.getElementById('fom'); if (!data || !sec) return;
     sec.querySelectorAll('#fom-m button').forEach(b => b.classList.toggle('on', b.dataset.m === month));
     const mm = [month], yy = fy(month), lab = m => MN[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
-    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
+    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : src === 'mb51' ? (`SAP MB51 daily file to ${data.asof}` + ((((data.mb51 || {})[month] || {}).plants || []).length ? ' (plant ' + (((data.mb51 || {})[month] || {}).plants || []).join(' + ') + ')' : '') + (Object.keys((data.flags || {})[month] || {}).length ? ' · * lines missing their SKP part' : '')) : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
     const ciIds = CI.filter(r => r[0] !== '-').map(r => r[0]), alIds = AL.map(r => r[0]);
     const aci = `<table>${head('ALUMINIUM AND CAST IRON PARTS (UNITS)', 30)}<tbody><tr><td>CAST IRON PARTS</td>${totCells(ciIds, mm, yy)}</tr><tr><td>ALUMINIUM PARTS</td>${totCells(alIds, mm, yy)}</tr><tr class="tot"><td>TOTAL</td>${totCells(ciIds.concat(alIds), mm, yy)}</tr></tbody></table>`;
     const dcell = id => { const a = val(mm, id), b = bud(mm, id); return `<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="p">${pct(a, b)}</td>`; };
@@ -3429,7 +3481,7 @@ ${AL.map(([id, l]) => `<tr><td title="${esc(tip(id))}">${l}${mark(id)}</td>${dce
     sec.querySelector('#fom-pg').innerHTML = `<div class="ttl">MANUFACTURING SALES · ${MN[+month.slice(5) - 1].toUpperCase()} ${month.slice(0, 4)}</div><div class="cols"><div class="col">
 ${block('TECHNICAL COLLABORATION PARTS (UNITS)', TC, mm, yy, 'TOTAL')}${aci}${block('SPARE PARTS', SP, mm, yy, 'TOTAL', spExtra)}</div><div class="col">
 ${block('POLYMER (UNITS)', PO, mm, yy, 'TOTAL', poExtra)}${det}
-<div class="ft">Year = from 1 July, all months added (Jul–Oct). Jul–Oct actuals: AEL F.O.M sheet, Oct-26 Final (SAP MB51 sales 601/602 and production 101/102, same code lists and factors). From Nov: lines Atlas covers are live from Atlas sales and production with the same code lists; the rest show — until SAP MB51 is linked. Budget: AEL budget 2026-27. Revenue and raw material are shown where the sheet has them. Hover a product for its SAP codes.</div></div></div>`;
+<div class="ft">Year = from 1 July, all months added (Jul–Oct). Jul–Oct actuals: AEL F.O.M sheet, Oct-26 Final (SAP MB51 sales 601/602 and production 101/102, same code lists and factors). From Nov: every line from the daily SAP MB51 file in SharePoint (Portal Data/MB51), same code lists and factors, updated each morning; Atlas sales and production fill in only when no MB51 file exists for the month yet. A * marks a line whose plant SKP codes are missing from that month's file. Budget: AEL budget 2026-27. Revenue and raw material are shown where the sheet has them. Hover a product for its SAP codes.</div></div></div>`;
   }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'fom') { try { render(); } catch (e) {} } return r; };
   init();
