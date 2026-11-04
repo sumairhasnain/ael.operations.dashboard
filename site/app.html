@@ -3379,7 +3379,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
 
 </script>
 <script>
-/* In-Transit Quantities - By Shop (Production tab; Umair, 4 Nov 2026).
+/* In-Transit Material - By Shop (Production tab; Umair, 4 Nov 2026).
    Production the casting and press shops posted in SAP (101 into their own storage location) that the main store has not
    yet received (315) at any storage location, net of what the shop issued straight to production orders from its own
    location (261/262). Umair, 4 Nov 18:28: a receipt anywhere (0003, 0008, 0015, 1020, 0023, 1004 ...) counts as received.
@@ -3402,7 +3402,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   function ensure() {
     const grid = document.querySelector('#production .grid'); if (!grid || document.getElementById('c-p-transit')) return;
     const card = document.createElement('div'); card.className = 'card wide'; card.id = 'c-p-transit'; card.hidden = true;
-    card.innerHTML = `<h3>In-Transit Quantities - By Shop</h3><div class="trsub" id="tr-sub"></div><div class="chart" id="tr-chart"></div>`;
+    card.innerHTML = `<h3>In-Transit Material - By Shop</h3><div class="trsub" id="tr-sub"></div><div class="chart" id="tr-chart"></div>`;
     const after = document.getElementById('c-p-daily'); if (after) after.after(card); else grid.appendChild(card);
   }
   function render(P) {
@@ -3411,7 +3411,8 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     card.hidden = false; const el = document.getElementById('tr-chart'), sub = document.getElementById('tr-sub');
     const d = window.dash && dash.data('sap_transit');
     if (!d || d.status !== 'ok') { sub.textContent = ''; if (d && d.status === 'error') empty(el, '● Failed to load'); else el.replaceChildren(); return; }
-    const T = Array.isArray(d.data) ? d.data[0] : d.data; const M = (T && T.months) || {};
+    const T = Array.isArray(d.data) ? d.data[0] : d.data; let M = (T && T.months) || {};
+    if (typeof M === 'string') { try { M = JSON.parse(M); } catch (e) { M = {}; } }   // the dashboard runtime hands nested objects over as JSON text
     const m = M[P.month] ? P.month : Object.keys(M).sort().pop();
     if (!m) { sub.textContent = ''; empty(el, 'No SAP MB51 movements loaded yet'); return; }
     const mo = M[m]; const items = (mo.items || []).filter(i => shops.includes(i.shop) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
