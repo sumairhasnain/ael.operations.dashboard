@@ -37,9 +37,10 @@
     const mo = M[m]; const items = (mo.items || []).filter(i => shops.includes(i.shop) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
     const tot = d3.sum(items, i => i.in_transit), red = items.filter(i => i.flag === 'red').length;
     const wd = shops.map(s => (mo.working_days || {})[s] || 0).reduce((a, b) => Math.max(a, b), 0);
-    sub.innerHTML = `<b>${esc(shops.join(' + '))}</b> · ${MN[+m.slice(5, 7) - 1]} ${m.slice(0, 4)} to ${dmy(mo.to)} · production the shop posted in SAP (101) that no storage location has received yet (315), net of parts the shop issued straight to production orders from its own location. ` +
-      `<i class="trsw" style="background:${C.bad}"></i>more than half a day of that part's output (${wd} working day${wd === 1 ? '' : 's'} so far) <i class="trsw" style="background:${C.warn}"></i>less than half a day · ` +
-      (items.length ? `<b>${nf(tot)}</b> units in transit on ${items.length} part${items.length === 1 ? '' : 's'}, <b>${red}</b> red` : 'nothing in transit');
+    /* 4 Nov 22:07 (Umair, comment): no explanatory sentence - just the month, the colour key and the total. The definition stays in the tooltip. */
+    sub.innerHTML = `<b>${esc(shops.join(' + '))}</b> · ${MN[+m.slice(5, 7) - 1]} ${m.slice(0, 4)} to ${dmy(mo.to)} · ` +
+      `<i class="trsw" style="background:${C.bad}"></i>over half a day's output <i class="trsw" style="background:${C.warn}"></i>under half a day · ` +
+      (items.length ? `<b>${nf(tot)}</b> units on ${items.length} part${items.length === 1 ? '' : 's'}, <b>${red}</b> red` : 'nothing in transit');
     if (!items.length) { empty(el, 'Nothing posted ahead of store receipt for this shop'); return; }
     const rh = 38, mt = 6, h = items.length * rh + mt + 6; const { svg, w } = box(el, h);
     const lab = i => (i.part || i.code).length > 36 ? (i.part || i.code).slice(0, 35) + '…' : (i.part || i.code);
