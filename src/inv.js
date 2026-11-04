@@ -124,7 +124,7 @@
       list.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pick(sg[+d.dataset.i]); });
       inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); }, 150));
       xb.addEventListener('click', () => { inp.value = ''; list.hidden = true; set({ invitem: 0 }); inp.focus(); }); })();
-    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
+    const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invcat: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
@@ -185,14 +185,17 @@
     const sOk = sh => itm ? true : shopOk(sh, g);   /* a searched item is shown across every shop that holds or consumes it, whatever the shop filter */
     { const ii = q('#iv-f-item'), ixb = q('#iv-f-item-x'); if (ii) { if (document.activeElement !== ii) { const hit = itm ? (D.S.find(r => String(r.code) === itm) || null) : null; ii.value = itm ? (hit && hit.part ? hit.part + ' · ' + itm : itm) : ''; } ii.classList.toggle('fon', !!itm); } if (ixb) ixb.hidden = !itm; }
     const baseAll = D.S.filter(r => sOk(r.shop) && mOk(r) && itemOk(r)), base = baseAll.filter(r => !r.oos);
-    const cov = COVK.includes(p.invcov) ? p.invcov : '', mov = MOVK.includes(p.invmov) ? p.invmov : '';
-    const pass = (r, skip) => (skip === 'cat' || on(r.category)) && (skip === 'age' || !age || r.age_bucket === age);
+    const cov = COVK.includes(p.invcov) ? p.invcov : '', mov = MOVK.includes(p.invmov) ? p.invmov : '', covCat = CATS.includes(p.invcat) ? p.invcat : '';
+    /* 4 Nov 22:39 (Umair, comment): a click on a Stock Cover segment (category x cover band) filters the whole tab, not just the lists below it */
+    const pass = (r, skip) => (skip === 'cat' || (on(r.category) && (!covCat || r.category === covCat))) && (skip === 'age' || !age || r.age_bucket === age) && (skip === 'cov' || !cov || r.cover_bucket === cov);
     const S = base.filter(r => pass(r));
     const stockAsOf = (D.S.find(r => r.asof) || {}).asof || '', flowTo = (D.F.find(r => r.asof) || {}).asof || '';
     const months = [...new Set(D.F.map(r => r.month))].sort(), M = months.includes(g.month) ? g.month : months[months.length - 1];
     const prev3 = months.filter(m => m < M).slice(-3), part = M === flowTo.slice(0, 7);
     { const nt = (g.shop !== 'All' ? `Shop ${g.shop}: materials linked to the shop through Atlas, their SAP group or a clear raw-material name. ` : '') + 'Consumption is SAP 201/202 to cost centres; production orders (261) are not in these files.', t = `Stock: SAP MB52, ${dmy(stockAsOf)} · Receipts and issues to ${dmy(flowTo)}` + (g.model !== 'All' ? ` · Model ${g.model} matched on the material description` : ''), e = q('#iv-asof'), h = q('#inventory .ivhead h2');   /* the dates and the consumption note show as the title's tooltip (Umair, 28 Oct) */
-      if (e) { if (itm) { e.textContent = 'Filtered to item ' + itm + ' — the monthly Received, Consumption, Cost Centre and Supplier cards are not held at item level and keep the shop view'; e.hidden = false; } else { e.textContent = ''; e.hidden = true; } } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
+      if (e) { if (itm) { e.textContent = 'Filtered to item ' + itm + ' — the monthly Received, Consumption, Cost Centre and Supplier cards are not held at item level and keep the shop view'; e.hidden = false; }
+        else if (cov) { e.textContent = `Filtered to ${covCat ? covCat + ' · ' : ''}${cov} (from the Stock Cover chart) — the monthly Received, Consumption, Cost Centre and Supplier cards are not held at material level and keep the shop view. Click the segment again or Clear filters to remove.`; e.hidden = false; }
+        else { e.textContent = ''; e.hidden = true; } } if (h) { h.title = t + '\n' + nt; h.style.cursor = 'help'; } const bar = q('#iv-bar'); if (bar) bar.style.display = 'none'; }
     selBox('iv-f-age', 'All ages', AGES.filter(a => base.some(r => r.age_bucket === a && pass(r, 'age'))), 'invage');
 
     /* flows for the shop / category filters */
@@ -255,18 +258,18 @@
     { const mt = q('#iv-covm'); mt.replaceChildren(); [['n', 'Materials'], ['v', 'Value']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.setProperty('--c', C.navy); b.className = covMode === k ? '' : 'off';
       b.setAttribute('aria-pressed', covMode === k); b.addEventListener('click', () => { covMode = k; window.__draw(); }); mt.appendChild(b); }); }
     q('#iv-cov-sub').textContent = '';   // 4 Nov 22:36 (Umair, comment): no explanatory note under the cover chart
-    { const el = q('#iv-cov'), cats = CATS.filter(c => on(c) && SA.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SA.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
+    { const el = q('#iv-cov'), SAc = baseAll.filter(r => on(r.category) && (!age || r.age_bucket === age)),   /* the chart keeps every category and band in view; the chosen segment is highlighted, the rest dimmed */ cats = CATS.filter(c => on(c) && SAc.some(r => r.category === c)), M2 = new Map(cats.map(c => [c, d3.rollup(SAc.filter(r => r.category === c), v => ({ n: v.length, v: d3.sum(v, r => r.value_pkr) }), r => r.cover_bucket)]));
       if (!cats.length) empty(el, 'No stock for this selection'); else {
         const get = (c, k) => M2.get(c).get(k) || { n: 0, v: 0 }, mv = o => covMode === 'n' ? o.n : o.v;
         const rh = 32, h = cats.length * rh + 8, { svg, w } = box(el, h), x0 = 128, x1 = w - 84;
         cats.forEach((c, i) => { const y = 4 + i * rh, tot = d3.sum(COVK, k => mv(get(c, k))) || 1; let acc = 0;
-          svg.append('text').attr('x', 0).attr('y', y + rh / 2 + 4).attr('font-size', 11.5).style('fill', C.navy).style('font-weight', 600).text(c);
+          svg.append('text').attr('x', 0).attr('y', y + rh / 2 + 4).attr('font-size', 11.5).style('fill', C.navy).style('font-weight', 600).style('opacity', covCat && covCat !== c ? .45 : 1).text(c);
           COVK.forEach(k => { const o = get(c, k), m = mv(o); if (!m) return; const xa = x0 + (x1 - x0) * acc / tot, wd = (x1 - x0) * m / tot;
-            const gg = svg.append('g').style('cursor', 'pointer').style('opacity', cov && cov !== k ? .35 : 1);
+            const hit = cov === k && (!covCat || covCat === c), gg = svg.append('g').style('cursor', 'pointer').style('opacity', cov && !hit ? .35 : 1);
             gg.append('rect').attr('x', xa).attr('y', y + 4).attr('width', Math.max(.5, wd - 1)).attr('height', rh - 8).attr('fill', COVC[k]);
             const lab = covMode === 'n' ? nf(o.n) : d3.format('.0%')(m / tot); if (wd > lab.length * 6.5 + 6) gg.append('text').attr('x', xa + wd / 2).attr('y', y + rh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', k === 'Use not recorded' || k === '15–30 days' ? C.navy : '#fff').style('pointer-events', 'none').text(lab);
-            gg.on('mousemove', ev => tip.show(ev, [c + ' · ' + k, `${nf(o.n)} materials · ${fRs(o.v)}`, d3.format('.0%')(m / tot) + ' of the category by ' + (covMode === 'n' ? 'count' : 'value'), COVT[k], cov === k ? 'Click to clear' : 'Click to list these below']))
-              .on('mouseleave', tip.hide).on('click', () => { tip.hide(); set({ invcov: cov === k ? 0 : k }); }); acc += m; });
+            gg.on('mousemove', ev => tip.show(ev, [c + ' · ' + k, `${nf(o.n)} materials · ${fRs(o.v)}`, d3.format('.0%')(m / tot) + ' of the category by ' + (covMode === 'n' ? 'count' : 'value'), COVT[k], hit ? 'Click to clear' : 'Click to filter the whole tab to these']))
+              .on('mouseleave', tip.hide).on('click', () => { tip.hide(); set(hit ? { invcov: 0, invcat: 0 } : { invcov: k, invcat: c }); }); acc += m; });
           const sh = get(c, 'Out of stock').n + get(c, 'Under 15 days').n;
           svg.append('text').attr('x', x1 + 8).attr('y', y + rh / 2 + 4).attr('font-size', 11).style('fill', sh ? C.bad : '#5A6670').style('font-weight', 600).text(sh ? nf(sh) + ' short' : 'none short'); });
         const lg = document.createElement('div'); lg.className = 'legend'; COVK.forEach(k => { if (!cats.some(c => get(c, k).n)) return; const s2 = document.createElement('span'), i2 = document.createElement('i'); i2.style.background = COVC[k]; s2.title = COVT[k]; s2.append(i2, document.createTextNode(k)); lg.appendChild(s2); }); el.appendChild(lg); } }
