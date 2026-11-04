@@ -2397,6 +2397,9 @@ window.addEventListener('resize', () => window.__draw());
 .ael #inventory table.tb td.n{text-align:right;font-variant-numeric:tabular-nums}
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm){max-height:300px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA transparent}
 .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar{width:8px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory :is(#iv-exl,#iv-slow,#iv-nm)::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
+/* 4 Nov 22:59 (Umair, comment): Excess Stock still being Bought shows 20 parts (40px rows) and scrolls for the rest, light grey bar on the right */
+.ael #inventory #iv-exb{max-height:812px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#CDD3DA #F3F5F8}
+.ael #inventory #iv-exb::-webkit-scrollbar{width:8px} .ael #inventory #iv-exb::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #inventory #iv-exb::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
 .ael #inventory .ivsw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 4px 0 2px}
 .ael #inventory .ivsep{grid-column:1/-1;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:8px 0 4px;margin-top:4px}
 .ael #inventory .ivpwrap{position:relative;display:inline-block}
