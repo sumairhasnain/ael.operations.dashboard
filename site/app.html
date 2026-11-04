@@ -2637,8 +2637,8 @@ window.addEventListener('resize', () => window.__draw());
         const lw = Math.min(Math.max(...bt.map(r => lab(r).length)) * 6.6 + 14, (el.clientWidth || 600) * .42);
         const mx = d3.max(bt, r => Math.max(r.rcv_6m_pkr, r.use_6m_pkr || 0)) || 1, x = d3.scaleLinear([0, mx], [lw, w - 64]);
         bt.forEach((r, i) => { const y0 = mt + i * rh, g = svg.append('g'), u6 = r.use_6m_pkr || 0, c = col(r), rt = ratio(r);
-          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 - 2).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(lab(r));
-          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 12).attr('font-size', 10.5).style('fill', '#5A6670').text(`${r.code}${r.last_rcv ? ' · last in ' + dmy(r.last_rcv) : ''}${r.cover_days != null ? ' · ' + (r.cover_days > 9999 ? 'over 9,999' : nf(r.cover_days)) + ' days of cover' : ' · no use in 6 months'}`);
+          g.append('text').attr('x', 0).attr('y', y0 + rh / 2 + 4).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(lab(r));
+          /* 4 Nov 23:46 (Umair, comment): code, last receipt and cover only in the tooltip */
           g.append('rect').attr('x', lw).attr('y', y0 + 6).attr('width', Math.max(1, x(u6) - lw)).attr('height', 12).attr('fill', '#CDD3DA');
           g.append('text').attr('x', x(u6) + 5).attr('y', y0 + 16).attr('font-size', 11).style('fill', '#5A6670').style('font-weight', 600).text(u6 ? fM(u6) : 'none');
           g.append('rect').attr('x', lw).attr('y', y0 + 20).attr('width', Math.max(1, x(r.rcv_6m_pkr) - lw)).attr('height', 12).attr('fill', c);
