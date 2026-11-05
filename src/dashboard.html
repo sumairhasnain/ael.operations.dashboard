@@ -158,7 +158,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-ov-shop"><h3>Production by Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 </div>
 </section>
-<section class="page" id="production"><i hidden data-source="sap_transit"></i>
+<section class="page" id="production"><i hidden data-source="sap_transit"></i><i hidden data-source="spd_supply"></i>
 <div class="grid">
 <div class="card" id="c-p-shop"><h3>Production Plan Vs Actual - By Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 <div class="card" id="c-p-model"><h3>Production Plan Vs Actual - By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
@@ -1689,5 +1689,6 @@ window.addEventListener('resize', () => window.__draw());
 <script src="crb.js"></script>
 <script src="os.js"></script>
 <script src="transit.js"></script>
+<script src="spd.js"></script>
 <script src="fom.js"></script>
 <script src="ins.js"></script>
