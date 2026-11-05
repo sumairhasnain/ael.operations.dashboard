@@ -3470,6 +3470,10 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   const SHOP = { 'FRONT FORK R/L SET': 'Cushion', 'CUSHION ASSY REAR': 'Cushion', 'DAMPER REAR CUSHION': 'Cushion', 'SPRINGS': 'Cushion', 'PIPE FRONT FORK': 'Cushion',
     'CAP ASSY NOISE SUPPR': 'Ignition Coil', 'PISTON KIT': 'Piston', 'CYLINDER KIT': 'CIF Machining', 'CLUTCH ASSY': 'Clutch', 'CLUTCH HOUSING ASSY': 'Clutch',
     'PRESSURE PLATE': 'Clutch', 'MUDGUARD FR/RR FENDER': 'Polymer', 'CASE METER': 'Polymer', 'CARBURETOR': 'Carburetor', 'FUEL COCK ASSY': 'Fuel Cock' };
+  /* 5 Nov 18:29 (Umair): parts in the sheet's mixed 'OTHERS' group get their shop from the AAL code's product segment (digits 5-7,
+     the same family digits as the OEM codes: 9110113004 Outer Clutch CD70 -> 113 Clutch), so the Shop filter finds them too */
+  const SEG = { '102': 'Cushion', '113': 'Clutch', '213': 'Clutch', '118': 'Drum Gear', '218': 'Drum Gear', '311': 'Bridge Fork Top', '510': 'Polymer', '910': 'Ignition Coil', '410': 'Carburetor', '158': 'Fuel Cock', '320': 'Piston', '331': 'CIF Machining' };
+  const shopOf = i => (i.group !== 'OTHERS' && SHOP[i.group]) || SEG[String(i.code).slice(4, 7)] || '';
   const title = s => String(s || '').toLowerCase().replace(/(^|[\s\/(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
   let drill = null;
   const css = document.createElement('style'); css.textContent = `
@@ -3495,18 +3499,18 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     const m = M[P.month] ? P.month : null;
     if (!m) { card.hidden = !Object.keys(M).length; sub.textContent = ''; empty(el, 'No SPD plan frozen for this month'); return; }
     const mo = M[m]; let items = mo.items || [];
-    if (P.shop) { items = items.filter(i => SHOP[i.group] === P.shop); if (!items.length) { card.hidden = true; return; } }
+    if (P.shop) { items = items.filter(i => shopOf(i) === P.shop); if (!items.length) { card.hidden = true; return; } }
     card.hidden = false;
     const day = Math.min(+((mo.asof || '').slice(8, 10)) || 0, 31);
     const ptd = i => d3.sum((i.plan_days || []).slice(0, day));
     let rows;
     if (drill && items.some(i => i.group === drill)) {
       rows = items.filter(i => i.group === drill).map(i => ({ key: i.code, lab: i.desc || i.code, sub2: `${i.code}${i.model ? ' · ' + i.model : ''}`, plan: i.plan, act: i.actual, ptd: ptd(i), it: [i] }))
-        .filter(r => r.plan || r.act).sort((a, b) => b.plan - a.plan || b.act - a.act);
+        .sort((a, b) => b.plan - a.plan || b.act - a.act);   // 5 Nov 18:29 (Umair): every plan line shows, zero-plan ones too
     } else {
       drill = null; const G = d3.group(items, i => i.group);
-      rows = [...G].map(([g, a]) => ({ key: g, lab: title(g), sub2: `${a.length} part${a.length === 1 ? '' : 's'}${a[0].resp ? ' · ' + a[0].resp : ''}`, plan: d3.sum(a, i => i.plan), act: d3.sum(a, i => i.actual), ptd: d3.sum(a, ptd), it: a, grp: true }))
-        .filter(r => r.plan || r.act).sort((a, b) => b.plan - a.plan);
+      rows = [...G].map(([g, a]) => ({ key: g, lab: title(g) + (g === 'OTHERS' && P.shop ? ' (' + P.shop + ')' : ''), sub2: `${a.length} part${a.length === 1 ? '' : 's'}${a[0].resp ? ' · ' + a[0].resp : ''}`, plan: d3.sum(a, i => i.plan), act: d3.sum(a, i => i.actual), ptd: d3.sum(a, ptd), it: a, grp: true }))
+        .sort((a, b) => b.plan - a.plan || b.act - a.act);
     }
     const tp = d3.sum(rows, r => r.plan), ta = d3.sum(rows, r => r.act);
     sub.innerHTML = (drill ? `<span class="spback" id="sp-back">‹ All groups</span><b>${esc(title(drill))}</b> · ` : '') +
@@ -3528,7 +3532,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
       if (r.act) g.append('rect').attr('x', lw).attr('y', y0 + 12).attr('width', Math.max(1, x(r.act) - lw)).attr('height', rh - 24).attr('fill', col);
       if (r.ptd > 0) g.append('line').attr('x1', x(r.ptd)).attr('x2', x(r.ptd)).attr('y1', y0 + 4).attr('y2', y0 + rh - 4).attr('stroke', C.navy).attr('stroke-width', 1.5).attr('stroke-dasharray', '3 2');
       g.append('text').attr('x', x(Math.max(r.plan, r.act, r.ptd)) + 6).attr('y', y0 + rh / 2 + 4).attr('font-size', 12).style('fill', col).style('font-weight', 700)
-        .text(pct == null ? nf(r.act) + ' (no plan)' : `${nf(r.act)} · ${pct}%`);
+        .text(pct == null ? (r.act ? nf(r.act) + ' (no plan)' : 'no plan this month') : `${nf(r.act)} · ${pct}%`);
       const lines = [r.grp ? title(r.key) : (r.it[0].desc || r.key), r.grp ? r.sub2 : `${r.it[0].code} · AHL ${r.it[0].ahl_code || '—'} · ${r.it[0].model || ''}`,
         `Month plan (frozen ${dmy((mo.plan_frozen_at || '').slice(0, 10))}): ${nf(r.plan)}`,
         r.ptd > 0 ? `Plan to ${dmy(mo.asof)} (sheet's daily phasing): ${nf(r.ptd)}` : 'No daily phasing to date in the sheet',
