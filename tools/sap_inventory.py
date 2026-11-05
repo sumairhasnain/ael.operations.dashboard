@@ -246,7 +246,7 @@ def row_of(code, cat, st, sh, how, g, d, qty, qi, bl, tr, val, uom, slocs, unit=
     um, basis = use_of(code, cat); daily = um / 30.4 if um > 0 else 0
     cq = ast[code] if basis == 'Atlas plan' and code in ast else qty   # stock used for cover
     cx = cq / daily if daily else None; cover = round(cx) if daily else None
-    cb = next(n for t, n in COVB[1:] if cx < t) if daily else ('Use not recorded' if basis == 'not recorded' else 'No use in 6 months')
+    cb = (next((n for t, n in COVB[1:] if cx < t), 'Over 180 days')) if daily else ('Use not recorded' if basis == 'not recorded' else 'No use in 6 months')   # 5 Nov: a tiny use rate can push cx past the table (inf/NaN)
     if daily and cq <= 0: cb = 'Out of stock'
     up = unit if unit is not None else (val / qty if qty else None)
     exc = 0 if basis == 'not recorded' else max(0.0, val - (180 * daily * up if (daily and up) else 0)) if val > 0 else 0   # excess: value above 6 months of use
