@@ -41,7 +41,7 @@ def find_dump():
                 elif isinstance(x, dict): st.extend(x.values())
                 elif isinstance(x, list): st.extend(x)
     return best
-dump = find_dump()
+dump = open(sys.argv[1], encoding='utf-8').read().rstrip('#') if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else find_dump()   # 5 Nov: a dump file (SAP fallback) can be passed instead of reading the transcript
 if not dump: sys.exit('NO_DUMP')
 sec, cur, head = {}, None, {}
 for ln in dump.split('\n')[1:]:

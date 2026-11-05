@@ -42,7 +42,8 @@ def find_dump():
             walk(o)
     return best
 
-txt = find_dump()
+import sys
+txt = open(sys.argv[1], encoding='utf-8').read().rstrip('#') if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else find_dump()   # 5 Nov: SAP fallback passes a dump file
 if not txt: print('NO_STOCK_DUMP'); raise SystemExit(1)
 head, sec, cur = {}, {}, None
 for ln in txt.split('\n')[1:]:
