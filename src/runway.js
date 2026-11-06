@@ -61,7 +61,7 @@
      the vendor code's stock at AEL (plus the machined / plated stages where the part goes out for plating). */
   const ccpG = () => { if (ALTG.__ccp || !window.__CCP) return; ALTG.__ccp = 1; const PLT = window.__PLT || {};
     Object.entries(window.__CCP).forEach(([vc, [lab, ...ih]]) => ALTG.push({ name: lab, codes: [...new Set([vc, ...ih, ...(PLT[vc] ? [PLT[vc]] : [])])] }));
-    ALTG.push({ name: 'FCB CD70', codes: ['3010410021', '9010410012'] }); };
+    ALTG.push({ name: 'FCB CD70', codes: ['3010410021', '9010410012'] }); ALTG.push({ name: 'FCB CG125', codes: ['3020410048', '9020410016'] }); };
   const grpItem = (M, c) => { ccpG(); const G = ALTG.find(g => g.codes.includes(c)); if (!G) return null;
     const its = G.codes.map(k => item(M, k)).filter(Boolean); if (!its.length) return null;
     const stock = d3.sum(its, r => r.stock), vstock = d3.sum(its, r => r.vstock), need = d3.max(its, r => r.need) || 0, T = M.T;
