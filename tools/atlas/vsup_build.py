@@ -146,7 +146,7 @@ ALSONS_PLATED = {'3010410032': ['9010410008'], '3090410005': ['9090410001']}
 # 6 Nov (Umair): FCB CD70. In-house FCBs (9010410012, Carb Child Parts) go out on OSP and come back as receipts on the vendor
 # code 3010410021, the same code the vendor's own supply arrives on. Same netting as Alsons, for any vendor on that code:
 # 3010410021 then counts vendor supply only and 9010410012 in-house production only.
-OSP_IH = {'3010410021': ['9010410012']}
+OSP_IH = {'3010410021': ['9010410012'], '3020410048': ['9020410016']}
 def alsons_net(sup, pdaily):
     """sup: vendor supply rows; pdaily: atlas_parts_daily rows. Rewrites Alsons 'received' on ALSONS_IH codes (keeps SAP figure in received_sap)."""
     import collections

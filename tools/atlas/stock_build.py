@@ -68,7 +68,7 @@ codes = {p['code'] for p in parts}
 mat, ven = {}, {}
 # 6 Nov (Umair): in-house FCB CD70 (9010410012) comes back from OSP as receipts on the vendor code 3010410021; take the
 # in-house quantity (month to date) out of that code's receipts so it counts vendor supply only (same rule as vsup_build).
-OSP_IH = {'3010410021': ['9010410012']}; _ihq = {}
+OSP_IH = {'3010410021': ['9010410012'], '3020410048': ['9020410016']}; _ihq = {}
 try:
     _m0 = (head.get('month') or '')
     _pdf = 'new_atlas_parts_daily.json' if os.path.exists('new_atlas_parts_daily.json') else 'atlas_parts_daily.json'
