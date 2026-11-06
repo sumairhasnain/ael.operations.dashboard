@@ -121,7 +121,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 .ael .gt .gr .tr b{position:absolute;top:0;height:9px;border-radius:2px}
 .ael .gt .gr .tr i{position:absolute;top:-2px;width:1px;height:13px;background:var(--bad)}
 .ael .gt .gr .dt{color:var(--mut);font-size:10.5px;white-space:nowrap}
-.ael .tip.wide{max-width:620px}
+.ael .tip.wide{max-width:620px}.ael .tip.one{max-width:min(560px,92vw)}.ael .tip.one div{white-space:nowrap}
 .ael .gt .gk{display:flex;gap:12px;font-size:10.5px;color:var(--mut);margin-top:5px}
 </style>
 <div class="ael" id="ael">
@@ -338,7 +338,7 @@ const nf = d3.format(','), f1 = d3.format(',.1f'), si = d3.format('.3~s');
 const kf = v => Math.abs(v) >= 1e6 ? d3.format('.2~s')(v).replace('M','M') : Math.abs(v) >= 1e4 ? d3.format('.3~s')(v) : nf(Math.round(v));
 const tipEl = () => document.getElementById('tip');
 const tip = {
-show(ev, lines) { const t = tipEl(), root = document.getElementById('ael'); t.replaceChildren(); lines.forEach((l, i) => { const d = document.createElement('div'); if (i === 0) d.className = 't'; d.textContent = l; t.appendChild(d); });
+show(ev, lines) { const t = tipEl(), root = document.getElementById('ael'); t.replaceChildren(); t.classList.toggle('one', !!(ev.target && ev.target.closest && ev.target.closest('#c-p-comp'))); /* 6 Nov (Umair): one line per item on the L2/L3 chart */ lines.forEach((l, i) => { const d = document.createElement('div'); if (i === 0) d.className = 't'; d.textContent = l; t.appendChild(d); });
 const rb = root.getBoundingClientRect(); let x = ev.clientX - rb.left + 12, y = ev.clientY - rb.top + 12; const w = t.offsetWidth || 180;
 if (x + w > rb.width - 8) x = ev.clientX - rb.left - w - 12; t.style.left = x + 'px'; t.style.top = y + 'px'; t.style.opacity = 1; },
 hide() { tipEl().style.opacity = 0; }
