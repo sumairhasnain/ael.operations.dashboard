@@ -143,22 +143,26 @@ ALSONS_IH = {  # Alsons vendor code: in-house code(s) of the same part (Carb Chi
 # Screw Stop CD70 and Screw Drain: machined in-house, plated at a vendor (Adamjee) and received back as the plated code,
 # which is the part equivalent to Alsons'. For these the in-house quantity is the plated receipts, not the machining output.
 ALSONS_PLATED = {'3010410032': ['9010410008'], '3090410005': ['9090410001']}
+# 6 Nov (Umair): FCB CD70. In-house FCBs (9010410012, Carb Child Parts) go out on OSP and come back as receipts on the vendor
+# code 3010410021, the same code the vendor's own supply arrives on. Same netting as Alsons, for any vendor on that code:
+# 3010410021 then counts vendor supply only and 9010410012 in-house production only.
+OSP_IH = {'3010410021': ['9010410012']}
 def alsons_net(sup, pdaily):
     """sup: vendor supply rows; pdaily: atlas_parts_daily rows. Rewrites Alsons 'received' on ALSONS_IH codes (keeps SAP figure in received_sap)."""
     import collections
     prod = collections.defaultdict(lambda: collections.defaultdict(int))
     for x in pdaily:
         c = str(x.get('code'))
-        for vc, ih in ALSONS_IH.items():
+        for vc, ih in {**ALSONS_IH, **OSP_IH}.items():
             if c in ih and x.get('prod_actual'): prod[vc][x['date']] += int(x['prod_actual'] or 0)
     for vc, pc_codes in ALSONS_PLATED.items():
         prod[vc] = collections.defaultdict(int)
         for r in sup:
             if r['code'] in pc_codes and not r.get('ih_adj'): prod[vc][r['date']] += int(r.get('received_sap', r['received']) or 0)
     months = {r['date'][:7] for r in sup}
-    for vc in ALSONS_IH:
+    for vc in [*ALSONS_IH, *OSP_IH]:
         for m in months:
-            rows = sorted([r for r in sup if r['code'] == vc and r['date'][:7] == m and 'ALSONS' in str(r['vendor']).upper()], key=lambda r: r['date'])
+            rows = sorted([r for r in sup if r['code'] == vc and r['date'][:7] == m and (vc in OSP_IH or 'ALSONS' in str(r['vendor']).upper())], key=lambda r: r['date'])
             pdm = {d: q for d, q in prod[vc].items() if d[:7] == m}
             if not rows or not pdm: continue
             dates = sorted({r['date'] for r in rows} | set(pdm))

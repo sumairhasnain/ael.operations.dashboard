@@ -66,8 +66,19 @@ for ln in sec.get('PARTS', []):
 codes = {p['code'] for p in parts}
 # supply by material (all vendors) and by vendor
 mat, ven = {}, {}
+# 6 Nov (Umair): in-house FCB CD70 (9010410012) comes back from OSP as receipts on the vendor code 3010410021; take the
+# in-house quantity (month to date) out of that code's receipts so it counts vendor supply only (same rule as vsup_build).
+OSP_IH = {'3010410021': ['9010410012']}; _ihq = {}
+try:
+    _m0 = (head.get('month') or '')
+    _pdf = 'new_atlas_parts_daily.json' if os.path.exists('new_atlas_parts_daily.json') else 'atlas_parts_daily.json'
+    for _x in (json.load(open(_pdf)) if _m0 and os.path.exists(_pdf) else []):
+        for _vc, _ih in OSP_IH.items():
+            if str(_x.get('code')) in _ih and str(_x.get('date', '')).startswith(_m0): _ihq[_vc] = _ihq.get(_vc, 0) + (_x.get('prod_actual') or 0)
+except Exception as _e: print('osp net skipped:', _e)
 for ln in sec.get('VEND', []):
     vcode, mcode, name, s, r = (ln.split('|') + [''] * 5)[:5]; s = float(s or 0); r = float(r or 0)
+    if mcode in _ihq and r: _t = min(r, _ihq[mcode]); r -= _t; _ihq[mcode] -= _t
     a = mat.setdefault(mcode, [0, 0]); a[0] += s; a[1] += r
     v = ven.setdefault(vcode, dict(vendor=name, vendor_code=vcode.zfill(10), parts=set(), month_schedule=0, received_mtd=0))
     v['parts'].add(mcode); v['month_schedule'] += s; v['received_mtd'] += r
