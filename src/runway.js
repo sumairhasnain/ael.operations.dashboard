@@ -56,7 +56,13 @@
   /* 31 Oct (Umair): alternate codes of one part share one stock pool. Hovering any of them shows a single bar on the
      combined closing stock of all the codes, against the one daily need; the vendor panel beside it is unchanged. */
   const ALTG = [{ name: 'Drive Plate CD70 · all codes', codes: ['6510213002', '6510213011', '6510213012', '6010213013'] }];
-  const grpItem = (M, c) => { const G = ALTG.find(g => g.codes.includes(c)); if (!G) return null;
+  /* 6 Nov (Umair): Carb Child Parts made in-house and also bought from Alsons (CCP in dashboard.html), and FCB CD70
+     (3010410021 vendor / 9010410012 in-house), are one part each: the run-out always adds the in-house code's stock and
+     the vendor code's stock at AEL (plus the machined / plated stages where the part goes out for plating). */
+  const ccpG = () => { if (ALTG.__ccp || !window.__CCP) return; ALTG.__ccp = 1; const PLT = window.__PLT || {};
+    Object.entries(window.__CCP).forEach(([vc, [lab, ...ih]]) => ALTG.push({ name: lab, codes: [...new Set([vc, ...ih, ...(PLT[vc] ? [PLT[vc]] : [])])] }));
+    ALTG.push({ name: 'FCB CD70', codes: ['3010410021', '9010410012'] }); };
+  const grpItem = (M, c) => { ccpG(); const G = ALTG.find(g => g.codes.includes(c)); if (!G) return null;
     const its = G.codes.map(k => item(M, k)).filter(Boolean); if (!its.length) return null;
     const stock = d3.sum(its, r => r.stock), vstock = d3.sum(its, r => r.vstock), need = d3.max(its, r => r.need) || 0, T = M.T;
     const nx = its.map(r => r.nx).filter(Boolean).sort()[0] || null, how = nx ? (its.find(r => r.nx === nx) || {}).how || '' : '';
@@ -108,7 +114,7 @@
   window.__rwHTML = build;
   const orig = window.__vendHover;
   if (orig) window.__vendHover = tables => { orig(tables);
-    const T = tables.find(t => t && t.id === 'tb-parts2'); if (!T || T.__rwh) return; T.__rwh = 1;
+    const T = tables.find(t => t && (t.id === 'tb-parts2' || t.id === 'tb-vs')); if (!T || T.__rwh) return; T.__rwh = 1; /* 6 Nov: also Vendor Supply > Vendor Parts Stock */
     T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'); if (!tr || !tr.cells[1] || !vp) return;
       const code = tr.cells[0].textContent.trim(), shown = vp.style.display !== 'none' && vp.dataset.code === code;
       if (vp.dataset.rw !== code || (shown && !vp.querySelector('.rwpop'))) {
