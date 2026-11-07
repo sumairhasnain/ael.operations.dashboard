@@ -2582,7 +2582,7 @@ window.addEventListener('resize', () => window.__draw());
        same window (back to Jan 2024); the reset button, lit while extra months show, returns to the latest 13. The latest
        months always stay in view, so the bar colours and the selected-month highlight stay as they were. */
     const W13 = window.__ivWin || (window.__ivWin = {}), wN = 13, wMx = Math.max(0, months.length - wN), wAdd = Math.min(W13.rcv || 0, wMx), rcvM = months.slice(Math.max(0, months.length - wN - wAdd));
-    vbar(q('#iv-rcv'), rcvM, rk, (m, k) => Math.max(0, fsum(m, k)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: M, onClick: m => set({ month: m }) });
+    vbar(q('#iv-rcv'), rcvM, rk, (m, k) => Math.max(0, fsum(m, k)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, onClick: m => set({ month: m }) }); /* 7 Nov (Umair): every month in full colour, suppliers / production split always visible */
     if (wMx > 0) { const box = document.createElement('div'); box.className = 'hwin';
       const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'hrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Back to the latest 13 months'; rs.setAttribute('aria-label', 'Show the latest 13 months'); rs.disabled = !wAdd;
       const rg = document.createElement('input'); rg.type = 'range'; rg.min = '0'; rg.max = String(wMx); rg.step = '1'; rg.value = String(wMx - wAdd); rg.title = 'Drag left to add earlier months'; rg.setAttribute('aria-label', 'Months shown');
