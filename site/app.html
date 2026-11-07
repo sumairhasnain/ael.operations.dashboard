@@ -2582,7 +2582,10 @@ window.addEventListener('resize', () => window.__draw());
        same window (back to Jan 2024); the reset button, lit while extra months show, returns to the latest 13. The latest
        months always stay in view, so the bar colours and the selected-month highlight stay as they were. */
     const W13 = window.__ivWin || (window.__ivWin = {}), wN = 13, wMx = Math.max(0, months.length - wN), wAdd = Math.min(W13.rcv || 0, wMx), rcvM = months.slice(Math.max(0, months.length - wN - wAdd));
-    vbar(q('#iv-rcv'), rcvM, rk, (m, k) => Math.max(0, fsum(m, k)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, onClick: m => set({ month: m }) }); /* 7 Nov (Umair): every month in full colour, suppliers / production split always visible */
+    /* 7 Nov (Umair): purchases split by stock category (the category colours used across the tab: Tools, Consumables, Spares...), plus 'From production' only when there is production in the months shown */
+    const pcs = new Map(); F.forEach(r => { if (r.kind === 'Purchase' && rcvM.includes(r.month)) pcs.set(r.category, (pcs.get(r.category) || 0) + r.value_pkr); });
+    const rcvS = [...CATS.filter(c => (pcs.get(c) || 0) > 0).map(c => ({ key: 'P|' + c, name: c, color: CATC[c] })), ...(d3.sum(rcvM, m => fsum(m, 'Production')) > 0 ? [{ key: 'Production', name: 'From production', color: '#E8833A' }] : [])];
+    vbar(q('#iv-rcv'), rcvM, rcvS, (m, k) => Math.max(0, k === 'Production' ? fsum(m, k) : d3.sum(F.filter(r => r.month === m && r.kind === 'Purchase' && r.category === k.slice(2)), r => r.value_pkr)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, emptyMsg: 'No receipts for this selection', onClick: m => set({ month: m }) });
     if (wMx > 0) { const box = document.createElement('div'); box.className = 'hwin';
       const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'hrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Back to the latest 13 months'; rs.setAttribute('aria-label', 'Show the latest 13 months'); rs.disabled = !wAdd;
       const rg = document.createElement('input'); rg.type = 'range'; rg.min = '0'; rg.max = String(wMx); rg.step = '1'; rg.value = String(wMx - wAdd); rg.title = 'Drag left to add earlier months'; rg.setAttribute('aria-label', 'Months shown');
