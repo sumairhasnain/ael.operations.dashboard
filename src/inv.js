@@ -242,24 +242,26 @@
     /* receipts and consumption by month */
     const rk = [{ key: 'Purchase', name: 'From suppliers', color: C.navy }, { key: 'Production', name: 'From production', color: C.cyan }];
     if (!document.getElementById('hwin-css')) { const st = document.createElement('style'); st.id = 'hwin-css'; st.textContent = `.ael .hwin{display:flex;align-items:center;gap:8px;margin:6px 0 0 4px}.ael .hwin input[type=range]{flex:1;-webkit-appearance:none;appearance:none;background:transparent;height:18px;margin:0;cursor:ew-resize}.ael .hwin input[type=range]::-webkit-slider-runnable-track{height:4px;background:#E6EAEE;border-radius:2px}.ael .hwin input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;background:#C3CAD1;border:1px solid #AEB7BF;margin-top:-4px}.ael .hwin input[type=range]:hover::-webkit-slider-thumb{background:#AEB7BF}.ael .hwin input[type=range]::-moz-range-track{height:4px;background:#E6EAEE;border-radius:2px}.ael .hwin input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#C3CAD1;border:1px solid #AEB7BF}.ael .hwin .hrs{border:1px solid #DDE2E7;background:#fff;color:#8C96A0;border-radius:4px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0;flex:none}.ael .hwin .hrs:disabled{opacity:.35;cursor:default}.ael .hwin .hrs:not(:disabled){border-color:#E0A100;background:#FFF6DB}.ael .hwin .hlb{font-size:11px;color:#5A6670;min-width:150px;text-align:right}`; document.head.appendChild(st); }
-    /* 7 Nov (Umair): the chart opens on the latest 13 months. Dragging the grey slider left squeezes earlier months into the
-       same window (back to Jan 2024); the reset button, lit while extra months show, returns to the latest 13. The latest
-       months always stay in view, so the bar colours and the selected-month highlight stay as they were. */
-    const W13 = window.__ivWin || (window.__ivWin = {}), wN = 13, wMx = Math.max(0, months.length - wN), wAdd = Math.min(W13.rcv || 0, wMx), rcvM = months.slice(Math.max(0, months.length - wN - wAdd));
+    /* 7 Nov (Umair): monthly charts open on the latest 13 months; dragging the grey slider under them left squeezes earlier
+       months into the same window (back to Jan 2024); the reset button, lit while extra months show, returns to 13 */
+    const W13 = window.__ivWin || (window.__ivWin = {}), wN = 13;
+    const mwin = (key, ms) => { const mx = Math.max(0, ms.length - wN), a = Math.min(W13[key] || 0, mx); return ms.slice(Math.max(0, ms.length - wN - a)); };
+    const mwinCtl = (key, el, ms) => { const wMx = Math.max(0, ms.length - wN); if (!wMx || !el) return; const wAdd = Math.min(W13[key] || 0, wMx); const box = document.createElement('div'); box.className = 'hwin';
+      const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'hrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Back to the latest 13 months'; rs.setAttribute('aria-label', 'Show the latest 13 months'); rs.disabled = !wAdd;
+      const rg = document.createElement('input'); rg.type = 'range'; rg.min = '0'; rg.max = String(wMx); rg.step = '1'; rg.value = String(wMx - wAdd); rg.title = 'Drag left to add earlier months'; rg.setAttribute('aria-label', 'Months shown');
+      const lb = document.createElement('span'); lb.className = 'hlb'; const lt = a => `${a + wN} months · from ${mon(ms[ms.length - wN - a])}`; lb.textContent = lt(wAdd);
+      let tmr; const go = v => { W13[key] = v; clearTimeout(tmr); tmr = setTimeout(() => (window.__draw ? window.__draw() : null), 40); };
+      rg.addEventListener('input', () => { const a = wMx - +rg.value; lb.textContent = lt(a); go(a); });
+      rs.addEventListener('click', () => go(0));
+      box.append(rs, rg, lb); el.appendChild(box); };
+    const rcvM = mwin('rcv', months);
     /* 7 Nov (Umair): purchases split by stock category (the category colours used across the tab: Tools, Consumables, Spares...), plus 'From production' only when there is production in the months shown */
     const pcs = new Map(); F.forEach(r => { if (r.kind === 'Purchase' && rcvM.includes(r.month)) pcs.set(r.category, (pcs.get(r.category) || 0) + r.value_pkr); });
     const rcvS = [...CATS.filter(c => (pcs.get(c) || 0) > 0).map(c => ({ key: 'P|' + c, name: c, color: CATC[c] })), ...(d3.sum(rcvM, m => fsum(m, 'Production')) > 0 ? [{ key: 'Production', name: 'From production', color: '#E8833A' }] : [])];
     vbar(q('#iv-rcv'), rcvM, rcvS, (m, k) => Math.max(0, k === 'Production' ? fsum(m, k) : d3.sum(F.filter(r => r.month === m && r.kind === 'Purchase' && r.category === k.slice(2)), r => r.value_pkr)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, emptyMsg: 'No receipts for this selection', onClick: m => set({ month: m }) });
-    if (wMx > 0) { const box = document.createElement('div'); box.className = 'hwin';
-      const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'hrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Back to the latest 13 months'; rs.setAttribute('aria-label', 'Show the latest 13 months'); rs.disabled = !wAdd;
-      const rg = document.createElement('input'); rg.type = 'range'; rg.min = '0'; rg.max = String(wMx); rg.step = '1'; rg.value = String(wMx - wAdd); rg.title = 'Drag left to add earlier months'; rg.setAttribute('aria-label', 'Months shown');
-      const lb = document.createElement('span'); lb.className = 'hlb'; const lt = a => `${a + wN} months · from ${mon(months[months.length - wN - a])}`; lb.textContent = lt(wAdd);
-      let tmr; const go = v => { W13.rcv = v; clearTimeout(tmr); tmr = setTimeout(() => (window.__draw ? window.__draw() : null), 40); };
-      rg.addEventListener('input', () => { const a = wMx - +rg.value; lb.textContent = lt(a); go(a); });
-      rs.addEventListener('click', () => go(0));
-      box.append(rs, rg, lb); q('#iv-rcv').appendChild(box); }
+    mwinCtl('rcv', q('#iv-rcv'), months);
     const ck = CATS.filter(c => F.some(r => r.kind === 'Consumption' && r.category === c));
-    vbar(q('#iv-cons'), months, ck.map(c => ({ key: c, name: c, color: CATC[c] })), (m, c) => Math.max(0, d3.sum(F.filter(r => r.month === m && r.kind === 'Consumption' && r.category === c), r => r.value_pkr)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: M, emptyMsg: 'No issues for this selection', onClick: m => set({ month: m }) });
+    const consM = mwin('cons', months); vbar(q('#iv-cons'), consM, ck.map(c => ({ key: c, name: c, color: CATC[c] })), (m, c) => Math.max(0, d3.sum(F.filter(r => r.month === m && r.kind === 'Consumption' && r.category === c), r => r.value_pkr)), { stack: 1, h: 250, xFmt: mon, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, emptyMsg: 'No issues for this selection', onClick: m => set({ month: m }) }); mwinCtl('cons', q('#iv-cons'), months);
 
     /* cost centres: month vs 3-month average */
     const CCm = D.CC.filter(r => shopOk(r.shop, g) && on(r.category));
