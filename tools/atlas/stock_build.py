@@ -52,7 +52,7 @@ for ln in txt.split('\n')[1:]:
     elif ln: sec[cur].append(ln)
 SHOP = {'clutch': 'Clutch', 'cushion': 'Cushion', 'carb': 'Carburetor', 'dgs': 'Drum Gear', 'bft': 'Bridge Fork Top', 'ign': 'Ignition Coil',
         'polymer': 'Polymer', 'cif': 'CIF Machining', 'carbchildparts': 'Carb Child Parts', 'hubs': 'Hubs', 'hpdc': 'HPDC / Die Cast',
-        'fuelcock': 'Fuel Cock', 'piston': 'Piston'}
+        'fuelcock': 'Carburetor', 'piston': 'Piston'}
 asof = head.get('stock_asof') or head.get('rcv_to')
 rcv_to = head.get('rcv_to') or asof
 day = int(rcv_to[8:10]) if rcv_to else 1; last = int(head.get('lastRcvDay') or 26)

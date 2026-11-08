@@ -58,7 +58,7 @@ for ln in txt.split('\n')[1:]:
     elif ln: sec[cur].append(ln)
 SHOP = {'clutch': 'Clutch', 'cushion': 'Cushion', 'carb': 'Carburetor', 'dgs': 'Drum Gear', 'bft': 'Bridge Fork Top', 'ign': 'Ignition Coil',
         'polymer': 'Polymer', 'cif': 'CIF Machining', 'carbchildparts': 'Carb Child Parts', 'hubs': 'Hubs', 'hpdc': 'HPDC / Die Cast',
-        'fuelcock': 'Fuel Cock', 'piston': 'Piston'}
+        'fuelcock': 'Carburetor', 'piston': 'Piston'}
 sa = head.get('stock_asof', ''); asof = sa[:4] + '-' + sa[4:6] + '-' + sa[6:8] if len(sa) == 8 else sa
 vn = {}
 for ln in sec.get('V', []):

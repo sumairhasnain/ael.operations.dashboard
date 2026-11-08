@@ -684,7 +684,7 @@ return { C, nf, f1, kf, tip, box, empty, status, compColor, legend, bullets, pva
 /* 8 Nov 2026: the filters & tabs script, moved out of dashboard.html as-is to keep the page under the artifact size limit. It must stay where its <script src> tag is (after the kit script, before the drawing script). */
 /* ---------- filters & tabs ---------- */
 (() => {
-const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Fuel Cock','Cushion','Hubs','Carb Child Parts'];
+const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Cushion','Hubs','Carb Child Parts'];
 const MONTHS = ['2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
 const MODELS = ['CD70','CD-Dream','CG125','CG125S','Pridor','CB125F','CB150F','K4AA'];
 window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; /* window.__TODAY is set in dashboard.html (the refresh tasks edit it there) */
@@ -781,7 +781,7 @@ const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vba
 
 const _lst = v => { if (Array.isArray(v) || v == null) return v; const t = String(v).trim(); if (t[0] === '[') { try { const j = JSON.parse(t); if (Array.isArray(j)) return j; } catch (e) {} } return t ? t.split(/\s*[\/,]\s*/).filter(Boolean) : undefined; };
 const _dn = new Map();
-const D = id => { const src = dash.data(id).data || []; if (id === 'atlas_parts' && window.__shopx) return window.__shopx(src); if (id === 'atlas_parts_daily' && window.__MPLAN) { /* 8 Nov: frozen plans (src/mplan.js) for codes Atlas has no November plan for; once Atlas has a plan for a code, Atlas wins (Umair) */ const c = _dn.get(id); if (c && c.src === src) return c.rows; const A = new Set(src.filter(r => +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => r.code)), SM = Object.fromEntries(Object.entries(window.__MSAME || {}).map(([k, pc]) => [k, Object.fromEntries(src.filter(r => r.code === pc && +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => [r.date, +r.prod_plan]))])), M = Object.fromEntries(Object.entries({ ...window.__MPLAN, ...SM }).filter(([c]) => !A.has(c))), rows = src.map(r => { const v = (M[r.code] || {})[r.date]; return v != null ? { ...r, prod_plan: v } : M[r.code] && r.date >= '2026-11-01' && r.date <= '2026-11-30' ? { ...r, prod_plan: 0 } : r; }), have = new Set(src.map(r => r.code + '|' + r.date));
+const D = id => { const src = window.__remap ? window.__remap(id, dash.data(id).data || []) : (dash.data(id).data || []); if (id === 'atlas_parts' && window.__shopx) return window.__shopx(src); if (id === 'atlas_parts_daily' && window.__MPLAN) { /* 8 Nov: frozen plans (src/mplan.js) for codes Atlas has no November plan for; once Atlas has a plan for a code, Atlas wins (Umair) */ const c = _dn.get(id); if (c && c.src === src) return c.rows; const A = new Set(src.filter(r => +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => r.code)), SM = Object.fromEntries(Object.entries(window.__MSAME || {}).map(([k, pc]) => [k, Object.fromEntries(src.filter(r => r.code === pc && +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => [r.date, +r.prod_plan]))])), M = Object.fromEntries(Object.entries({ ...window.__MPLAN, ...SM }).filter(([c]) => !A.has(c))), rows = src.map(r => { const v = (M[r.code] || {})[r.date]; return v != null ? { ...r, prod_plan: v } : M[r.code] && r.date >= '2026-11-01' && r.date <= '2026-11-30' ? { ...r, prod_plan: 0 } : r; }), have = new Set(src.map(r => r.code + '|' + r.date));
 Object.entries(M).forEach(([c, dd]) => Object.entries(dd).forEach(([d, v]) => { if (!have.has(c + '|' + d)) rows.push({ date: d, code: c, prod_plan: v, prod_actual: 0 }); })); _dn.set(id, { src, rows }); return rows; } if (id !== 'atlas_issues') return src; const c = _dn.get(id); if (c && c.src === src) return c.rows;
 const rows = src.map(r => r.shops == null || Array.isArray(r.shops) ? r : { ...r, shops: _lst(r.shops) }); _dn.set(id, { src, rows }); return rows; };
 const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
@@ -1584,7 +1584,7 @@ const pctf = v => d3.format('.1f')(v) + '%';
 const byArea = d3.rollups(rs, v => ({ abs: absPct(v), ot: d3.sum(v, r => r.ot_hours) }), r => r.area);
 const ga = new Map(byArea), areas = byArea.map(d => d[0]);
 
-const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer', 'Fuel Cock'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a) || a); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
+const SQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer'], shA = new Map(all.map(r => [r.area, r.shop])), ix = a => { const i = SQ.indexOf(shA.get(a) || a); return (i < 0 ? 99 : i) * 2 + (a === shA.get(a) ? 0 : 1); }, aCmp = (a, b) => ix(a) - ix(b) || a.localeCompare(b);
 const sel = areas.includes(dash.params().wfa) ? dash.params().wfa : null, pick = { focus: sel, onClick: c => dash.setParams({ wfa: sel === c ? 0 : c }) }, rf = sel ? rs.filter(r => r.area === sel) : rs;
 const aSort = areas.slice().sort((a, b) => (ga.get(b).abs ?? -1) - (ga.get(a).abs ?? -1));
 vbar(eabs, aSort, [{ key: 'a', name: 'Absenteeism %', color: c => ga.get(c).abs > 10 ? C.bad : ga.get(c).abs > 5 ? C.warn : C.navy }], c => ga.get(c).abs == null ? null : Math.round(ga.get(c).abs * 10) / 10,
@@ -1714,7 +1714,7 @@ vbar(es, shops, [{ key: 'Critical', name: 'Critical', color: C.bad }, { key: 'No
 const md = d3.rollups(open, v => v.length, r => r.last_meeting).sort((a, b) => d3.ascending(a[0], b[0]));
 vbar(ea, md.map(d => d[0]), [{ key: 'n', name: 'Open', color: C.navy }], c => md.find(d => d[0] === c)[1], { xFmt: day, rot: 1, h: 260, yFmt: d3.format('d'), noLegend: 1, emptyMsg: 'No open issues' });
 
-const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock', 'Cushion', 'Supply Chain', 'General'];
+const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Cushion', 'Supply Chain', 'General'];
 const sx = v => { const i = SEQ.indexOf(String(v || '').split(', ')[0]); return i < 0 ? SEQ.length : i; };
 table(q('#tb-iss'), all.map(r => ({ ...r, shop: (r.shops || [r.shop]).join(', ') })), [{ k: 'id' }, { k: 'item' }, { k: 'shop', cmp: (x, y) => sx(x) - sx(y) || String(x).localeCompare(String(y)) }, { k: 'priority', pill: v => v === 'Critical' ? 'bad' : v === 'Non-critical' ? 'warn' : 'neu' }, { k: 'status', pill: v => v === 'open' ? 'warn' : 'good', cmp: (x, y) => (x === 'open' ? 0 : 1) - (y === 'open' ? 0 : 1) }, { k: 'problem' }, { k: 'last_meeting', fmt: day }], { q: q('#q-iss'), sort: 'last_meeting', dir: -1, multi: ['status', 'shop'] });
 }
@@ -2775,7 +2775,7 @@ window.addEventListener('resize', () => window.__draw());
   };
   /* rows for the By Area & Section table that have no attendance at all: sections on the sheet's roster with nothing marked
      in the selected dates, and production shops that have no area in the sheet. Rows never marked are shaded red below. */
-  const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock'];
+  const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
   window.__wfMiss = (p, rows, sel) => {
     const ppl = (dash.data('sp_attendance_people') || {}).data || [], att = (dash.data('sp_attendance') || {}).data || [];
     const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
@@ -3562,10 +3562,10 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   const dmy = s => s ? `${+s.slice(8, 10)} ${MN[+s.slice(5, 7) - 1]}` : '—';
   const SHOP = { 'FRONT FORK R/L SET': 'Cushion', 'CUSHION ASSY REAR': 'Cushion', 'DAMPER REAR CUSHION': 'Cushion', 'SPRINGS': 'Cushion', 'PIPE FRONT FORK': 'Cushion',
     'CAP ASSY NOISE SUPPR': 'Ignition Coil', 'PISTON KIT': 'Piston', 'CYLINDER KIT': 'CIF Machining', 'CLUTCH ASSY': 'Clutch', 'CLUTCH HOUSING ASSY': 'Clutch',
-    'PRESSURE PLATE': 'Clutch', 'MUDGUARD FR/RR FENDER': 'Polymer', 'CASE METER': 'Polymer', 'CARBURETOR': 'Carburetor', 'FUEL COCK ASSY': 'Fuel Cock' };
+    'PRESSURE PLATE': 'Clutch', 'MUDGUARD FR/RR FENDER': 'Polymer', 'CASE METER': 'Polymer', 'CARBURETOR': 'Carburetor', 'FUEL COCK ASSY': 'Carburetor' };
   /* 5 Nov 18:29 (Umair): parts in the sheet's mixed 'OTHERS' group get their shop from the AAL code's product segment (digits 5-7,
      the same family digits as the OEM codes: 9110113004 Outer Clutch CD70 -> 113 Clutch), so the Shop filter finds them too */
-  const SEG = { '102': 'Cushion', '113': 'Clutch', '213': 'Clutch', '118': 'Drum Gear', '218': 'Drum Gear', '311': 'Bridge Fork Top', '510': 'Polymer', '910': 'Ignition Coil', '410': 'Carburetor', '158': 'Fuel Cock', '320': 'Piston', '331': 'CIF Machining' };
+  const SEG = { '102': 'Cushion', '113': 'Clutch', '213': 'Clutch', '118': 'Drum Gear', '218': 'Drum Gear', '311': 'Bridge Fork Top', '510': 'Polymer', '910': 'Ignition Coil', '410': 'Carburetor', '158': 'Carburetor', '320': 'Piston', '331': 'CIF Machining' };
   const shopOf = i => (i.group !== 'OTHERS' && SHOP[i.group]) || SEG[String(i.code).slice(4, 7)] || '';
   const title = s => String(s || '').toLowerCase().replace(/(^|[\s\/(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
   let drill = null;
@@ -3661,6 +3661,13 @@ window.__MSAME = { '6510410006': '9010410012', '6520410007': '9020410016' };
    window.__shopx(rows) returns atlas_parts with these shops overridden (same array back while the data is unchanged). */
 window.__SHOPX = { '9010410012': 'Bridge Fork Top', '9020410016': 'Bridge Fork Top' };
 (() => { let c = {}; window.__shopx = a => { if (!Array.isArray(a)) return a; if (c.src === a) return c.rows; const X = window.__SHOPX; c = { src: a, rows: a.map(r => X[String(r.code)] ? { ...r, shop: X[String(r.code)] } : r) }; return c.rows; }; })();
+/* 9 Nov (Umair): Fuel Cock is not a shop. Fuel Cock Pridor (9030158000) is a level 1 part of the Carburetor shop, so every
+   dataset row tagged shop 'Fuel Cock' (parts, castings, vendor supply, stock, maintenance sheets) is shown under Carburetor. */
+window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
+(() => { const C = new Map(); window.__remap = (id, a) => { if (!Array.isArray(a) || !a.length) return a; const c = C.get(id); if (c && c.src === a) return c.rows;
+  const M = window.__SHOPMAP, fix = r => { if (!r || typeof r !== 'object') return r; let o = r; ['shop', 'dash_shop', 'area'].forEach(k => { if (typeof r[k] === 'string' && M[r[k]]) { if (o === r) o = { ...r }; o[k] = M[r[k]]; } });
+    if (Array.isArray(r.shops) && r.shops.some(s => M[s])) { if (o === r) o = { ...r }; o.shops = [...new Set(r.shops.map(s => M[s] || s))]; } return o; };
+  const rows = a.some(r => r && (M[r.shop] || M[r.dash_shop] || M[r.area] || (Array.isArray(r.shops) && r.shops.some(s => M[s])))) ? a.map(fix) : a; C.set(id, { src: a, rows }); return rows; }; })();
 
 </script>
 <script>

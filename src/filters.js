@@ -1,7 +1,7 @@
 /* 8 Nov 2026: the filters & tabs script, moved out of dashboard.html as-is to keep the page under the artifact size limit. It must stay where its <script src> tag is (after the kit script, before the drawing script). */
 /* ---------- filters & tabs ---------- */
 (() => {
-const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Fuel Cock','Cushion','Hubs','Carb Child Parts'];
+const SHOPS = ['Clutch','Ignition Coil','Drum Gear','Carburetor','Piston','CIF Machining','HPDC / Die Cast','Polymer','Bridge Fork Top','Cushion','Hubs','Carb Child Parts'];
 const MONTHS = ['2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
 const MODELS = ['CD70','CD-Dream','CG125','CG125S','Pridor','CB125F','CB150F','K4AA'];
 window.__MODELS = MODELS; window.__SHOPS = SHOPS; window.__MONTHS = MONTHS; /* window.__TODAY is set in dashboard.html (the refresh tasks edit it there) */

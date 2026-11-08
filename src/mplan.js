@@ -10,3 +10,10 @@ window.__MSAME = { '6510410006': '9010410012', '6520410007': '9020410016' };
    window.__shopx(rows) returns atlas_parts with these shops overridden (same array back while the data is unchanged). */
 window.__SHOPX = { '9010410012': 'Bridge Fork Top', '9020410016': 'Bridge Fork Top' };
 (() => { let c = {}; window.__shopx = a => { if (!Array.isArray(a)) return a; if (c.src === a) return c.rows; const X = window.__SHOPX; c = { src: a, rows: a.map(r => X[String(r.code)] ? { ...r, shop: X[String(r.code)] } : r) }; return c.rows; }; })();
+/* 9 Nov (Umair): Fuel Cock is not a shop. Fuel Cock Pridor (9030158000) is a level 1 part of the Carburetor shop, so every
+   dataset row tagged shop 'Fuel Cock' (parts, castings, vendor supply, stock, maintenance sheets) is shown under Carburetor. */
+window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
+(() => { const C = new Map(); window.__remap = (id, a) => { if (!Array.isArray(a) || !a.length) return a; const c = C.get(id); if (c && c.src === a) return c.rows;
+  const M = window.__SHOPMAP, fix = r => { if (!r || typeof r !== 'object') return r; let o = r; ['shop', 'dash_shop', 'area'].forEach(k => { if (typeof r[k] === 'string' && M[r[k]]) { if (o === r) o = { ...r }; o[k] = M[r[k]]; } });
+    if (Array.isArray(r.shops) && r.shops.some(s => M[s])) { if (o === r) o = { ...r }; o.shops = [...new Set(r.shops.map(s => M[s] || s))]; } return o; };
+  const rows = a.some(r => r && (M[r.shop] || M[r.dash_shop] || M[r.area] || (Array.isArray(r.shops) && r.shops.some(s => M[s])))) ? a.map(fix) : a; C.set(id, { src: a, rows }); return rows; }; })();

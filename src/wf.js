@@ -40,7 +40,7 @@
   };
   /* rows for the By Area & Section table that have no attendance at all: sections on the sheet's roster with nothing marked
      in the selected dates, and production shops that have no area in the sheet. Rows never marked are shaded red below. */
-  const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer', 'Fuel Cock'];
+  const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
   window.__wfMiss = (p, rows, sel) => {
     const ppl = (dash.data('sp_attendance_people') || {}).data || [], att = (dash.data('sp_attendance') || {}).data || [];
     const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);

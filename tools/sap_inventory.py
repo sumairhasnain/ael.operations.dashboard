@@ -28,7 +28,7 @@ for q in json.load(open(DATA + 'atlas_child_stock.json')): atlas.setdefault(str(
 for q in json.load(open(DATA + 'atlas_bom.json')): atlas.setdefault(str(q['code']), q['shop'])
 PFX = [('CLU', 'Clutch'), ('DGS', 'Drum Gear'), ('IGN', 'Ignition Coil'), ('POL', 'Polymer'), ('PST', 'Piston'), ('HPDC', 'HPDC / Die Cast'),
        ('DIECAST', 'HPDC / Die Cast'), ('HP-', 'Hubs'), ('BUF', 'Hubs'), ('CIF', 'CIF Machining'), ('CIM', 'CIF Machining'), ('KEIHIN', 'Carburetor'),
-       ('ALF', 'Bridge Fork Top'), ('ALM', 'Bridge Fork Top'), ('CUS', 'Cushion'), ('FC-', 'Fuel Cock')]
+       ('ALF', 'Bridge Fork Top'), ('ALM', 'Bridge Fork Top'), ('CUS', 'Cushion'), ('FC-', 'Carburetor')]
 STAGE = [('FIN', 'Finished'), ('-FI', 'Finished'), ('INH', 'In-house WIP'), ('-IN', 'In-house WIP'), ('VEN', 'Vendor parts'), ('-VE', 'Vendor parts'),
          ('IMP', 'Imported parts'), ('-IM', 'Imported parts'), ('OSP', 'Outsourced'), ('GEN', 'Shop spares & consumables'), ('-GE', 'Shop spares & consumables'), ('-G', 'Shop spares & consumables')]
 RAW = {'RM.AEL', 'CR.RM', 'V16', 'C02', 'L10'}

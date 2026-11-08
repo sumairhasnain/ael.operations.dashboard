@@ -12,10 +12,10 @@
   const dmy = s => s ? `${+s.slice(8, 10)} ${MN[+s.slice(5, 7) - 1]}` : '—';
   const SHOP = { 'FRONT FORK R/L SET': 'Cushion', 'CUSHION ASSY REAR': 'Cushion', 'DAMPER REAR CUSHION': 'Cushion', 'SPRINGS': 'Cushion', 'PIPE FRONT FORK': 'Cushion',
     'CAP ASSY NOISE SUPPR': 'Ignition Coil', 'PISTON KIT': 'Piston', 'CYLINDER KIT': 'CIF Machining', 'CLUTCH ASSY': 'Clutch', 'CLUTCH HOUSING ASSY': 'Clutch',
-    'PRESSURE PLATE': 'Clutch', 'MUDGUARD FR/RR FENDER': 'Polymer', 'CASE METER': 'Polymer', 'CARBURETOR': 'Carburetor', 'FUEL COCK ASSY': 'Fuel Cock' };
+    'PRESSURE PLATE': 'Clutch', 'MUDGUARD FR/RR FENDER': 'Polymer', 'CASE METER': 'Polymer', 'CARBURETOR': 'Carburetor', 'FUEL COCK ASSY': 'Carburetor' };
   /* 5 Nov 18:29 (Umair): parts in the sheet's mixed 'OTHERS' group get their shop from the AAL code's product segment (digits 5-7,
      the same family digits as the OEM codes: 9110113004 Outer Clutch CD70 -> 113 Clutch), so the Shop filter finds them too */
-  const SEG = { '102': 'Cushion', '113': 'Clutch', '213': 'Clutch', '118': 'Drum Gear', '218': 'Drum Gear', '311': 'Bridge Fork Top', '510': 'Polymer', '910': 'Ignition Coil', '410': 'Carburetor', '158': 'Fuel Cock', '320': 'Piston', '331': 'CIF Machining' };
+  const SEG = { '102': 'Cushion', '113': 'Clutch', '213': 'Clutch', '118': 'Drum Gear', '218': 'Drum Gear', '311': 'Bridge Fork Top', '510': 'Polymer', '910': 'Ignition Coil', '410': 'Carburetor', '158': 'Carburetor', '320': 'Piston', '331': 'CIF Machining' };
   const shopOf = i => (i.group !== 'OTHERS' && SHOP[i.group]) || SEG[String(i.code).slice(4, 7)] || '';
   const title = s => String(s || '').toLowerCase().replace(/(^|[\s\/(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
   let drill = null;
