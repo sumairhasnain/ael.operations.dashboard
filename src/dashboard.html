@@ -806,7 +806,9 @@ const CCP = { '3010410030': ['Screw Adjust CD70', '9010410007'], '3010410031': [
 
 const PLT = { '3010410032': '9010410008', '3090410005': '9090410001' }; /* 9 Nov (Umair): ignition coil bought-in parts (Millenium Engineering) get a vendor panel */
 const IGC = { '6010910025': 'Ignition Coil Cord CD70', '6010910011': 'Noise Suppressor Assy CD70', '6020910013': 'Noise Suppressor Assy CG125', '6020910022': 'Bobbin Secondary Sub-Assy CG125', '6020910016': 'Ferrite Core CG125', '6030910026': 'Ignition Coil Cord Pridor', '6030910027': 'Cap Noise Suppressor Pridor', '6030910018': 'Grommet 34 Pridor', '6030910020': 'Tube Rubber 450mm Pridor', '6030910021': 'Terminal Tab (IGC GK4) Pridor', '6090910017': 'Clamp Cord C1,3 (CD70/Pridor)', '6090910024': 'Bobbin Primary Sub-Assy C1,3', '6090910023': 'Bobbin Secondary Sub-Assy C1,3', '9190910004': 'Cap Assy Noise Suppressor CD70 (SPD)' };
-Object.entries(IGC).forEach(([c, lab]) => { VPAN['igc' + c] = [lab + ' · Millenium', c, null]; VHOV[c] = ['igc' + c]; });
+Object.entries(IGC).forEach(([c, lab]) => { VPAN['igc' + c] = [lab + ' · Millenium', c, null]; VHOV[c] = ['igc' + c]; }); /* 9 Nov (Umair): CG125 hub cast-in inserts (Deen Co.) */
+const HUBV = { '6090102001': 'Hub Drum Brake Rear CG125', '6020102002': 'Bush Rear Hub CG125', '6020100002': 'Hub Drum Brake Front CG125' };
+Object.entries(HUBV).forEach(([c, lab]) => { VPAN['hub' + c] = [lab + ' · Deen Co.', c, null]; VHOV[c] = ['hub' + c]; });
 window.__CCP = CCP; window.__PLT = PLT; 
 Object.entries(CCP).forEach(([vc, [lab, ...ih]]) => { const k = 'ccp' + vc;
 if (PLT[vc]) { VPAN[k] = [lab + ' · Alsons (net of in-house plated)', vc, null]; VPAN[k + 'p'] = [lab + ' · machining → plating (Adamjee)', PLT[vc], { own: ih[0] }]; [vc, PLT[vc], ...ih].forEach(c => { VHOV[c] = [k + 'p', k]; }); }
