@@ -26,9 +26,8 @@
   }
   function render(P) {
     ensure(); const card = document.getElementById('c-p-transit'); if (!card) return;
-    /* 8 Nov (Umair): with Shop = All but a part picked in the Part filter, the card follows that part's shop */
-    const ap = window.dash && dash.data('atlas_parts'), pfShop = P.pf && ap && ap.status === 'ok' ? ((ap.data || []).find(r => String(r.code) === String(P.pf)) || {}).shop : null;
-    const shops = SHOW[P.shop && P.shop !== 'All' ? P.shop : pfShop]; if (!shops) { card.hidden = true; return; }
+    /* 8 Nov (Umair): the card also shows for a shop whose parts use these castings/pressings (e.g. Carburetor - carb bodies from HPDC, Hubs, Drum Gear, Clutch - drive plate casting), listing just those parts. Own shop from atlas_parts, parent shops from atlas_bom. */
+    let shops = SHOW[P.shop]; const par = P.shop && P.shop !== 'All', base = shops || []; if (!par) { card.hidden = true; return; }
     card.hidden = false; const el = document.getElementById('tr-chart'), sub = document.getElementById('tr-sub');
     const d = window.dash && dash.data('sap_transit');
     if (!d || d.status !== 'ok') { sub.textContent = ''; if (d && d.status === 'error') empty(el, '● Failed to load'); else el.replaceChildren(); return; }
@@ -36,7 +35,12 @@
     if (typeof M === 'string') { try { M = JSON.parse(M); } catch (e) { M = {}; } }   // the dashboard runtime hands nested objects over as JSON text
     const m = M[P.month] ? P.month : Object.keys(M).sort().pop();
     if (!m) { sub.textContent = ''; empty(el, 'No SAP MB51 movements loaded yet'); return; }
-    const mo = M[m]; const items = (mo.items || []).filter(i => shops.includes(i.shop) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
+    const mo = M[m]; let rel = null;
+    if (par) { const ap = dash.data('atlas_parts'), bm = dash.data('atlas_bom'), own = new Map(ap && ap.status === 'ok' ? (ap.data || []).map(r => [String(r.code), r.shop]) : []); rel = new Map();
+      (mo.items || []).forEach(i => rel.set(String(i.code), new Set([own.get(String(i.code))])));
+      if (bm && bm.status === 'ok') (bm.data || []).forEach(b => { const st = rel.get(String(b.code)); if (st) String(b.fg || '').split(';').forEach(t => { const f = t.split(':')[0]; if (f) st.add(own.get(f)); }); }); }
+    const items = (mo.items || []).filter(i => (base.includes(i.shop) || rel.get(String(i.code)).has(P.shop)) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
+    if (!items.length && !base.length) { card.hidden = true; return; } shops = [...new Set([...base, ...items.map(i => i.shop)])];
     const tot = d3.sum(items, i => i.in_transit), red = items.filter(i => i.flag === 'red').length;
     const wd = shops.map(s => (mo.working_days || {})[s] || 0).reduce((a, b) => Math.max(a, b), 0);
     /* 4 Nov 22:07 (Umair, comment): no explanatory sentence and no month/date (22:10) - just the shop, the colour key and the total. The definition stays in the tooltip. */
