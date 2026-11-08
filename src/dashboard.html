@@ -1051,7 +1051,7 @@ const mk = qq => { const L = partAgg(qq, p.start, p.asof).filter(r => r.pp || r.
 const dim = r => (p.sf && r.shop !== p.shop && !(r.shops || []).includes(p.shop)) || (p.mf && !String(r.models || '').split(/[\/,]\s*/).map(x => x.trim()).includes(p.model));
 const cc = v => v == null ? null : v < 80 ? C.bad : v < 95 ? C.warn : null;
 const cols = [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: (v, r) => (r.shops && r.shops.length > 1) ? r.shops.join(' / ') : v, click: v => dash.setParams(p.sf && p.shop === v ? { shop: 'All', sf: 0, pf: 0 } : { shop: v, sf: 1, pf: 0 }), bold: v => p.sf && p.shop === v }, { k: 'models' }, { k: 'ss', n: 1 }, { k: 'stk', n: 1, color: (v, r) => v != null && r.ss && v < r.ss ? C.bad : null }, { k: 'pt', n: 1 }, { k: 'pp', n: 1 }, { k: 'pa', n: 1 }, { k: 'pc', n: 1, fmt: pct, color: cc }, { k: 'dp', n: 1 }, { k: 'da', n: 1 }, { k: 'dc', n: 1, fmt: pct, color: cc }];
-const FGX = new Set(['6510410005']) /* 8 Nov (Umair): Screw Stop CD70 is listed with the finished goods */, fg = r => String(r.code).startsWith('90') || FGX.has(String(r.code));
+const FGX = new Set(['6510410005', '6510410006', '6520410007']) /* 8 Nov (Umair): Screw Stop CD70 is listed with the finished goods */, fg = r => String(r.code).startsWith('90') || FGX.has(String(r.code));
 const keep = r => !dim(r); 
 table(tbl, rows.filter(r => fg(r) && keep(r)), cols, { q: q('#q-parts'), sort: 'ord', dir: 1 });
 /* 8 Nov (Umair): Other Parts gets a Level column (atlas_bom level) and the in-house made level parts Atlas has no line for (MB51 101 via sap_transit inhouse, e.g. 6530010066 clutch center CG machined) */
