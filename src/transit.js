@@ -36,7 +36,7 @@
     const m = M[P.month] ? P.month : Object.keys(M).sort().pop();
     if (!m) { sub.textContent = ''; empty(el, 'No SAP MB51 movements loaded yet'); return; }
     const mo = M[m]; let rel = null;
-    if (par) { const ap = dash.data('atlas_parts'), bm = dash.data('atlas_bom'), own = new Map(ap && ap.status === 'ok' ? (ap.data || []).map(r => [String(r.code), r.shop]) : []); rel = new Map();
+    if (par) { const ap = dash.data('atlas_parts'), bm = dash.data('atlas_bom'), own = new Map(ap && ap.status === 'ok' ? (window.__shopx ? window.__shopx(ap.data || []) : (ap.data || [])).map(r => [String(r.code), r.shop]) : []); rel = new Map();
       (mo.items || []).forEach(i => rel.set(String(i.code), new Set([own.get(String(i.code))])));
       if (bm && bm.status === 'ok') (bm.data || []).forEach(b => { const st = rel.get(String(b.code)); if (st) String(b.fg || '').split(';').forEach(t => { const f = t.split(':')[0]; if (f) st.add(own.get(f)); }); }); }
     const items = (mo.items || []).filter(i => (base.includes(i.shop) || rel.get(String(i.code)).has(P.shop)) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);

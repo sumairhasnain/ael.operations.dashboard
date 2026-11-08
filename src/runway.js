@@ -172,10 +172,11 @@
     const L = Object.entries(ALT), BM = dash.data('atlas_bom'), PD = dash.data('atlas_parts');
     if (BM && BM.status === 'ok') { const have = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : '')), one = new Map(), lvR = (BM.data || []).filter(b => b.level);
       lvR.forEach(b => { if (!one.has(String(b.code))) one.set(String(b.code), b); });
-      one.forEach((b, c) => { if (have.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
+      const fgA = new Set(((PD && PD.data) || []).map(r => String(r.code)).filter(x => x.startsWith('90'))); /* 8 Nov: finished-goods codes already sit in the Finished Goods table */
+      one.forEach((b, c) => { if (have.has(c) || fgA.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
         const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
         const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
-        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
+        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
     const bLv = c => { const b = ((BM && BM.data) || []).find(x => String(x.code) === c && x.level); return b ? +b.level : 0; };
     L.forEach(([code, a]) => {
       if (!a.lv && bLv(code)) { a = { ...a, lv: 'L' + bLv(code) }; } /* ALT rows take their BOM level when set (6010213013 L3, 8 Nov) */

@@ -719,7 +719,7 @@ sPart.addEventListener('blur', () => setTimeout(() => { pList.hidden = true; sPa
 pX.addEventListener('click', () => pickPart(0));
 
 let _pl = {};
-const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? A.data : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
+const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? (window.__shopx ? window.__shopx(A.data) : A.data) : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
 if (_pl.a === a && _pl.k === k && _pl.b === b) return _pl.rows;
 const mm = new Map(a.map(r => [String(r.code), String(r.models || r.model || '').split('/').filter(Boolean)])), shs = r => { const v = r.shops; if (Array.isArray(v)) return v; try { const j = JSON.parse(v); if (Array.isArray(j)) return j; } catch (e) {} return v ? String(v).split('/').map(x => x.trim()).filter(Boolean) : []; };
 const bm = new Map(); b.forEach(x => { const set = bm.get(String(x.code)) || new Set(); String(x.fg || '').split(/[;,]/).forEach(f => (mm.get(f.split(':')[0].trim()) || []).forEach(m => set.add(m))); bm.set(String(x.code), set); });
@@ -781,7 +781,7 @@ const { C, nf, f1, kf, tip, empty, status, compColor, legend, bullets, pvaH, vba
 
 const _lst = v => { if (Array.isArray(v) || v == null) return v; const t = String(v).trim(); if (t[0] === '[') { try { const j = JSON.parse(t); if (Array.isArray(j)) return j; } catch (e) {} } return t ? t.split(/\s*[\/,]\s*/).filter(Boolean) : undefined; };
 const _dn = new Map();
-const D = id => { const src = dash.data(id).data || []; if (id === 'atlas_parts_daily' && window.__MPLAN) { /* 8 Nov: frozen plans (src/mplan.js) for codes Atlas has no November plan for; once Atlas has a plan for a code, Atlas wins (Umair) */ const c = _dn.get(id); if (c && c.src === src) return c.rows; const A = new Set(src.filter(r => +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => r.code)), SM = Object.fromEntries(Object.entries(window.__MSAME || {}).map(([k, pc]) => [k, Object.fromEntries(src.filter(r => r.code === pc && +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => [r.date, +r.prod_plan]))])), M = Object.fromEntries(Object.entries({ ...window.__MPLAN, ...SM }).filter(([c]) => !A.has(c))), rows = src.map(r => { const v = (M[r.code] || {})[r.date]; return v != null ? { ...r, prod_plan: v } : M[r.code] && r.date >= '2026-11-01' && r.date <= '2026-11-30' ? { ...r, prod_plan: 0 } : r; }), have = new Set(src.map(r => r.code + '|' + r.date));
+const D = id => { const src = dash.data(id).data || []; if (id === 'atlas_parts' && window.__shopx) return window.__shopx(src); if (id === 'atlas_parts_daily' && window.__MPLAN) { /* 8 Nov: frozen plans (src/mplan.js) for codes Atlas has no November plan for; once Atlas has a plan for a code, Atlas wins (Umair) */ const c = _dn.get(id); if (c && c.src === src) return c.rows; const A = new Set(src.filter(r => +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => r.code)), SM = Object.fromEntries(Object.entries(window.__MSAME || {}).map(([k, pc]) => [k, Object.fromEntries(src.filter(r => r.code === pc && +r.prod_plan && r.date >= '2026-11-01' && r.date <= '2026-11-30').map(r => [r.date, +r.prod_plan]))])), M = Object.fromEntries(Object.entries({ ...window.__MPLAN, ...SM }).filter(([c]) => !A.has(c))), rows = src.map(r => { const v = (M[r.code] || {})[r.date]; return v != null ? { ...r, prod_plan: v } : M[r.code] && r.date >= '2026-11-01' && r.date <= '2026-11-30' ? { ...r, prod_plan: 0 } : r; }), have = new Set(src.map(r => r.code + '|' + r.date));
 Object.entries(M).forEach(([c, dd]) => Object.entries(dd).forEach(([d, v]) => { if (!have.has(c + '|' + d)) rows.push({ date: d, code: c, prod_plan: v, prod_actual: 0 }); })); _dn.set(id, { src, rows }); return rows; } if (id !== 'atlas_issues') return src; const c = _dn.get(id); if (c && c.src === src) return c.rows;
 const rows = src.map(r => r.shops == null || Array.isArray(r.shops) ? r : { ...r, shops: _lst(r.shops) }); _dn.set(id, { src, rows }); return rows; };
 const q = s => document.querySelector(s); const ch = id => q(`#${id} .chart`);
@@ -3153,10 +3153,11 @@ window.addEventListener('resize', () => window.__draw());
     const L = Object.entries(ALT), BM = dash.data('atlas_bom'), PD = dash.data('atlas_parts');
     if (BM && BM.status === 'ok') { const have = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : '')), one = new Map(), lvR = (BM.data || []).filter(b => b.level);
       lvR.forEach(b => { if (!one.has(String(b.code))) one.set(String(b.code), b); });
-      one.forEach((b, c) => { if (have.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
+      const fgA = new Set(((PD && PD.data) || []).map(r => String(r.code)).filter(x => x.startsWith('90'))); /* 8 Nov: finished-goods codes already sit in the Finished Goods table */
+      one.forEach((b, c) => { if (have.has(c) || fgA.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
         const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
         const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
-        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
+        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
     const bLv = c => { const b = ((BM && BM.data) || []).find(x => String(x.code) === c && x.level); return b ? +b.level : 0; };
     L.forEach(([code, a]) => {
       if (!a.lv && bLv(code)) { a = { ...a, lv: 'L' + bLv(code) }; } /* ALT rows take their BOM level when set (6010213013 L3, 8 Nov) */
@@ -3508,7 +3509,7 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     const m = M[P.month] ? P.month : Object.keys(M).sort().pop();
     if (!m) { sub.textContent = ''; empty(el, 'No SAP MB51 movements loaded yet'); return; }
     const mo = M[m]; let rel = null;
-    if (par) { const ap = dash.data('atlas_parts'), bm = dash.data('atlas_bom'), own = new Map(ap && ap.status === 'ok' ? (ap.data || []).map(r => [String(r.code), r.shop]) : []); rel = new Map();
+    if (par) { const ap = dash.data('atlas_parts'), bm = dash.data('atlas_bom'), own = new Map(ap && ap.status === 'ok' ? (window.__shopx ? window.__shopx(ap.data || []) : (ap.data || [])).map(r => [String(r.code), r.shop]) : []); rel = new Map();
       (mo.items || []).forEach(i => rel.set(String(i.code), new Set([own.get(String(i.code))])));
       if (bm && bm.status === 'ok') (bm.data || []).forEach(b => { const st = rel.get(String(b.code)); if (st) String(b.fg || '').split(';').forEach(t => { const f = t.split(':')[0]; if (f) st.add(own.get(f)); }); }); }
     const items = (mo.items || []).filter(i => (base.includes(i.shop) || rel.get(String(i.code)).has(P.shop)) && i.in_transit > 0).sort((a, b) => b.in_transit - a.in_transit);
@@ -3650,6 +3651,10 @@ window.__MPLAN = {"6510213002":{"2026-11-02":1000,"2026-11-03":1000,"2026-11-04"
 /* 8 Nov (Umair): FCB machined bodies take the same daily plan as their surface-treated FCB, read live from Atlas each load
    (so it follows any Atlas change to the FCB plan). Atlas wins once it carries its own plan for the machined code. */
 window.__MSAME = { '6510410006': '9010410012', '6520410007': '9020410016' };
+/* 8 Nov (Umair): the surface-treated FCBs belong to Bridge Fork Top, where surface treatment takes place, not Carb Child Parts.
+   window.__shopx(rows) returns atlas_parts with these shops overridden (same array back while the data is unchanged). */
+window.__SHOPX = { '9010410012': 'Bridge Fork Top', '9020410016': 'Bridge Fork Top' };
+(() => { let c = {}; window.__shopx = a => { if (!Array.isArray(a)) return a; if (c.src === a) return c.rows; const X = window.__SHOPX; c = { src: a, rows: a.map(r => X[String(r.code)] ? { ...r, shop: X[String(r.code)] } : r) }; return c.rows; }; })();
 
 </script>
 <script>

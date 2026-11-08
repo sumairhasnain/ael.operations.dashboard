@@ -36,7 +36,7 @@ sPart.addEventListener('blur', () => setTimeout(() => { pList.hidden = true; sPa
 pX.addEventListener('click', () => pickPart(0));
 
 let _pl = {};
-const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? A.data : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
+const partList = () => { const A = dash.data('atlas_parts'), K = dash.data('atlas_child_stock'), B = dash.data('atlas_bom'); const a = A.status === 'ok' ? (window.__shopx ? window.__shopx(A.data) : A.data) : [], k = K.status === 'ok' ? K.data : [], b = B.status === 'ok' ? B.data : [];
 if (_pl.a === a && _pl.k === k && _pl.b === b) return _pl.rows;
 const mm = new Map(a.map(r => [String(r.code), String(r.models || r.model || '').split('/').filter(Boolean)])), shs = r => { const v = r.shops; if (Array.isArray(v)) return v; try { const j = JSON.parse(v); if (Array.isArray(j)) return j; } catch (e) {} return v ? String(v).split('/').map(x => x.trim()).filter(Boolean) : []; };
 const bm = new Map(); b.forEach(x => { const set = bm.get(String(x.code)) || new Set(); String(x.fg || '').split(/[;,]/).forEach(f => (mm.get(f.split(':')[0].trim()) || []).forEach(m => set.add(m))); bm.set(String(x.code), set); });

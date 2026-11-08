@@ -6,3 +6,7 @@ window.__MPLAN = {"6510213002":{"2026-11-02":1000,"2026-11-03":1000,"2026-11-04"
 /* 8 Nov (Umair): FCB machined bodies take the same daily plan as their surface-treated FCB, read live from Atlas each load
    (so it follows any Atlas change to the FCB plan). Atlas wins once it carries its own plan for the machined code. */
 window.__MSAME = { '6510410006': '9010410012', '6520410007': '9020410016' };
+/* 8 Nov (Umair): the surface-treated FCBs belong to Bridge Fork Top, where surface treatment takes place, not Carb Child Parts.
+   window.__shopx(rows) returns atlas_parts with these shops overridden (same array back while the data is unchanged). */
+window.__SHOPX = { '9010410012': 'Bridge Fork Top', '9020410016': 'Bridge Fork Top' };
+(() => { let c = {}; window.__shopx = a => { if (!Array.isArray(a)) return a; if (c.src === a) return c.rows; const X = window.__SHOPX; c = { src: a, rows: a.map(r => X[String(r.code)] ? { ...r, shop: X[String(r.code)] } : r) }; return c.rows; }; })();
