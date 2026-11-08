@@ -15,7 +15,7 @@ tpl = (ROOT / 'tools' / 'app.template.html').read_text(encoding='utf-8')
 PATCHES = [
     # (description, regex, replacement)
     ('today from the clock', r"window\.__TODAY = '\d{4}-\d{2}-\d{2}'", "window.__TODAY = window.__PORTAL.today"),
-    ('default month/asof', r"month: '\d{4}-\d{2}', asof: '\d{4}-\d{2}-\d{2}'", "month: window.__TODAY.slice(0, 7), asof: window.__TODAY"),
+    ('default month/asof', r"month: '\d{4}-\d{2}', asof: (?:'\d{4}-\d{2}-\d{2}'|window\.__ASOF0\.asof)", "month: window.__TODAY.slice(0, 7), asof: window.__TODAY"),
     ('fallback month', r"const month = p\.month \|\| '\d{4}-\d{2}'", "const month = p.month || window.__TODAY.slice(0, 7)"),
     ('overview bullets do not require cost/savings', r"'smp_pm', 'smp_cost', 'smp_savings'\)\) \{", "'smp_pm')) {"),
     ('tag cost bullet', r"(note: 'Budget vs actual, lower is better · sample') \}", r"\1, lock: 'smp_cost' }"),
