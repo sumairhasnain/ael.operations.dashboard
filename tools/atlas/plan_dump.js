@@ -11,7 +11,12 @@ const L = [];
 Object.entries(pl.fg || {}).forEach(([c, o]) => L.push('fg|' + strip(c) + '|' + (o.days || []).map(x => Math.round(+x || 0)).join(',')));
 Object.entries(pl.ih || {}).forEach(([c, o]) => L.push('ih|' + strip(c) + '|' + (o.days || []).map(x => Math.round(+x || 0)).join(',')));
 Object.entries(pl.salesPlan || {}).forEach(([c, o]) => L.push('sp|' + strip(c) + '|' + (o.days || []).map(x => Math.round(+x || 0)).join(',')));
-const SC = []; months.forEach(mm => ((S.schedule[mm] || {}).rows || []).forEach(r => { const q = Math.round(+r.qty || 0); if (q) SC.push([mm, strip(r.vendor), strip(r.part), q].join('|')); }));
+/* 8 Nov (Umair): OSP (30-series) parts, e.g. Alsons carburetor child parts, keep their schedule in Atlas's separate OSP Schedule
+   store (S.ospSchedule). November 2026 has them only there, so the dump adds OSP-store rows for parts the main schedule lacks. */
+const isOsp = c => { c = strip(c); return !!((S.ospAhlCodes && S.ospAhlCodes[c]) || (S.ospVendors && S.ospVendors[c])); };
+const SC = []; months.forEach(mm => { const add = r => { const q = Math.round(+r.qty || 0); if (q) SC.push([mm, strip(r.vendor), strip(r.part), q].join('|')); };
+  const reg = ((S.schedule[mm] || {}).rows || []), has = new Set(reg.map(r => strip(r.part))); reg.forEach(add);
+  (((S.ospSchedule || {})[mm] || {}).rows || []).filter(r => isOsp(r.part) && !has.has(strip(r.part))).forEach(add); });
 const W = months.map(mm => { const [y, mo] = mm.split('-').map(Number); const rec = S.schedule[mm] || {}; const dim = new Date(y, mo, 0).getDate(); const lrd = Math.min(rec.lastRcvDay || dim, dim);
   const d = []; for (let i = 1; i <= lrd; i++) if (typeof isWorking !== 'function' || isWorking(y, mo, i, mm)) d.push(i); return mm + '|' + d.join(','); });
 const P = (S.parts || []).map(p => [strip(p.code), p.shop || '', p.cls || '', Math.round(+p.safety || 0), clean(p.desc), clean(p.cat)].join('|'));

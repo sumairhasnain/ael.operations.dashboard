@@ -17,7 +17,8 @@ for (const m of months) {
     const r = Math.round(+x.Receipt || 0), s = Math.round(+x.Schedule || 0); if (r || s) R.push([x.Date, v, strip(x.Material), r, s].join('|')); });
   if (m === cur) { stockItems = F.feeds.stock.items || []; stockAsOf = String((F.feeds.stock.info || {}).asOf || '');
     /* 30 Oct: prefer the stock from Atlas's BAPI refresh (bapi_refresh.js). */ if (window.__BAPI_STOCK && window.__BAPI_STOCK.length) { stockItems = window.__BAPI_STOCK; stockAsOf = cur === new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 7) ? new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10).split('-').join('') : stockAsOf; } }
-  ((S.schedule[m] || {}).rows || []).forEach(r => { const q = Math.round(+r.qty || 0); if (q) SC.push([m, strip(r.vendor), strip(r.part), q].join('|')); });
+  /* 8 Nov: OSP parts (e.g. Alsons carb child parts) take their schedule from Atlas's OSP Schedule store, as Atlas does */ const isOsp = c => { c = strip(c); return !!((S.ospAhlCodes && S.ospAhlCodes[c]) || (S.ospVendors && S.ospVendors[c])); };
+  (reg => { const has = new Set(reg.map(r => strip(r.part))); return [...reg, ...(((S.ospSchedule || {})[m] || {}).rows || []).filter(r => isOsp(r.part) && !has.has(strip(r.part)))]; })((S.schedule[m] || {}).rows || []).forEach(r => { const q = Math.round(+r.qty || 0); if (q) SC.push([m, strip(r.vendor), strip(r.part), q].join('|')); });
 }
 const st = {}; stockItems.forEach(x => { st[strip(x.Material)] = x; });
 const P = S.parts.map(p => { const x = st[p.code] || {}; return [p.code, p.shop || '', p.cls || '', Math.round(+x.SafetyStock || +p.safety || 0), Math.round(+x.Qty || 0), Math.round(+x.VendorStock || 0), clean(p.desc)].join('|'); });
