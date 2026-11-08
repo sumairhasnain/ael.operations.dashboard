@@ -3495,7 +3495,9 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
   }
   function render(P) {
     ensure(); const card = document.getElementById('c-p-transit'); if (!card) return;
-    const shops = SHOW[P.shop]; if (!shops) { card.hidden = true; return; }
+    /* 8 Nov (Umair): with Shop = All but a part picked in the Part filter, the card follows that part's shop */
+    const ap = window.dash && dash.data('atlas_parts'), pfShop = P.pf && ap && ap.status === 'ok' ? ((ap.data || []).find(r => String(r.code) === String(P.pf)) || {}).shop : null;
+    const shops = SHOW[P.shop && P.shop !== 'All' ? P.shop : pfShop]; if (!shops) { card.hidden = true; return; }
     card.hidden = false; const el = document.getElementById('tr-chart'), sub = document.getElementById('tr-sub');
     const d = window.dash && dash.data('sap_transit');
     if (!d || d.status !== 'ok') { sub.textContent = ''; if (d && d.status === 'error') empty(el, '● Failed to load'); else el.replaceChildren(); return; }
