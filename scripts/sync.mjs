@@ -20,7 +20,9 @@ for (const f of files) {
   try { data = JSON.parse(await readFile(`data/${f}`, 'utf8')); }
   catch (e) { console.error(`✗ ${name}: not valid JSON (${e.message})`); failed++; continue; }
   const row = { name, tabs: access[name] || access._default || ['overview'], data, updated_at: new Date().toISOString() };
-  const res = await fetch(`${URL_}/rest/v1/datasets?on_conflict=name`, { method: 'POST', headers, body: JSON.stringify(row) });
+  /* 8 Nov: the largest file (atlas_vendor_supply, ~6 MB) can hit Supabase's statement timeout; try up to 3 times */
+  let res;
+  for (let t = 1; t <= 3; t++) { res = await fetch(`${URL_}/rest/v1/datasets?on_conflict=name`, { method: 'POST', headers, body: JSON.stringify(row) }); if (res.ok || res.status < 500 || t === 3) break; console.log(`… ${name}: ${res.status}, retrying (${t}/3)`); await new Promise(r => setTimeout(r, 5000 * t)); }
   if (res.ok) { ok++; console.log(`✓ ${name} (${Array.isArray(data) ? data.length + ' rows' : 'object'})`); }
   else { failed++; console.error(`✗ ${name}: ${res.status} ${await res.text()}`); }
 }
