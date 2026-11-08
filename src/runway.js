@@ -180,6 +180,7 @@
         if (i === 8) td.title = 'Received from vendors this month to date';
         tr.appendChild(td); });
       const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
+      if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''; tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
       if (anchor) anchor.after(tr); else tb.appendChild(tr); });
   };
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
