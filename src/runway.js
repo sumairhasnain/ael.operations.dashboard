@@ -147,7 +147,7 @@
   document.head.appendChild(css);
   const d0 = window.__draw; if (!d0) return;
   window.__draw = (...a) => { const pg = document.getElementById('production'); let s = 'All'; try { s = window.__P().shop; } catch (e) {}
-    const on = !!s && s !== 'All'; if (pg) pg.classList.toggle('shf', on);
+    let pf = 0; try { pf = window.__P().pf; } catch (e) {} const on = (!!s && s !== 'All') || !!pf; /* 8 Nov (Umair): also when a part is picked */ if (pg) pg.classList.toggle('shf', on);
     /* the shop / last-day KPI card sits at the bottom left of By Shop while a shop is picked; back in Daily Production otherwise */
     const kw = document.querySelector('#c-p-daily .kwrap, #c-p-shop > .kwrap'), sh = document.getElementById('c-p-shop'), hd = document.querySelector('#c-p-daily .chd');
     if (kw && sh && hd) { if (on && kw.parentElement !== sh) sh.appendChild(kw); else if (!on && kw.parentElement !== hd) hd.appendChild(kw); }

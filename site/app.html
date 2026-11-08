@@ -802,7 +802,7 @@ let _sr = {};
 const SR = p => { const src = D('atlas_parts_daily'), dims = DIMS();
 if (_sr.src === src && _sr.dims === dims && _sr.model === p.model) return _sr.rows;
 const rows = [];
-src.forEach(r => { const dm = dims.get(r.code); if (!dm || !inModel(dm, p) || dm.type === 'Component') return; 
+src.forEach(r => { const dm = dims.get(r.code); if (!dm || !inModel(dm, p)) return; if (dm.type === 'Component') { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'Component', plan: r.prod_plan || 0, actual: r.prod_actual }); return; } /* 8 Nov: Component rows only for the Production tab when such a part is picked */ 
 if (dm.type === 'Finished') { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'Production', plan: r.prod_plan || 0, actual: r.prod_actual });
 if (r.disp_plan || r.disp_actual) rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'Dispatch', plan: r.disp_plan || 0, actual: r.disp_actual }); }
 else { rows.push({ date: r.date, shop: dm.shop, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual }); (dm.shops || []).filter(s => s !== dm.shop).forEach(s => rows.push({ date: r.date, shop: s, code: r.code, stream: 'In-house', plan: r.prod_plan || 0, actual: r.prod_actual, sec: 1 })); } });
@@ -993,7 +993,7 @@ draw._shopPva(ch('c-ov-shop'), 'Production', p);
 const sc = ch('c-ov-score');
 if (!status(sc, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_breakdowns', 'atlas_shop_parts')) {
 const rng = r => r.date >= p.start && r.date <= p.actEnd;
-const prod = SR(p).filter(r => r.stream !== 'Dispatch' && r.date >= p.start && r.date <= p.asof);
+const prod = SR(p).filter(r => r.stream !== 'Dispatch' && r.stream !== 'Component' && r.date >= p.start && r.date <= p.asof);
 const shops = window.__SHOPS.filter(s => p.shop === 'All' || s === p.shop);
 const cols = ['Production %', 'OEE %', 'Yield %', 'Efficiency %', 'Downtime h', 'Below safety'];
 const val = (s, c) => {
@@ -1030,9 +1030,9 @@ const d = document.createElement('div'); d.className = 'issue'; if (r.priority !
 },
 _shopPva(el, stream, p) {
 if (sA(el)) return;
-const pq = p.sf && !p.one ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec)));
+const pq = p.sf && !p.one ? { ...p, shop: 'All' } : p; const rows = SR(p).filter(r => r.stream === stream && r.date >= p.start && r.date <= p.asof && (inShop(r, pq) || (pq.shop === 'All' && r.sec && (!pq.pf || r.code === pq.pf))));
 const pEnd = planTo(p, p.asof), pl = byKey(rows.filter(r => r.date <= pEnd), 'shop', r => r.plan), ac = byKey(rows.filter(r => r.date <= p.actEnd), 'shop', r => r.actual || 0);
-const rowsM = SR(p).filter(r => r.stream === stream && r.date >= p.month + '-01' && r.date <= window.__mEnd(p.month) && (inShop(r, pq) || (pq.shop === 'All' && r.sec))), mp = byKey(rowsM, 'shop', r => r.plan);
+const rowsM = SR(p).filter(r => r.stream === stream && r.date >= p.month + '-01' && r.date <= window.__mEnd(p.month) && (inShop(r, pq) || (pq.shop === 'All' && r.sec && (!pq.pf || r.code === pq.pf)))), mp = byKey(rowsM, 'shop', r => r.plan);
 const prj = new Map(); if (stream !== 'Dispatch' && !p.future) { const cs = d3.group(rows.filter(r => r.date <= p.actEnd || true), r => r.shop); cs.forEach((v, sh) => { const ps = projSum(p, v.map(r => r.code)); if (ps) prj.set(sh, ps); }); }
 const P0 = stream !== 'Dispatch' ? PROJ(p) : null;
 pvaH(el, [...new Set([...pl.keys(), ...mp.keys()])].map(s => ({ label: s, plan: pl.get(s) || 0, month: mp.get(s) || 0, actual: p.future ? null : (ac.get(s) || 0), proj: prj.has(s) ? Math.max(prj.get(s).v, ac.get(s) || 0) : null, projNote: prj.has(s) ? projNote(P0, prj.get(s).lim) : '' })).filter(r => r.plan > 0 || r.month > 0).sort((a, b) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = x => { const i = SEQ.indexOf(x.label); return i < 0 ? SEQ.length : i; }; return ix(a) - ix(b) || a.label.localeCompare(b.label); }), { vals: 1, rh: 38, focus: p.sf ? p.shop : null, onClick: s => dash.setParams(p.sf && p.shop === s ? { shop: 'All', sf: 0, pf: 0 } : { shop: s, sf: 1, pf: 0 }), emptyMsg: p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data' });
@@ -1113,9 +1113,12 @@ const lvN = g => +String(g.lv).slice(1), ech = g => g.lvx ? d3.sum(grp.filter(h 
 lines(ec, ds, [{ name: sh((grpOf(main) || {}).part || (dims.get(main) || {}).part || main) + (mainCodes.length > 1 ? ' (' + mainCodes.length + ' codes)' : ''), color: C.bad, w: 2.8, values: mainCodes.length > 1 ? cumG(mainCodes) : cum(main) }, ...grp.map((g, i) => ({ name: g.lv + ' ' + sh(g.name) + (g.codes.length > 1 ? ' (' + g.codes.length + ' alt.)' : '') + (g.qty > 1 ? ' ×' + g.qty : ''), color: PAL[i % PAL.length], dash: g.lv === 'L2' ? null : g.lv === 'L3' ? '5 4' : '2 3', w: g.lv === 'L2' ? 1.6 : 1.4, values: addOp(cumG(g.codes), opG(g.codes) + ech(g)), dispOff: ech(g), sub: g.codes.length > 1 ? g.codes.map(c => ({ name: (k => k && k.lv ? k.name + (k.vend ? ' · vendor ' : ' · in-house ') + c : (dims.get(c) || {}).part || c)(ks.find(z => z.code === c)), values: addOp(cum(c), opC(c)) })) : null })).filter((x, i) => sub || grp[i].lv === 'L2')],
 { xFmt: day, marker: p.asof, noDots: 1, h: 300, scaleKey: main }); } } }
 const el = ch('c-p-daily'), kd = q('#k-p-daily');
-{ const ks = q('#k-p-sel'); if (ks) { ks.replaceChildren(); const on = p.shop !== 'All' || p.model !== 'All'; ks.hidden = !on; 
+/* 8 Nov (Umair): Daily Production, By Shop and the last-day KPI follow the picked part's own stream (in-house or component parts
+   included), and a shop with no finished goods (Carb Child Parts) shows its in-house production */
+const stP = (() => { const dm = p.pf && DIMS().get(p.pf); if (dm) return dm.type === 'Finished' ? 'Production' : dm.type === 'Component' ? 'Component' : 'In-house'; if (p.shop !== 'All' && ![...DIMS().values()].some(d => d.type === 'Finished' && d.shop === p.shop)) return 'In-house'; return 'Production'; })();
+{ const ks = q('#k-p-sel'); if (ks) { ks.replaceChildren(); const on = p.shop !== 'All' || p.model !== 'All' || !!p.pf; ks.hidden = !on; 
 if (on) { const sn = document.createElement('div'); sn.className = 'sn'; sn.textContent = p.shop === 'All' ? 'All Shops' : p.shop; const mn = document.createElement('div'); mn.className = 'mn'; mn.textContent = (p.model === 'All' ? 'All Models' : p.model) + (p.pf && DIMS().get(p.pf) ? ' · ' + (DIMS().get(p.pf).part || p.pf) : ''); ks.append(sn, mn); } } }
-if (kd) { kd.replaceChildren(); if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') { const f0 = flow('Production', p), lim = p.actEnd >= window.__TODAY ? window.__TODAY : '9999';
+if (kd) { kd.replaceChildren(); if (dash.data('atlas_parts_daily').status === 'ok' && dash.data('atlas_parts').status === 'ok') { const f0 = flow(stP, p), lim = p.actEnd >= window.__TODAY ? window.__TODAY : '9999';
 const ld = f0.ds.filter(d => d <= p.actEnd && (f0.ac.get(d) || 0) > 0).slice(-1)[0], add = (cls, t) => { const e = document.createElement('div'); e.className = cls; e.textContent = t; kd.appendChild(e); return e; };
 if (ld) { const av = f0.ac.get(ld) || 0, pv = f0.pl.get(ld) || 0, pc = pv ? av / pv * 100 : null, dt = new Date(ld + 'T00:00:00');
 add('kl', 'Last day produced · ' + dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }));
@@ -1123,9 +1126,9 @@ add('kv', d3.format(',')(Math.round(av)));
 const sub = add('ks', 'vs plan ' + d3.format(',')(Math.round(pv)) + (pc == null ? '' : ' · ')); if (pc != null) { const sp = document.createElement('span'); sp.className = 'kp'; sp.textContent = Math.round(pc) + '%'; sp.style.color = pc >= 100 ? C.navy : pc >= 80 ? C.warn : C.bad; sub.appendChild(sp); }
 }
 else { add('kl', 'Last day produced'); add('kv', '—'); } } }
-if (!sA(el)) { const pF = p.full || p, f = flow('Production', pF), nx = c => d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(c + 'T00:00:00Z'), 1)), acP = c => nx(c) <= pF.actEnd ? (f.ac.get(nx(c)) || 0) : null;  if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
+if (!sA(el)) { const pF = p.full || p, f = flow(stP, pF), nx = c => d3.utcFormat('%Y-%m-%d')(d3.utcDay.offset(new Date(c + 'T00:00:00Z'), 1)), acP = c => nx(c) <= pF.actEnd ? (f.ac.get(nx(c)) || 0) : null;  if (!f.planM) empty(el, p.future ? 'No plan uploaded in Atlas for this month yet' : 'No data');
 else vbar(el, f.ds, [{ key: 'p', name: 'Plan', color: C.plan }, { key: 'a', name: 'Actual (produced)', color: c => { const pv = f.pl.get(c) || 0, av = acP(c) || 0; return !pv || av >= pv ? C.navy : av / pv >= 0.8 ? C.warn : C.bad; } }], (c, k) => k === 'p' ? f.pl.get(c) || 0 : acP(c), { xFmt: d => +d.slice(8), marker: pF.asof, vals: 1, h: 200, focus: p.day, clickKey: 'a', onClick: c => dash.setParams({ day: p.day === c ? 0 : c }) }); }
-draw._shopPva(ch('c-p-shop'), 'Production', { ...p, one: 1 }); 
+draw._shopPva(ch('c-p-shop'), stP, { ...p, one: 1 }); 
 const em = ch('c-p-model'), hubP = ['Hubs', 'CIF Machining', 'HPDC / Die Cast', 'Polymer', 'Carb Child Parts'].includes(p.shop), emH = q('#c-p-model h3'); if (emH) emH.textContent = hubP ? 'Production Plan Vs Actual - By Part' : 'Production Plan Vs Actual - By Model';
 if (!sA(em) && hubP) { const pl = new Map(), ac = new Map(), md = new Map(), kc = new Map(), pq = { ...p, pf: null };
 const allIH = p.shop === 'HPDC / Die Cast' || p.shop === 'Carb Child Parts' /* 8 Nov (Umair): every part produced in the month shows, plan or not */, fin = new Map(); partAgg(pq, p.start, p.asof).filter(r => allIH || r.type === 'Finished' || /MACH/i.test(r.part || '')).forEach(r => { const k = r.part || r.code; kc.set(k, r.code); md.set(k, r.model); fin.set(k, r.type === 'Finished' ? 0 : 1); pl.set(k, (pl.get(k) || 0) + r.pp); ac.set(k, (ac.get(k) || 0) + r.pa); });
@@ -3125,7 +3128,7 @@ window.addEventListener('resize', () => window.__draw());
   document.head.appendChild(css);
   const d0 = window.__draw; if (!d0) return;
   window.__draw = (...a) => { const pg = document.getElementById('production'); let s = 'All'; try { s = window.__P().shop; } catch (e) {}
-    const on = !!s && s !== 'All'; if (pg) pg.classList.toggle('shf', on);
+    let pf = 0; try { pf = window.__P().pf; } catch (e) {} const on = (!!s && s !== 'All') || !!pf; /* 8 Nov (Umair): also when a part is picked */ if (pg) pg.classList.toggle('shf', on);
     /* the shop / last-day KPI card sits at the bottom left of By Shop while a shop is picked; back in Daily Production otherwise */
     const kw = document.querySelector('#c-p-daily .kwrap, #c-p-shop > .kwrap'), sh = document.getElementById('c-p-shop'), hd = document.querySelector('#c-p-daily .chd');
     if (kw && sh && hd) { if (on && kw.parentElement !== sh) sh.appendChild(kw); else if (!on && kw.parentElement !== hd) hd.appendChild(kw); }
