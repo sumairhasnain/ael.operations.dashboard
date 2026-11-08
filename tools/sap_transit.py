@@ -17,7 +17,7 @@ Store locations (Umair, 4 Nov 18:28): a 315 receipt at ANY storage location (000
 as received; only quantities nobody has received anywhere are in transit. SPD / STORE below are left empty on purpose.
 half_day   = posted / working days elapsed / 2 (days with any 101 for the shop); red when in_transit > half_day, else yellow.
 """
-import json, sys, collections, datetime as dt
+import json, os, sys, collections, datetime as dt
 
 SL = {'1006': 'HPDC / Die Cast', '1022': 'CIF Casting', '1023': 'CIF Casting', '1024': 'CIF Casting', '1025': 'CIF Casting',
       '1027': 'Aluminium Foundry', '1021': 'Aluminium Foundry', '1031': 'Clutch Press'}
@@ -87,6 +87,14 @@ def build(dumps, out):
         res['months'][m] = {'items': items, 'working_days': {s: len(v) for s, v in days101.items()},
                             'to': max((r[3] for r in rows), default=None)}
         prev_315 = {c: rcv.get(c, 0) + spd.get(c, 0) for c in set(rcv) | set(spd)}
+    # 8 Nov (Umair): in-house production of BOM level parts Atlas does not report (tools/sap_inhouse.py); never blocks the transit card
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sap_inhouse
+        lc = sap_inhouse.level_codes()
+        for p in dumps:
+            for m, rws in sap_inhouse.inhouse(p, lc).items():
+                if m in res['months']: res['months'][m]['inhouse'] = rws
+    except Exception as e: print('inhouse skipped:', e)
     res['asof'] = max(v['to'] for v in res['months'].values() if v.get('to')) if res['months'] else None
     json.dump([res], open(out, 'w'), separators=(',', ':'))   # one record, as a list like the other dataset files
     last = res['months'][months[-1]] if months else {'items': []}
