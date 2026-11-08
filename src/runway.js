@@ -74,7 +74,9 @@
   const build = (code, part) => {
     const M = model(), c = String(code || ''), set = new Set([c]);
     (M.kids.get(c) || []).forEach(k => set.add(k));
-    let rows = [...set].map(k => (k === c && grpItem(M, k)) || item(M, k)).filter(Boolean);
+    /* 8 Nov (Umair): a finished part's list shows each pooled group (e.g. Drive Plate CD70: 6510213002 + 6510213011 + 6010213013) as one line, run-out on the combined stock */
+    const seenG = new Set(); ccpG();
+    let rows = [...set].map(k => { const G = k !== c && ALTG.find(g => g.codes.includes(k)); if (G) { if (seenG.has(G.name)) return null; seenG.add(G.name); return grpItem(M, k); } return (k === c && grpItem(M, k)) || item(M, k); }).filter(Boolean);
     if (!rows.length) return null;
     rows.sort((a, b) => (a.c === c ? -1 : b.c === c ? 1 : 0) || ({ bad: 0, warn: 1, ok: 2 }[a.lvl] - { bad: 0, warn: 1, ok: 2 }[b.lvl]) || a.days - b.days);
     const more = rows.length > 12 ? rows.length - 12 : 0; rows = rows.slice(0, 12);
