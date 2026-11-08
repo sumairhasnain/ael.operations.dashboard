@@ -178,7 +178,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card" id="c-p-model"><h3>Production Plan Vs Actual - By Model</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 <div class="card wide" id="c-p-daily"><div class="chd"><h3>Daily Production</h3><div class="kwrap"><div class="ksel" id="k-p-sel" hidden></div><div class="kmini" id="k-p-daily" data-source="atlas_parts_daily atlas_parts"></div></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 <div class="card wide" id="c-p-parts"><h3>Part Compliance - Finished Goods</h3><input class="q" id="q-parts" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Current Stock</th><th class="n" data-k="pt">Month plan</th><th class="n" data-k="pp">Plan MTD</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
-<div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts<button type="button" class="ptog" id="t-parts2" aria-pressed="false" title="On: Level 3, 4, 5 parts shown. Off: they are hidden"><span class="sw"></span>Sub-Levels</button></h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th data-k="lv">Level</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Stock</th><th class="n" data-k="pt">Month plan</th><th class="n" data-k="pp">Plan MTD</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card wide" id="c-p-parts2"><h3>Part Compliance - Other Parts<button type="button" class="ptog" id="t-parts2" aria-pressed="false" title="On: Level 3, 4, 5 parts shown. Off: they are hidden"><span class="sw"></span>Sub-Levels</button></h3><input class="q" id="q-parts2" placeholder="Search part or code" aria-label="Search parts"><div class="tbox" data-source="atlas_parts_daily atlas_parts atlas_part_stock"><table class="tb" id="tb-parts2"><thead><tr><th data-k="code">Code</th><th data-k="part">Part</th><th data-k="shop">Shop</th><th data-k="models">Model</th><th data-k="lv">Level</th><th class="n" data-k="ss">Safety level</th><th class="n" data-k="stk">Stock</th><th class="n" data-k="pt">IH Plan</th><th class="n" data-k="vt">VEN Plan</th><th class="n" data-k="pp">Plan MTD</th><th class="n" data-k="pa">Produced</th><th class="n" data-k="pc">Prod %</th><th class="n" data-k="dp">Disp plan</th><th class="n" data-k="da">Dispatched</th><th class="n" data-k="dc">Disp %</th></tr></thead><tbody></tbody></table></div></div>
 <div class="card" id="c-p-cum"><h3>Production &amp; Dispatch - Cumulative Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 <div class="card" id="c-p-comp"><div class="chd"><h3 id="h-p-comp" title="L2/L3 lines = opening stock (31 Oct closing) + produced to date">Finished Part vs Level 2 &amp; 3 Components</h3><div class="cr"><button type="button" class="ptog" id="t-comp" aria-pressed="false" title="On: Level 3, 4, 5 lines shown. Off: only the finished part (L1) and Level 2"><span class="sw"></span>Sub-Levels</button><select id="s-comp" class="csel" aria-label="Finished part"></select></div></div><div class="chart" data-source="atlas_parts_daily atlas_parts atlas_bom"></div></div>
 <div class="card wide" id="c-p-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
@@ -1164,8 +1164,9 @@ if (okD('sap_transit')) ((((D('sap_transit')[0] || {}).months || {})[p.month] ||
 const cst = new Map(okD('atlas_child_stock') ? D('atlas_child_stock').map(r => [String(r.code), r.stock]) : []);
 ihq.forEach((qy, c) => { const b = BL.get(c); if (!b || !b.level || h2.has(c)) return; const f = DIMS().get(String(b.fg || '').split(':')[0]) || {}, r = { code: c, part: b.part + ' (IN-HOUSE)', shop: b.shop, models: f.models || f.model || '', pp: null, pa: Math.round(qy), pc: null, dp: null, da: null, dc: null, pt: null, stk: cst.has(c) ? cst.get(c) : null, ss: +b.safety || null }; r.ord = so(r); if ((sh2 === 'All' || r.shop === sh2) && mOk(r)) r2.push(r); });
 const tg2 = q('#t-parts2'), sub2 = window.__psub === true; tg2.setAttribute('aria-pressed', String(sub2)); tg2.onclick = () => { window.__psub = !sub2; window.__draw(); };
-r2.forEach(r => { const b = BL.get(String(r.code)); r.lv = !b ? '' : b.level ? 'L' + b.level : /CAST/i.test(b.part) && !/MACH/i.test(b.part) ? 'L3' : 'L2'; });
-table(q('#tb-parts2'), sub2 ? r2 : r2.filter(r => !/^L[3-9]/.test(r.lv)), [...cols.slice(0, 4), { k: 'lv' }, ...cols.slice(4)], { q: q('#q-parts2'), sort: 'ord', dir: 1 }); 
+const vsm = new Map(); if (okD('atlas_vendor_supply')) D('atlas_vendor_supply').forEach(v => { if (v.date >= pmF.start && v.date <= pmF.end) vsm.set(String(v.code), (vsm.get(String(v.code)) || 0) + (+v.scheduled || 0)); });
+r2.forEach(r => { r.vt = vsm.get(String(r.code)) || null; const b = BL.get(String(r.code)); r.lv = !b ? '' : b.level ? 'L' + b.level : /CAST/i.test(b.part) && !/MACH/i.test(b.part) ? 'L3' : 'L2'; });
+table(q('#tb-parts2'), sub2 ? r2 : r2.filter(r => !/^L[3-9]/.test(r.lv)), [...cols.slice(0, 4), { k: 'lv' }, ...cols.slice(4, 7), { k: 'vt', n: 1 }, ...cols.slice(7)], { q: q('#q-parts2'), sort: 'ord', dir: 1 }); 
 window.__vendHover([tbl, q('#tb-parts2')]);
 }
 },
@@ -1718,8 +1719,8 @@ window.addEventListener('resize', () => window.__draw());
 .ael #c-p-parts2 .tbox::-webkit-scrollbar{height:8px;width:8px} .ael #c-p-parts2 .tbox::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #c-p-parts2 .tbox::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
 .ael #tb-parts2{table-layout:fixed;width:calc(100% + 330px);min-width:1310px}
 .ael #tb-parts2 th:nth-child(1){width:122px} .ael #tb-parts2 th:nth-child(3){width:130px} .ael #tb-parts2 th:nth-child(4){width:92px} .ael #tb-parts2 th:nth-child(5){width:52px}
-.ael #tb-parts2 th:nth-child(6){width:88px} .ael #tb-parts2 th:nth-child(7){width:78px} .ael #tb-parts2 th:nth-child(8){width:88px} .ael #tb-parts2 th:nth-child(9){width:80px} .ael #tb-parts2 th:nth-child(10){width:80px} .ael #tb-parts2 th:nth-child(11){width:66px}
-.ael #tb-parts2 th:nth-child(n+12){width:110px}
+.ael #tb-parts2 th:nth-child(6){width:88px} .ael #tb-parts2 th:nth-child(7){width:78px} .ael #tb-parts2 th:nth-child(8){width:80px} .ael #tb-parts2 th:nth-child(9){width:84px} .ael #tb-parts2 th:nth-child(10){width:80px} .ael #tb-parts2 th:nth-child(11){width:80px} .ael #tb-parts2 th:nth-child(12){width:66px}
+.ael #tb-parts2 th:nth-child(n+13){width:110px}
 .ael #tb-parts2 td{overflow:hidden;text-overflow:ellipsis}`; (document.head || document.body).appendChild(st); })();
 
 </script>
@@ -3153,13 +3154,13 @@ window.addEventListener('resize', () => window.__draw());
       const st = PS && PS.status === 'ok' ? (PS.data || []).find(r => String(r.code) === code) : null, stk = st && st.stock != null ? +st.stock : null, ss = st && +st.safety > 0 ? +st.safety : null;
       const pc = pp ? Math.round(pa / pp * 100) : null;
       const tr = document.createElement('tr'); tr.className = 'altv'; tr.style.background = '#FAFBFC';
-      const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null];
+      const cells = [code, a.part, a.shop, a.models, ss, stk, null, pt || null, pp || null, pa, pc, null, null, null]; /* 8 Nov: IH Plan (none) | VEN Plan = vendor schedule */
       cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
-        td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
+        td.textContent = v == null ? '—' : i === 10 ? v + '%' : i >= 4 ? nf(v) : v;
         if (i === 1) td.title = a.lv ? 'Level part bought from vendors. Plan = vendor schedule, Produced = received from vendors.' : `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`;
         if (i === 5 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
-        if (i === 9 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
-        if (i === 8) td.title = 'Received from vendors this month to date';
+        if (i === 10 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
+        if (i === 9) td.title = 'Received from vendors this month to date';
         tr.appendChild(td); });
       const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
       if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = a.lv || (anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''); tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
