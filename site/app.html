@@ -3152,7 +3152,7 @@ window.addEventListener('resize', () => window.__draw());
       one.forEach((b, c) => { if (have.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
         const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
         const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
-        L.push([c, { of: up ? String(up.code) : '', part: b.part, shop: b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
+        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
     const bLv = c => { const b = ((BM && BM.data) || []).find(x => String(x.code) === c && x.level); return b ? +b.level : 0; };
     L.forEach(([code, a]) => {
       if (!a.lv && bLv(code)) { a = { ...a, lv: 'L' + bLv(code) }; } /* ALT rows take their BOM level when set (6010213013 L3, 8 Nov) */
@@ -3175,6 +3175,10 @@ window.addEventListener('resize', () => window.__draw());
       const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
       if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = a.lv || (anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''); tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
       if (anchor) anchor.after(tr); else tb.appendChild(tr); });
+    /* 8 Nov (Umair): every sub-level row sits directly under its parent (atlas_bom 'parent'), e.g. 6090213003 casted under 6530010066 machined */
+    if (T.querySelector('th[data-k="lv"]') && BM && BM.status === 'ok') { const par = new Map((BM.data || []).filter(b => b.parent).map(b => [String(b.code), String(b.parent)])), rowOf = c => [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === c);
+      const depth = c => { let d = 0, x = c; while (par.has(x) && d < 6) { x = par.get(x); d++; } return d; };
+      [...par.keys()].sort((a, b) => depth(a) - depth(b)).forEach(c => { const r = rowOf(c), pr = r && rowOf(par.get(c)); if (!r || !pr) return; let at = pr; while (at.nextElementSibling && par.get(at.nextElementSibling.cells[0].textContent.trim()) === par.get(c) && at.nextElementSibling !== r) at = at.nextElementSibling; at.after(r); }); }
   };
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
   const qi = document.getElementById('q-parts2'); if (qi) qi.addEventListener('input', () => setTimeout(add, 0));
