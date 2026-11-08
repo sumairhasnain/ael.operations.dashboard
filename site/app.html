@@ -3128,7 +3128,17 @@ window.addEventListener('resize', () => window.__draw());
     const VS = dash.data('atlas_vendor_supply'), PS = dash.data('atlas_part_stock'); if (!VS || VS.status !== 'ok') return;
     const q = ((document.getElementById('q-parts2') || {}).value || '').toLowerCase();
     tb.querySelectorAll('tr.altv').forEach(r => r.remove());
-    Object.entries(ALT).forEach(([code, a]) => {
+    /* 8 Nov (Umair): BOM level parts that are not Atlas production parts (vendor castings / machined parts, e.g. 6510213001
+       Clutch Outer CD70 Casted L3) are added the same way, under the next level up of the same finished part. L3 and below
+       only while the table's Sub-Levels toggle is on. */
+    const L = Object.entries(ALT), BM = dash.data('atlas_bom'), PD = dash.data('atlas_parts');
+    if (BM && BM.status === 'ok') { const have = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : '')), one = new Map(), lvR = (BM.data || []).filter(b => b.level);
+      lvR.forEach(b => { if (!one.has(String(b.code))) one.set(String(b.code), b); });
+      one.forEach((b, c) => { if (have.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
+        const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
+        const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
+        L.push([c, { of: up ? String(up.code) : '', part: b.part, shop: b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
+    L.forEach(([code, a]) => {
       if (p.shop && p.shop !== 'All' && p.shop !== a.shop) return; if (p.model && p.model !== 'All' && !a.models.split(/[\/,]\s*/).includes(p.model)) return;
       if (q && ![code, a.part, a.shop, a.models].join(' ').toLowerCase().includes(q)) return;
       let pt = 0, pp = 0, pa = 0; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
@@ -3138,13 +3148,13 @@ window.addEventListener('resize', () => window.__draw());
       const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null];
       cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
         td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
-        if (i === 1) td.title = `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`;
+        if (i === 1) td.title = a.lv ? 'Level part bought from vendors. Plan = vendor schedule, Produced = received from vendors.' : `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`;
         if (i === 5 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
         if (i === 9 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
         if (i === 8) td.title = 'Received from vendors this month to date';
         tr.appendChild(td); });
       const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
-      if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''; tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
+      if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = a.lv || (anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''); tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
       if (anchor) anchor.after(tr); else tb.appendChild(tr); });
   };
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
