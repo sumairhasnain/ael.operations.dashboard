@@ -104,6 +104,15 @@
       </nav>`;
     bar.querySelector('#p-out').onclick = () => P.signOut();
     document.body.prepend(bar);
+    /* 9 Nov (Umair): on the dashboard the top bar stays hidden and slides down when the cursor moves to the top edge
+       (or the top strip is tapped on a phone); it hides again once the cursor moves away from it. */
+    if (current === 'app') {
+      bar.classList.add('ah'); const hot = document.createElement('div'); hot.className = 'pbar-hot'; document.body.prepend(hot);
+      const show = v => bar.classList.toggle('show', v);
+      document.addEventListener('mousemove', e => { if (e.clientY <= 14) show(true); else if (bar.classList.contains('show') && e.clientY > bar.offsetHeight + 24) show(false); }, { passive: true });
+      hot.addEventListener('click', () => show(true)); document.addEventListener('mouseleave', () => show(false));
+      document.addEventListener('touchstart', e => { if (!bar.contains(e.target) && e.target !== hot) show(false); }, { passive: true });
+    }
     return bar;
   };
 
