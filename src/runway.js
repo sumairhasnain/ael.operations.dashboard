@@ -119,7 +119,8 @@
   const orig = window.__vendHover;
   if (orig) window.__vendHover = tables => { orig(tables);
     tables.filter(t => t && ['tb-parts', 'tb-parts2', 'tb-vs'].includes(t.id) && !t.__rwh).forEach(T => { T.__rwh = 1; /* 6 Nov (Umair): Part Compliance - Finished Goods and Vendor Supply > Vendor Parts Stock too */
-    T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'); if (!tr || !tr.cells[1] || !vp) return;
+    T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'), td = ev.target.closest('td'); if (!tr || !tr.cells[1] || !vp) return;
+      if (T.id !== 'tb-vs' && (!td || td.cellIndex > 1)) { vp.style.display = 'none'; return; } /* 9 Nov (Umair): only over the code or part name */
       const code = tr.cells[0].textContent.trim(), shown = vp.style.display !== 'none' && vp.dataset.code === code;
       if (vp.dataset.rw !== code || (shown && !vp.querySelector('.rwpop'))) {
         const h = build(code, tr.cells[1].textContent.trim());

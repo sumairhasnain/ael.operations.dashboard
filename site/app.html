@@ -926,7 +926,7 @@ else { VPAN[k] = [lab + ' (in-house vs Alsons)', vc, { own: ih[0] }]; [vc, ...ih
 window.__vendHover = tables => { let pop = document.getElementById('vpop'); if (!pop) { pop = document.createElement('div'); pop.id = 'vpop'; pop.className = 'vpop'; pop.style.display = 'none'; document.getElementById('ael').appendChild(pop); }
 const hide = () => { pop.style.display = 'none'; pop.dataset.code = ''; };
 tables.forEach(t => { if (!t || t.__vh) return; t.__vh = 1;
-t.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), code = tr && tr.cells[0] ? tr.cells[0].textContent.trim() : '', keys = VHOV[code]; if (!keys) return hide();
+t.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), code = tr && tr.cells[0] ? tr.cells[0].textContent.trim() : '', keys = VHOV[code], td = ev.target.closest('td'); if (['tb-parts', 'tb-parts2'].includes(t.id) && (!td || td.cellIndex > 1)) return hide(); /* 9 Nov (Umair): parts tables show the tooltip only over the code or part name */ if (!keys) return hide();
 if (pop.dataset.code !== code) { pop.dataset.code = code; pop.replaceChildren(); const p = window.__P();
 keys.forEach(k => { const [title, VC, IH] = VPAN[k], box = document.createElement('div'); box.className = 'vsk'; pop.appendChild(box); vendPanel(box, VC, IH, p, true); const hd = box.querySelector('.vh'); if (hd) hd.textContent = title + ' · MTD vs month plan'; }); }
 pop.style.display = 'flex'; const w = pop.offsetWidth, hgt = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12; if (x + w > innerWidth - 8) x = ev.clientX - w - 16; if (y + hgt > innerHeight - 8) y = Math.max(8, innerHeight - hgt - 8); pop.style.left = x + 'px'; pop.style.top = y + 'px'; });
@@ -3107,7 +3107,8 @@ window.addEventListener('resize', () => window.__draw());
   const orig = window.__vendHover;
   if (orig) window.__vendHover = tables => { orig(tables);
     tables.filter(t => t && ['tb-parts', 'tb-parts2', 'tb-vs'].includes(t.id) && !t.__rwh).forEach(T => { T.__rwh = 1; /* 6 Nov (Umair): Part Compliance - Finished Goods and Vendor Supply > Vendor Parts Stock too */
-    T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'); if (!tr || !tr.cells[1] || !vp) return;
+    T.addEventListener('mousemove', ev => { const tr = ev.target.closest('tbody tr'), vp = document.getElementById('vpop'), td = ev.target.closest('td'); if (!tr || !tr.cells[1] || !vp) return;
+      if (T.id !== 'tb-vs' && (!td || td.cellIndex > 1)) { vp.style.display = 'none'; return; } /* 9 Nov (Umair): only over the code or part name */
       const code = tr.cells[0].textContent.trim(), shown = vp.style.display !== 'none' && vp.dataset.code === code;
       if (vp.dataset.rw !== code || (shown && !vp.querySelector('.rwpop'))) {
         const h = build(code, tr.cells[1].textContent.trim());
