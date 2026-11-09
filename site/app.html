@@ -3701,6 +3701,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 #fom tr.tot td{font-weight:700}#fom tr.sub td{background:#D9D9D9;font-weight:700}#fom tr.dt td{background:#EEF3F9;font-weight:700}
 #fom .na{color:#9AA5B1}#fom sup{font-size:.6cqw;color:#5A6670;line-height:0}
 #fom .det{border-collapse:collapse}#fom .det .sec th{text-align:left}#fom .det .hd th{background:#E9E2CF}
+#fom.proj td.a{font-style:italic;color:#0B5CAD}#fom .pjn{color:#0B5CAD;font-weight:600}
 #fom .ft{font-size:.66cqw;color:#5A6670;line-height:1.35;margin-top:auto}`;
   document.head.appendChild(css);
   const portal = () => window.__PORTAL;
@@ -3730,7 +3731,24 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   const AL = [['al_cyl', 'CYLINDER CG (CASTED)'], ['al_bft', 'BFT'], ['al_hub', 'HUB FRONT / REAR'], ['al_cov', 'COVERS'], ['al_bs', 'BRAKE SHOE'], ['al_hpdc', 'CLUTCH INHOUSE (HPDC)']];
   const SP = [['-', 'INHOUSE', 'sub'], ['sp_piston', 'PISTON SPD'], ['-', 'CUSHION PARTS', 'sub'], ['sp_ff', 'FRONT FORK'], ['sp_rc', 'REAR CUSHION'], ['sp_clutch', 'Clutch SPD'], ['sp_other', 'OTHER PARTS'], ['-', 'VENDOR', 'sub'], ['sp_vendor', 'VENDOR']];
   function fy(m) { const s = +(data.fy_start || '07'); const [y, mo] = m.split('-').map(Number); const y0 = mo >= s ? y : y - 1; return Object.keys(data.months).filter(k => { const [ky, km] = k.split('-').map(Number); return (ky > y0 || (ky === y0 && km >= s)) && k <= m; }); }
-  const val = (ms, id) => { const v = ms.map(k => (data.months[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
+  /* 9 Nov (Umair): with the Projection button on, the open month's actuals become projected month-end figures. Each line keeps
+     its SAP MB51 month-to-date and is scaled by the Atlas run rate of its own codes (dispatch for sales lines, production for
+     production lines): code month-end = MTD + last-10-working-day average x working days left, the same rate as the other tabs.
+     Lines with no Atlas codes (typed lines, revenue, raw material) use the plant's working-day run rate. */
+  let PJ = null;
+  const projOn = () => !!(window.__projOn && window.__projOn()) && month === String(data.asof || '').slice(0, 7);
+  function projBuild() { const m = month, anchor = data.asof, T = window.__TODAY || anchor, key = m + '|' + anchor;
+    let src = []; try { const d = window.dash && dash.data('atlas_parts_daily'); src = (d && d.data) || []; } catch (e) {}
+    if (PJ && PJ.key === key && PJ.src === src) return PJ;
+    const tot = new Map(), by = new Map(); src.forEach(r => { if (!String(r.date).startsWith(m)) return; tot.set(r.date, (tot.get(r.date) || 0) + (+r.prod_plan || 0)); const c = String(r.code); let o = by.get(c); if (!o) by.set(c, o = []); o.push(r); });
+    const wd = [...tot].filter(([, v]) => v > 5000).map(([d]) => d).sort(), last = new Set(wd.filter(d => d < anchor && d < T).slice(-10)), NR = wd.filter(d => d > anchor).length, done = wd.filter(d => d <= anchor).length;
+    const code = new Map(); by.forEach((rs, c) => { const g = k => { let mtd = 0, ls = 0; rs.forEach(r => { const v = +r[k] || 0; if (r.date <= anchor) mtd += v; if (last.has(r.date)) ls += v; }); return { mtd, proj: mtd + (last.size ? ls / last.size : 0) * NR }; }; code.set(c, { D: g('disp_actual'), P: g('prod_actual') }); });
+    PJ = { key, src, code, NR, base: done ? (done + NR) / done : 1, ratio: new Map() }; return PJ; }
+  function ratio(id) { const P = projBuild(); if (P.ratio.has(id)) return P.ratio.get(id); let a = 0, b = 0;
+    ((data.codes || {})[id] || []).forEach(([c, f, k]) => { const o = P.code.get(String(c)); if (!o) return; const x = o[k === 'P' ? 'P' : 'D']; a += x.proj * (+f || 1); b += x.mtd * (+f || 1); });
+    const r = b > 0 ? Math.max(1, a / b) : P.base; P.ratio.set(id, r); return r; }
+  const mv = (k, id) => { const v = (data.months[k] || {})[id]; return v != null && k === month && projOn() ? v * ratio(id) : v; };
+  const val = (ms, id) => { const v = ms.map(k => mv(k, id)); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
   const bud = (ms, id) => { const B = data.budget; if (!B) return null; const v = ms.map(k => (B[k] || {})[id]); return v.some(x => x != null) ? d3.sum(v, x => x || 0) : null; };
   const num = v => v == null ? '<span class="na">—</span>' : nf(v), dec = v => v == null ? '<span class="na">—</span>' : d3.format(',.2f')(v);
   const pct = (a, b) => (a == null || !b) ? '<span class="na">—</span>' : Math.round(a / b * 100) + '%';
@@ -3761,7 +3779,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const sec = document.getElementById('fom'); if (!data || !sec) return;
     sec.querySelectorAll('#fom-m button').forEach(b => b.classList.toggle('on', b.dataset.m === month));
     const mm = [month], yy = fy(month), lab = m => MN[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
-    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : src === 'mb51' ? (`SAP MB51 daily file to ${data.asof}` + ((((data.mb51 || {})[month] || {}).plants || []).length ? ' (plant ' + (((data.mb51 || {})[month] || {}).plants || []).join(' + ') + ')' : '') + (Object.keys((data.flags || {})[month] || {}).length ? ' · * lines missing their SKP part' : '')) : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
+    const pj = projOn(); sec.classList.toggle('proj', pj);
+    const src = (data.source || {})[month]; sec.querySelector('#fom-n').textContent = (pj ? `PROJECTED ${MN[+month.slice(5) - 1]} month-end (MTD to ${data.asof} + Atlas last-10-day rate × ${projBuild().NR} working days left) · ` : '') + `Year = ${lab(yy[0])} to ${lab(month)} · ` + (src === 'sheet' ? 'AEL F.O.M sheet (SAP MB51)' : src === 'mb51' ? (`SAP MB51 daily file to ${data.asof}` + ((((data.mb51 || {})[month] || {}).plants || []).length ? ' (plant ' + (((data.mb51 || {})[month] || {}).plants || []).join(' + ') + ')' : '') + (Object.keys((data.flags || {})[month] || {}).length ? ' · * lines missing their SKP part' : '')) : `live from Atlas to ${data.asof}; lines Atlas can't cover show — until SAP MB51 is linked`) + (data.budget ? ' · budget 2026-27' : '');
     const ciIds = CI.filter(r => r[0] !== '-').map(r => r[0]), alIds = AL.map(r => r[0]);
     const aci = `<table>${head('ALUMINIUM AND CAST IRON PARTS (UNITS)', 30)}<tbody><tr><td>CAST IRON PARTS</td>${totCells(ciIds, mm, yy)}</tr><tr><td>ALUMINIUM PARTS</td>${totCells(alIds, mm, yy)}</tr><tr class="tot"><td>TOTAL</td>${totCells(ciIds.concat(alIds), mm, yy)}</tr></tbody></table>`;
     const dcell = id => { const a = val(mm, id), b = bud(mm, id); return `<td class="n">${num(a)}</td><td class="n">${num(b)}</td><td class="p">${pct(a, b)}</td>`; };
