@@ -6,7 +6,7 @@ The MB51 file is exported once a morning, so these feeds are often ahead of it.
 Rules: receipts are only ever raised (per day, code and vendor), never lowered. Production per code is raised to Atlas's
 month-to-date (counting our days up to Atlas's asOf); the difference goes on the asOf day, since the feed has no days.
 Codes outside atlas_parts_daily / atlas_vendor_supply are left alone (merged codes are already combined).
-Usage: python3 atlas_feed_merge.py <afeed dump> <data dir> <plan_dump.txt (vendor names)>
+Usage: python3 atlas_feed_merge.py <afeed dump> <data dir | parts_daily.json,vendor_supply.json> <plan_dump.txt (vendor names)>
 The dump is '@@AFEED' text: ##P code|qty, ##S code|qty, ##R date|code|vendor|receipt|schedule, from the Atlas tab.
 """
 import json, sys, collections
@@ -24,12 +24,13 @@ def load(path):
 
 def main(dump, data, plan):
     sec = load(dump)
-    meta = dict(l.split('=', 1) for l in sec('M')) if '##M' in open(dump).read() else {}
+    try: meta = dict(l.split('=', 1) for l in sec('M'))
+    except Exception: meta = {}
     asof = meta.get('asof')
     P = {l.split('|')[0]: float(l.split('|')[1]) for l in sec('P')}
     R = [l.split('|') for l in sec('R')]
     if not asof: asof = max(r[0] for r in R)
-    pdp = data + '/atlas_parts_daily.json'; vsp = data + '/atlas_vendor_supply.json'
+    pdp, vsp = data.split(',') if ',' in data else (data + '/atlas_parts_daily.json', data + '/atlas_vendor_supply.json')
     pd = json.load(open(pdp)); v = json.load(open(vsp))
     pt = open(plan).read(); V = dict(l.split('|', 1) for l in pt.split('##V\n')[1].split('\n##')[0].split('\n') if '|' in l)
     m = asof[:7]; mtd = collections.defaultdict(float); idx = {}
