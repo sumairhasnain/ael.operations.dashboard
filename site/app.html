@@ -3014,7 +3014,9 @@ window.addEventListener('resize', () => window.__draw());
     const nWd = [...tot.values()].filter(v => v > 5000).length || 26, daily = c => (plan.get(String(c)) || 0) / nWd;
     const par = new Map(), info = new Map();
     bom.forEach(b => { const c = String(b.code); info.set(c, b); String(b.fg || '').split(';').forEach(t => { const [f, q] = t.split(':'); if (f) (par.get(c) || par.set(c, []).get(c)).push({ f, q: +q || 1 }); }); });
-    const kids = new Map(); par.forEach((ps, c) => ps.forEach(({ f }) => (kids.get(f) || kids.set(f, new Set()).get(f)).add(c)));
+    /* 9 Nov (Umair): FCB Casted CD70 / CG125 are not relevant to the carburetor assemblies' runway; they stay only under their machined FCB */
+    const RX = new Set(['6510101018', '6520101017']);
+    const kids = new Map(); par.forEach((ps, c) => ps.forEach(({ f }) => { if (RX.has(c) && f.startsWith('90')) return; (kids.get(f) || kids.set(f, new Set()).get(f)).add(c); }));
     const from = iso(new Date(dt(T).getTime() - 30 * 864e5)), rc = new Map();
     vs.forEach(r => { if (r.date > from && r.date <= T && +r.received > 0) { const c = String(r.code); (rc.get(c) || rc.set(c, new Set()).get(c)).add(r.date); } });
     cache = { pd, cs, vs, T, daily, par, kids, info, futP, lastA, rc, stock: new Map(cs.map(r => [String(r.code), r])) };
