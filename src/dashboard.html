@@ -3,9 +3,9 @@
 .ael{--navy:#051C2C;--blue:#2251FF;--cyan:#00A9F4;--sky:#AAE6F0;--line:#E2E6EB;--soft:#F4F6F9;--ink:#051C2C;--mut:#5A6670;--bad:#D0312D;--warn:#C98300;--good:#1E8C5A;
 background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);padding:0 0 32px;position:relative;min-height:100vh}
 .ael *{box-sizing:border-box}
-.ael .hdr{background:var(--navy);color:#fff;padding:16px 24px 0}
+.ael .hdr{background:var(--navy);color:#fff;padding:8px 24px 0}
 .ael .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-.ael h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#fff}
+.ael h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:21px;margin:0;color:#fff}
 .ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ael .filters button.fclr{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;align-self:flex-end}
 .ael .filters button.fclr:hover{background:#163B57}
@@ -14,11 +14,11 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 .ael .filters .psug{position:absolute;left:0;top:100%;margin-top:2px;z-index:50;width:max(100%,360px);max-height:320px;overflow:auto;background:#fff;color:#051C2C;border:1px solid #C9D1D9;border-radius:4px;box-shadow:0 6px 18px rgba(5,28,44,.18);font-size:13px;text-transform:none;letter-spacing:normal;font-weight:400}
 .ael .filters .psug div{padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}.ael .filters .psug div.on,.ael .filters .psug div:hover{background:#EEF4FF}.ael .filters .psug small{color:#5A6670;white-space:nowrap}.ael .filters .psug b{font-weight:700;color:#2251FF}.ael .filters .psug .pn{color:#5A6670;cursor:default}
 .ael .filters button.fclr.fon{background:#D0312D;border-color:#D0312D;color:#fff}.ael .filters button.fclr.fon:hover{background:#B02622}
-.ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:3px}
-.ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
+.ael .filters label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#AFC0CE;display:flex;flex-direction:column;gap:2px}
+.ael .filters select,.ael .filters input{font:inherit;font-size:13px;padding:4px 8px;border:1px solid #2C4256;border-radius:4px;background:#0B2A40;color:#fff;min-width:120px;color-scheme:dark}
 .ael .filters select.fon,.ael .filters input.fon{background:#E0A100;color:#000;border-color:#E0A100;font-weight:600;color-scheme:light}.ael .filters select.fon option{background:#fff;color:#000;font-weight:400}.ael .filters input.fon::-webkit-datetime-edit-year-field,.ael .filters input.fon::-webkit-datetime-edit-month-field,.ael .filters input.fon::-webkit-datetime-edit-day-field,.ael .filters input.fon::-webkit-datetime-edit-text{color:#000}
-.ael .tabs{display:flex;gap:2px;overflow-x:auto;margin-top:12px;scrollbar-width:thin}
-.ael .tab{background:transparent;border:0;color:#C9D3DC;font:inherit;font-size:13px;padding:10px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+.ael .tabs{display:flex;gap:2px;overflow-x:auto;margin-top:6px;scrollbar-width:thin}
+.ael .tab{background:transparent;border:0;color:#C9D3DC;font:inherit;font-size:13px;padding:7px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
 .ael .tab:hover{color:#fff}
 .ael .tab[aria-selected=true]{color:#fff;border-bottom-color:var(--cyan);font-weight:600}
 .ael .page{display:none;padding:18px 24px}
@@ -91,7 +91,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 .ael .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .ael .issue{border-left:3px solid var(--bad);padding:6px 10px;margin-bottom:8px;background:#FCFCFD}
 .ael .issue .h{font-weight:600;font-size:13px} .ael .issue .m{font-size:11.5px;color:var(--mut)} .ael .issue .p{font-size:12.5px;margin-top:2px}
-@media (max-width:640px){.ael .hdr{padding:12px 14px 0}.ael .page{padding:14px}.ael .filters select,.ael .filters input{min-width:100px}}
+@media (max-width:640px){.ael .hdr{padding:8px 14px 0}.ael .page{padding:14px}.ael .filters select,.ael .filters input{min-width:100px}}
 .ael .gt{font-size:12px}
 .ael .gt .gtip-t{font-weight:600;font-size:12.5px;margin-bottom:2px}
 .ael .gt .gtip-m{color:var(--mut);font-size:11px;margin-bottom:6px}
@@ -117,7 +117,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <label>Shift<select id="f-shift" aria-label="Shift"><option value="All">All</option><option>A</option><option>B</option><option>C</option></select></label>
 <button type="button" class="fclr" id="f-clear" title="Reset shop, model, shift, vendor and part selections (keeps month and date)">Clear filters</button>
 <button type="button" class="ptog" id="f-proj" aria-pressed="false"><span class="sw"></span>Projection</button>
-<span id="f-data" style="align-self:flex-end;font-size:12px;color:#5A6670;padding-bottom:6px"></span>
+<span id="f-data" style="align-self:flex-end;font-size:12px;color:#AFC0CE;padding-bottom:6px"></span>
 </div>
 </div>
 <nav class="tabs" id="tabs" role="tablist">
