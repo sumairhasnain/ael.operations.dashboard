@@ -1,0 +1,10 @@
+{
+  "appId": "com.ael.operations",
+  "appName": "AEL Operations",
+  "webDir": "www",
+  "backgroundColor": "#ffffff",
+  "server": { "androidScheme": "https", "iosScheme": "capacitor" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#ffffff" }
+  }
+}
