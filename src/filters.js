@@ -98,5 +98,6 @@ show(location.hash.slice(1) || 'overview', false);
   tog.addEventListener('mouseenter', () => set(true)); tog.addEventListener('click', () => set(!hdr.classList.contains('fopen')));
   hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over && !busy()) set(false); }, 250); });
   fl.addEventListener('focusout', () => setTimeout(() => { if (!over && !busy()) set(false); }, 300));
-  if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
+  const clr2 = document.getElementById('f-clear2'); if (clr && clr2) clr2.addEventListener('click', () => clr.click()); /* 9 Nov (Umair): Clear filters beside the funnel, shown only while a filter is applied */
+  if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; if (clr2) clr2.hidden = !a; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
 })();

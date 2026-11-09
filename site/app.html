@@ -22,7 +22,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 .ael *{box-sizing:border-box}
 .ael .hdr{background:var(--navy);color:#fff;padding:8px 24px 0}
 .ael .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-.ael .ttlw{display:flex;align-items:center;gap:10px}.ael .ftog{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;padding:0}.ael .ftog:hover,.ael .hdr.fopen .ftog{background:#163B57}.ael .ftog.fon{background:#E0A100;border-color:#E0A100;color:#000}.ael .hdr:not(.fopen) .filters{display:none}
+.ael .ttlw{display:flex;align-items:center;gap:10px}.ael .ftog{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;padding:0}.ael .ftog:hover,.ael .hdr.fopen .ftog{background:#163B57}.ael .ftog.fon{background:#E0A100;border-color:#E0A100;color:#000}.ael .hdr:not(.fopen) .filters{display:none}.ael .ttlw .fclr2{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #D0312D;border-radius:4px;background:#D0312D;color:#fff;cursor:pointer}.ael .ttlw .fclr2:hover{background:#B02622}.ael .ttlw .fclr2[hidden]{display:none}
 .ael h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:21px;margin:0;color:#fff}
 .ael .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ael .filters button.fclr{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #4A6680;border-radius:4px;background:transparent;color:#fff;cursor:pointer;align-self:flex-end}
@@ -125,7 +125,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="ael" id="ael">
 <div class="hdr">
 <div class="top">
-<div class="ttlw"><h1>Operations Dashboard</h1><button type="button" class="ftog" id="f-tog" aria-label="Show filters" aria-expanded="false" title="Filters"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button></div>
+<div class="ttlw"><h1>Operations Dashboard</h1><button type="button" class="ftog" id="f-tog" aria-label="Show filters" aria-expanded="false" title="Filters"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><button type="button" class="fclr2" id="f-clear2" hidden title="Reset shop, model, shift, vendor and part selections (keeps month and date)">Clear filters</button></div>
 <div class="filters">
 <label>Shop<select id="f-shop" aria-label="Shop"></select></label>
 <label>Model<select id="f-model" aria-label="Model"></select></label>
@@ -782,7 +782,8 @@ show(location.hash.slice(1) || 'overview', false);
   tog.addEventListener('mouseenter', () => set(true)); tog.addEventListener('click', () => set(!hdr.classList.contains('fopen')));
   hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over && !busy()) set(false); }, 250); });
   fl.addEventListener('focusout', () => setTimeout(() => { if (!over && !busy()) set(false); }, 300));
-  if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
+  const clr2 = document.getElementById('f-clear2'); if (clr && clr2) clr2.addEventListener('click', () => clr.click()); /* 9 Nov (Umair): Clear filters beside the funnel, shown only while a filter is applied */
+  if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; if (clr2) clr2.hidden = !a; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
 })();
 
 </script>
