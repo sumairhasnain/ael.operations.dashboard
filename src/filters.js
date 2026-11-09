@@ -89,3 +89,14 @@ show(location.hash.slice(1) || 'overview', false);
 [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
 ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm','q-fih','q-fv','q-fs'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
 })();
+/* 9 Nov (Umair): the filter row stays hidden; hovering the funnel button beside the title opens it, and it stays open until the
+   cursor leaves the dark top pane (not while a box in it is still being used). The funnel turns amber while any filter is applied. */
+(() => { const hdr = document.querySelector('.ael .hdr'), tog = document.getElementById('f-tog'), fl = hdr && hdr.querySelector('.filters'), clr = document.getElementById('f-clear');
+  if (!hdr || !tog || !fl) return; let over = false;
+  const set = v => { hdr.classList.toggle('fopen', v); tog.setAttribute('aria-expanded', String(v)); };
+  const busy = () => fl.contains(document.activeElement) && /^(SELECT|INPUT)$/.test(document.activeElement.tagName);
+  tog.addEventListener('mouseenter', () => set(true)); tog.addEventListener('click', () => set(!hdr.classList.contains('fopen')));
+  hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over && !busy()) set(false); }, 250); });
+  fl.addEventListener('focusout', () => setTimeout(() => { if (!over && !busy()) set(false); }, 300));
+  if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
+})();
