@@ -89,6 +89,16 @@
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', mt).attr('y2', h).attr('stroke', C.navy);
     const sv = el.querySelector('svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet');
   }
-  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'production') { try { render(window.__P()); } catch (e) {} } return r; };
+  /* 9 Nov (Umair): when the filters bring up both In-Transit Material and SPD Supplies, the two sit side by side (half width
+     each); either one alone stays full width. A card whose width changes is drawn again at its new size. */
+  function pair(P) { const t = document.getElementById('c-p-transit'), s = document.getElementById('c-p-spd'); if (!t || !s) return;
+    let w = document.getElementById('c-p-pair');
+    if (!w) { w = document.createElement('div'); w.id = 'c-p-pair'; w.hidden = true; (t.parentNode.id === 'c-p-pair' ? t.parentNode : t).before(w);
+      const st = document.createElement('style'); st.textContent = '.ael #c-p-pair{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-width:0}.ael #c-p-pair[hidden]{display:none}.ael #c-p-pair>.card{min-width:0}@media (max-width:900px){.ael #c-p-pair{grid-template-columns:1fr}}'; document.head.appendChild(st); }
+    const both = !t.hidden && !s.hidden, was = t.parentNode === w;
+    if (both && !was) { w.append(t, s); t.classList.remove('wide'); s.classList.remove('wide'); w.hidden = false; }
+    else if (!both && was) { w.after(t); t.after(s); t.classList.add('wide'); s.classList.add('wide'); w.hidden = true; }
+    if (both !== was) { if (!t.hidden && window.__trRender) window.__trRender(P); if (!s.hidden) render(P); } }
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'production') { try { const P = window.__P(); render(P); pair(P); } catch (e) {} } return r; };
   try { if (window.__page === 'production' && window.__P) render(window.__P()); } catch (e) {}
 })();

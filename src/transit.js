@@ -63,6 +63,7 @@
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', mt).attr('y2', h).attr('stroke', C.navy);
     const sv = el.querySelector('svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet');
   }
+  window.__trRender = render;
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'production') { try { render(window.__P()); } catch (e) {} } return r; };
   try { if (window.__page === 'production' && window.__P) render(window.__P()); } catch (e) {}
 })();
