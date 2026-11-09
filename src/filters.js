@@ -101,3 +101,16 @@ show(location.hash.slice(1) || 'overview', false);
   const clr2 = document.getElementById('f-clear2'); if (clr && clr2) clr2.addEventListener('click', () => clr.click()); /* 9 Nov (Umair): Clear filters beside the funnel, shown only while a filter is applied */
   if (clr) { const sync = () => { const a = clr.classList.contains('fon'); tog.classList.toggle('fon', a); tog.title = a ? 'Filters are applied · hover to see them' : 'Filters'; if (clr2) clr2.hidden = !a; }; new MutationObserver(sync).observe(clr, { attributes: true, attributeFilter: ['class'] }); sync(); }
 })();
+/* 9 Nov (Umair): compact header, option 1. The tab strip is hidden; the current page's name sits beside the title, and hovering it
+   (or the grid button) opens all pages until the cursor leaves the top pane. Picking a page closes the list.
+   To go back to the old tab strip, set window.__NAVCOMPACT = false here (one line). */
+window.__NAVCOMPACT = true;
+(() => { if (window.__NAVCOMPACT === false) return; const hdr = document.querySelector('.ael .hdr'), tabs = document.getElementById('tabs'), pg = document.getElementById('f-pg'), nav = document.getElementById('f-nav'), nm = document.getElementById('f-pgn');
+  if (!hdr || !tabs || !pg || !nav || !nm) return; hdr.classList.add('ncompact'); pg.hidden = false; nav.hidden = false; let over = false;
+  const set = v => { hdr.classList.toggle('nopen', v); pg.setAttribute('aria-expanded', String(v)); };
+  const name = () => { const t = tabs.querySelector('.tab[aria-selected="true"]'); nm.textContent = t ? t.textContent.trim() : ''; };
+  [pg, nav].forEach(b => { b.addEventListener('mouseenter', () => set(true)); b.addEventListener('click', () => set(!hdr.classList.contains('nopen'))); });
+  hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over) set(false); }, 250); });
+  tabs.addEventListener('click', ev => { if (ev.target.closest('.tab')) setTimeout(() => { name(); set(false); }, 0); }, true);
+  new MutationObserver(name).observe(tabs, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-selected'] }); name();
+})();
