@@ -187,7 +187,9 @@
       if (p.shop && p.shop !== 'All' && p.shop !== a.shop) return; if (p.model && p.model !== 'All' && !a.models.split(/[\/,]\s*/).includes(p.model)) return;
       if (q && ![code, a.part, a.shop, a.models].join(' ').toLowerCase().includes(q)) return;
       let pt = 0, pp = 0, pa = 0; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
-      const st = PS && PS.status === 'ok' ? (PS.data || []).find(r => String(r.code) === code) : null, stk = st && st.stock != null ? +st.stock : null, ss = st && +st.safety > 0 ? +st.safety : null;
+      let st = PS && PS.status === 'ok' ? (PS.data || []).find(r => String(r.code) === code) : null;
+      if (!st) { const CS = dash.data('atlas_child_stock'), x = CS && CS.status === 'ok' ? (CS.data || []).find(r => String(r.code) === code) : null; if (x) st = { stock: x.stock, safety: x.safety_stock }; } /* 9 Nov: BOM parts outside Atlas's part master (e.g. imported clutch discs) take MB52 stock from the child stock list */
+      const stk = st && st.stock != null ? +st.stock : null, ss = st && +st.safety > 0 ? +st.safety : null;
       const pc = pp ? Math.round(pa / pp * 100) : null;
       if (a.lv && !pt && !pa && !(stk > 0)) return; /* idle level codes (no schedule, receipts or stock, e.g. OSP 6510213012) stay out */
       const tr = document.createElement('tr'); tr.className = 'altv'; tr.style.background = '#FAFBFC';
