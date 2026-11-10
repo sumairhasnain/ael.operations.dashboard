@@ -268,3 +268,34 @@ drop policy if exists "cr uploaders read own, admin reads all" on storage.object
 create policy "cr uploaders read own, admin reads all" on storage.objects
   for select to authenticated
   using (bucket_id = 'cr-uploads' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
+
+-- ---------- Tab usage (11 Nov 2026, Umair): which tabs each signed-in user opens ----------
+-- One 'tab_view' row per user per tab, at most once every 10 minutes for the same tab.
+create or replace function public.log_tab(p_tab text, p_ua text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_email text;
+begin
+  if auth.uid() is null then return; end if;
+  if p_tab is null or p_tab !~ '^[a-z0-9_-]{1,30}$' then return; end if;
+  if exists (select 1 from login_log where user_id = auth.uid() and event = 'tab_view' and detail = p_tab
+             and at > now() - interval '10 minutes') then return; end if;
+  select email into v_email from profiles where id = auth.uid();
+  insert into login_log (user_id, email, event, detail, user_agent)
+  values (auth.uid(), v_email, 'tab_view', p_tab, left(coalesce(p_ua, ''), 300));
+end $$;
+
+-- Admin-only summary: views per user, tab and day (Pakistan time)
+create or replace function public.tab_usage(p_days int default 30)
+returns table (email text, tab text, day date, views bigint, last_at timestamptz)
+language plpgsql security definer set search_path = public stable as $$
+begin
+  if not is_admin() then raise exception 'admins only'; end if;
+  return query
+    select l.email, l.detail, (l.at at time zone 'Asia/Karachi')::date, count(*), max(l.at)
+    from login_log l
+    where l.event = 'tab_view' and l.at > now() - make_interval(days => least(greatest(coalesce(p_days, 30), 1), 400))
+    group by 1, 2, 3;
+end $$;
+
+revoke execute on function public.log_tab(text, text), public.tab_usage(int) from public, anon;
+grant execute on function public.log_tab(text, text), public.tab_usage(int) to authenticated;

@@ -11,6 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/portal.js?v=20261109"></script>
+<style>.t td.n,.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}#ud{border:0;margin:0}</style>
 </head>
 <body>
 <div class="wrap" id="app"><div class="loading">Loading…</div></div>
@@ -67,12 +68,12 @@
         <div class="kpi"><div class="l">Sign-ins, last 7 days</div><div class="v">${logins7.length}</div></div>
         <div class="kpi"><div class="l">Disabled</div><div class="v">${users.length - active.length}</div></div>
       </div>
-      <div class="seg"><button data-v="users" class="${view === 'users' ? 'on' : ''}">Users</button><button data-v="log" class="${view === 'log' ? 'on' : ''}">Activity log</button><button data-v="matrix" class="${view === 'matrix' ? 'on' : ''}">Authority matrix</button></div>
+      <div class="seg"><button data-v="users" class="${view === 'users' ? 'on' : ''}">Users</button><button data-v="log" class="${view === 'log' ? 'on' : ''}">Activity log</button><button data-v="usage" class="${view === 'usage' ? 'on' : ''}">Tab usage</button><button data-v="matrix" class="${view === 'matrix' ? 'on' : ''}">Authority matrix</button></div>
       <div id="body"></div>`;
     app.querySelector('#b-add').onclick = () => editDlg(null);
     app.querySelector('#b-bulk').onclick = bulkDlg;
     app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
-    ({ users: renderUsers, log: renderLog, matrix: renderMatrix })[view](app.querySelector('#body'));
+    ({ users: renderUsers, log: renderLog, usage: renderUsage, matrix: renderMatrix })[view](app.querySelector('#body'));
   };
 
   const renderUsers = el => {
@@ -112,6 +113,39 @@
     el.querySelector('#lq').oninput = paint; paint();
     el.querySelector('#ldl').onclick = () => download('portal-activity.csv', [['When (PKT)', 'User', 'Event', 'Detail', 'Device'], ...logs.map(l => [P.pkt(l.at), l.email, label[l.event] || l.event, l.detail, device(l.user_agent)])]);
   };
+
+  /* 11 Nov 2026 (Umair): Tab usage. Which tabs each person opens, from 'tab_view' rows (one per tab per 10 minutes). */
+  let usageDays = 7;
+  const renderUsage = async el => {
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    const { data, error } = await P.sb.rpc('tab_usage', { p_days: usageDays });
+    if (error) { el.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    const rs = data || [], name = e => { const u = users.find(x => x.email === e); return u && u.full_name ? u.full_name : (e || ''); };
+    const tabs = P.TABS.map(t => t.id).filter(t => rs.some(r => r.tab === t)), people = [...new Set(rs.map(r => r.email))];
+    const tot = (e, t) => rs.filter(r => r.email === e && (!t || r.tab === t)).reduce((a, r) => a + Number(r.views), 0);
+    people.sort((a, b) => tot(b) - tot(a));
+    const last = e => rs.filter(r => r.email === e).reduce((m, r) => r.last_at > m ? r.last_at : m, '');
+    const days = e => new Set(rs.filter(r => r.email === e).map(r => r.day)).size;
+    const max = Math.max(1, ...people.flatMap(e => tabs.map(t => tot(e, t))));
+    const cell = n => n ? `<td class="n" style="background:rgba(34,81,255,${(0.08 + 0.5 * n / max).toFixed(2)})">${n}</td>` : '<td class="n muted">·</td>';
+    const byDay = [...d3group(rs)].sort((a, b) => a.day < b.day ? 1 : a.day > b.day ? -1 : tot(b.email) - tot(a.email));
+    el.innerHTML = `<div class="acts" style="margin-bottom:10px"><div class="seg" id="ud">${[1, 7, 30, 90].map(d => `<button data-d="${d}" class="${usageDays === d ? 'on' : ''}">${d === 1 ? 'Today' : 'Last ' + d + ' days'}</button>`).join('')}</div>
+      <button class="btn ghost" id="udl">Download CSV</button></div>
+      ${!rs.length ? '<p class="muted">No tab views recorded in this period yet. Recording started on 11 Nov 2026.</p>' : `
+      <h3 style="margin:6px 0">Who uses which tabs</h3>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>User</th><th class="n">Days</th><th class="n">Total</th>${tabs.map(t => `<th class="n">${esc(TN[t] || t)}</th>`).join('')}<th>Last seen (PKT)</th></tr></thead><tbody>
+        ${people.map(e => `<tr><td>${esc(name(e))}<div class="small muted">${esc(e)}</div></td><td class="n">${days(e)}</td><td class="n"><b>${tot(e)}</b></td>${tabs.map(t => cell(tot(e, t))).join('')}<td class="small">${P.pkt(last(e))}</td></tr>`).join('')}
+        <tr><th>All users</th><th></th><th class="n">${tot()}</th>${tabs.map(t => `<th class="n">${rs.filter(r => r.tab === t).reduce((a, r) => a + Number(r.views), 0)}</th>`).join('')}<th></th></tr>
+      </tbody></table></div>
+      <h3 style="margin:16px 0 6px">Day by day</h3>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>Day</th><th>User</th><th>Tabs opened (views)</th></tr></thead><tbody>
+        ${byDay.map(g => `<tr><td class="small">${esc(g.day)}</td><td>${esc(name(g.email))}</td><td class="small">${g.tabs.sort((a, b) => b[1] - a[1]).map(([t, n]) => `${esc(TN[t] || t)} (${n})`).join(' · ')}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="small muted">A view is counted when someone opens a tab; staying on or coming back to the same tab within 10 minutes counts once. Recording started on 11 Nov 2026.</p>`}`;
+    el.querySelectorAll('#ud button').forEach(b => b.onclick = () => { usageDays = +b.dataset.d; renderUsage(el); });
+    el.querySelector('#udl').onclick = () => download('portal-tab-usage.csv', [['Day', 'User', 'Email', 'Tab', 'Views', 'Last view (PKT)'], ...rs.map(r => [r.day, name(r.email), r.email, TN[r.tab] || r.tab, r.views, P.pkt(r.last_at)])]);
+  };
+  const d3group = rs => { const m = new Map(); rs.forEach(r => { const k = r.day + '|' + r.email; if (!m.has(k)) m.set(k, { day: r.day, email: r.email, tabs: [] }); m.get(k).tabs.push([r.tab, Number(r.views)]); }); return m.values(); };
 
   const renderMatrix = el => {
     const rows = [

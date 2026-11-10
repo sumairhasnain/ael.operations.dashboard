@@ -83,6 +83,12 @@
   };
   await refresh(true);
   try { if (!sessionStorage.getItem('ael_opened')) { sessionStorage.setItem('ael_opened', '1'); P.log('open_dashboard'); } } catch (e) {}
+  /* 11 Nov 2026 (Umair): tab usage. Records which tab a signed-in user opens (the database keeps at most one row per tab per 10 minutes). */
+  let lastTab = '';
+  const logTab = () => { const t = window.__page; if (!t || t === lastTab || document.visibilityState !== 'visible' || !P.sb) return; lastTab = t;
+    P.sb.rpc('log_tab', { p_tab: String(t).slice(0, 30), p_ua: navigator.userAgent }).then(() => {}, () => {}); };
+  setInterval(logTab, 2000); setTimeout(logTab, 800);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { lastTab = ''; logTab(); } });
   setInterval(() => { if (document.visibilityState === 'visible') refresh(false); }, 5 * 60e3);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(false); });
 })();
