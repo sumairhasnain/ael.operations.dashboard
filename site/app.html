@@ -2893,8 +2893,9 @@ window.addEventListener('resize', () => window.__draw());
             .on('mouseleave', tip.hide).on('click', () => { tip.hide(); dash.setParams({ wfa: sel === a ? 0 : a }); }); }); } }
     const tb = document.querySelector('#c-w-oal table.tb'), nf1 = v => v ? fx(v) : '—';
     /* 10 Nov (Umair): 'Top 10 Absentees' toggle beside this table's Clear filters. On = the 10 people with the most absent days in the
-       month, from everyone in the selected shop (top filter pane) and area, whether or not they did overtime. Kept in the wfoat param. */
-    const t10 = !!dash.params().wfoat, rows = t10 ? rs.filter(r => r.absent > 0).sort((a, b) => b.absent - a.absent || (b.sw || 0) - (a.sw || 0)).slice(0, 10) : fl;
+       month, from everyone in the selected shop (top filter pane) and area, whether or not they did overtime.
+       10 Nov 20:20 (Umair): the shop's own people only, so shared Aluminium Foundry staff don't appear under Piston or Bridge Fork Top. Kept in the wfoat param. */
+    const t10 = !!dash.params().wfoat, rows = t10 ? rs.filter(r => r.absent > 0 && (p.shop === 'All' || r.shop === p.shop)).sort((a, b) => b.absent - a.absent || (b.sw || 0) - (a.sw || 0)).slice(0, 10) : fl;
     tb.id = t10 ? 'tb-wfoa10' : 'tb-wfoa';   /* own sort memory per view, so Top 10 opens sorted by absent days */
     table(tb, rows, [{ k: 'name' }, { k: 'emp_id' }, { k: 'area' }, { k: 'section' }, { k: 'absent', n: 1, fmt: nf1 }, { k: 'abs_in_ot_weeks', n: 1, fmt: nf1 }, { k: 'ot_hours', n: 1, fmt: nf1 }, { k: 'ot_in_abs_weeks', n: 1, fmt: nf1, color: () => '#D0312D' },
       { k: 'absent_with_ot_days', n: 1, fmt: nf1, color: v => v > 0 ? '#8B1E1B' : null }, { k: 'sw', n: 1, fmt: nf1 }, { k: 'xp', n: 1, fmt: nf1 }], { q: document.getElementById('q-wfoa'), sort: t10 ? 'absent' : 'sw', dir: -1 });
