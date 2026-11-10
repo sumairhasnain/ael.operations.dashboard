@@ -82,6 +82,7 @@
   oaCss.textContent = `#c-w-oa .oag{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px}@media (max-width:900px){#c-w-oa .oag{grid-template-columns:1fr}}
 #c-w-oa .oak{display:flex;flex-wrap:wrap;gap:8px 22px;margin:2px 0 10px}#c-w-oa .oak div{border-left:3px solid #D0312D;padding:2px 0 2px 10px}
 #c-w-oa .oak span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770}#c-w-oa .oak b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C}
+#c-w-oal .wfoat{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #D5DBE1;border-radius:4px;background:#EEF1F4;color:#5A6670;cursor:pointer;white-space:nowrap;margin-left:6px}#c-w-oal .wfoat:hover{background:#E2E7EC}#c-w-oal .wfoat.on{background:#051C2C;border-color:#051C2C;color:#fff}
 #c-w-oa .oas{font-size:11.5px;color:#5A6670;margin:-4px 0 8px;line-height:1.4}`;
   document.head.appendChild(oaCss);
   const oa = (p, sel) => {
@@ -129,9 +130,22 @@
           g.append('rect').attr('x', 0).attr('y', y0).attr('width', bx.w).attr('height', rh).attr('fill', 'transparent')
             .on('mousemove', ev => tip.show(ev, [a, `${o.n} of ${o.hc} people did overtime in a week they were absent`, `Swapped hours ${f0(Math.round(o.sw))} · extra pay ${f0(Math.round(o.sw / 2))} h`, sel === a ? 'Click to show all areas' : 'Click to filter the page to this area']))
             .on('mouseleave', tip.hide).on('click', () => { tip.hide(); dash.setParams({ wfa: sel === a ? 0 : a }); }); }); } }
-    const tb = document.getElementById('tb-wfoa'), nf1 = v => v ? fx(v) : '—';
-    table(tb, fl, [{ k: 'name' }, { k: 'emp_id' }, { k: 'area' }, { k: 'section' }, { k: 'absent', n: 1, fmt: nf1 }, { k: 'abs_in_ot_weeks', n: 1, fmt: nf1 }, { k: 'ot_hours', n: 1, fmt: nf1 }, { k: 'ot_in_abs_weeks', n: 1, fmt: nf1, color: () => '#D0312D' },
-      { k: 'absent_with_ot_days', n: 1, fmt: nf1, color: v => v > 0 ? '#8B1E1B' : null }, { k: 'sw', n: 1, fmt: nf1 }, { k: 'xp', n: 1, fmt: nf1 }], { q: document.getElementById('q-wfoa'), sort: 'sw', dir: -1 });
+    const tb = document.querySelector('#c-w-oal table.tb'), nf1 = v => v ? fx(v) : '—';
+    /* 10 Nov (Umair): 'Top 10 Absentees' toggle beside this table's Clear filters. On = the 10 people with the most absent days in the
+       month, from everyone in the selected shop (top filter pane) and area, whether or not they did overtime. Kept in the wfoat param. */
+    const t10 = !!dash.params().wfoat, rows = t10 ? rs.filter(r => r.absent > 0).sort((a, b) => b.absent - a.absent || (b.sw || 0) - (a.sw || 0)).slice(0, 10) : fl;
+    tb.id = t10 ? 'tb-wfoa10' : 'tb-wfoa';   /* own sort memory per view, so Top 10 opens sorted by absent days */
+    table(tb, rows, [{ k: 'name' }, { k: 'emp_id' }, { k: 'area' }, { k: 'section' }, { k: 'absent', n: 1, fmt: nf1 }, { k: 'abs_in_ot_weeks', n: 1, fmt: nf1 }, { k: 'ot_hours', n: 1, fmt: nf1 }, { k: 'ot_in_abs_weeks', n: 1, fmt: nf1, color: () => '#D0312D' },
+      { k: 'absent_with_ot_days', n: 1, fmt: nf1, color: v => v > 0 ? '#8B1E1B' : null }, { k: 'sw', n: 1, fmt: nf1 }, { k: 'xp', n: 1, fmt: nf1 }], { q: document.getElementById('q-wfoa'), sort: t10 ? 'absent' : 'sw', dir: -1 });
+    const bar = document.getElementById('q-wfoa').closest('.qbar');
+    if (bar) { let tg = bar.querySelector('.wfoat');
+      if (!tg) { tg = document.createElement('button'); tg.type = 'button'; tg.className = 'wfoat'; tg.textContent = 'Top 10 Absentees';
+        tg.title = 'Show the 10 people with the most absent days this month (in the shop chosen at the top, if any)';
+        tg.addEventListener('click', () => dash.setParams({ wfoat: dash.params().wfoat ? 0 : 1 }));
+        const qc = bar.querySelector('.qclr'); qc ? qc.after(tg) : bar.appendChild(tg);
+        const fc = document.getElementById('f-clear'); if (fc && !fc._wfoat) { fc._wfoat = 1; fc.addEventListener('click', () => dash.setParams({ wfoat: 0 })); } }
+      tg.classList.toggle('on', t10); tg.setAttribute('aria-pressed', t10); }
+    const h3 = document.querySelector('#c-w-oal h3'); if (h3) h3.textContent = t10 ? `Who: Top 10 Absentees${p.shop !== 'All' ? ' · ' + p.shop : ''}` : 'Who: Overtime in the Same Week as an Absence';
   };
   window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf); try { oa(P, sel); } catch (e) { console.error(e); }
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
