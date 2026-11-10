@@ -75,8 +75,8 @@
 <div class="card"><h3 id="wt-oth" style="cursor:help">Overtime per Working Day</h3><div class="k" id="wt-otk" style="font-size:12px;color:#5A6670;margin:-2px 0 4px"></div><div class="wtc" id="wt-ot"></div></div>
 <div class="card"><h3 title="Absent % of present + absent days · green at or below the 5% target" style="cursor:help">Absenteeism Heatmap</h3><div class="wtc" id="wt-hab"></div></div>
 <div class="card"><h3 title="Overtime hours per present man-day (fair across part months) · green up to 1 h, amber near 1.75 h, red from 4 h" style="cursor:help">Overtime Intensity Heatmap</h3><div class="wtc" id="wt-hot"></div></div>
-<div class="card"><h3>Absenteeism Change vs Last Month</h3><div class="ssub" id="wt-dsub"></div><div class="wtc" id="wt-dab"></div></div>
-<div class="card"><h3>Overtime per Present Day: Change vs Last Month</h3><div class="ssub" id="wt-dsub2"></div><div class="wtc" id="wt-dot"></div></div>
+<div class="card"><h3 id="wt-dsub" style="cursor:help">Absenteeism Change vs Last Month</h3><div class="wtc" id="wt-dab"></div></div>
+<div class="card"><h3 id="wt-dsub2" style="cursor:help">Overtime per Present Day: Change vs Last Month</h3><div class="wtc" id="wt-dot"></div></div>
 <div class="card wide"><h3>Scorecards</h3><div class="ssub">Line: absenteeism % by month (dashed = 5% target) · bars: overtime hours per present man-day</div><div class="wtsm" id="wt-sm"></div></div>
 <div class="card wide"><h3>Month-to-Month Table</h3><div class="ssub" id="wt-tsub"></div><div class="wttb" id="wt-tb"></div></div>`;
     sec.appendChild(w);
@@ -152,7 +152,7 @@
     if (ms.includes(M.cur)) d3.select(el).append('div').style('font-size', '11px').style('color', MUT).text('* month to date');
   }
   function delta(id, sub, M, val, fmt, unit) {
-    const el = box(id), ms = M.months; document.getElementById(sub).textContent = ms.length > 1 ? `${mon(ms[ms.length - 1])}${ms[ms.length - 1] === M.cur ? ' to date' : ''} vs ${mon(ms[ms.length - 2])} · green = better, red = worse` : '';
+    const el = box(id), ms = M.months; document.getElementById(sub).title = ms.length > 1 ? `${mon(ms[ms.length - 1])}${ms[ms.length - 1] === M.cur ? ' to date' : ''} vs ${mon(ms[ms.length - 2])} · green = better, red = worse` : '';
     if (ms.length < 2) return emptyMsg(el, 'Needs two months of attendance; the file has ' + ms.map(mon).join(', ') + ' so far.');
     const [pm, lm] = ms.slice(-2), d = M.groups.map(g => { const a = val(M.g.get(g).get(lm) || {}), b = val(M.g.get(g).get(pm) || {}); return { g, a, b, d: a != null && b != null ? a - b : null }; }).filter(x => x.d != null).sort((x, y) => y.d - x.d);
     const W = Math.max(320, el.clientWidth || 440), rh = 22, lw = 132, H = d.length * rh + 20, ext = d3.max(d, x => Math.abs(x.d)) || 1, x = d3.scaleLinear([-ext, ext], [lw + 58, W - 62]);
