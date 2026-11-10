@@ -72,7 +72,7 @@
     const w = document.createElement('div'); w.id = 'wf-trend'; w.className = 'grid';
     w.innerHTML = `<div class="card wide"><h3><span id="wt-ttl" style="cursor:help">Absenteeism / Overtime Trend</span> <span class="chip snap" id="wt-scope"></span><span class="wtseg" id="wt-per" role="group" aria-label="Period"><button type="button" data-n="3">3M</button><button type="button" data-n="6">6M</button><button type="button" data-n="12">12M</button></span></h3><div class="wtk" id="wt-kpi"></div></div>
 <div class="card"><h3 title="Working days only (Sundays left out) · absent ÷ (present + absent) · target 5%" style="cursor:help">Absenteeism % by Month</h3><div class="wtc" id="wt-abs"></div></div>
-<div class="card"><h3 id="wt-oth">Overtime per Working Day</h3><div class="ssub" id="wt-ots"></div><div class="k" id="wt-otk" style="font-size:12px;color:#5A6670;margin:-2px 0 4px"></div><div class="wtc" id="wt-ot"></div></div>
+<div class="card"><h3 id="wt-oth" style="cursor:help">Overtime per Working Day</h3><div class="k" id="wt-otk" style="font-size:12px;color:#5A6670;margin:-2px 0 4px"></div><div class="wtc" id="wt-ot"></div></div>
 <div class="card"><h3>Absenteeism Heatmap</h3><div class="ssub">Absent % of present + absent days · green at or below the 5% target</div><div class="wtc" id="wt-hab"></div></div>
 <div class="card"><h3>Overtime Intensity Heatmap</h3><div class="ssub">Overtime hours per present man-day (fair across part months) · green up to 1 h, amber near 1.75 h, red from 4 h</div><div class="wtc" id="wt-hot"></div></div>
 <div class="card"><h3>Absenteeism Change vs Last Month</h3><div class="ssub" id="wt-dsub"></div><div class="wtc" id="wt-dab"></div></div>
@@ -114,7 +114,7 @@
   function otStack(M) {   /* dumbbell: every month a dot (faded = earlier, navy = latest), line first -> latest month, trend line at the right */
     const el = box('wt-ot'), ms = M.months, G = M.groups, first = ms[0], last = ms[ms.length - 1];
     document.getElementById('wt-oth').textContent = 'Overtime per Working Day by ' + M.label;
-    document.getElementById('wt-ots').textContent = `OT hours per working day · ${ms.length > 1 ? `faded dots = earlier months, navy dot = ${mlab(last, M.cur)} · line from ${mon(first)} to ${mon(last)}: red if overtime rose, green if it fell` : 'one month on file so far'}`;
+    document.getElementById('wt-oth').title = `OT hours per working day · ${ms.length > 1 ? `faded dots = earlier months, navy dot = ${mlab(last, M.cur)} · line from ${mon(first)} to ${mon(last)}: red if overtime rose, green if it fell` : 'one month on file so far'}`;
     const pa = M.plant.get(first), pb = M.plant.get(last), dd = pb.otday - pa.otday;
     document.getElementById('wt-otk').innerHTML = ms.length > 1 ? `${M.shop === 'All' ? 'All shops' : esc(M.shop)}: <b style="color:${NAVY}">${f0(pa.otday)} h/day</b> in ${mon(first)} → <b style="color:${NAVY}">${f0(pb.otday)} h/day</b> in ${mlab(last, M.cur)} <span style="color:${dd > 0 ? BAD : GOOD}">${dd > 0 ? '▲' : '▼'} ${f0(Math.abs(dd))}</span>` : `${M.shop === 'All' ? 'All shops' : esc(M.shop)}: <b style="color:${NAVY}">${f0(pb.otday)} h/day</b> in ${mlab(last, M.cur)}`;
     const rows = G.map(g => ({ g, v: ms.map(k => { const o = M.g.get(g).get(k) || {}; return o.otday == null ? 0 : o.otday; }) })).sort((a, b) => d3.max(b.v) - d3.max(a.v));
