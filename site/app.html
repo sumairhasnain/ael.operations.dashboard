@@ -3835,7 +3835,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 <span><svg width="22" height="10" aria-hidden="true"><line x1="1" x2="21" y1="5" y2="5" stroke="#1E8C5A" stroke-dasharray="3 3"/></svg>5% target</span>
 <span><svg width="12" height="10" aria-hidden="true"><rect x="1" y="1" width="10" height="9" fill="#C7D3F5"/></svg>Overtime hours per present man-day</span>
 <span>* month to date</span></div></div>
-<div class="card wide"><h3>Month-to-Month Table</h3><div class="ssub" id="wt-tsub"></div><div class="wttb" id="wt-tb"></div></div>`;
+<div class="card wide"><h3 id="wt-tsub" style="cursor:help">Month-to-Month Table</h3><div class="wttb" id="wt-tb"></div></div>`;
     sec.appendChild(w);
     w.querySelectorAll('#wt-per button').forEach(btn => btn.addEventListener('click', () => { per = +btn.dataset.n; render(); }));
     return sec;
@@ -3941,7 +3941,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   }
   function tableOf(M) {
     const el = box('wt-tb'), ms = M.months, two = ms.length > 1, [pm, lm] = ms.slice(-2);
-    document.getElementById('wt-tsub').textContent = `Absent % on working days, overtime hours and overtime per present man-day by ${M.label.toLowerCase()}` + (two ? `; repeat absentees = people with 3+ absent days in both ${mon(pm)} and ${mon(lm)}` : '');
+    document.getElementById('wt-tsub').title = `Absent % on working days, overtime hours and overtime per present man-day by ${M.label.toLowerCase()}` + (two ? `; repeat absentees = people with 3+ absent days in both ${mon(pm)} and ${mon(lm)}` : '');
     const cell = (o, k) => k === 'abs' ? (o.abs == null ? '—' : `<span style="color:${o.abs > 10 ? BAD : o.abs > 5 ? WARN : GOOD};font-weight:600">${f1(o.abs)}%</span>`) : k === 'ot' ? f0(o.ot || 0) : (o.otpd == null ? '—' : f2(o.otpd));
     const dlt = (a, b, f, u) => a == null || b == null ? '—' : `<span style="color:${a - b > 0 ? BAD : GOOD}">${a - b > 0 ? '▲' : a - b < 0 ? '▼' : ''} ${f(Math.abs(a - b))}${u}</span>`;
     let h = `<table><thead><tr><th rowspan="2">${M.label}</th>${ms.map(k => `<th class="grp" colspan="3">${mlab(k, M.cur)}</th>`).join('')}${two ? '<th class="grp" colspan="3">Change</th>' : ''}</tr><tr>${ms.map(() => '<th class="gl">Abs %</th><th>OT h</th><th>OT h/day</th>').join('')}${two ? '<th class="gl">Abs pts</th><th>OT h/day</th><th>Repeat absentees</th>' : ''}</tr></thead><tbody>`;
