@@ -160,7 +160,9 @@ def alsons_net(sup, pdaily):
         for r in sup:
             if r['code'] in pc_codes and not r.get('ih_adj'): prod[vc][r['date']] += int(r.get('received_sap', r['received']) or 0)
     months = {r['date'][:7] for r in sup}
-    for vc in [*ALSONS_IH, *OSP_IH]:
+    # 10 Nov (Umair): Alsons supply now arrives as 501 deliveries (tools/osp_alsons.py) and is pure Alsons supply, so it is
+    # no longer netted against in-house production; only the FCB OSP codes are still netted.
+    for vc in [*OSP_IH]:
         for m in months:
             rows = sorted([r for r in sup if r['code'] == vc and r['date'][:7] == m and (vc in OSP_IH or 'ALSONS' in str(r['vendor']).upper())], key=lambda r: r['date'])
             pdm = {d: q for d, q in prod[vc].items() if d[:7] == m}
