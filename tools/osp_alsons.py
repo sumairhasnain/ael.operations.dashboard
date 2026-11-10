@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OSP vendor receipts from MB51 (Umair, 10 Nov 2026).
+"""OSP vendor receipts from MB51 (Umair, 10 Nov 2026). Applies to all OSP vendors in Atlas's OSP list (Alsons first, then the others).
 
 Alsons' OSP carburetor child parts (30-series codes, vendor mapped in Atlas's OSP list) are booked in SAP
 as movement type 501 (receipt without PO) into store 0015, with no supplier on the line:
@@ -21,7 +21,7 @@ import collections, json, re, sys
 FARAZ_SRC, FARAZ_TO, FARAZ_V = '6010410020', '3090410005', '100375'
 FARAZ_MONTHS = ('2026-10', '2026-11', '2026-12')
 INHOUSE_REF = re.compile(r'^8\d{7}$')
-OSP_501_VENDORS = {'100022'}   # vendors whose 501 deliveries count (Umair confirmed Alsons, 10 Nov); add others only on his word
+OSP_501_VENDORS = {'100022', '100433', '100613', '100068', '100493'}   # Alsons, Faraz, Rubatech, MBI, Adamjee: 501 deliveries count for every OSP vendor (Umair, 10 Nov)
 
 
 def main(mb51_p, plan_p, vs_p, hist_p=None):
