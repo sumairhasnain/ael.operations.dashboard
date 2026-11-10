@@ -3915,8 +3915,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     b.hidden = window.__page !== 'workforce'; return b;
   }
   function label(b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
-    b.innerHTML = on ? '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.4"/></svg>Current Month'
-      : '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M1.5 12.5l4-4 3 2.5 6-6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 4.5h3.5V8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Trend';
+    b.innerHTML = on ? '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.4"/></svg>Show Current Month'
+      : '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M1.5 12.5l4-4 3 2.5 6-6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 4.5h3.5V8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Show Trend';
     b.title = on ? 'Back to the current month view' : 'Show month-to-month trends of absenteeism and overtime by shop'; }
   const sync = () => { try { button(); if (window.__page === 'workforce') render(); } catch (e) { console.warn('trend', e); } };
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); sync(); return r; };
