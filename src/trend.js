@@ -22,6 +22,7 @@
 .ael .wtk{display:flex;flex-wrap:wrap;gap:10px 22px;margin:2px 0 4px}
 .ael .wtk .t{border-left:3px solid #D0312D;padding:2px 0 2px 10px;min-width:150px} .ael .wtk .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770}
 .ael .wtk .v{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C;font-variant-numeric:tabular-nums;line-height:1.25} .ael .wtk .d{font-size:11.5px;margin-top:1px} .ael .wtk .v .p{font-family:var(--font-anthropic-sans);font-size:13px;color:#5B6770}
+.ael .wtlg{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px 16px;margin-top:8px;font-size:11.5px;color:#5A6670}.ael .wtlg span{display:inline-flex;align-items:center;gap:6px}
 .ael .wtsm{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px} .ael .wtsm .s{border:1px solid var(--line);padding:8px 10px}
 .ael .wtsm .s h4{margin:0;font-size:12px;font-weight:600;color:var(--ink);display:flex;justify-content:space-between;gap:6px} .ael .wtsm .s h4 b{font-weight:600}
 .ael .wttb{overflow:auto} .ael .wttb table{border-collapse:collapse;width:100%;font-size:12px} .ael .wttb th{background:var(--soft);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600}
@@ -77,7 +78,11 @@
 <div class="card"><h3 title="Overtime hours per present man-day (fair across part months) · green up to 1 h, amber near 1.75 h, red from 4 h" style="cursor:help">Overtime Intensity Heatmap</h3><div class="wtc" id="wt-hot"></div></div>
 <div class="card"><h3 id="wt-dsub" style="cursor:help">Absenteeism Change vs Last Month</h3><div class="wtc" id="wt-dab"></div></div>
 <div class="card"><h3 id="wt-dsub2" style="cursor:help">Overtime per Present Day: Change vs Last Month</h3><div class="wtc" id="wt-dot"></div></div>
-<div class="card wide"><h3>Scorecards</h3><div class="ssub">Line: absenteeism % by month (dashed = 5% target) · bars: overtime hours per present man-day</div><div class="wtsm" id="wt-sm"></div></div>
+<div class="card wide"><h3>Scorecards</h3><div class="wtsm" id="wt-sm"></div><div class="wtlg" aria-label="Legend">
+<span><svg width="22" height="10" aria-hidden="true"><line x1="1" x2="21" y1="5" y2="5" stroke="#051C2C" stroke-width="2"/><circle cx="11" cy="5" r="3" fill="#1E8C5A" stroke="#051C2C"/></svg>Absenteeism % by month</span>
+<span><svg width="22" height="10" aria-hidden="true"><line x1="1" x2="21" y1="5" y2="5" stroke="#1E8C5A" stroke-dasharray="3 3"/></svg>5% target</span>
+<span><svg width="12" height="10" aria-hidden="true"><rect x="1" y="1" width="10" height="9" fill="#C7D3F5"/></svg>Overtime hours per present man-day</span>
+<span>* month to date</span></div></div>
 <div class="card wide"><h3>Month-to-Month Table</h3><div class="ssub" id="wt-tsub"></div><div class="wttb" id="wt-tb"></div></div>`;
     sec.appendChild(w);
     w.querySelectorAll('#wt-per button').forEach(btn => btn.addEventListener('click', () => { per = +btn.dataset.n; render(); }));
