@@ -82,6 +82,8 @@
   oaCss.textContent = `#c-w-oa .oag{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px}@media (max-width:900px){#c-w-oa .oag{grid-template-columns:1fr}}
 #c-w-oa .oak{display:flex;flex-wrap:wrap;gap:8px 22px;margin:2px 0 10px}#c-w-oa .oak div{border-left:3px solid #D0312D;padding:2px 0 2px 10px}
 #c-w-oa .oak span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770}#c-w-oa .oak b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C}
+.ael .wfrow{grid-column:1/-1;display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:14px;align-items:stretch}@media (max-width:900px){.ael .wfrow{grid-template-columns:1fr}}
+.ael .wfrow>.card{display:flex;flex-direction:column;min-width:0;margin:0}.ael .wfrow>#c-w-oal .tbox{flex:1 1 0;min-height:200px;max-height:none}.ael .wfrow>#c-w-dist .tbox{max-height:none;flex:1 1 auto}
 #c-w-oal .wfoav{display:inline-flex;gap:6px;margin-left:6px}#c-w-oal .wfoat{font:inherit;font-size:12.5px;font-weight:600;padding:5px 12px;border:1px solid #D5DBE1;border-radius:4px;background:#EEF1F4;color:#5A6670;cursor:pointer;white-space:nowrap}#c-w-oal .wfoat:hover{background:#E2E7EC}#c-w-oal .wfoat.on{background:#051C2C;border-color:#051C2C;color:#fff}
 #c-w-oa .oas{font-size:11.5px;color:#5A6670;margin:-4px 0 8px;line-height:1.4}`;
   document.head.appendChild(oaCss);
@@ -95,7 +97,9 @@
       /* 10 Nov (Umair): 'Manpower Distribution - By Shop': people on the attendance sheet in the month, per shop */
       const card3 = document.createElement('div'); card3.className = 'card'; card3.id = 'c-w-dist';
       card3.innerHTML = '<h3>Manpower Distribution - By Shop</h3><div class="tbox"><table class="tb" id="tb-wfdist"><thead><tr><th data-k="shop">Shop</th><th class="n" data-k="n" title="People on the SharePoint attendance sheet this month (each EMP ID + name counted once)">Total Manpower</th></tr></thead><tbody></tbody><tfoot><tr><th style="text-align:left">Total</th><th class="n" id="wfdist-t"></th></tr></tfoot></table></div>';
-      host.after(card, card2, card3); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
+      /* 10 Nov 21:42 (Umair): Distribution table on the left, the Who table narrowed beside it, both the same height */
+      card2.className = 'card'; const row = document.createElement('div'); row.className = 'wfrow'; row.append(card3, card2);
+      host.after(card, row); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
     const all = (dash.data('sp_attendance_people') || {}).data || [], m = p.month || (window.__TODAY || '').slice(0, 7);
     const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     /* 10 Nov (Umair): 'AVG Absent Day (3 months)' = average absent days a month over the 3 complete months before month m,
