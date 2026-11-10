@@ -3785,7 +3785,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 <div class="card"><h3>Absenteeism % by Month</h3><div class="ssub">Working days only · target 5%</div><div class="wtc" id="wt-abs"></div></div>
 <div class="card"><h3>Overtime Hours by Month</h3><div class="ssub" id="wt-ots"></div><div class="wtc" id="wt-ot"></div></div>
 <div class="card"><h3>Absenteeism Heatmap</h3><div class="ssub">Absent % of present + absent days · green at or below the 5% target</div><div class="wtc" id="wt-hab"></div></div>
-<div class="card"><h3>Overtime Intensity Heatmap</h3><div class="ssub">Overtime hours per present man-day (fair across part months)</div><div class="wtc" id="wt-hot"></div></div>
+<div class="card"><h3>Overtime Intensity Heatmap</h3><div class="ssub">Overtime hours per present man-day (fair across part months) · green up to 1 h, amber near 1.75 h, red from 4 h</div><div class="wtc" id="wt-hot"></div></div>
 <div class="card"><h3>Absenteeism Change vs Last Month</h3><div class="ssub" id="wt-dsub"></div><div class="wtc" id="wt-dab"></div></div>
 <div class="card"><h3>Overtime per Present Day: Change vs Last Month</h3><div class="ssub" id="wt-dsub2"></div><div class="wtc" id="wt-dot"></div></div>
 <div class="card wide"><h3>Scorecards</h3><div class="ssub">Line: absenteeism % by month (dashed = 5% target) · bars: overtime hours per present man-day</div><div class="wtsm" id="wt-sm"></div></div>
@@ -3901,7 +3901,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     document.getElementById('wt-sub').textContent = `${M.months.length} month${M.months.length > 1 ? 's' : ''} on file: ${M.months.map(k => mlab(k, M.cur)).join(', ')} · by ${M.label.toLowerCase()} · source: Daily Attendance (SharePoint)`;
     kpis(M); plantAbs(M); otStack(M);
     heat('wt-hab', M, o => o.abs, v => f1(v) + '%', absCol, d => `<b>${esc(d.g)} · ${mlab(d.m, M.cur)}</b><br>Absenteeism ${d.o.abs == null ? '—' : f1(d.o.abs) + '%'}<br>${f0(d.o.absd || 0)} absent man-days · average headcount ${d.o.hc == null ? '—' : f0(d.o.hc)}`);
-    const otMax = d3.max(M.groups, g => d3.max(M.months, k => (M.g.get(g).get(k) || {}).otpd || 0)) || 1, otCol = d3.scaleSequential([0, otMax], d3.interpolateRgb('#D6E2FF', '#051C2C'));
+    const otCol = d3.scaleLinear().domain([0, 1, 1.75, 2.5, 4]).range(['#1E8C5A', '#8CC5A0', '#F2C14E', '#E7843C', '#D0312D']).clamp(true);   /* same colours as the absenteeism heatmap: green up to 1 OT hour per present man-day, red from 4 */
     heat('wt-hot', M, o => o.otpd, v => f2(v), v => v == null ? '#C9D0D7' : otCol(v), d => `<b>${esc(d.g)} · ${mlab(d.m, M.cur)}</b><br>${d.o.otpd == null ? '—' : f2(d.o.otpd)} OT hours per present man-day<br>Total overtime ${f0(d.o.ot || 0)} h`);
     delta('wt-dab', 'wt-dsub', M, o => o.abs, f1, ' pts'); delta('wt-dot', 'wt-dsub2', M, o => o.otpd, f2, ' h');
     multiples(M); tableOf(M);
