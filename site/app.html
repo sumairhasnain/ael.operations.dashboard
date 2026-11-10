@@ -2853,7 +2853,10 @@ window.addEventListener('resize', () => window.__draw());
       card.innerHTML = '<h3>Overtime While Absent</h3><div class="oas" id="wf-oa-sub"></div><div class="oak" id="wf-oa-k"></div><div class="oag"><div><div class="chart" id="wf-oa-sc"></div></div><div><div style="font-size:12px;font-weight:600;color:#051C2C;margin:0 0 4px">By area: swapped hours (people)</div><div class="chart" id="wf-oa-ar"></div></div></div>';
       const card2 = document.createElement('div'); card2.className = 'card wide'; card2.id = 'c-w-oal';
       card2.innerHTML = '<h3>Who: Overtime in the Same Week as an Absence</h3><input class="q" id="q-wfoa" placeholder="Search name, EMP ID, area or section" aria-label="Search people"><div class="tbox"><table class="tb" id="tb-wfoa"><thead><tr><th data-k="name">Name</th><th data-k="emp_id">EMP ID</th><th data-k="area">Area</th><th data-k="section">Section</th><th class="n" data-k="absent">Absent days</th><th class="n" data-k="avg3" title="Average absent days a month over the last 3 complete months before the month shown (only the months this person is on the attendance sheet). Only October is on file now, so it shows October until more months come in.">AVG Absent Day (3 months)</th><th class="n" data-k="abs_in_ot_weeks">Absent in OT weeks</th><th class="n" data-k="ot_hours">OT hours</th><th class="n" data-k="ot_in_abs_weeks">OT in absent weeks</th><th class="n" data-k="absent_with_ot_days">Absent + OT same day</th><th class="n" data-k="sw">Swapped hours</th><th class="n" data-k="xp">Extra pay (h)</th></tr></thead><tbody></tbody></table></div>';
-      host.after(card, card2); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
+      /* 10 Nov (Umair): 'Manpower Distribution - By Shop': people on the attendance sheet in the month, per shop */
+      const card3 = document.createElement('div'); card3.className = 'card'; card3.id = 'c-w-dist';
+      card3.innerHTML = '<h3>Manpower Distribution - By Shop</h3><div class="tbox"><table class="tb" id="tb-wfdist"><thead><tr><th data-k="shop">Shop</th><th class="n" data-k="n" title="People on the SharePoint attendance sheet this month (each EMP ID + name counted once)">Total Manpower</th></tr></thead><tbody></tbody><tfoot><tr><th style="text-align:left">Total</th><th class="n" id="wfdist-t"></th></tr></tfoot></table></div>';
+      host.after(card, card2, card3); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
     const all = (dash.data('sp_attendance_people') || {}).data || [], m = p.month || (window.__TODAY || '').slice(0, 7);
     const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     /* 10 Nov (Umair): 'AVG Absent Day (3 months)' = average absent days a month over the 3 complete months before month m,
@@ -2896,6 +2899,11 @@ window.addEventListener('resize', () => window.__draw());
           g.append('rect').attr('x', 0).attr('y', y0).attr('width', bx.w).attr('height', rh).attr('fill', 'transparent')
             .on('mousemove', ev => tip.show(ev, [a, `${o.n} of ${o.hc} people did overtime in a week they were absent`, `Swapped hours ${f0(Math.round(o.sw))} · extra pay ${f0(Math.round(o.sw / 2))} h`, sel === a ? 'Click to show all areas' : 'Click to filter the page to this area']))
             .on('mouseleave', tip.hide).on('click', () => { tip.hide(); dash.setParams({ wfa: sel === a ? 0 : a }); }); }); } }
+    { const pk2 = r => String(r.emp_id).trim() + '|' + String(r.name || '').trim().toUpperCase(), mon_ = all.filter(r => r.month === m);
+      const dr = d3.rollups(mon_, v => new Set(v.map(pk2)).size, r => r.shop || '—').map(([shop, n]) => ({ shop, n }));
+      table(document.getElementById('tb-wfdist'), dr, [{ k: 'shop' }, { k: 'n', n: 1, fmt: d3.format(',') }], { sort: 'n', dir: -1 });
+      document.getElementById('wfdist-t').textContent = d3.format(',')(d3.sum(dr, d => d.n));
+      document.querySelectorAll('#tb-wfdist tbody tr').forEach(tr => { const on = p.shop !== 'All' && tr.cells[0] && tr.cells[0].textContent === p.shop; tr.style.fontWeight = on ? 700 : ''; tr.style.background = on ? '#EEF1F4' : ''; }); }
     const tb = document.querySelector('#c-w-oal table.tb'), nf1 = v => v ? fx(v) : '—';
     /* 10 Nov (Umair): view buttons beside this table's Clear filters, kept in the wfoat param (only one on at a time; click again = default):
          default    = all manpower in the month, every shop (or the shop chosen in the top filter pane: its own people only)
