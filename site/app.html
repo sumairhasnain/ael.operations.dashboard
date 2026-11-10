@@ -3832,7 +3832,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const pa = M.plant.get(first), pb = M.plant.get(last), dd = pb.otday - pa.otday;
     document.getElementById('wt-otk').innerHTML = ms.length > 1 ? `${M.shop === 'All' ? 'All shops' : esc(M.shop)}: <b style="color:${NAVY}">${f0(pa.otday)} h/day</b> in ${mon(first)} → <b style="color:${NAVY}">${f0(pb.otday)} h/day</b> in ${mlab(last, M.cur)} <span style="color:${dd > 0 ? BAD : GOOD}">${dd > 0 ? '▲' : '▼'} ${f0(Math.abs(dd))}</span>` : `${M.shop === 'All' ? 'All shops' : esc(M.shop)}: <b style="color:${NAVY}">${f0(pb.otday)} h/day</b> in ${mlab(last, M.cur)}`;
     const rows = G.map(g => ({ g, v: ms.map(k => { const o = M.g.get(g).get(k) || {}; return o.otday == null ? 0 : o.otday; }) })).sort((a, b) => d3.max(b.v) - d3.max(a.v));
-    const W = Math.max(340, el.clientWidth || 440), sw = ms.length > 2 ? Math.min(90, W * .16) : 0, lw = Math.min(130, W * .28), rh = 26, H = rows.length * rh + 30;
+    const W = Math.max(340, el.clientWidth || 440), sw = ms.length > 1 ? Math.min(90, W * .16) : 0, lw = Math.min(130, W * .28), rh = 26, H = rows.length * rh + 30;
     const x = d3.scaleLinear([0, (d3.max(rows, r => d3.max(r.v)) || 1) * 1.05], [lw, W - sw - 48]);
     const s = d3.select(el).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%');
     s.append('g').attr('transform', `translate(0,${H - 18})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor((W - lw - sw) / 80))).tickSize(-(H - 24))).call(g => { g.select('.domain').remove(); g.selectAll('line').attr('stroke', LINE); g.selectAll('text').attr('fill', MUT).attr('font-size', 10); });
@@ -3850,7 +3850,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       if (sw) { const sx = d3.scalePoint(ms, [W - sw + 6, W - 6]), sy = d3.scaleLinear([0, d3.max(r.v) || 1], [y + 8, y - 8]);
         g.append('path').attr('d', d3.line((q, j) => sx(ms[j]), q => sy(q))(r.v)).attr('fill', 'none').attr('stroke', NAVY).attr('stroke-width', 1.4);
         g.append('circle').attr('cx', sx(last)).attr('cy', sy(b)).attr('r', 2.4).attr('fill', NAVY); } });
-    if (sw) s.append('text').attr('x', W - sw + 6).attr('y', H - 4).attr('font-size', 10).attr('fill', MUT).text(mon(first) + ' → ' + mon(last));
+    if (sw) s.append('text').attr('x', W - 4).attr('y', H - 4).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', MUT).text(MON[+first.slice(5) - 1] + ' → ' + MON[+last.slice(5) - 1]);
     if (ms.length === 2) { const lg = d3.select(el).append('div').style('font-size', '11px').style('color', MUT).style('margin-top', '2px');
       lg.html(`<span style="display:inline-block;width:9px;height:9px;border:2px solid #9AA5B1;border-radius:50%;vertical-align:-2px;margin-right:4px"></span>${mlab(first, M.cur)} &nbsp; <span style="display:inline-block;width:11px;height:11px;background:${NAVY};border-radius:50%;vertical-align:-2px;margin-right:4px"></span>${mlab(last, M.cur)}`); }
   }
