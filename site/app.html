@@ -4045,21 +4045,47 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       <div class="t"><div class="l">Cost of production</div><div class="v">${pm(T)} <span class="p">PKR · ${mon(m)}${partial ? ' to ' + (+asof.slice(8)) + ' ' + MN[+asof.slice(5, 7) - 1] : ''}</span></div><div class="d">${SH ? esc(SH) : 'All shops'}</div></div>
       ${EL.map(([e, c]) => { const v = tot(e); return `<div class="t" style="border-left-color:${c}"><div class="l">${e}</div><div class="v">${pm(v)} <span class="p">${T ? Math.round(100 * v / T) : 0}%</span></div><div class="d">${e === 'Direct labour' ? (ppl ? nf(ppl) + ' people' : 'no attendance for this month') : e === 'Utilities' ? (cur.some(r => r.element === 'Utilities' && r.estimate) ? 'electricity & gas · estimated' : 'electricity & gas · ' + d3.format(',.0f')(d3.sum(cur.filter(r => r.element === 'Utilities'), r => r.mwh || 0)) + ' MWh') : e === 'Direct material' ? 'purchased material to production' : 'tools, consumables, spares, lubes'}</div></div>`; }).join('')}
     </div>`;
-    // by shop (stacked horizontal)
-    const es = document.getElementById('cp-shop');
-    const byS = d3.rollup(cur, v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);
-    const shops = [...byS.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
+    /* 11 Nov 23:18 (Umair): vertical columns, one per cost element, for each shop. With a shop picked in the filter pane the
+       chart shows that shop's finished products instead (OEM products at the shop's OEM rates, SPD parts at their allocated cost). */
+    const es = document.getElementById('cp-shop'), h3 = document.querySelector('#c-cp-shop h3');
     document.getElementById('cp-shop-lg').innerHTML = leg();
-    if (!shops.length) empty(es, 'No cost data for this month'); else {
-      const rh = 26, mt = 4, lw = 150, h = shops.length * rh + mt + 22; const { svg, w } = box(es, h);
-      const mx = d3.max(shops, s => d3.sum(EL, ([e]) => Math.max(0, byS.get(s)[e]))) || 1; const x = d3.scaleLinear().domain([0, mx]).range([0, w - lw - 70]);
-      shops.forEach((s, i) => { const o = byS.get(s), y = mt + i * rh; let x0 = lw;
-        svg.append('text').attr('x', lw - 8).attr('y', y + rh / 2 + 4).attr('text-anchor', 'end').attr('font-size', 11.5).attr('fill', C.navy).text(s);
-        EL.forEach(([e, c]) => { const v = Math.max(0, o[e]); if (!v) return; const ww = x(v);
-          svg.append('rect').attr('x', x0).attr('y', y + 5).attr('width', Math.max(0.5, ww)).attr('height', rh - 10).attr('fill', c)
-            .on('mousemove', ev => tip.show(ev, [s, `${e}: ${pm(v)} PKR`, ...(e === 'Utilities' ? [`Electricity ${d3.format(',.1f')(d3.sum(cur.filter(r => r.shop === s && r.element === e), r => r.mwh || 0))} MWh x Rs 32/kWh${cur.some(r => r.shop === s && r.element === e && r.estimate) ? ' (estimate)' : ''}`] : []), `Shop total: ${pm(d3.sum(EL, ([k]) => o[k]))} PKR`])).on('mouseleave', tip.hide); x0 += ww; });
-        svg.append('text').attr('x', x0 + 6).attr('y', y + rh / 2 + 4).attr('font-size', 11).attr('fill', '#5B6770').text(pm(d3.sum(EL, ([k]) => o[k]))); });
-      svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', mt).attr('y2', mt + shops.length * rh).attr('stroke', C.navy);
+    let G = [];
+    if (!SH) {
+      const byS = d3.rollup(cur, v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);
+      G = [...byS.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); })
+        .map(s => ({ name: s, v: byS.get(s), sub: '' })).filter(g => d3.sum(EL, ([e]) => g.v[e]));
+      if (h3) h3.textContent = 'COGM by Shop';
+    } else {
+      const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === SH) || {}).units;
+      const rate = Object.fromEntries(EL.map(([e]) => [e, vo ? d3.sum(cur.filter(r => r.element === e && !r.spd), r => r.value_pkr) / vo : 0]));
+      R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])), ru: rate }));
+      const K2 = { 'Direct material': 'dm_unit', 'Indirect material': 'im_unit', 'Direct labour': 'lab_unit', 'Utilities': 'util_unit' };
+      R.filter(r => r.month === m && r.element === 'SPD product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: 'SPD', spd: true, v: Object.fromEntries(EL.map(([e]) => [e, (r[K2[e]] || 0) * r.units])), ru: Object.fromEntries(EL.map(([e]) => [e, r[K2[e]] || 0])) }));
+      G.sort((a, b) => (a.spd ? 1 : 0) - (b.spd ? 1 : 0) || d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));
+      const oem = G.filter(g => !g.spd), sp = G.filter(g => g.spd), MAXS = Math.max(3, 14 - oem.length);
+      if (sp.length > MAXS) { const rest = sp.slice(MAXS - 1); G = [...oem, ...sp.slice(0, MAXS - 1), { name: `Other SPD parts (${rest.length})`, sub: 'SPD', spd: true, units: d3.sum(rest, g => g.units), v: Object.fromEntries(EL.map(([e]) => [e, d3.sum(rest, g => g.v[e])])) }]; }
+      if (h3) h3.textContent = 'COGM by Product · ' + SH;
+    }
+    if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
+      const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
+      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(0.22).paddingOuter(0.08);
+      const x1 = d3.scaleBand().domain(EL.map(([e]) => e)).range([0, x0.bandwidth()]).padding(0.08);
+      const y = d3.scaleLinear().domain([0, d3.max(G, g => d3.max(EL, ([e]) => g.v[e])) || 1]).nice().range([h - mb, mt + 30]);
+      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => v >= 1e6 ? d3.format(',.0f')(v / 1e6) + 'M' : pm(v).replace(' ', ''))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
+      svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - 8).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#E6E9EC').lower();
+      const f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v);
+      G.forEach((g, i) => { const gx = x0(i), t = d3.sum(EL, ([e]) => g.v[e]);
+        const L = [g.name + (g.code ? ' · ' + g.code : '') + (g.spd ? ' (SPD)' : ''), ...(g.units ? [`${nf(g.units)} units${SH ? '' : ''}`] : []), ...EL.map(([e]) => `${e}: ${pm(g.v[e])} PKR${g.ru ? ' · Rs ' + rsu(g.ru[e]) + '/unit' : ''}`), `Total: ${pm(t)} PKR${g.units ? ' · Rs ' + rsu(t / g.units) + '/unit' : ''}`];
+        if (!SH) { const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === g.name) || {}).units; if (vo) L.splice(1, 0, `${nf(vo)} units produced`); }
+        EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0), bx = gx + x1(e), bw = x1.bandwidth();
+          svg.append('rect').attr('x', bx).attr('y', y(v)).attr('width', bw).attr('height', Math.max(v ? 1 : 0, y(0) - y(v))).attr('fill', c).attr('opacity', g.spd ? 0.75 : 1)
+            .on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide);
+          if (v) svg.append('text').attr('transform', `translate(${bx + bw / 2 + 3},${y(v) - 4}) rotate(-90)`).attr('font-size', bw >= 11 ? 9.5 : 8).attr('fill', '#33414B').text(pm(v).replace(' ', '')); });
+        const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
+        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 14).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
+        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub || '') + ' · ' + pm(t).replace(' ', ''));
+        svg.append('rect').attr('x', gx).attr('y', mt).attr('width', x0.bandwidth()).attr('height', h - mb - mt).attr('fill', 'transparent').lower(); });
+      svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy);
     }
     // monthly trend (stacked columns)
     const et = document.getElementById('cp-trend'); document.getElementById('cp-trend-lg').innerHTML = leg();
