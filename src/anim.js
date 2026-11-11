@@ -125,5 +125,7 @@
     holders().forEach(h => { h._drawn = 1; }); };
   const hookDraw = () => { const d = window.__draw; if (typeof d !== 'function') return false; if (d._a) return true;
     const w = (...a) => { let r; try { r = d(...a); } finally { const p = window.__page; try { after(p); } catch (e) {} lastPage = p; } return r; }; w._a = 1; window.__draw = w; return true; };
+  /* 12 Nov 00:41 (Umair): replay the tab-entrance animation for a page whose view changes without a tab click (Manpower: Show Trend / Show Current Month) */
+  window.__animReplay = page => { const sec = document.getElementById(page); if (!sec || still()) return; qa('svg', sec).forEach(s => done.delete(s)); entry = { page, t: performance.now() }; requestAnimationFrame(() => page === 'savings' ? savings(sec) : generic(sec)); };
   if (!hookDraw()) document.addEventListener('DOMContentLoaded', hookDraw);
 })();

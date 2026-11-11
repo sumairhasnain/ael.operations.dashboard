@@ -219,7 +219,7 @@
   function button() {
     let b = document.getElementById('f-trend'); const top = document.querySelector('.ael .hdr .top'); if (!top) return null;
     if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'f-trend'; b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', () => { on = !on; label(b); render(); }); top.appendChild(b); label(b); }
+      b.addEventListener('click', () => { on = !on; label(b); render(); try { window.scrollTo({ top: 0 }); if (window.__animReplay) window.__animReplay(window.__page); } catch (e) {} });   /* page entrance animation on both views (Umair, 12 Nov) */ top.appendChild(b); label(b); }
     b.hidden = window.__page !== 'workforce'; return b;
   }
   function label(b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));

@@ -2392,6 +2392,8 @@ window.addEventListener('resize', () => window.__draw());
     holders().forEach(h => { h._drawn = 1; }); };
   const hookDraw = () => { const d = window.__draw; if (typeof d !== 'function') return false; if (d._a) return true;
     const w = (...a) => { let r; try { r = d(...a); } finally { const p = window.__page; try { after(p); } catch (e) {} lastPage = p; } return r; }; w._a = 1; window.__draw = w; return true; };
+  /* 12 Nov 00:41 (Umair): replay the tab-entrance animation for a page whose view changes without a tab click (Manpower: Show Trend / Show Current Month) */
+  window.__animReplay = page => { const sec = document.getElementById(page); if (!sec || still()) return; qa('svg', sec).forEach(s => done.delete(s)); entry = { page, t: performance.now() }; requestAnimationFrame(() => page === 'savings' ? savings(sec) : generic(sec)); };
   if (!hookDraw()) document.addEventListener('DOMContentLoaded', hookDraw);
 })();
 
@@ -3973,7 +3975,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   function button() {
     let b = document.getElementById('f-trend'); const top = document.querySelector('.ael .hdr .top'); if (!top) return null;
     if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'f-trend'; b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', () => { on = !on; label(b); render(); }); top.appendChild(b); label(b); }
+      b.addEventListener('click', () => { on = !on; label(b); render(); try { window.scrollTo({ top: 0 }); if (window.__animReplay) window.__animReplay(window.__page); } catch (e) {} });   /* page entrance animation on both views (Umair, 12 Nov) */ top.appendChild(b); label(b); }
     b.hidden = window.__page !== 'workforce'; return b;
   }
   function label(b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
