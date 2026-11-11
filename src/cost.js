@@ -61,39 +61,38 @@
        chart shows that shop's finished products instead (OEM products at the shop's OEM rates, SPD parts at their allocated cost). */
     const es = document.getElementById('cp-shop'), h3 = document.querySelector('#c-cp-shop h3');
     document.getElementById('cp-shop-lg').innerHTML = leg();
-    let G = [];
+    let G = [];   /* 12 Nov 00:00 (Umair): Rs per unit, OEM only. Shop view: each element (OEM share) / the shop's units produced; product view: each OEM product of the shop at its shop's rate */
+    const VU = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r.units]));
+    const oemBy = s => Object.fromEntries(EL.map(([e]) => [e, d3.sum(cur.filter(r => r.shop === s && r.element === e && !r.spd), r => r.value_pkr)]));
     if (!SH) {
-      const byS = d3.rollup(cur.filter(r => !r.spd), v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);   /* OEM share only */
-      G = [...byS.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); })
-        .map(s => ({ name: s, v: byS.get(s), sub: '' })).filter(g => d3.sum(EL, ([e]) => g.v[e]));
-      if (h3) h3.textContent = 'COGM by Shop (OEM)';
+      G = [...new Set(cur.map(r => r.shop))].filter(s => VU.get(s)).sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); })
+        .map(s => { const T = oemBy(s), u = VU.get(s); return { name: s, units: u, pk: T, v: Object.fromEntries(EL.map(([e]) => [e, T[e] / u])), sub: '' }; }).filter(g => d3.sum(EL, ([e]) => g.v[e]));
+      if (h3) h3.textContent = 'COGM per Unit by Shop (OEM, Rs / unit)';
     } else {
-      const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === SH) || {}).units;
-      const rate = Object.fromEntries(EL.map(([e]) => [e, vo ? d3.sum(cur.filter(r => r.element === e && !r.spd), r => r.value_pkr) / vo : 0]));
-      R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])), ru: rate }));
-      G.sort((a, b) => d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));   /* 11 Nov 23:34 (Umair): OEM products only, no SPD */
-      if (h3) h3.textContent = 'COGM by OEM Product · ' + SH;
+      const vo = VU.get(SH), T = oemBy(SH), rate = Object.fromEntries(EL.map(([e]) => [e, vo ? T[e] / vo : 0]));
+      R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: { ...rate }, pk: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])) }));
+      G.sort((a, b) => b.units - a.units);
+      if (h3) h3.textContent = 'COGM per Unit by OEM Product · ' + SH + ' (Rs / unit)';
     }
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
       const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
       const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15);   /* 11 Nov 23:38 (Umair): stacked columns */
       const y = d3.scaleLinear().domain([0, d3.max(G, g => d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0))) || 1]).nice().range([h - mb, mt + 14]);
-      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => v >= 1e6 ? d3.format(',.0f')(v / 1e6) + 'M' : pm(v).replace(' ', ''))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
+      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => d3.format(',.0f')(v))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
       svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - 8).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#E6E9EC').lower();
       const f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v);
       G.forEach((g, i) => { const gx = x0(i), t = d3.sum(EL, ([e]) => g.v[e]);
-        const L = [g.name + (g.code ? ' · ' + g.code : '') + (g.spd ? ' (SPD)' : ''), ...(g.units ? [`${nf(g.units)} units${SH ? '' : ''}`] : []), ...EL.map(([e]) => `${e}: ${pm(g.v[e])} PKR${g.ru ? ' · Rs ' + rsu(g.ru[e]) + '/unit' : ''}`), `Total: ${pm(t)} PKR${g.units ? ' · Rs ' + rsu(t / g.units) + '/unit' : ''}`];
-        if (!SH) { const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === g.name) || {}).units; if (vo) L.splice(1, 0, `${nf(vo)} units produced`); }
+        const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
         let y0 = 0; const bw = x0.bandwidth();
         EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = y(y0 + v), hh = y(y0) - yt;
           svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
-            .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: ${pm(v)} PKR (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
-          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Utilities' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(pm(v).replace(' ', ''));
+            .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: Rs ${rsu(v)}/unit (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
+          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Utilities' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
           y0 += v; });
-        svg.append('text').attr('x', gx + bw / 2).attr('y', y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text(pm(t).replace(' ', ''));
+        svg.append('text').attr('x', gx + bw / 2).attr('y', y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text('Rs ' + rsu(t));
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
         svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 14).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
-        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub || '') + ' · ' + pm(t).replace(' ', ''));
+        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub ? g.sub + ' · ' : '') + nf(g.units) + ' units');
         svg.append('rect').attr('x', gx).attr('y', mt).attr('width', x0.bandwidth()).attr('height', h - mb - mt).attr('fill', 'transparent').lower(); });
       svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy);
     }
