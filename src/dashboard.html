@@ -136,7 +136,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <button class="tab" role="tab" id="t-efficiency" data-p="efficiency">Efficiency</button>
 <button class="tab" role="tab" id="t-workforce" data-p="workforce">Manpower</button>
 <button class="tab" role="tab" id="t-inventory" data-p="inventory">Inventory</button>
-<button class="tab" role="tab" id="t-cost" data-p="cost">Cost</button>
+<button class="tab" role="tab" id="t-cost" data-p="cost">Cost of Production</button>
 <button class="tab" role="tab" id="t-savings" data-p="savings">VA/CR Activities</button>
 <button class="tab" role="tab" id="t-issues" data-p="issues">Issues</button>
 <button class="tab" role="tab" id="t-projects" data-p="projects">Projects</button>
@@ -278,10 +278,11 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 </section>
 <section class="page" id="cost">
 <div class="grid">
-<div class="card" id="c-k-month"><h3>Budget vs Actual <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_cost"></div></div>
-<div class="card" id="c-k-shop"><h3>By Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_cost"></div></div>
-<div class="card" id="c-k-unit"><h3>Unit Cost <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_unit_cost"></div></div>
-<div class="card" id="c-k-margin"><h3>Margin <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_unit_cost"></div></div>
+<div class="card wide kpicard" id="c-cp-kpi"><h3 title="Cost of Goods Manufactured = direct material (SAP 261 less 262 of purchased material) + indirect material (SAP cost-centre issues: tools, consumables, spares, lubricants) + direct labour (attendance: Rs 42,500 a month, less absent days at 42,500/26, plus overtime at 1.5x the hour rate of 42,500/26/8) + utilities (electricity: MWh per shop from the utilities sheet x Rs 32/kWh; the current month is estimated from October until its figures are given; gas not costed yet)" style="cursor:help">Cost of Goods Manufactured</h3><div id="cp-kpi" data-source="cogm"></div></div>
+<div class="card wide" id="c-cp-shop"><h3>COGM by Shop</h3><div id="cp-shop-lg"></div><div class="chart" id="cp-shop" data-source="cogm"></div></div>
+<div class="card wide" id="c-cp-trend"><h3 title="Labour is counted from October 2026, when the attendance workbook starts. * = month to date" style="cursor:help">COGM by Month</h3><div id="cp-trend-lg"></div><div class="chart" id="cp-trend" data-source="cogm"></div></div>
+<div class="card wide" id="c-cp-tab"><h3 title="Electricity: MWh per shop from the utilities sheet x Rs 32/kWh. Grey italic = estimated (month not on the sheet yet). Machining is shown as the utilities sheet names it." style="cursor:help">Cost Elements by Shop</h3><div class="tbox" id="cp-tab" data-source="cogm"></div></div>
+<div class="card wide" id="c-cp-lab"><h3>Direct Labour by Shop</h3><div class="tbox" id="cp-lab" data-source="cogm"></div></div>
 </div>
 </section>
 <section class="page" id="savings"><i hidden data-source="cr_ideas cr_conv"></i></section>
@@ -1506,7 +1507,7 @@ document.querySelectorAll('[data-asof]').forEach(el => { try { const r = D(el.da
 if (dash.data('atlas_stock_critical').status === 'ok') table(q('#tb-crit'), D('atlas_stock_critical').filter(r => inShop(r, p) && okC(r.code)), [{ k: 'code' }, { k: 'part' }, { k: 'shop' }, { k: 'safety_stock', n: 1 }, { k: 'stock', n: 1 }, { k: 'vendor_stock', n: 1 }, { k: 'cover_pct', n: 1, fmt: v => v + '%', color: v => v < 25 ? C.bad : C.warn }], { q: q('#q-crit'), sort: 'cover_pct', dir: 1 });
 },
 cost(p) {
-const em = ch('c-k-month'), es = ch('c-k-shop'), eu = ch('c-k-unit'), eg = ch('c-k-margin');
+const em = ch('c-k-month'), es = ch('c-k-shop'), eu = ch('c-k-unit'), eg = ch('c-k-margin'); if (!em) return;   /* 11 Nov (Umair): sample cards replaced by cost.js (Cost of Production) */
 if (!status(em, 'smp_cost')) { const g = d3.rollup(D('smp_cost').filter(r => inShop(r, p)), v => ({ b: d3.sum(v, r => r.budget_pkr_m), a: v.some(r => r.actual_pkr_m != null) ? d3.sum(v, r => r.actual_pkr_m || 0) : null }), r => r.month);
 vbar(em, window.__MONTHS, [{ key: 'b', name: 'Budget', color: C.plan }, { key: 'a', name: 'Actual', color: c => { const v = g.get(c); return v.a == null ? C.plan : v.a > v.b * 1.02 ? C.bad : C.navy; } }], (c, k) => (g.get(c) || {})[k], { xFmt: mon, fmt: v => f1(v) + ' M', yFmt: v => v, marker: p.month, extra: c => c === '2026-10' ? 'October to 14 Oct' : '' }); }
 if (!status(es, 'smp_cost')) pvaH(es, D('smp_cost').filter(r => r.month === p.month && inShop(r, p)).map(r => ({ label: r.shop, plan: r.budget_pkr_m, actual: r.actual_pkr_m })).sort((a, b) => b.plan - a.plan), { inv: 1, planName: 'Budget', actName: 'Actual', fmt: v => f1(v) + ' M', rh: 26 });
@@ -1624,6 +1625,6 @@ window.addEventListener('resize', () => window.__draw());
 <script src="os.js"></script>
 <script src="transit.js"></script>
 <script src="spd.js"></script><script src="compopen.js"></script>
-<script src="mplan.js"></script><script src="trend.js"></script>
+<script src="mplan.js"></script><script src="trend.js"></script><script src="cost.js"></script>
 <script src="fom.js"></script>
 <script src="ins.js"></script>
