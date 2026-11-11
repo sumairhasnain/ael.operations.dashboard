@@ -91,7 +91,7 @@ def main(upkl, mb51, data, out, asof=None):
         if 'ZINC' in d: return 'Carburetor'                                  # ZDC: carburetor body casting
         if 'HD2' in d.replace(' ', '') and 'BS1' in d.replace(' ', ''): return 'HPDC / Die Cast'   # HD2 BS1 aluminium: HPDC only (Umair)
         if 'AC8A' in d.replace(' ', ''): return 'Piston'                     # AC8A aluminium: Piston only (Umair)
-        if 'HD2G' in d.replace(' ', ''): return 'Bridge Fork Top'            # HD2G aluminium: BFT casting in Aluminium Foundry (Umair)
+        if 'HD2G' in d.replace(' ', '') or 'HD1.1' in d.replace(' ', ''): return 'Bridge Fork Top'  # HD2G = HD1.1 in SAP: BFT casting in Aluminium Foundry (Umair)
         if not shop_of.get(mat):
             for kw, sh in KW_SHOP:
                 if kw in d: return sh
