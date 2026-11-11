@@ -192,7 +192,7 @@ def main(upkl, mb51, data, out, asof=None):
         for t, uu in tgt.items():
             if uu: rows[(m, t, e, sub)] += v * uu / tt; alloc[(m, t, e, sub)] = alloc.get((m, t, e, sub), 0) + v * uu / tt
     # ---- SPD (11 Nov 22:24, Umair): SPD parts made in-house (AAL 91-codes, MB51 101 with no supplier) take their share of the shop's
-    # direct and indirect material, so OEM products carry only their own material. Share = SPD production at SAP standard cost /
+    # direct and indirect material, labour and utilities, so OEM products carry only their own material. Share = SPD production at SAP standard cost /
     # (OEM finished production at standard + SPD at standard). Current month only (the MB51 file holds the current month).
     a101 = collections.defaultdict(float); q101 = collections.defaultdict(float)
     for ln in open(mb51, encoding='utf-8'):
@@ -224,13 +224,17 @@ def main(upkl, mb51, data, out, asof=None):
         S = sum(x[2] for x in lst); O = oem_std.get(sh, 0)
         if not O or (cur, sh) not in units: continue
         share = S / (O + S); spd_share[sh] = (share, S, O, sum(x[1] for x in lst))
-        mat = 0.0
+        # 11 Nov 22:35 (Umair): labour and utilities split the same way as material (all four elements)
+        el = collections.defaultdict(float)
         for (m, s_, e, sub), v in list(rows.items()):
-            if m == cur and s_ == sh and e in ('Direct material', 'Indirect material'):
-                rows[(m, s_, e, sub)] = v * (1 - share); rows[(m, s_, e, sub + '|SPD')] = v * share; mat += v * share
+            if m == cur and s_ == sh and e in ('Direct material', 'Indirect material', 'Direct labour', 'Utilities'):
+                rows[(m, s_, e, sub)] = v * (1 - share); rows[(m, s_, e, sub + '|SPD')] = v * share; el[e] += v * share
+        mat = sum(el.values())
         for c, q, a in sorted(lst, key=lambda x: -x[2]):
+            k = a / S
             spd_rows.append({'month': cur, 'shop': sh, 'element': 'SPD product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': mdesc.get(c, '') or desc.get(c, ''),
-                             'units': round(q), 'std_pkr': round(a), 'std_unit': round(a / q, 1), 'material_pkr': round(mat * a / S), 'material_unit': round(mat * a / S / q, 1), 'asof': asof})
+                             'units': round(q), 'std_pkr': round(a), 'std_unit': round(a / q, 1), 'cost_pkr': round(mat * k), 'cost_unit': round(mat * k / q, 1),
+                             **{n_: round(el[e_] * k / q, 1) for n_, e_ in (('dm_unit', 'Direct material'), ('im_unit', 'Indirect material'), ('lab_unit', 'Direct labour'), ('util_unit', 'Utilities'))}, 'asof': asof})
     out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub.split('|')[0], **({'spd': True} if sub.endswith('|SPD') else {}), 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
                  **({'mwh': extra_u.get((m, s))} if e == 'Utilities' and sub == 'Electricity' else {}),
                  **({'from_alf': round(alloc[(m, s, e, sub)])} if (m, s, e, sub) in alloc else {}), 'asof': asof}
