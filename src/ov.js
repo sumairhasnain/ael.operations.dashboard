@@ -26,6 +26,9 @@
   const STA = { good: ['On track', '#1E8C5A', '#E6F4EC'], watch: ['Watch', '#9A6B00', '#FDF3D6'], bad: ['Needs action', '#B3261E', '#FBE7E6'], info: ['Month to date', '#33414B', '#EEF1F4'] };
   const pill = k => { const x = STA[k] || STA.info; return `<span class="pill" style="color:${x[1]};background:${x[2]}"><i></i>${x[0]}</span>`; };
   const band = (v, g, w, hiGood = true) => v == null ? 'info' : hiGood ? (v >= g ? 'good' : v >= w ? 'watch' : 'bad') : (v <= g ? 'good' : v <= w ? 'watch' : 'bad');
+  /* 12 Nov 00:06 (Umair): less text on the cards. One headline figure + 3 short rows; sub-lines, card subtitle and 'View details' are gone (hover for the notes, the detail window keeps everything) */
+  const SHORT = { 'Direct material': 'Material', 'Indirect material': 'Indirect', 'Direct labour': 'Labour', 'Excess stock': 'Excess', 'Slow moving': 'Slow', 'Total potential': 'Potential', 'Absent latest day': 'Latest day', 'Vendors under 80%': 'Under 80%', 'Parts over capacity': 'Parts over', 'Machines over 85%': 'M/c over 85%', 'Machines studied': 'Machines', 'In-house parts': 'In-house' };
+  const PICK = { production: [0, 1, 2, 4], vendor: [0, 1, 2, 4], inventory: [0, 1, 2, 3], workforce: [1, 0, 3, 2], cost: [0, 1, 2, 3], capacity: [2, 0, 3, 4], projects: [1, 0, 2, 4], savings: [2, 1, 3, 0] };
   const NEED = { production: ['atlas_parts_daily', 'atlas_parts'], vendor: ['atlas_vendor_supply'], inventory: ['sap_stock'], workforce: ['sp_attendance'],
     cost: ['cogm'], capacity: ['cap_machines', 'cap_parts', 'atlas_parts_daily', 'atlas_parts'], projects: ['jira_issues'], savings: ['cr_ideas'] };
 
@@ -81,7 +84,20 @@
 .ovm .pn .em{color:#5B6770;font-size:12px;padding:30px 0;text-align:center}
 .ovm .ft{font-size:11.5px;color:#5B6770;margin-top:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ovm .ft button{border:1px solid #051C2C;background:#051C2C;color:#fff;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer}
-@media (max-width:1000px){.ael #summary .ovg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;aspect-ratio:auto;max-height:none}.ael #summary .ovc{height:300px}.ovm .bg{grid-template-columns:1fr}}`;
+@media (max-width:1000px){.ael #summary .ovg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;aspect-ratio:auto;max-height:none}.ael #summary .ovc{height:300px}.ovm .bg{grid-template-columns:1fr}}
+.ael #summary .ovc{padding:12px 16px 12px}
+.ael #summary .ovc .hd{margin-bottom:10px}
+.ael #summary .ovk{flex:0 0 40%;justify-content:flex-start;gap:0}
+.ael #summary .ovk .hero{padding-bottom:10px}
+.ael #summary .ovk .hero .l{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovk .hero .v{font-family:var(--font-anthropic-serif);font-size:clamp(22px,2vw,32px);line-height:1.15;color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ael #summary .ovk .hero .s{font-size:11px;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovk .rows{border-top:1px solid #E2E6EB}
+.ael #summary .ovk .r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid #EEF1F4;font-size:12px;color:#5B6770}
+.ael #summary .ovk .r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ael #summary .ovk .r b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:clamp(14px,1.15vw,17px);color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ael #summary .ovv .vt{font-size:10.5px;color:#8A949E;margin-bottom:4px;text-align:right}
+.ael #summary .ovb{gap:16px}`;
   document.head.appendChild(css);
 
   /* ---------- small chart helpers (sized to their box) ---------- */
@@ -159,7 +175,7 @@
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
     return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80),
       kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
-        ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to date (FG)', kf(Math.max(0, pp - pa)), 'plan less actual']],
+        ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to plan', kf(Math.max(0, pp - pa)), 'plan less actual']],
       vt: 'Cumulative FG production vs plan', mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         { t: 'Cumulative production and dispatch (finished goods)', lg: [['Production plan', '#B9C1C9'], ['Production', C.navy], ['Dispatch', C.cyan]], draw: el => lineC(el, ds, [{ name: 'Production plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Production', color: C.navy, values: cA }, { name: 'Dispatch', color: C.cyan, values: cD }], { h: 260, xFmt: dlab }) },
@@ -179,7 +195,7 @@
     let cs = 0, cr = 0; const cS = ds.map(d => (cs += d <= pEnd ? (byD.get(d) || {}).s || 0 : 0)), cR = ds.map(d => (cr += (byD.get(d) || {}).r || 0));
     return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80),
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
-        ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors below 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
+        ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         { t: 'Cumulative receipts vs schedule', lg: [['Schedule', '#B9C1C9'], ['Received', C.navy]], draw: el => lineC(el, ds, [{ name: 'Schedule', color: '#B9C1C9', values: cS, dash: '4 3' }, { name: 'Received', color: C.navy, values: cR }], { h: 260, xFmt: dlab }) },
@@ -197,7 +213,7 @@
     const top = S.filter(r => +r.excess_pkr > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 12);
     const asof = (S.find(r => r.asof) || {}).asof || '';
     return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
-      kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow / no movement', rs(DV), 'no issue for over a year', C.bad],
+      kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow moving', rs(DV), 'no issue for over a year', C.bad],
         ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
       vt: 'Stock value by category', mini: el => hbarC(el, cat.map(([c, v], i) => ({ label: c, v, lab: rs(v).replace('Rs ', ''), color: PAL[i % PAL.length], tip: [c, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, lw: 92, lc: 15, fs: 10 }),
       detail: [
@@ -234,7 +250,7 @@
     const unit = byS.map(([s]) => { const u = V.get(s); return u ? { label: s, v: d3.sum(cur.filter(r => r.shop === s && !r.spd), r => r.value_pkr) / u, u } : null; }).filter(Boolean).sort((a, b) => b.v - a.v);
     const spd = d3.sum(cur.filter(r => r.spd), r => r.value_pkr), asof = (R.find(r => r.asof) || {}).asof || '';
     return { title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
-      kpis: [['Cost of production', rs(T), `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
+      kpis: [['COGM', rs(T), `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
       vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => v >= 1e9 ? d3.format(',.1f')(v / 1e9) + 'B' : f0(v / 1e6) + 'M', fmt: rs, ml: 38 }),
       detail: [
         { t: 'COGM by shop and element', lg: EL, draw: el => colC(el, byS.map(d => d[0]), EL.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 280, rot: 1, fmt: rs }) },
@@ -292,7 +308,7 @@
     const top = d3.rollups(R, v => ({ a: ann(v), st: v[0].status, shop: v[0].shop, item: v[0].item }), r => r.key).sort((a, b) => b[1].a - a[1].a).slice(0, 12);
     const T = ann(R);
     return { title: 'Cost reduction ideas', st: band(T ? ann(done) / T * 100 : null, 50, 25),
-      kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Annual saving (all)', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
+      kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Total potential', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
         ['In progress', rs(ann(ip)), `${nf(keys(ip))} ideas`, '#B07D00'], ['Pending + proposals', rs(ann(pend)), `${nf(keys(pend))} ideas`]],
       vt: 'Annual saving by shop and status', mini: el => colC(el, byS.map(d => d[0]), STC.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, fmt: rs, yFmt: kf, rot: 1, ml: 32 }),
       detail: [
@@ -312,8 +328,12 @@
     if (sts.some(s => s !== 'ok')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Loading…</div>`; return el; }
     let o; try { o = M[id](P); } catch (e) { console.error('overview', id, e); el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Could not summarise this tab</div>`; return el; }
     last[id] = o;
-    el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div><div class="su">${esc(o.title || '')}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('')}</div><div class="ovv"><div class="vt">${esc(o.vt || '')}</div><div class="vc"></div></div></div><div class="mo">View details →</div>`}`;
-    el.title = 'Click for details';
+    const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
+    el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
+      <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
+      <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
+      <div class="ovv"><div class="vt">${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
+    el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
     return el; }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
