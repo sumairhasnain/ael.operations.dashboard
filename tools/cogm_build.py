@@ -101,8 +101,10 @@ def main(upkl, mb51, data, out, asof=None):
     # makes no finished product, its in-house parts (basis says which). Every finished product of a shop carries the
     # shop's Rs/unit for each element (volume-based allocation).
     try:
-        parts = {st(q['code']): q for q in json.load(open(data + '/atlas_parts.json'))}
-        pdd = json.load(open(data + '/atlas_parts_daily.json'))
+        import os; rd = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+        pick = lambda f: (data + '/' + f) if os.path.exists(data + '/' + f) else os.path.join(rd, f)   # repo data/ if not copied
+        parts = {st(q['code']): q for q in json.load(open(pick('atlas_parts.json')))}
+        pdd = json.load(open(pick('atlas_parts_daily.json')))
     except Exception as e:
         parts, pdd = {}, []; print('no production volume:', e)
     SHOPX = {'Fuel Cock': 'Carburetor'}
