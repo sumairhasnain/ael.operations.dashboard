@@ -76,19 +76,21 @@
     }
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
       const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
-      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(0.22).paddingOuter(0.08);
-      const x1 = d3.scaleBand().domain(EL.map(([e]) => e)).range([0, x0.bandwidth()]).padding(0.08);
-      const y = d3.scaleLinear().domain([0, d3.max(G, g => d3.max(EL, ([e]) => g.v[e])) || 1]).nice().range([h - mb, mt + 30]);
+      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15);   /* 11 Nov 23:38 (Umair): stacked columns */
+      const y = d3.scaleLinear().domain([0, d3.max(G, g => d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0))) || 1]).nice().range([h - mb, mt + 14]);
       svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => v >= 1e6 ? d3.format(',.0f')(v / 1e6) + 'M' : pm(v).replace(' ', ''))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
       svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - 8).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#E6E9EC').lower();
       const f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v);
       G.forEach((g, i) => { const gx = x0(i), t = d3.sum(EL, ([e]) => g.v[e]);
         const L = [g.name + (g.code ? ' · ' + g.code : '') + (g.spd ? ' (SPD)' : ''), ...(g.units ? [`${nf(g.units)} units${SH ? '' : ''}`] : []), ...EL.map(([e]) => `${e}: ${pm(g.v[e])} PKR${g.ru ? ' · Rs ' + rsu(g.ru[e]) + '/unit' : ''}`), `Total: ${pm(t)} PKR${g.units ? ' · Rs ' + rsu(t / g.units) + '/unit' : ''}`];
         if (!SH) { const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === g.name) || {}).units; if (vo) L.splice(1, 0, `${nf(vo)} units produced`); }
-        EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0), bx = gx + x1(e), bw = x1.bandwidth();
-          svg.append('rect').attr('x', bx).attr('y', y(v)).attr('width', bw).attr('height', Math.max(v ? 1 : 0, y(0) - y(v))).attr('fill', c).attr('opacity', g.spd ? 0.75 : 1)
-            .on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide);
-          if (v) svg.append('text').attr('transform', `translate(${bx + bw / 2 + 3},${y(v) - 4}) rotate(-90)`).attr('font-size', bw >= 11 ? 9.5 : 8).attr('fill', '#33414B').text(pm(v).replace(' ', '')); });
+        let y0 = 0; const bw = x0.bandwidth();
+        EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = y(y0 + v), hh = y(y0) - yt;
+          svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
+            .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: ${pm(v)} PKR (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
+          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Utilities' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(pm(v).replace(' ', ''));
+          y0 += v; });
+        svg.append('text').attr('x', gx + bw / 2).attr('y', y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text(pm(t).replace(' ', ''));
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
         svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 14).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
         svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub || '') + ' · ' + pm(t).replace(' ', ''));
