@@ -160,8 +160,11 @@
   const days = (a, b) => { const o = []; for (let d = new Date(a + 'T00:00:00Z'); d3.utcFormat('%Y-%m-%d')(d) <= b; d = d3.utcDay.offset(d, 1)) o.push(d3.utcFormat('%Y-%m-%d')(d)); return o; };
 
   const M = {};
+  /* 12 Nov 00:20 (Umair): every card follows the Shop filter of the top pane */
+  const SHf = P => P.shop && P.shop !== 'All' ? P.shop : '';
+  const inSh = (sh, r, ...ks) => !sh || ks.some(k => { const v = r[k]; if (Array.isArray(v)) return v.includes(sh); if (typeof v === 'string' && v.trim().startsWith('[')) { try { return JSON.parse(v).includes(sh); } catch (e) { return false; } } return v === sh; });
   M.production = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const parts = new Map(D('atlas_parts').map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end);
+    const SH = SHf(P), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops')).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
     const fin = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'Finished'), ih = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'In-house');
     const sum = (rs, k, to) => d3.sum(rs.filter(r => r.date <= to), r => +r[k] || 0);
     const pp = sum(fin, 'prod_plan', pEnd), pa = sum(fin, 'prod_actual', end), dp = sum(fin, 'disp_plan', pEnd), da = sum(fin, 'disp_actual', end), ip = sum(ih, 'prod_plan', pEnd), ia = sum(ih, 'prod_actual', end);
@@ -185,8 +188,9 @@
       foot: 'Atlas plan vs actual. Plan counts to yesterday while the month is running; actuals to the latest Atlas day. Bars are cut at 250%; the label shows the true figure.' }; };
 
   M.vendor = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const rows = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end);
+    const SH = SHf(P), rows = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop'));
     const sc = d3.sum(rows.filter(r => r.date <= pEnd), r => +r.scheduled || 0), rc = d3.sum(rows, r => +r.received || 0);
+    if (SH && !sc && !rc) return { title: SH, kpis: [], none: `No vendor schedule or receipts for ${SH} this month` };
     const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
     const low = byV.filter(([, o]) => o.r / o.s < 0.8), short = d3.sum(rows.filter(r => r.date <= pEnd), r => 0) + d3.sum(byV, ([, o]) => Math.max(0, o.s - o.r));
     const ds = days(ms, end), byD = d3.rollup(rows, v => ({ s: d3.sum(v, r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.date);
@@ -204,7 +208,7 @@
         { t: 'Daily receipts vs schedule', lg: [['Schedule', '#C9D1D9'], ['Received', C.navy]], draw: el => colC(el, ds, [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8) }) }],
       foot: `Atlas vendor schedule and receipts. Short against schedule to date: ${kf(short)} pieces.` }; };
 
-  M.inventory = P => { const S = D('sap_stock').filter(r => r.code), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
+  M.inventory = P => { const SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop')), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
     const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
     const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');
     const cat = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.category || '—').sort((a, b) => b[1] - a[1]);
@@ -223,7 +227,7 @@
         { t: 'Largest excess stock (12)', draw: el => hbarC(el, top.map(r => ({ label: `${r.part || r.code}`, v: +r.excess_pkr, lab: rs(+r.excess_pkr), color: C.warn, tip: [r.part, r.code, `Excess ${rs(+r.excess_pkr)} of ${rs(+r.value_pkr)}`, `${r.category} · ${r.shop || 'no shop'}`, `Cover: ${r.cover_bucket}`] })), { fmt: rs, h: 270, lw: 190, lc: 30 }) }],
       foot: 'SAP MB52 stock valued at SAP price; excess = stock above the cover target from recent use.' }; };
 
-  M.workforce = P => { const end = P.actEnd, A = D('sp_attendance').filter(r => r.date >= P.start && r.date <= end && (r.present + r.absent) > 0);
+  M.workforce = P => { const end = P.actEnd, A = D('sp_attendance').filter(r => r.date >= P.start && r.date <= end && (r.present + r.absent) > 0 && inSh(SHf(P), r, 'shop'));
     if (!A.length) return { title: mon(P.month), kpis: [], none: 'No attendance for this month yet' };
     const pr = d3.sum(A, r => r.present), ab = d3.sum(A, r => r.absent), ot = d3.sum(A, r => r.ot_hours), last = d3.max(A, r => r.date), L = A.filter(r => r.date === last);
     const hc = d3.sum(L, r => r.headcount), ds = [...new Set(A.map(r => r.date))].sort();
@@ -241,7 +245,7 @@
         { t: 'Daily overtime hours', draw: el => colC(el, ds, [{ name: 'Overtime hours', color: C.blue }], d => (byD.get(d) || {}).o, { h: 230, cFmt: d => +d.slice(8) }) }],
       foot: 'Attendance workbook (SharePoint). Sundays have no attendance marks.' }; };
 
-  M.cost = P => { const R = D('cogm'), months = [...new Set(R.map(r => r.month))].sort(), m = months.includes(P.month) ? P.month : months[months.length - 1];
+  M.cost = P => { const R = D('cogm').filter(r => inSh(SHf(P), r, 'shop')), months = [...new Set(R.map(r => r.month))].sort(), m = months.includes(P.month) ? P.month : months[months.length - 1];
     const EL = [['Direct material', '#051C2C'], ['Indirect material', '#2251FF'], ['Direct labour', '#00A9F4'], ['Utilities', '#B9C1C9']], isC = r => EL.some(([e]) => e === r.element);
     const cur = R.filter(r => r.month === m && isC(r)), T = d3.sum(cur, r => r.value_pkr), e = n => d3.sum(cur.filter(r => r.element === n), r => r.value_pkr);
     const byM = months.map(mm => ({ m: mm, ...Object.fromEntries(EL.map(([n]) => [n, d3.sum(R.filter(r => r.month === mm && r.element === n), r => r.value_pkr)])) }));
@@ -250,7 +254,7 @@
     const unit = byS.map(([s]) => { const u = V.get(s); return u ? { label: s, v: d3.sum(cur.filter(r => r.shop === s && !r.spd), r => r.value_pkr) / u, u } : null; }).filter(Boolean).sort((a, b) => b.v - a.v);
     const spd = d3.sum(cur.filter(r => r.spd), r => r.value_pkr), asof = (R.find(r => r.asof) || {}).asof || '';
     return { title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
-      kpis: [['COGM', rs(T), `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
+      kpis: [['COGM', rs(T), SHf(P) && V.get(SHf(P)) ? `Rs ${f0(d3.sum(cur.filter(r => !r.spd), r => r.value_pkr) / V.get(SHf(P)))} per OEM unit` : `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
       vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => v >= 1e9 ? d3.format(',.1f')(v / 1e9) + 'B' : f0(v / 1e6) + 'M', fmt: rs, ml: 38 }),
       detail: [
         { t: 'COGM by shop and element', lg: EL, draw: el => colC(el, byS.map(d => d[0]), EL.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 280, rot: 1, fmt: rs }) },
@@ -259,7 +263,8 @@
         { t: 'Cost elements', draw: el => donutC(el, EL.map(([n, c]) => ({ label: n, v: e(n), color: c })), { h: 250, fmt: rs, center: rs(T) }) }],
       foot: 'SAP MB51 issues, cost-centre issues, attendance (Rs 42,500 a month) and the utilities sheet; SPD parts carry their own share.' }; };
 
-  M.capacity = P => { const MC = D('cap_machines'), PT = D('cap_parts'), parts = new Map(D('atlas_parts').map(r => [String(r.code), r]));
+  M.capacity = P => { if (SHf(P) && SHf(P) !== 'Clutch') return { title: SHf(P), kpis: [], none: 'Capacity time studies cover the Clutch area only' };
+    const MC = D('cap_machines'), PT = D('cap_parts'), parts = new Map(D('atlas_parts').map(r => [String(r.code), r]));
     const arr = v => Array.isArray(v) ? v.map(String) : typeof v === 'string' ? (v.trim().startsWith('[') ? (() => { try { return JSON.parse(v).map(String); } catch { return []; } })() : v.split(/[,;\s]+/).filter(Boolean)) : [];
     const run = MC.filter(r => r.status === 'Running' && +r.cap_month > 0);
     const plan = c => d3.sum(D('atlas_parts_daily').filter(r => r.date.startsWith(P.month) && String(r.code) === c), r => +r.prod_plan || 0);
@@ -280,7 +285,10 @@
         { t: 'Capacity by line (sum of bottleneck parts)', draw: el => hbarC(el, d3.rollups(run, v => v.length, r => r.line).map(([l, n]) => ({ label: l, v: n, lab: n + ' machines', color: C.blue })), { fmt: nf, h: 200, lw: 140 }) }],
       foot: 'Capacity from the Clutch area time studies (7.1 h per shift, 26 days). Shift changes saved on the Capacity tab are not applied here.' }; };
 
-  M.projects = P => { const J = D('jira_issues'), today = window.__TODAY || new Date().toISOString().slice(0, 10);
+  M.projects = P => { const SH = SHf(P), kw = SH ? SH.split(/[\s/]+/).filter(w => w.length >= 4).map(w => w.toLowerCase()) : [];
+    const J = D('jira_issues').filter(r => !SH || kw.some(w => (r.summary + ' ' + r.project_name).toLowerCase().includes(w)));
+    if (SH && !J.length) return { title: SH, kpis: [], none: `No Jira activities mention ${SH}` };
+    const _j = 0, today = window.__TODAY || new Date().toISOString().slice(0, 10);
     const dn = J.filter(r => r.cat === 'done'), ip = J.filter(r => r.cat === 'indeterminate'), nw = J.filter(r => r.cat === 'new'), od = J.filter(r => r.cat !== 'done' && r.due && r.due < today);
     const SC = [['To do', '#B9C1C9', 'new'], ['In progress', C.warn, 'indeterminate'], ['Done', '#1E8C5A', 'done']];
     const byP = d3.rollups(J, v => Object.fromEntries(SC.map(([n, , k]) => [n, v.filter(r => r.cat === k).length])), r => r.project_name).sort((a, b) => d3.sum(SC, ([n]) => b[1][n]) - d3.sum(SC, ([n]) => a[1][n]));
@@ -299,7 +307,7 @@
         { t: 'Overdue activities (longest first)', draw: el => hbarC(el, od.map(r => ({ label: `${r.key} ${r.summary}`, v: (new Date(today) - new Date(r.due)) / 864e5, color: C.bad, lab: Math.round((new Date(today) - new Date(r.due)) / 864e5) + ' days', tip: [r.key + ' · ' + r.summary, `Due ${r.due} · ${r.status}`, r.assignee || 'Unassigned', r.project_name] })).sort((a, b) => b.v - a.v).slice(0, 12), { fmt: v => f0(v) + ' d', h: 280, lw: 210, lc: 34, empty: 'Nothing overdue' }) }],
       foot: 'Jira (read only).' }; };
 
-  M.savings = P => { const A = D('cr_ideas'), R = A.filter(r => !r.fin_only), keys = rs_ => new Set(rs_.map(r => r.key)).size;
+  M.savings = P => { const A = D('cr_ideas').filter(r => inSh(SHf(P), r, 'dash_shop', 'shop')), R = A.filter(r => !r.fin_only), keys = rs_ => new Set(rs_.map(r => r.key)).size;
     const ann = rs_ => d3.sum(rs_, r => +r.annual_pkr || 0), mon_ = rs_ => d3.sum(rs_, r => +r.monthly_pkr || 0);
     const done = R.filter(r => r.status === 'Completed'), ip = R.filter(r => r.status === 'In Progress'), pend = R.filter(r => r.status === 'Pending' || r.status === 'Proposal');
     const STC = [['Completed', '#1E8C5A'], ['In Progress', '#E0A100'], ['Pending', '#8E9AA6'], ['Proposal', '#C9D1D9']];
@@ -329,7 +337,7 @@
     let o; try { o = M[id](P); } catch (e) { console.error('overview', id, e); el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Could not summarise this tab</div>`; return el; }
     last[id] = o;
     const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
-    el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
+    el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
       <div class="ovv"><div class="vt">${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
@@ -338,6 +346,7 @@
     return el; }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
+    { const h2 = s.querySelector('.ovhd h2'), sh = SHf(P); h2.innerHTML = 'Operations Overview' + (sh ? ` <span style="font-family:var(--font-anthropic-sans);font-size:13px;color:#fff;background:#051C2C;border-radius:12px;padding:3px 10px;vertical-align:4px;margin-left:8px">${esc(sh)}</span>` : ''); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
     const root = document.getElementById('ael'); if (root) root.classList.add('ovfit');
