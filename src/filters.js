@@ -74,7 +74,7 @@ const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw =
 const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); root.querySelectorAll('button.qclr').forEach(b => b.classList.toggle('fon', act)); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
 document.getElementById('ael').addEventListener('input', ev => { if (ev.target.matches('input.q')) window.__clearState(); });
 document.getElementById('ael').addEventListener('change', ev => { if (ev.target.matches('select')) setTimeout(window.__clearState, 0); });
-const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
+const pages = ['summary','overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
 window.__page = 'overview';
 const show = (p, link) => { if (!pages.includes(p)) p = 'overview'; window.__page = p;
 document.querySelectorAll('#ael .page').forEach(s => s.classList.toggle('on', s.id === p));
@@ -85,7 +85,7 @@ window.__setShifts = async (machine, n, base) => { if (window.__PORTAL && window
 let m = {}; try { m = JSON.parse(dash.params().capsh || '{}') || {}; } catch (e) { m = {}; } if (n === base) delete m[machine]; else m[machine] = n; dash.setParams({ capsh: Object.keys(m).length ? JSON.stringify(m) : 0 }); };
 window.__resetShifts = async machines => { if (window.__PORTAL && window.__PORTAL.saveShifts) { for (const mc of machines) await window.__PORTAL.saveShifts(mc, null); return; } dash.setParams({ capsh: 0 }); };
 document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; show(b.dataset.p, true); });
-show(location.hash.slice(1) || 'overview', false);
+show(location.hash.slice(1) || 'summary', false); /* 11 Nov (Umair): Overview is the landing page */
 [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
 ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm','q-fih','q-fv','q-fs'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
 })();

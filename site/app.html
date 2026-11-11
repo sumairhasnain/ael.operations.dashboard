@@ -141,6 +141,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 </div>
 </div>
 <nav class="tabs" id="tabs" role="tablist">
+<button class="tab" role="tab" id="t-summary" data-p="summary">Overview</button>
 <button class="tab" role="tab" id="t-overview" data-p="overview">Critical Issues</button>
 <button class="tab" role="tab" id="t-production" data-p="production">Production</button>
 <button class="tab" role="tab" id="t-product" data-p="product">Product Overview</button>
@@ -160,6 +161,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <button class="tab" role="tab" id="t-bom" data-p="bom">B.O.M</button>
 </nav>
 </div>
+<section class="page" id="summary"><i hidden data-source="atlas_parts_daily atlas_parts atlas_vendor_supply sap_stock sp_attendance cogm cap_machines cap_parts jira_issues cr_ideas"></i></section>
 <section class="page" id="overview">
 <div class="grid">
 <div class="card wide" id="c-ov-issues"><h3 id="h-ov-issues">Meeting Minutes - Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
@@ -759,7 +761,7 @@ const tx = [...root.querySelectorAll('input.q')].some(i => i.value.trim()), vw =
 const act = dd || pr || tx || vw; btn.classList.toggle('fon', act); root.querySelectorAll('button.qclr').forEach(b => b.classList.toggle('fon', act)); btn.title = act ? 'Filters are applied: click to clear them all' : 'Reset shop, model, shift, vendor and part selections (keeps month and date)'; };
 document.getElementById('ael').addEventListener('input', ev => { if (ev.target.matches('input.q')) window.__clearState(); });
 document.getElementById('ael').addEventListener('change', ev => { if (ev.target.matches('select')) setTimeout(window.__clearState, 0); });
-const pages = ['overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
+const pages = ['summary','overview','production','product','vendor','inhouse','quality','maintenance','oee','capacity','efficiency','workforce','inventory','cost','savings','issues','projects','bom'];
 window.__page = 'overview';
 const show = (p, link) => { if (!pages.includes(p) || !window.__PORTAL.canTab(p)) p = window.__PORTAL.firstTab; window.__page = p;
 document.querySelectorAll('#ael .page').forEach(s => s.classList.toggle('on', s.id === p));
@@ -770,7 +772,7 @@ window.__setShifts = async (machine, n, base) => { if (window.__PORTAL && window
 let m = {}; try { m = JSON.parse(dash.params().capsh || '{}') || {}; } catch (e) { m = {}; } if (n === base) delete m[machine]; else m[machine] = n; dash.setParams({ capsh: Object.keys(m).length ? JSON.stringify(m) : 0 }); };
 window.__resetShifts = async machines => { if (window.__PORTAL && window.__PORTAL.saveShifts) { for (const mc of machines) await window.__PORTAL.saveShifts(mc, null); return; } dash.setParams({ capsh: 0 }); };
 document.getElementById('tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; show(b.dataset.p, true); });
-show(location.hash.slice(1) || 'overview', false);
+show(location.hash.slice(1) || 'summary', false); /* 11 Nov (Umair): Overview is the landing page */
 [['q-parts', 'q-parts2'], ['q-parts2', 'q-parts']].forEach(([a, b]) => document.getElementById(a).addEventListener('input', () => { document.getElementById(b).value = document.getElementById(a).value; }));
 ['q-parts','q-parts2','q-prod','q-ih','q-wf','q-bd','q-crit','q-iss','q-vt','q-vs','q-bom','q-capm','q-fih','q-fv','q-fs'].forEach(id => document.getElementById(id).addEventListener('input', () => window.__draw()));
 })();
@@ -4051,20 +4053,16 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     document.getElementById('cp-shop-lg').innerHTML = leg();
     let G = [];
     if (!SH) {
-      const byS = d3.rollup(cur, v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);
+      const byS = d3.rollup(cur.filter(r => !r.spd), v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);   /* OEM share only */
       G = [...byS.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); })
         .map(s => ({ name: s, v: byS.get(s), sub: '' })).filter(g => d3.sum(EL, ([e]) => g.v[e]));
-      if (h3) h3.textContent = 'COGM by Shop';
+      if (h3) h3.textContent = 'COGM by Shop (OEM)';
     } else {
       const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === SH) || {}).units;
       const rate = Object.fromEntries(EL.map(([e]) => [e, vo ? d3.sum(cur.filter(r => r.element === e && !r.spd), r => r.value_pkr) / vo : 0]));
       R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])), ru: rate }));
-      const K2 = { 'Direct material': 'dm_unit', 'Indirect material': 'im_unit', 'Direct labour': 'lab_unit', 'Utilities': 'util_unit' };
-      R.filter(r => r.month === m && r.element === 'SPD product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: 'SPD', spd: true, v: Object.fromEntries(EL.map(([e]) => [e, (r[K2[e]] || 0) * r.units])), ru: Object.fromEntries(EL.map(([e]) => [e, r[K2[e]] || 0])) }));
-      G.sort((a, b) => (a.spd ? 1 : 0) - (b.spd ? 1 : 0) || d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));
-      const oem = G.filter(g => !g.spd), sp = G.filter(g => g.spd), MAXS = Math.max(3, 14 - oem.length);
-      if (sp.length > MAXS) { const rest = sp.slice(MAXS - 1); G = [...oem, ...sp.slice(0, MAXS - 1), { name: `Other SPD parts (${rest.length})`, sub: 'SPD', spd: true, units: d3.sum(rest, g => g.units), v: Object.fromEntries(EL.map(([e]) => [e, d3.sum(rest, g => g.v[e])])) }]; }
-      if (h3) h3.textContent = 'COGM by Product · ' + SH;
+      G.sort((a, b) => d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));   /* 11 Nov 23:34 (Umair): OEM products only, no SPD */
+      if (h3) h3.textContent = 'COGM by OEM Product · ' + SH;
     }
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
       const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
@@ -4189,6 +4187,351 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   window.__costRender = render;
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'cost') { try { render(window.__P()); } catch (e) { console.error(e); } } return r; };
   try { if (window.__page === 'cost' && window.__P) render(window.__P()); } catch (e) {}
+})();
+
+</script>
+<script>
+/* Overview tab (Umair, 11 Nov 2026 23:28). One 16:9 page, two rows of four cards in this order: Production, Vendor Supply,
+   Inventory, Manpower / Cost of Production, Capacity, Projects, VA/CR. Each card: 4-6 KPIs on the left and one chart on the
+   right, worked out from the same datasets as its tab (month and "as of" date from the filter pane, all shops). Clicking a card
+   opens a detail window with more charts; clicking outside it, the X button or Esc closes it. A viewer who may not open a tab
+   sees that card locked (its data is never sent to them). */
+(() => {
+  const AK = window.AK; if (!AK) return;
+  const { C, tip } = AK;
+  const nf = d3.format(','), f1 = d3.format(',.1f'), f0 = d3.format(',.0f');
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const kf = v => v == null || !isFinite(v) ? '—' : Math.abs(v) >= 1e6 ? f1(v / 1e6) + 'M' : Math.abs(v) >= 1e4 ? f0(v / 1e3) + 'k' : nf(Math.round(v));
+  const rs = v => v == null || !isFinite(v) ? '—' : 'Rs ' + (Math.abs(v) >= 1e9 ? d3.format(',.2f')(v / 1e9) + 'B' : Math.abs(v) >= 1e6 ? f1(v / 1e6) + 'M' : Math.abs(v) >= 1e3 ? f0(v / 1e3) + 'k' : nf(Math.round(v)));
+  const pc = v => v == null || !isFinite(v) ? '—' : f0(v) + '%';
+  const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const mon = m => MN[+m.slice(5, 7) - 1] + '-' + m.slice(2, 4), dlab = d => +d.slice(8) + ' ' + MN[+d.slice(5, 7) - 1];
+  const D = id => { const d = window.dash && dash.data(id); return d && d.status === 'ok' ? (Array.isArray(d.data) ? d.data : []) : null; };
+  const ST = id => { const d = window.dash && dash.data(id); return d ? d.status : 'loading'; };
+  const CARDS = [['production', 'Production'], ['vendor', 'Vendor Supply'], ['inventory', 'Inventory'], ['workforce', 'Manpower'],
+    ['cost', 'Cost of Production'], ['capacity', 'Capacity'], ['projects', 'Projects'], ['savings', 'VA/CR Activities']];
+  const ACC = { production: '#051C2C', vendor: '#2251FF', inventory: '#1F9E89', workforce: '#00A9F4', cost: '#8C6BD8', capacity: '#E0A100', projects: '#33414B', savings: '#1E8C5A' };
+  const ICON = { production: '<path d="M2 14V7l4 2.5V7l4 2.5V4h4v10z"/>', vendor: '<path d="M1 4h9v7H1zM10 7h3l2 2.5V11h-5M4 13.5a1.3 1.3 0 1 0 0-.1M12 13.5a1.3 1.3 0 1 0 0-.1"/>',
+    inventory: '<path d="M2 6l6-3 6 3v7l-6 3-6-3zM2 6l6 3 6-3M8 9v7"/>', workforce: '<path d="M6 7a2.5 2.5 0 1 0 0-.1M1.5 14c.5-2.5 2.3-4 4.5-4s4 1.5 4.5 4M11.5 7.5a2 2 0 1 0 0-.1M11 10c2 0 3.2 1.4 3.5 3.5"/>',
+    cost: '<path d="M3 3h10M3 6.5h10M6 3c3 0 4 1.6 4 3.5S8.5 10 5.5 10L11 15"/>', capacity: '<path d="M2 12a6 6 0 1 1 12 0M8 12l3-4M5 12h.01M11 12h.01"/>',
+    projects: '<path d="M2 3h12v10H2zM6 3v10M10 3v10M3.5 5.5h1.5M7.5 5.5h1.5M7.5 8h1.5M11.5 5.5h1.5"/>', savings: '<path d="M3 13c0-6 4-9 10-10-1 6-4 10-10 10zM3 13l6-6"/>' };
+  const ico = id => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[id] || ''}</svg>`;
+  const STA = { good: ['On track', '#1E8C5A', '#E6F4EC'], watch: ['Watch', '#9A6B00', '#FDF3D6'], bad: ['Needs action', '#B3261E', '#FBE7E6'], info: ['Month to date', '#33414B', '#EEF1F4'] };
+  const pill = k => { const x = STA[k] || STA.info; return `<span class="pill" style="color:${x[1]};background:${x[2]}"><i></i>${x[0]}</span>`; };
+  const band = (v, g, w, hiGood = true) => v == null ? 'info' : hiGood ? (v >= g ? 'good' : v >= w ? 'watch' : 'bad') : (v <= g ? 'good' : v <= w ? 'watch' : 'bad');
+  const NEED = { production: ['atlas_parts_daily', 'atlas_parts'], vendor: ['atlas_vendor_supply'], inventory: ['sap_stock'], workforce: ['sp_attendance'],
+    cost: ['cogm'], capacity: ['cap_machines', 'cap_parts', 'atlas_parts_daily', 'atlas_parts'], projects: ['jira_issues'], savings: ['cr_ideas'] };
+
+  const css = document.createElement('style'); css.textContent = `
+.ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;aspect-ratio:16/9;max-height:calc(100vh - 190px);min-height:540px;margin:12px auto 0;width:min(100%,calc((100vh - 190px)*16/9))}
+.ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:14px auto 0;width:min(100%,calc((100vh - 190px)*16/9));border-bottom:2px solid #051C2C;padding-bottom:8px}
+.ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
+.ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
+.ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
+.ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.ovm .pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-left:10px;vertical-align:4px}
+.ael #summary .ovc{background:#fff;border:1px solid #D5DBE1;border-top:4px solid var(--ac,#051C2C);border-radius:6px;padding:10px 14px 8px;overflow:hidden;display:flex;flex-direction:column;min-width:0;min-height:0;cursor:pointer;transition:box-shadow .15s,border-color .15s;position:relative}
+.ael #summary .ovc:hover,.ael #summary .ovc:focus-visible{border-color:#051C2C;border-top-color:var(--ac,#051C2C);box-shadow:0 8px 22px rgba(5,28,44,.14);transform:translateY(-2px);outline:none}
+.ael #summary .ovc{transition:box-shadow .18s,transform .18s,border-color .18s}
+.ael #summary .ovc .hd{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.ael #summary .ovc .ic{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--ac,#051C2C) 12%,#fff);color:var(--ac,#051C2C);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ael #summary .ovc .ic svg{width:15px;height:15px}
+.ael #summary .ovc .hd h3{margin:0;flex:1;min-width:0}
+.ael #summary .ovc .su{font-size:10.5px;color:#5B6770;margin:0 0 8px 34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovc .mo{font-size:10.5px;color:var(--ac,#051C2C);text-align:right;margin-top:4px;opacity:.75;letter-spacing:.03em}
+.ael #summary .ovc:hover .mo{opacity:1}
+.ael #summary .ovc h3{font-family:var(--font-anthropic-serif);font-weight:400;font-size:17px;color:#051C2C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovb{display:flex;gap:10px;flex:1;min-height:0}
+.ael #summary .ovk{flex:0 0 42%;display:flex;flex-direction:column;justify-content:space-between;gap:2px;min-width:0}
+.ael #summary .ovk .k{border-left:3px solid #051C2C;padding:0 0 0 8px;min-width:0}
+.ael #summary .ovk .l{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovk .v{font-family:var(--font-anthropic-serif);font-size:clamp(15px,1.45vw,21px);line-height:1.15;color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ael #summary .ovk .s{font-size:10.5px;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovv{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.ael #summary .ovv .vt{font-size:10.5px;color:#5B6770;margin-bottom:2px}
+.ael #summary .ovv .vc{flex:1;min-height:0}
+.ael #summary .ovl{position:absolute;inset:44px 14px 12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#5B6770;font-size:12.5px}
+.ael #summary .ovn{font-size:11px;color:#5B6770;margin:8px auto 0;width:min(100%,calc((100vh - 150px)*16/9))}
+.ovm{position:fixed;inset:0;background:rgba(5,28,44,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
+.ovm .bx{background:#fff;border-radius:8px;border-top:5px solid var(--ac,#051C2C);width:min(1280px,96vw);max-height:92vh;overflow:auto;padding:18px 22px 20px;box-shadow:0 18px 50px rgba(0,0,0,.3);font-family:var(--font-anthropic-sans);color:#051C2C}
+.ovm .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+.ovm h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;margin:0}
+.ovm .bs{font-size:12px;color:#5B6770;margin-top:2px}
+.ovm .x{border:1px solid #D5DBE1;background:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;color:#051C2C;flex:0 0 auto}
+.ovm .x:hover{background:#051C2C;color:#fff}
+.ovm .bk{display:flex;flex-wrap:wrap;gap:8px 26px;margin:6px 0 12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4}
+.ovm .bk .k{border-left:3px solid var(--ac,#051C2C);padding-left:9px}
+.ovm .bk .l{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#5B6770}
+.ovm .bk .v{font-family:var(--font-anthropic-serif);font-size:22px;font-variant-numeric:tabular-nums}
+.ovm .bk .s{font-size:11px;color:#5B6770}
+.ovm .bg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}
+.ovm .pn h4{margin:0 0 4px;font-size:13px;font-weight:600}
+.ovm .pn .lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:#5A6670;margin-bottom:2px}
+.ovm .pn .lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.ovm .pn .em{color:#5B6770;font-size:12px;padding:30px 0;text-align:center}
+.ovm .ft{font-size:11.5px;color:#5B6770;margin-top:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ovm .ft button{border:1px solid #051C2C;background:#051C2C;color:#fff;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer}
+@media (max-width:1000px){.ael #summary .ovg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;aspect-ratio:auto;max-height:none}.ael #summary .ovc{height:300px}.ovm .bg{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  /* ---------- small chart helpers (sized to their box) ---------- */
+  const mk = (el, h) => { el.replaceChildren(); const w = Math.max(160, el.clientWidth || 300); h = h || Math.max(90, el.clientHeight || 160);
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', h).attr('viewBox', `0 0 ${w} ${h}`); return { svg, w, h }; };
+  const none = (el, msg) => { el.innerHTML = `<div class="em" style="color:#5B6770;font-size:12px;text-align:center;padding:20px 0">${esc(msg)}</div>`; };
+  const axisY = (svg, y, x0, x1, fmt, n = 4) => { svg.append('g').selectAll('line').data(y.ticks(n)).join('line').attr('x1', x0).attr('x2', x1).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#EEF1F4');
+    svg.append('g').selectAll('text').data(y.ticks(n)).join('text').attr('x', x0 - 4).attr('y', d => y(d) + 3).attr('text-anchor', 'end').attr('font-size', 9.5).attr('fill', '#5B6770').text(fmt); };
+  /* lines: xs labels, series [{name,color,values,dash}] */
+  function lineC(el, xs, S, o = {}) { if (!xs.length) return none(el, o.empty || 'No data'); const { svg, w, h } = mk(el, o.h); const ml = o.ml ?? 38, mb = 16, mt = 6;
+    const all = S.flatMap(s => s.values).filter(v => v != null); if (o.ref != null) all.push(o.ref);
+    const y = d3.scaleLinear().domain([o.min ?? Math.min(0, d3.min(all)), (d3.max(all) || 1) * 1.05]).nice().range([h - mb, mt]), x = d3.scalePoint().domain(d3.range(xs.length)).range([ml, w - 6]);
+    axisY(svg, y, ml, w - 6, o.yFmt || kf, o.h && o.h > 200 ? 5 : 3);
+    if (o.ref != null) svg.append('line').attr('x1', ml).attr('x2', w - 6).attr('y1', y(o.ref)).attr('y2', y(o.ref)).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
+    S.forEach(s => svg.append('path').attr('d', d3.line().defined(v => v != null).x((v, i) => x(i)).y(v => y(v))(s.values)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.width || 1.8).attr('stroke-dasharray', s.dash || null));
+    const step = Math.max(1, Math.ceil(xs.length / (w / 46)));
+    xs.forEach((t, i) => { if (i % step === 0 || i === xs.length - 1) svg.append('text').attr('x', x(i)).attr('y', h - 3).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(o.xFmt ? o.xFmt(t) : t); });
+    const hv = svg.append('rect').attr('x', ml).attr('y', mt).attr('width', w - ml - 6).attr('height', h - mb - mt).attr('fill', 'transparent');
+    hv.on('mousemove', ev => { const [mx] = d3.pointer(ev); const i = Math.max(0, Math.min(xs.length - 1, Math.round((mx - ml) / ((w - ml - 6) / Math.max(1, xs.length - 1))))); tip.show(ev, [o.xFmt ? o.xFmt(xs[i]) : xs[i], ...S.map(s => `${s.name}: ${s.values[i] == null ? '—' : (o.fmt || kf)(s.values[i])}`)]); }).on('mouseleave', tip.hide); }
+  /* vertical columns: cats, series [{name,color}], get(cat, s) ; o.stack */
+  function colC(el, cats, S, get, o = {}) { if (!cats.length) return none(el, o.empty || 'No data'); const { svg, w, h } = mk(el, o.h); const ml = o.ml ?? 38, mb = o.rot ? 46 : 16, mt = 6;
+    const tot = c => o.stack ? d3.sum(S, s => Math.max(0, get(c, s) || 0)) : d3.max(S, s => get(c, s) || 0);
+    const y = d3.scaleLinear().domain([0, (d3.max(cats, tot) || 1) * 1.06]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(d3.range(cats.length)).range([ml, w - 4]).padding(0.22);
+    const x1 = d3.scaleBand().domain(S.map(s => s.name)).range([0, x.bandwidth()]).padding(0.05);
+    axisY(svg, y, ml, w - 4, o.yFmt || kf, o.h && o.h > 200 ? 5 : 3);
+    cats.forEach((c, i) => { let y0 = 0; const L = [o.cFmt ? o.cFmt(c) : c, ...S.map(s => `${s.name}: ${(o.fmt || kf)(get(c, s) || 0)}`)];
+      S.forEach(s => { const v = Math.max(0, get(c, s) || 0); const bx = o.stack ? x(i) : x(i) + x1(s.name), bw = o.stack ? x.bandwidth() : x1.bandwidth();
+        svg.append('rect').attr('x', bx).attr('y', y(y0 + v)).attr('width', bw).attr('height', Math.max(0, y(y0) - y(y0 + v))).attr('fill', s.color)
+          .on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide); if (o.stack) y0 += v; });
+      const lb = o.cFmt ? o.cFmt(c) : c, step = Math.max(1, Math.ceil(cats.length / (w / (o.rot ? 18 : 40))));
+      if (i % step === 0 || i === cats.length - 1) { const t = svg.append('text').attr('font-size', 9).attr('fill', '#5B6770');
+        if (o.rot) t.attr('transform', `translate(${x(i) + x.bandwidth() / 2 + 3},${h - mb + 6}) rotate(-45)`).attr('text-anchor', 'end').text(String(lb).length > 14 ? String(lb).slice(0, 13) + '…' : lb);
+        else t.attr('x', x(i) + x.bandwidth() / 2).attr('y', h - 3).attr('text-anchor', 'middle').text(lb); } });
+    svg.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#051C2C'); }
+  /* horizontal bars: items [{label, v, plan?, color?, tip?}] ; o.pct shows v as % with 100 line */
+  function hbarC(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rh = o.rh || 20, lw = o.lw || 120, h = o.h || items.length * rh + 18; const { svg, w } = mk(el, h);
+    const mx = Math.min(o.cap || Infinity, o.max || d3.max(items, d => Math.max(d.v || 0, d.plan || 0, o.ref || 0)) || 1), x = d3.scaleLinear().domain([0, mx * 1.05]).range([lw, w - 46]);
+    const rh2 = (h - 18) / items.length;
+    items.forEach((d, i) => { const y = 4 + i * rh2, bh = Math.max(6, rh2 * 0.62);
+      svg.append('text').attr('x', lw - 6).attr('y', y + bh / 2 + 3.5).attr('text-anchor', 'end').attr('font-size', o.fs || 10.5).attr('fill', '#051C2C').text(d.label.length > (o.lc || 20) ? d.label.slice(0, (o.lc || 20) - 1) + '…' : d.label).append('title').text(d.label);
+      if (d.plan != null) svg.append('rect').attr('x', lw).attr('y', y).attr('width', Math.max(0, x(d.plan) - lw)).attr('height', bh).attr('fill', '#E6E9EC');
+      svg.append('rect').attr('x', lw).attr('y', y + (d.plan != null ? bh * 0.2 : 0)).attr('width', Math.max(0.5, x(Math.min(mx * 1.05, Math.max(0, d.v || 0))) - lw)).attr('height', d.plan != null ? bh * 0.6 : bh).attr('fill', d.color || C.navy)
+        .on('mousemove', ev => tip.show(ev, d.tip || [d.label, (o.fmt || kf)(d.v)])).on('mouseleave', tip.hide);
+      svg.append('text').attr('x', Math.min(w - 44, x(Math.min(mx * 1.05, Math.max(d.v || 0, d.plan || 0))) + 4)).attr('y', y + bh / 2 + 3.5).attr('font-size', 9.5).attr('fill', '#33414B').text(d.lab ?? (o.fmt || kf)(d.v)); });
+    if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
+    svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
+  /* donut: items [{label, v, color}] */
+  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 4, w / 4.2);
+    const g = svg.append('g').attr('transform', `translate(${r + 6},${h / 2})`), tot = d3.sum(items, d => d.v);
+    g.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r * 0.58).outerRadius(r)).attr('fill', d => d.data.color)
+      .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot * 100)}`])).on('mouseleave', tip.hide);
+    g.append('text').attr('text-anchor', 'middle').attr('y', 4).attr('font-size', 11).attr('font-weight', 600).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot));
+    const lh = Math.min(16, (h - 6) / items.length); items.forEach((d, i) => { const y = h / 2 - items.length * lh / 2 + i * lh + lh / 2;
+      svg.append('rect').attr('x', 2 * r + 18).attr('y', y - 5).attr('width', 9).attr('height', 9).attr('fill', d.color);
+      svg.append('text').attr('x', 2 * r + 31).attr('y', y + 3).attr('font-size', 10).attr('fill', '#33414B').text(`${d.label.length > 18 ? d.label.slice(0, 17) + '…' : d.label} · ${pc(d.v / tot * 100)}`); }); }
+
+  /* ---------- per-card models: {kpis:[[label,value,sub,color?]], mini(el), title, sub, detail:[{t, lg, draw(el)}], foot} ---------- */
+  const PAL = [C.navy, C.blue, C.cyan, '#1F9E89', '#E0A100', '#8C6BD8', '#B9C1C9', '#D0312D'];
+  const lg = L => L.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('');
+  const days = (a, b) => { const o = []; for (let d = new Date(a + 'T00:00:00Z'); d3.utcFormat('%Y-%m-%d')(d) <= b; d = d3.utcDay.offset(d, 1)) o.push(d3.utcFormat('%Y-%m-%d')(d)); return o; };
+
+  const M = {};
+  M.production = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
+    const parts = new Map(D('atlas_parts').map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end);
+    const fin = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'Finished'), ih = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'In-house');
+    const sum = (rs, k, to) => d3.sum(rs.filter(r => r.date <= to), r => +r[k] || 0);
+    const pp = sum(fin, 'prod_plan', pEnd), pa = sum(fin, 'prod_actual', end), dp = sum(fin, 'disp_plan', pEnd), da = sum(fin, 'disp_actual', end), ip = sum(ih, 'prod_plan', pEnd), ia = sum(ih, 'prod_actual', end);
+    const mp = d3.sum(D('atlas_parts_daily').filter(r => r.date.startsWith(P.month) && (parts.get(String(r.code)) || {}).type === 'Finished'), r => +r.prod_plan || 0);
+    const ds = days(ms, end); let cp = 0, ca = 0, cd = 0; const byD = d3.rollup(fin, v => ({ p: d3.sum(v, r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0), d: d3.sum(v, r => +r.disp_actual || 0), dpl: d3.sum(v, r => +r.disp_plan || 0) }), r => r.date);
+    const cP = ds.map(d => (cp += d <= pEnd ? (byD.get(d) || {}).p || 0 : 0)), cA = ds.map(d => (ca += (byD.get(d) || {}).a || 0)), cD = ds.map(d => (cd += (byD.get(d) || {}).d || 0));
+    const col = v => v != null && v < 80 ? C.bad : v != null && v < 95 ? C.warn : null;
+    const agg = (rs, key) => d3.rollups(rs, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0), dp: d3.sum(v.filter(r => r.date <= pEnd), r => +r.disp_plan || 0), da: d3.sum(v, r => +r.disp_actual || 0) }), key);
+    const byShop = agg(fin, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
+    const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
+    const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
+    return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80),
+      kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
+        ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to date (FG)', kf(Math.max(0, pp - pa)), 'plan less actual']],
+      vt: 'Cumulative FG production vs plan', mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
+      detail: [
+        { t: 'Cumulative production and dispatch (finished goods)', lg: [['Production plan', '#B9C1C9'], ['Production', C.navy], ['Dispatch', C.cyan]], draw: el => lineC(el, ds, [{ name: 'Production plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Production', color: C.navy, values: cA }, { name: 'Dispatch', color: C.cyan, values: cD }], { h: 260, xFmt: dlab }) },
+        { t: 'Production compliance by shop (finished goods)', draw: el => hbarC(el, byShop.map(([s, o]) => ({ label: s, v: o.p ? o.a / o.p * 100 : 0, lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [s, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) },
+        { t: 'Production and dispatch by model, plan vs actual', lg: [['Prod plan', '#C9D1D9'], ['Produced', C.navy], ['Disp plan', '#AAE6F0'], ['Dispatched', C.cyan]], draw: el => colC(el, byModel.map(d => d[0]), [{ name: 'Prod plan', color: '#C9D1D9' }, { name: 'Produced', color: C.navy }, { name: 'Disp plan', color: '#AAE6F0' }, { name: 'Dispatched', color: C.cyan }], (c, s) => { const o = new Map(byModel).get(c); return { 'Prod plan': o.p, Produced: o.a, 'Disp plan': o.dp, Dispatched: o.da }[s.name]; }, { h: 260 }) },
+        { t: 'In-house parts compliance by shop', draw: el => hbarC(el, ihShop, { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }],
+      foot: 'Atlas plan vs actual. Plan counts to yesterday while the month is running; actuals to the latest Atlas day. Bars are cut at 250%; the label shows the true figure.' }; };
+
+  M.vendor = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
+    const rows = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end);
+    const sc = d3.sum(rows.filter(r => r.date <= pEnd), r => +r.scheduled || 0), rc = d3.sum(rows, r => +r.received || 0);
+    const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
+    const low = byV.filter(([, o]) => o.r / o.s < 0.8), short = d3.sum(rows.filter(r => r.date <= pEnd), r => 0) + d3.sum(byV, ([, o]) => Math.max(0, o.s - o.r));
+    const ds = days(ms, end), byD = d3.rollup(rows, v => ({ s: d3.sum(v, r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.date);
+    const byS = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.shop || '—').filter(([, o]) => o.s > 0);
+    const c = sc ? rc / sc * 100 : null, col = v => v < 70 ? C.bad : v < 85 ? C.warn : C.navy;
+    let cs = 0, cr = 0; const cS = ds.map(d => (cs += d <= pEnd ? (byD.get(d) || {}).s || 0 : 0)), cR = ds.map(d => (cr += (byD.get(d) || {}).r || 0));
+    return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80),
+      kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
+        ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors below 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
+      vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
+      detail: [
+        { t: 'Cumulative receipts vs schedule', lg: [['Schedule', '#B9C1C9'], ['Received', C.navy]], draw: el => lineC(el, ds, [{ name: 'Schedule', color: '#B9C1C9', values: cS, dash: '4 3' }, { name: 'Received', color: C.navy, values: cR }], { h: 260, xFmt: dlab }) },
+        { t: 'Weakest 12 vendors (compliance, month to date)', draw: el => hbarC(el, byV.map(([v, o]) => ({ label: v, v: o.r / o.s * 100 })).sort((a, b) => a.v - b.v).slice(0, 12).map(d => { const o = new Map(byV).get(d.label); return { ...d, lab: pc(d.v), color: col(d.v), tip: [d.label, `Compliance ${pc(d.v)}`, `${kf(o.r)} received of ${kf(o.s)} scheduled`, `${o.n} parts`] }; }), { fmt: pc, ref: 100, h: 270, lw: 170, lc: 26 }) },
+        { t: 'Compliance by shop', draw: el => hbarC(el, byS.map(([s, o]) => ({ label: s, v: o.r / o.s * 100, lab: pc(o.r / o.s * 100), color: col(o.r / o.s * 100), tip: [s, `${kf(o.r)} received of ${kf(o.s)} scheduled`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130 }) },
+        { t: 'Daily receipts vs schedule', lg: [['Schedule', '#C9D1D9'], ['Received', C.navy]], draw: el => colC(el, ds, [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8) }) }],
+      foot: `Atlas vendor schedule and receipts. Short against schedule to date: ${kf(short)} pieces.` }; };
+
+  M.inventory = P => { const S = D('sap_stock').filter(r => r.code), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
+    const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
+    const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');
+    const cat = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.category || '—').sort((a, b) => b[1] - a[1]);
+    const mv = ['Moved in last 90 days', '91–365 days', 'Over 1 year', 'No movement since Jan 2024'].map(b => [b, d3.sum(S.filter(r => r.move_bucket === b), r => +r.value_pkr || 0)]);
+    const stg = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.stage || 'Not classed').sort((a, b) => b[1] - a[1]);
+    const top = S.filter(r => +r.excess_pkr > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 12);
+    const asof = (S.find(r => r.asof) || {}).asof || '';
+    return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
+      kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow / no movement', rs(DV), 'no issue for over a year', C.bad],
+        ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
+      vt: 'Stock value by category', mini: el => hbarC(el, cat.map(([c, v], i) => ({ label: c, v, lab: rs(v).replace('Rs ', ''), color: PAL[i % PAL.length], tip: [c, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, lw: 92, lc: 15, fs: 10 }),
+      detail: [
+        { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v], i) => ({ label: c, v, color: PAL[i % PAL.length] })), { h: 250, fmt: rs, center: rs(V) }) },
+        { t: 'Stock value by last movement', draw: el => hbarC(el, mv.map(([b, v], i) => ({ label: b, v, lab: rs(v), color: [C.navy, C.blue, C.warn, C.bad][i], tip: [b, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
+        { t: 'Stock value by stage', draw: el => hbarC(el, stg.map(([s, v]) => ({ label: s, v, lab: rs(v) })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
+        { t: 'Largest excess stock (12)', draw: el => hbarC(el, top.map(r => ({ label: `${r.part || r.code}`, v: +r.excess_pkr, lab: rs(+r.excess_pkr), color: C.warn, tip: [r.part, r.code, `Excess ${rs(+r.excess_pkr)} of ${rs(+r.value_pkr)}`, `${r.category} · ${r.shop || 'no shop'}`, `Cover: ${r.cover_bucket}`] })), { fmt: rs, h: 270, lw: 190, lc: 30 }) }],
+      foot: 'SAP MB52 stock valued at SAP price; excess = stock above the cover target from recent use.' }; };
+
+  M.workforce = P => { const end = P.actEnd, A = D('sp_attendance').filter(r => r.date >= P.start && r.date <= end && (r.present + r.absent) > 0);
+    if (!A.length) return { title: mon(P.month), kpis: [], none: 'No attendance for this month yet' };
+    const pr = d3.sum(A, r => r.present), ab = d3.sum(A, r => r.absent), ot = d3.sum(A, r => r.ot_hours), last = d3.max(A, r => r.date), L = A.filter(r => r.date === last);
+    const hc = d3.sum(L, r => r.headcount), ds = [...new Set(A.map(r => r.date))].sort();
+    const byD = d3.rollup(A, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours) }), r => r.date);
+    const byS = d3.rollups(A, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours), hc: d3.sum(v.filter(r => r.date === last), r => r.headcount) }), r => r.shop || r.area);
+    const ap = pr + ab ? ab / (pr + ab) * 100 : null, la = d3.sum(L, r => r.present) + d3.sum(L, r => r.absent), lap = la ? d3.sum(L, r => r.absent) / la * 100 : null;
+    return { title: `${mon(P.month)} to ${dlab(last)}`, st: band(ap, 5, 8, false),
+      kpis: [['Headcount', nf(hc), `on ${dlab(last)}`], ['Absenteeism', f1(ap) + '%', 'absent of present + absent, MTD', ap > 8 ? C.bad : ap > 5 ? C.warn : null], ['Absent latest day', lap == null ? '—' : f1(lap) + '%', dlab(last)],
+        ['Overtime', kf(ot) + ' h', `${f1(pr ? ot / (pr * 8) * 100 : 0)}% of present hours`], ['OT per day', kf(ot / ds.length) + ' h', `${ds.length} days recorded`]],
+      vt: 'Daily absenteeism %', mini: el => lineC(el, ds, [{ name: 'Absenteeism', color: C.bad, values: ds.map(d => { const o = byD.get(d); return o.p + o.a ? Math.round(o.a / (o.p + o.a) * 1000) / 10 : null; }) }], { xFmt: d => +d.slice(8), yFmt: v => v + '%', fmt: v => f1(v) + '%', ml: 30, min: 0 }),
+      detail: [
+        { t: 'Absenteeism by shop (month to date)', draw: el => hbarC(el, byS.map(([s, o]) => ({ label: s, v: o.p + o.a ? o.a / (o.p + o.a) * 100 : 0 })).sort((a, b) => b.v - a.v).map(d => ({ ...d, lab: f1(d.v) + '%', color: d.v > 8 ? C.bad : d.v > 5 ? C.warn : C.navy })), { fmt: v => f1(v) + '%', h: 280, lw: 130 }) },
+        { t: 'Overtime hours by shop (month to date)', draw: el => hbarC(el, byS.map(([s, o]) => ({ label: s, v: o.o, tip: [s, `${kf(o.o)} OT hours`, `${f1(o.p ? o.o / (o.p * 8) * 100 : 0)}% of present hours`, `Headcount ${nf(o.hc)}`] })).sort((a, b) => b.v - a.v).map(d => ({ ...d, lab: kf(d.v) + ' h', color: C.blue })), { fmt: kf, h: 280, lw: 130 }) },
+        { t: 'Daily absenteeism %', draw: el => lineC(el, ds, [{ name: 'Absenteeism', color: C.bad, values: ds.map(d => { const o = byD.get(d); return o.p + o.a ? Math.round(o.a / (o.p + o.a) * 1000) / 10 : null; }) }], { h: 230, xFmt: dlab, yFmt: v => v + '%', fmt: v => f1(v) + '%', min: 0 }) },
+        { t: 'Daily overtime hours', draw: el => colC(el, ds, [{ name: 'Overtime hours', color: C.blue }], d => (byD.get(d) || {}).o, { h: 230, cFmt: d => +d.slice(8) }) }],
+      foot: 'Attendance workbook (SharePoint). Sundays have no attendance marks.' }; };
+
+  M.cost = P => { const R = D('cogm'), months = [...new Set(R.map(r => r.month))].sort(), m = months.includes(P.month) ? P.month : months[months.length - 1];
+    const EL = [['Direct material', '#051C2C'], ['Indirect material', '#2251FF'], ['Direct labour', '#00A9F4'], ['Utilities', '#B9C1C9']], isC = r => EL.some(([e]) => e === r.element);
+    const cur = R.filter(r => r.month === m && isC(r)), T = d3.sum(cur, r => r.value_pkr), e = n => d3.sum(cur.filter(r => r.element === n), r => r.value_pkr);
+    const byM = months.map(mm => ({ m: mm, ...Object.fromEntries(EL.map(([n]) => [n, d3.sum(R.filter(r => r.month === mm && r.element === n), r => r.value_pkr)])) }));
+    const byS = d3.rollups(cur, v => Object.fromEntries(EL.map(([n]) => [n, d3.sum(v.filter(r => r.element === n), r => r.value_pkr)])), r => r.shop).sort((a, b) => d3.sum(EL, ([n]) => b[1][n]) - d3.sum(EL, ([n]) => a[1][n]));
+    const V = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r.units]));
+    const unit = byS.map(([s]) => { const u = V.get(s); return u ? { label: s, v: d3.sum(cur.filter(r => r.shop === s && !r.spd), r => r.value_pkr) / u, u } : null; }).filter(Boolean).sort((a, b) => b.v - a.v);
+    const spd = d3.sum(cur.filter(r => r.spd), r => r.value_pkr), asof = (R.find(r => r.asof) || {}).asof || '';
+    return { title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
+      kpis: [['Cost of production', rs(T), `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
+      vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => kf(v), fmt: rs, ml: 36 }),
+      detail: [
+        { t: 'COGM by shop and element', lg: EL, draw: el => colC(el, byS.map(d => d[0]), EL.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 280, rot: 1, fmt: rs }) },
+        { t: 'COGM by month', lg: EL, draw: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, h: 280, cFmt: mon, fmt: rs }) },
+        { t: 'OEM cost per unit by shop (Rs / unit)', draw: el => hbarC(el, unit.map(d => ({ ...d, lab: 'Rs ' + f0(d.v), tip: [d.label, `Rs ${f0(d.v)} per OEM unit`, `${nf(d.u)} units`] })), { fmt: v => f0(v), h: 280, lw: 130 }) },
+        { t: 'Cost elements', draw: el => donutC(el, EL.map(([n, c]) => ({ label: n, v: e(n), color: c })), { h: 250, fmt: rs, center: rs(T) }) }],
+      foot: 'SAP MB51 issues, cost-centre issues, attendance (Rs 42,500 a month) and the utilities sheet; SPD parts carry their own share.' }; };
+
+  M.capacity = P => { const MC = D('cap_machines'), PT = D('cap_parts'), parts = new Map(D('atlas_parts').map(r => [String(r.code), r]));
+    const arr = v => Array.isArray(v) ? v.map(String) : typeof v === 'string' ? (v.trim().startsWith('[') ? (() => { try { return JSON.parse(v).map(String); } catch { return []; } })() : v.split(/[,;\s]+/).filter(Boolean)) : [];
+    const run = MC.filter(r => r.status === 'Running' && +r.cap_month > 0);
+    const plan = c => d3.sum(D('atlas_parts_daily').filter(r => r.date.startsWith(P.month) && String(r.code) === c), r => +r.prod_plan || 0);
+    const PL = PT.map(p => { const ms = run.filter(r => r.part === p.part), ops = d3.rollups(ms, v => d3.sum(v, r => +r.cap_month), r => r.op), cap = ops.length ? d3.min(ops, d => d[1]) : null, bn = ops.length ? ops.find(d => d[1] === cap)[0] : null;
+      const load = d3.sum(arr(p.plan_codes), plan); return { label: p.part, cap, load, bn, u: cap ? load / cap * 100 : null, mc: ms.length }; }).filter(d => d.cap);
+    const util = run.map(r => ({ label: r.machine, line: r.line, part: r.part, op: r.op, v: +r.study_load / +r.cap_month * 100, cap: +r.cap_month, load: +r.study_load })).filter(d => isFinite(d.v)).sort((a, b) => b.v - a.v);
+    const over = PL.filter(d => d.u > 100), hi = PL.slice().sort((a, b) => b.u - a.u)[0];
+    const st = d3.rollups(MC, v => v.length, r => r.status);
+    return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good',
+      kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
+        ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
+        ['Machines over 85%', nf(util.filter(d => d.v > 85).length), 'time-study load vs capacity']],
+      vt: `Plan load vs capacity, ${mon(P.month)}`, mini: el => hbarC(el, PL.map(d => ({ label: d.label, v: d.u, lab: pc(d.u), color: d.u > 100 ? C.bad : d.u > 85 ? C.warn : C.navy, tip: [d.label, `Load ${pc(d.u)}`, `Plan ${kf(d.load)} vs capacity ${kf(d.cap)} a month`, `Bottleneck op ${d.bn}`] })).sort((a, b) => b.v - a.v), { fmt: pc, ref: 100, lw: 100, lc: 17, fs: 10 }),
+      detail: [
+        { t: `Part load vs capacity (${mon(P.month)} Atlas plan)`, lg: [['Capacity', '#E6E9EC'], ['Plan load', C.navy]], draw: el => hbarC(el, PL.map(d => ({ label: d.label, v: d.load, plan: d.cap, lab: pc(d.u), color: d.u > 100 ? C.bad : d.u > 85 ? C.warn : C.navy, tip: [d.label, `Plan ${kf(d.load)} vs capacity ${kf(d.cap)}`, `Load ${pc(d.u)}`, `Bottleneck op ${d.bn} · ${d.mc} machines`] })), { fmt: kf, h: 250, lw: 130 }) },
+        { t: 'Machine status', draw: el => donutC(el, st.map(([s, n], i) => ({ label: s, v: n, color: { Running: C.navy, Standby: C.warn, 'Not working': C.bad }[s] || PAL[(i + 3) % PAL.length] })), { h: 250, fmt: nf, center: nf(MC.length) + ' machines' }) },
+        { t: 'Busiest machines (time-study load vs capacity)', draw: el => hbarC(el, util.slice(0, 14).map(d => ({ label: `${d.label} · ${d.op}`, v: d.v, lab: pc(d.v), color: d.v > 100 ? C.bad : d.v > 85 ? C.warn : C.navy, tip: [d.label, `${d.line} · ${d.part} · ${d.op}`, `Load ${kf(d.load)} vs capacity ${kf(d.cap)} a month`] })), { fmt: pc, ref: 100, h: 320, lw: 190, lc: 30 }) },
+        { t: 'Capacity by line (sum of bottleneck parts)', draw: el => hbarC(el, d3.rollups(run, v => v.length, r => r.line).map(([l, n]) => ({ label: l, v: n, lab: n + ' machines', color: C.blue })), { fmt: nf, h: 200, lw: 140 }) }],
+      foot: 'Capacity from the Clutch area time studies (7.1 h per shift, 26 days). Shift changes saved on the Capacity tab are not applied here.' }; };
+
+  M.projects = P => { const J = D('jira_issues'), today = window.__TODAY || new Date().toISOString().slice(0, 10);
+    const dn = J.filter(r => r.cat === 'done'), ip = J.filter(r => r.cat === 'indeterminate'), nw = J.filter(r => r.cat === 'new'), od = J.filter(r => r.cat !== 'done' && r.due && r.due < today);
+    const SC = [['To do', '#B9C1C9', 'new'], ['In progress', C.warn, 'indeterminate'], ['Done', '#1E8C5A', 'done']];
+    const byP = d3.rollups(J, v => Object.fromEntries(SC.map(([n, , k]) => [n, v.filter(r => r.cat === k).length])), r => r.project_name).sort((a, b) => d3.sum(SC, ([n]) => b[1][n]) - d3.sum(SC, ([n]) => a[1][n]));
+    const own = d3.rollups(J.filter(r => r.cat !== 'done'), v => ({ n: v.length, o: v.filter(r => r.due && r.due < today).length }), r => r.assignee || 'Unassigned').sort((a, b) => b[1].n - a[1].n).slice(0, 12);
+    const asof = (J.find(r => r.asof) || {}).asof || '';
+    const wk = d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };
+    const wks = [...new Set([...J.map(r => r.created && wk(r.created)), ...dn.map(r => r.resolved && wk(r.resolved.slice(0, 10)))].filter(Boolean))].sort().slice(-12);
+    return { title: `Jira${asof ? ' as of ' + dlab(asof) : ''}`, st: band(J.length ? od.length / J.length * 100 : null, 5, 15, false),
+      kpis: [['Activities', nf(J.length), `${byP.length} projects`], ['Done', pc(J.length ? dn.length / J.length * 100 : null), `${nf(dn.length)} completed`, '#1E8C5A'], ['In progress', nf(ip.length), 'being worked on'], ['To do', nf(nw.length), 'not started'],
+        ['Overdue', nf(od.length), 'past due date, not done', od.length ? C.bad : null]],
+      vt: 'Status by project', mini: el => hbarC(el, byP.map(([p, o]) => ({ label: p, v: d3.sum(SC, ([n]) => o[n]), lab: `${o.Done}/${d3.sum(SC, ([n]) => o[n])} done`, color: C.navy, tip: [p, ...SC.map(([n]) => `${n}: ${o[n]}`)] })), { fmt: nf, lw: 110, lc: 18, fs: 10 }),
+      detail: [
+        { t: 'Activities by project and status', lg: SC.map(([n, c]) => [n, c]), draw: el => colC(el, byP.map(d => d[0]), SC.map(([n, c]) => ({ name: n, color: c })), (p, s) => new Map(byP).get(p)[s.name], { stack: 1, h: 260, fmt: nf, yFmt: nf, cFmt: p => p.length > 26 ? p.slice(0, 25) + '…' : p }) },
+        { t: 'Open activities by owner (red = overdue)', draw: el => hbarC(el, own.map(([a, o]) => ({ label: a, v: o.n, lab: `${o.n}${o.o ? ' · ' + o.o + ' overdue' : ''}`, color: o.o ? C.bad : C.navy })), { fmt: nf, h: 280, lw: 150, lc: 24 }) },
+        { t: 'Created vs completed per week', lg: [['Created', C.blue], ['Completed', '#1E8C5A']], draw: el => colC(el, wks, [{ name: 'Created', color: C.blue }, { name: 'Completed', color: '#1E8C5A' }], (w, s) => s.name === 'Created' ? J.filter(r => r.created && wk(r.created) === w).length : dn.filter(r => r.resolved && wk(r.resolved.slice(0, 10)) === w).length, { h: 240, fmt: nf, yFmt: nf, cFmt: dlab }) },
+        { t: 'Overdue activities (longest first)', draw: el => hbarC(el, od.map(r => ({ label: `${r.key} ${r.summary}`, v: (new Date(today) - new Date(r.due)) / 864e5, color: C.bad, lab: Math.round((new Date(today) - new Date(r.due)) / 864e5) + ' days', tip: [r.key + ' · ' + r.summary, `Due ${r.due} · ${r.status}`, r.assignee || 'Unassigned', r.project_name] })).sort((a, b) => b.v - a.v).slice(0, 12), { fmt: v => f0(v) + ' d', h: 280, lw: 210, lc: 34, empty: 'Nothing overdue' }) }],
+      foot: 'Jira (read only).' }; };
+
+  M.savings = P => { const A = D('cr_ideas'), R = A.filter(r => !r.fin_only), keys = rs_ => new Set(rs_.map(r => r.key)).size;
+    const ann = rs_ => d3.sum(rs_, r => +r.annual_pkr || 0), mon_ = rs_ => d3.sum(rs_, r => +r.monthly_pkr || 0);
+    const done = R.filter(r => r.status === 'Completed'), ip = R.filter(r => r.status === 'In Progress'), pend = R.filter(r => r.status === 'Pending' || r.status === 'Proposal');
+    const STC = [['Completed', '#1E8C5A'], ['In Progress', '#E0A100'], ['Pending', '#8E9AA6'], ['Proposal', '#C9D1D9']];
+    const byS = d3.rollups(R, v => Object.fromEntries(STC.map(([s]) => [s, ann(v.filter(r => r.status === s))])), r => r.dash_shop || r.shop).sort((a, b) => d3.sum(STC, ([s]) => b[1][s]) - d3.sum(STC, ([s]) => a[1][s]));
+    const byC = d3.rollups(R, v => ann(v), r => r.category || '—').sort((a, b) => b[1] - a[1]);
+    const top = d3.rollups(R, v => ({ a: ann(v), st: v[0].status, shop: v[0].shop, item: v[0].item }), r => r.key).sort((a, b) => b[1].a - a[1].a).slice(0, 12);
+    const T = ann(R);
+    return { title: 'Cost reduction ideas', st: band(T ? ann(done) / T * 100 : null, 50, 25),
+      kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Annual saving (all)', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
+        ['In progress', rs(ann(ip)), `${nf(keys(ip))} ideas`, '#B07D00'], ['Pending + proposals', rs(ann(pend)), `${nf(keys(pend))} ideas`]],
+      vt: 'Annual saving by shop and status', mini: el => colC(el, byS.map(d => d[0]), STC.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, fmt: rs, yFmt: kf, rot: 1, ml: 32 }),
+      detail: [
+        { t: 'Annual saving by shop and status', lg: STC, draw: el => colC(el, byS.map(d => d[0]), STC.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 270, fmt: rs, rot: 1 }) },
+        { t: 'Annual saving by status', draw: el => donutC(el, STC.map(([s, c]) => ({ label: s, v: ann(R.filter(r => r.status === s)), color: c })), { h: 250, fmt: rs, center: rs(T) }) },
+        { t: 'Annual saving by category', draw: el => hbarC(el, byC.map(([c, v], i) => ({ label: c, v, lab: rs(v), color: PAL[i % PAL.length] })), { fmt: rs, h: 250, lw: 130 }) },
+        { t: 'Largest ideas (annual saving)', draw: el => hbarC(el, top.map(([k, o]) => ({ label: `${k} ${o.item}`, v: o.a, lab: rs(o.a), color: (STC.find(([s]) => s === o.st) || [, C.navy])[1], tip: [`${k} · ${o.item}`, o.shop, o.st, rs(o.a) + ' a year'] })), { fmt: rs, h: 290, lw: 190, lc: 30 }) }],
+      foot: 'VA/CR ideas register; annual saving is the run-rate once an idea is in place.' }; };
+
+  /* ---------- page ---------- */
+  function sec() { return document.getElementById('summary'); }
+  let last = {};
+  function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
+    const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
+    if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
+    if (sts.includes('error')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">● Failed to load</div>`; return el; }
+    if (sts.some(s => s !== 'ok')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Loading…</div>`; return el; }
+    let o; try { o = M[id](P); } catch (e) { console.error('overview', id, e); el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Could not summarise this tab</div>`; return el; }
+    last[id] = o;
+    el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div><div class="su">${esc(o.title || '')}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('')}</div><div class="ovv"><div class="vt">${esc(o.vt || '')}</div><div class="vc"></div></div></div><div class="mo">View details →</div>`}`;
+    el.title = 'Click for details';
+    el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
+    return el; }
+  function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
+    let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2><div class="sb"></div></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
+    s.querySelector('.ovhd .sb').textContent = `${mon(P.month)} · as of ${dlab(P.actEnd)} · all shops`;
+    s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join('');
+    g.replaceChildren(...CARDS.map(([id, n]) => card(id, n, P)));
+    g.querySelectorAll('.ovc').forEach(el => { const o = last[el.dataset.k], vc = el.querySelector('.vc'); if (o && vc && o.mini) try { o.mini(vc); } catch (e) { console.error(e); } });
+    s.querySelector('.ovn').textContent = 'Status: Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved. Click a card for its details.'; }
+  /* detail window */
+  function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
+  const escK = ev => { if (ev.key === 'Escape') closeD(); };
+  function openD(id, name) { const o = last[id]; if (!o || o.none) return; closeD();
+    const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
+    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><button class="x" type="button" aria-label="Close" title="Close">×</button></div>
+      <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
+      <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
+      <div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div></div>`;
+    (document.getElementById('ael') || document.body).appendChild(m);
+    m.addEventListener('click', ev => { if (ev.target === m) closeD(); }); m.querySelector('.x').addEventListener('click', closeD);
+    m.querySelector('.go').addEventListener('click', () => { closeD(); const t = document.querySelector(`#tabs .tab[data-p="${id}"]`); if (t) t.click(); });
+    document.addEventListener('keydown', escK); m.querySelector('.x').focus();
+    m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } }); }
+  window.__ovRender = render;
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (window.__page === 'summary') render(); }, 200); });
+  try { if (window.__page === 'summary') render(); } catch (e) {}
 })();
 
 </script>

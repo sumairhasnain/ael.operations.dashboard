@@ -63,20 +63,16 @@
     document.getElementById('cp-shop-lg').innerHTML = leg();
     let G = [];
     if (!SH) {
-      const byS = d3.rollup(cur, v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);
+      const byS = d3.rollup(cur.filter(r => !r.spd), v => Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])), r => r.shop);   /* OEM share only */
       G = [...byS.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); })
         .map(s => ({ name: s, v: byS.get(s), sub: '' })).filter(g => d3.sum(EL, ([e]) => g.v[e]));
-      if (h3) h3.textContent = 'COGM by Shop';
+      if (h3) h3.textContent = 'COGM by Shop (OEM)';
     } else {
       const vo = (R.find(r => r.month === m && r.element === 'Volume' && r.shop === SH) || {}).units;
       const rate = Object.fromEntries(EL.map(([e]) => [e, vo ? d3.sum(cur.filter(r => r.element === e && !r.spd), r => r.value_pkr) / vo : 0]));
       R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])), ru: rate }));
-      const K2 = { 'Direct material': 'dm_unit', 'Indirect material': 'im_unit', 'Direct labour': 'lab_unit', 'Utilities': 'util_unit' };
-      R.filter(r => r.month === m && r.element === 'SPD product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: 'SPD', spd: true, v: Object.fromEntries(EL.map(([e]) => [e, (r[K2[e]] || 0) * r.units])), ru: Object.fromEntries(EL.map(([e]) => [e, r[K2[e]] || 0])) }));
-      G.sort((a, b) => (a.spd ? 1 : 0) - (b.spd ? 1 : 0) || d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));
-      const oem = G.filter(g => !g.spd), sp = G.filter(g => g.spd), MAXS = Math.max(3, 14 - oem.length);
-      if (sp.length > MAXS) { const rest = sp.slice(MAXS - 1); G = [...oem, ...sp.slice(0, MAXS - 1), { name: `Other SPD parts (${rest.length})`, sub: 'SPD', spd: true, units: d3.sum(rest, g => g.units), v: Object.fromEntries(EL.map(([e]) => [e, d3.sum(rest, g => g.v[e])])) }]; }
-      if (h3) h3.textContent = 'COGM by Product · ' + SH;
+      G.sort((a, b) => d3.sum(EL, ([e]) => b.v[e]) - d3.sum(EL, ([e]) => a.v[e]));   /* 11 Nov 23:34 (Umair): OEM products only, no SPD */
+      if (h3) h3.textContent = 'COGM by OEM Product · ' + SH;
     }
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
       const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
