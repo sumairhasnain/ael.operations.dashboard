@@ -49,6 +49,12 @@ GAS_KNM3 = {
 CIF_PRODUCTS = {'6590331001': 'SLEEVE CYLINDER CG125 (in-house)', '9030331000': 'CYLINDER PRIDOR', '6503800001': 'DRIVE PLATE CASTING (in-house)',
                 '6530381005': 'CLUTCH CENTER WITH BOSS PRIDOR CASTING'}
 CIF_FOM = ('ci_sleeve', 'ci_cyl', 'ci_dp', 'ci_boss')
+# Bought-in material SAP does not tie to a shop (Umair confirmed 11 Nov 2026): codes, then description keywords
+MAT_SHOP = {'5090910011': 'Ignition Coil', '5090910010': 'Ignition Coil', '5020910009': 'Ignition Coil', '5090910005': 'Ignition Coil',
+            '5090910007': 'Ignition Coil', '5020910015': 'Ignition Coil', '5020910014': 'Ignition Coil', '5020910007': 'Ignition Coil',
+            '6020840003': 'Cushion', '6020850003': 'Cushion', '6110271034': 'Cushion', '5010210002': 'Clutch', '1010510033': 'Polymer'}
+KW_SHOP = [('WIRE MAGNET', 'Ignition Coil'), ('RESIN', 'Ignition Coil'), ('BOBBIN', 'Ignition Coil'), ('CASE COIL', 'Ignition Coil'),
+           ('CASE BOTTOM', 'Cushion'), ('CUSHION', 'Cushion'), ('FRONT FORK', 'Cushion'), ('PLASTIC', 'Polymer'), ('PP MATERIAL', 'Polymer')]
 
 
 def main(upkl, mb51, data, out, asof=None):
@@ -75,9 +81,18 @@ def main(upkl, mb51, data, out, asof=None):
     u = u[(u.m >= FROM) & (u.m <= cur) & (u['Movement Type'].astype(str).isin(['261', '262']))]
     u = u[~u.Material.isin(made)]
     desc = {st(r['code']): str(r.get('part') or '').upper() for r in json.load(open(data + '/sap_stock.json'))}
+    mdesc = {}
+    for ln in open(mb51, encoding='utf-8'):
+        f = ln.split('|')
+        if len(f) > 2 and not ln.startswith(('@@', 'file=', 'month=', 'cols=')): mdesc.setdefault(st(f[0]), f[1].upper())
     def mshop(mat):
-        d = desc.get(mat, '')
+        d = desc.get(mat, '') or mdesc.get(mat, '')
+        if mat in MAT_SHOP: return MAT_SHOP[mat]
         if 'ZINC' in d: return 'Carburetor'                                  # ZDC: carburetor body casting
+        if 'HD2' in d.replace(' ', '') and 'BS1' in d.replace(' ', ''): return 'HPDC / Die Cast'   # HD2 BS1 aluminium: HPDC only (Umair)
+        if not shop_of.get(mat):
+            for kw, sh in KW_SHOP:
+                if kw in d: return sh
         if not shop_of.get(mat) and 'ALUMIN' in d and 'INGOT' in d: return 'Aluminium Foundry'
         return shop_of.get(mat, '')
     for (m, mat), v in u.groupby(['m', 'Material'])['amt'].sum().items():
