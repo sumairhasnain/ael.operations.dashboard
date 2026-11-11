@@ -97,7 +97,12 @@
 .ael #summary .ovk .r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ael #summary .ovk .r b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:clamp(14px,1.15vw,17px);color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ael #summary .ovv .vt{font-size:10.5px;color:#8A949E;margin-bottom:4px;text-align:right}
-.ael #summary .ovb{gap:16px}`;
+.ael #summary .ovb{gap:16px}
+.ael #summary .ovv .vt{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.ael #summary .tg{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:3px 10px;cursor:pointer;margin-right:auto;white-space:nowrap}
+.ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
+.ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
+.ael #summary .tg.on::before{content:'✓ '}`;
   document.head.appendChild(css);
 
   /* ---------- small chart helpers (sized to their box) ---------- */
@@ -145,14 +150,14 @@
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
-  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 4, w / 4.2);
+  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 4, w / 4.8);
     const g = svg.append('g').attr('transform', `translate(${r + 6},${h / 2})`), tot = d3.sum(items, d => d.v);
     g.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r * 0.58).outerRadius(r)).attr('fill', d => d.data.color)
       .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot * 100)}`])).on('mouseleave', tip.hide);
     g.append('text').attr('text-anchor', 'middle').attr('y', 4).attr('font-size', 11).attr('font-weight', 600).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot));
     const lh = Math.min(16, (h - 6) / items.length); items.forEach((d, i) => { const y = h / 2 - items.length * lh / 2 + i * lh + lh / 2;
       svg.append('rect').attr('x', 2 * r + 18).attr('y', y - 5).attr('width', 9).attr('height', 9).attr('fill', d.color);
-      svg.append('text').attr('x', 2 * r + 31).attr('y', y + 3).attr('font-size', 10).attr('fill', '#33414B').text(`${d.label.length > 18 ? d.label.slice(0, 17) + '…' : d.label} · ${pc(d.v / tot * 100)}`); }); }
+      svg.append('text').attr('x', 2 * r + 31).attr('y', y + 3).attr('font-size', 10).attr('fill', '#33414B').text(`${d.label.length > 16 ? d.label.slice(0, 15) + '…' : d.label} · ${pc(d.v / tot * 100)}`); }); }
 
   /* ---------- per-card models: {kpis:[[label,value,sub,color?]], mini(el), title, sub, detail:[{t, lg, draw(el)}], foot} ---------- */
   const PAL = [C.navy, C.blue, C.cyan, '#1F9E89', '#E0A100', '#8C6BD8', '#B9C1C9', '#D0312D'];
@@ -208,7 +213,11 @@
         { t: 'Daily receipts vs schedule', lg: [['Schedule', '#C9D1D9'], ['Received', C.navy]], draw: el => colC(el, ds, [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8) }) }],
       foot: `Atlas vendor schedule and receipts. Short against schedule to date: ${kf(short)} pieces.` }; };
 
-  M.inventory = P => { const SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop')), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
+  /* 12 Nov 00:34 (Umair): 'Exclude Raw Material' toggle leaves out Raw Material, Production parts and Lubricants */
+  const CATC = { 'Raw Material': '#051C2C', 'Production parts': '#2251FF', Lubricants: '#00A9F4', Tools: '#1F9E89', Consumables: '#E0A100', Spares: '#8C6BD8' };
+  const EXC = ['Raw Material', 'Production parts', 'Lubricants'];
+  let exRM = (() => { try { return localStorage.getItem('ovExRM') === '1'; } catch (e) { return false; } })();
+  M.inventory = P => { const SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop') && !(exRM && EXC.includes(r.category))), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
     const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
     const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');
     const cat = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.category || '—').sort((a, b) => b[1] - a[1]);
@@ -216,12 +225,12 @@
     const stg = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.stage || 'Not classed').sort((a, b) => b[1] - a[1]);
     const top = S.filter(r => +r.excess_pkr > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 12);
     const asof = (S.find(r => r.asof) || {}).asof || '';
-    return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
+    return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}${exRM ? ' · excl. raw material, production parts, lubricants' : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
       kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow moving', rs(DV), 'no issue for over a year', C.bad],
         ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
-      vt: 'Stock value by category', mini: el => hbarC(el, cat.map(([c, v], i) => ({ label: c, v, lab: rs(v).replace('Rs ', ''), color: PAL[i % PAL.length], tip: [c, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, lw: 92, lc: 15, fs: 10 }),
+      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', '') }),
       detail: [
-        { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v], i) => ({ label: c, v, color: PAL[i % PAL.length] })), { h: 250, fmt: rs, center: rs(V) }) },
+        { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
         { t: 'Stock value by last movement', draw: el => hbarC(el, mv.map(([b, v], i) => ({ label: b, v, lab: rs(v), color: [C.navy, C.blue, C.warn, C.bad][i], tip: [b, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
         { t: 'Stock value by stage', draw: el => hbarC(el, stg.map(([s, v]) => ({ label: s, v, lab: rs(v) })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
         { t: 'Largest excess stock (12)', draw: el => hbarC(el, top.map(r => ({ label: `${r.part || r.code}`, v: +r.excess_pkr, lab: rs(+r.excess_pkr), color: C.warn, tip: [r.part, r.code, `Excess ${rs(+r.excess_pkr)} of ${rs(+r.value_pkr)}`, `${r.category} · ${r.shop || 'no shop'}`, `Cover: ${r.cover_bucket}`] })), { fmt: rs, h: 270, lw: 190, lc: 30 }) }],
@@ -340,7 +349,8 @@
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-      <div class="ovv"><div class="vt">${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
+      <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
+    const tg = el.querySelector('.tg'); if (tg) { tg.addEventListener('click', ev => { ev.stopPropagation(); exRM = !exRM; try { localStorage.setItem('ovExRM', exRM ? '1' : '0'); } catch (e) {} render(); }); tg.addEventListener('keydown', ev => ev.stopPropagation()); }
     el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
     return el; }
