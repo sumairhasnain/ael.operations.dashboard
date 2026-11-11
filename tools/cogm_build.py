@@ -116,6 +116,20 @@ def main(upkl, mb51, data, out, asof=None):
         for sh, k in (gsrc or {}).items():
             g = 1.0 if m in GAS_KNM3 else f
             rows[key(m, sh, 'Utilities', 'Gas')] += k * 1000 * RATE_GAS * g
+    # "Machining" on the utilities sheet = Clutch (without the press shop), Drum Gear and Hub Machining (Umair, 11 Nov):
+    # shared to those three shops by their headcount in the attendance workbook (latest month on file for earlier months)
+    hc = collections.defaultdict(lambda: collections.Counter())
+    for q in json.load(open(data + '/sp_attendance_people.json')):
+        a_ = str(q.get('area') or '').upper()
+        if q.get('shop') == 'Clutch' and 'PRESS' not in a_: hc[q['month']]['Clutch'] += 1
+        elif q.get('shop') in ('Drum Gear', 'Hubs'): hc[q['month']][q['shop']] += 1
+    for (m, sh, e, sub), v in list(rows.items()):
+        if sh != 'Machining': continue
+        w = hc.get(m) or (hc[max(hc)] if hc else None)
+        if not w: continue
+        del rows[(m, sh, e, sub)]; t = sum(w.values())
+        for k, n in w.items(): rows[(m, k, e, sub)] += v * n / t
+        for k, n in w.items(): extra_u[(m, k)] = round((extra_u.get((m, k)) or 0) + (extra_u.get((m, 'Machining')) or 0) * n / t, 2)
     # ---- production volume per shop (11 Nov, Umair) ----
     import os; rd = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
     pick = lambda f: (data + '/' + f) if os.path.exists(data + '/' + f) else os.path.join(rd, f)   # repo data/ if not copied
