@@ -191,7 +191,47 @@ def main(upkl, mb51, data, out, asof=None):
         del rows[(m, sh, e, sub)]
         for t, uu in tgt.items():
             if uu: rows[(m, t, e, sub)] += v * uu / tt; alloc[(m, t, e, sub)] = alloc.get((m, t, e, sub), 0) + v * uu / tt
-    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub, 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
+    # ---- SPD (11 Nov 22:24, Umair): SPD parts made in-house (AAL 91-codes, MB51 101 with no supplier) take their share of the shop's
+    # direct and indirect material, so OEM products carry only their own material. Share = SPD production at SAP standard cost /
+    # (OEM finished production at standard + SPD at standard). Current month only (the MB51 file holds the current month).
+    a101 = collections.defaultdict(float); q101 = collections.defaultdict(float)
+    for ln in open(mb51, encoding='utf-8'):
+        f = ln.rstrip('\n').split('|')
+        if len(f) < 11 or ln.startswith(('@@', 'file=', 'month=', 'cols=')) or f[6].strip() or f[7] not in ('101', '102'): continue
+        try: q101[st(f[0])] += float(f[2] or 0); a101[st(f[0])] += float(f[4] or 0)
+        except ValueError: pass
+    unit_std = lambda c: (a101[c] / q101[c]) if q101.get(c) else 0.0
+    SPD_KW = (('CLUTCH', 'Clutch'), ('DRIVE PLATE', 'Clutch'), ('PISTON', 'Piston'), ('CYLINDER', 'CIF Machining'), ('CARBURETOR', 'Carburetor'),
+              ('FUEL COCK', 'Carburetor'), ('IGNITION', 'Ignition Coil'), ('CUSHION', 'Cushion'), ('FORK ASSY', 'Cushion'), ('FRONT FORK', 'Cushion'),
+              ('CASE DAMPER', 'Cushion'), ('CASE METER', 'Polymer'), ('GEAR SHIFT', 'Drum Gear'))
+    def spd_shop(c):
+        s_ = shop_of.get(c) or ''
+        if s_: return SHOPX.get(s_, s_)
+        d_ = mdesc.get(c, '') or desc.get(c, '')
+        return next((v_ for k_, v_ in SPD_KW if k_ in d_), '')
+    spd = collections.defaultdict(list)
+    for c in q101:
+        if c.startswith('91') and q101[c] > 0 and a101[c] > 0:
+            sh_ = spd_shop(c)
+            if sh_: spd[sh_].append((c, q101[c], a101[c]))
+    oem_std = collections.defaultdict(float)
+    for (m, sh, c, nm, md), a in prod.items():
+        if m != cur: continue
+        if c == 'FF+RC': oem_std[sh] += sum(a101.get(k, 0) for k in cw)
+        else: oem_std[sh] += a * unit_std(c)
+    spd_share, spd_rows = {}, []
+    for sh, lst in spd.items():
+        S = sum(x[2] for x in lst); O = oem_std.get(sh, 0)
+        if not O or (cur, sh) not in units: continue
+        share = S / (O + S); spd_share[sh] = (share, S, O, sum(x[1] for x in lst))
+        mat = 0.0
+        for (m, s_, e, sub), v in list(rows.items()):
+            if m == cur and s_ == sh and e in ('Direct material', 'Indirect material'):
+                rows[(m, s_, e, sub)] = v * (1 - share); rows[(m, s_, e, sub + '|SPD')] = v * share; mat += v * share
+        for c, q, a in sorted(lst, key=lambda x: -x[2]):
+            spd_rows.append({'month': cur, 'shop': sh, 'element': 'SPD product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': mdesc.get(c, '') or desc.get(c, ''),
+                             'units': round(q), 'std_pkr': round(a), 'std_unit': round(a / q, 1), 'material_pkr': round(mat * a / S), 'material_unit': round(mat * a / S / q, 1), 'asof': asof})
+    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub.split('|')[0], **({'spd': True} if sub.endswith('|SPD') else {}), 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
                  **({'mwh': extra_u.get((m, s))} if e == 'Utilities' and sub == 'Electricity' else {}),
                  **({'from_alf': round(alloc[(m, s, e, sub)])} if (m, s, e, sub) in alloc else {}), 'asof': asof}
                 for (m, s, e, sub), v in sorted(rows.items()) if abs(v) >= 1]
@@ -203,13 +243,15 @@ def main(upkl, mb51, data, out, asof=None):
     for (m, sh), o in sorted(vol.items()):
         fin = o.get('Finished', 0); ih = sum(v for k, v in o.items() if k != 'Finished')
         out_rows.append({'month': m, 'shop': sh, 'element': 'Volume', 'sub': '', 'value_pkr': 0, 'units': round(fin or ih),
-                         'basis': 'sets' if sh == 'Cushion' else ('Finished' if fin else 'In-house parts'), 'finished': round(fin), 'inhouse': round(ih), 'asof': asof})
+                         'basis': 'sets' if sh == 'Cushion' else ('Finished' if fin else 'In-house parts'), 'finished': round(fin), 'inhouse': round(ih),
+                         **({'spd_share': round(spd_share[sh][0], 4), 'spd_std_pkr': round(spd_share[sh][1]), 'oem_std_pkr': round(spd_share[sh][2]), 'spd_units': round(spd_share[sh][3])} if m == cur and sh in spd_share else {}), 'asof': asof})
+    out_rows += spd_rows
     for (m, sh, c, nm, md), a in sorted(prod.items()):
         out_rows.append({'month': m, 'shop': sh, 'element': 'Product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': nm, 'model': md, 'units': round(a), 'asof': asof})
     json.dump(out_rows, open(out, 'w'), separators=(',', ':'))
     tot = collections.defaultdict(float)
     for r in out_rows:
-        if r['month'] == cur and r['element'] not in ('Volume', 'Product'): tot[r['element']] += r['value_pkr']
+        if r['month'] == cur and r['element'] not in ('Volume', 'Product', 'SPD product'): tot[r['element']] += r['value_pkr']
     print(json.dumps({'asof': asof, 'months': months, 'rows': len(out_rows), 'inhouse_parts_left_out': len(made),
                       'current_month_pkr_m': {k: round(v / 1e6, 1) for k, v in tot.items() if k != 'Labour detail'}}))
 
