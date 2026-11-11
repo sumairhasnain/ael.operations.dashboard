@@ -168,11 +168,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-x-fih"><h3>In-house Production Flags</h3><p class="xnote">Chronic: below 85% month to date, under 85% in 2 of the last 3 weeks, and short on at least 6 of the last 10 plan days. Watch: below 85% with at least one weak week.</p><input class="q" id="q-fih" placeholder="Search part, code or shop" aria-label="Search in-house flags"><div class="tbox"><table class="tb" id="tb-fih"><thead><tr><th data-field="level">Flag</th><th data-field="part">Part</th><th data-field="code">Code</th><th data-field="shop">Shop</th><th data-field="mtd_pct">MTD</th><th data-field="wk">Last 3 weeks</th><th data-field="miss">Short days</th><th data-field="proj_pct">Proj. month-end</th></tr></thead><tbody></tbody></table></div></div>
 <div class="card wide" id="c-x-fv"><h3>Vendor Supply Flags</h3><p class="xnote">Chronic: below 80% of schedule in each of the last 3 weeks, or below 70% month to date with 2 weak weeks. Watch: below 85% with a weak week. Faraz's two codes are combined.</p><input class="q" id="q-fv" placeholder="Search vendor" aria-label="Search vendor flags"><div class="tbox"><table class="tb" id="tb-fv"><thead><tr><th data-field="level">Flag</th><th data-field="vendor">Vendor</th><th data-field="parts">Parts</th><th data-field="mtd_pct">MTD</th><th data-field="wk">Last 3 weeks</th><th data-field="short">Short to date</th><th data-field="month">Month schedule</th></tr></thead><tbody></tbody></table></div></div>
 <div class="card wide" id="c-x-fs"><h3>Stock Flags</h3><p class="xnote" id="x-fs-note"></p><input class="q" id="q-fs" placeholder="Search part, code, shop or vendor" aria-label="Search stock flags"><div class="tbox"><table class="tb" id="tb-fs"><thead><tr><th data-field="level">Flag</th><th data-field="part">Part</th><th data-field="code">Code</th><th data-field="shop">Shop</th><th data-field="stock">Stock</th><th data-field="safety">Safety</th><th data-field="cover">Days cover</th><th data-field="last">Last receipt</th><th data-field="cv">Chronic vendor</th></tr></thead><tbody></tbody></table></div></div>
-<div class="card wide" id="c-ov-bullets"><h3>Plan vs Actual</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_pm smp_cost smp_savings"></div></div>
-<div class="card" id="c-ov-cum"><h3>Cumulative Production</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
-<div class="card" id="c-ov-cumd"><h3>Cumulative Dispatch</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 <div class="card wide" id="c-ov-score"><h3>Shop Scorecard</h3><div class="chart" data-source="atlas_parts_daily atlas_parts smp_oee smp_quality smp_efficiency smp_breakdowns atlas_shop_parts"></div></div>
-<div class="card wide" id="c-ov-shop"><h3>Production by Shop</h3><div class="chart" data-source="atlas_parts_daily atlas_parts"></div></div>
 </div>
 </section>
 <section class="page" id="production"><i hidden data-source="sap_transit"></i><i hidden data-source="spd_supply"></i>
@@ -997,8 +993,8 @@ if (dash.data('atlas_issues').status === 'ok') { const iss = D('atlas_issues').f
 const open = iss.filter(r => String(r.status).toLowerCase() !== 'closed').length, cl30 = iss.filter(r => r.closed_on && r.closed_on >= off(window.__TODAY, -29)).length;
 tile({ label: 'Open critical issues', value: String(open), col: open ? C.bad : null, sub: `of ${iss.length} critical logged`, bar: [{ v: open, c: C.bad }, { v: iss.length - open, c: '#C9D1D9' }], vsTxt: `${cl30} closed in the last 30 days` }); }
 }
-const el = ch('c-ov-bullets');
-if (!status(el, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_pm')) {
+const el = ch('c-ov-bullets');  /* 11 Nov (Umair): Plan vs Actual, Cumulative Production/Dispatch and Production by Shop removed from Critical Issues */
+if (el && !status(el, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_pm')) {
 const rng = r => r.date >= p.start && r.date <= p.actEnd && inShop(r, p);
 const fp = flow('Production', p), fd = flow('Dispatch', p), fi = flow('In-house', p);
 const oe = D('smp_oee').filter(r => rng(r) && inShift(r, p)); const oee = oe.length ? d3.mean(oe, r => r.availability * r.performance * r.quality) * 100 : null;
@@ -1019,8 +1015,8 @@ bullets(el, [
 { label: 'Cost (PKR M)', plan: d3.sum(cs, r => r.budget_pkr_m), actual: csA, fmt: f1, inv: 1, note: 'Budget vs actual, lower is better · sample', lock: 'smp_cost' },
 { label: 'Savings YTD (PKR M)', plan: d3.sum(sv, r => r.target_pkr_m), actual: svA, fmt: f1, note: 'Since Jun · sample', lock: 'smp_savings' }].filter(b => !b.lock || dash.data(b.lock).status === 'ok'));
 }
-cumChart(ch('c-ov-cum'), 'Production', p); cumChart(ch('c-ov-cumd'), 'Dispatch', p);
-draw._shopPva(ch('c-ov-shop'), 'Production', p);
+if (ch('c-ov-cum')) cumChart(ch('c-ov-cum'), 'Production', p); if (ch('c-ov-cumd')) cumChart(ch('c-ov-cumd'), 'Dispatch', p);
+if (ch('c-ov-shop')) draw._shopPva(ch('c-ov-shop'), 'Production', p);
 // scorecard
 const sc = ch('c-ov-score');
 if (!status(sc, ...ATL, 'smp_oee', 'smp_quality', 'smp_efficiency', 'smp_breakdowns', 'atlas_shop_parts')) {
