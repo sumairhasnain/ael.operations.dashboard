@@ -30,8 +30,8 @@
     cost: ['cogm'], capacity: ['cap_machines', 'cap_parts', 'atlas_parts_daily', 'atlas_parts'], projects: ['jira_issues'], savings: ['cr_ideas'] };
 
   const css = document.createElement('style'); css.textContent = `
-.ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;aspect-ratio:16/9;max-height:calc(100vh - 190px);min-height:540px;margin:12px auto 0;width:min(100%,calc((100vh - 190px)*16/9))}
-.ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:14px auto 0;width:min(100%,calc((100vh - 190px)*16/9));border-bottom:2px solid #051C2C;padding-bottom:8px}
+.ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;height:calc(100vh - 190px);min-height:540px;margin:12px 0 0;width:100%}   /* 11 Nov 23:40 (Umair): full screen width */
+.ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:14px 0 0;width:100%;border-bottom:2px solid #051C2C;padding-bottom:8px}
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
@@ -50,7 +50,7 @@
 .ael #summary .ovc:hover .mo{opacity:1}
 .ael #summary .ovc h3{font-family:var(--font-anthropic-serif);font-weight:400;font-size:17px;color:#051C2C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael #summary .ovb{display:flex;gap:10px;flex:1;min-height:0}
-.ael #summary .ovk{flex:0 0 42%;display:flex;flex-direction:column;justify-content:space-between;gap:2px;min-width:0}
+.ael #summary .ovk{flex:0 0 38%;display:flex;flex-direction:column;justify-content:space-between;gap:2px;min-width:0}
 .ael #summary .ovk .k{border-left:3px solid #051C2C;padding:0 0 0 8px;min-width:0}
 .ael #summary .ovk .l{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael #summary .ovk .v{font-family:var(--font-anthropic-serif);font-size:clamp(15px,1.45vw,21px);line-height:1.15;color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -59,7 +59,7 @@
 .ael #summary .ovv .vt{font-size:10.5px;color:#5B6770;margin-bottom:2px}
 .ael #summary .ovv .vc{flex:1;min-height:0}
 .ael #summary .ovl{position:absolute;inset:44px 14px 12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#5B6770;font-size:12.5px}
-.ael #summary .ovn{font-size:11px;color:#5B6770;margin:8px auto 0;width:min(100%,calc((100vh - 150px)*16/9))}
+.ael #summary .ovn{font-size:11px;color:#5B6770;margin:8px 0 0}
 .ovm{position:fixed;inset:0;background:rgba(5,28,44,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
 .ovm .bx{background:#fff;border-radius:8px;border-top:5px solid var(--ac,#051C2C);width:min(1280px,96vw);max-height:92vh;overflow:auto;padding:18px 22px 20px;box-shadow:0 18px 50px rgba(0,0,0,.3);font-family:var(--font-anthropic-sans);color:#051C2C}
 .ovm .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
@@ -233,7 +233,7 @@
     const spd = d3.sum(cur.filter(r => r.spd), r => r.value_pkr), asof = (R.find(r => r.asof) || {}).asof || '';
     return { title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
       kpis: [['Cost of production', rs(T), `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
-      vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => kf(v), fmt: rs, ml: 36 }),
+      vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => v >= 1e9 ? d3.format(',.1f')(v / 1e9) + 'B' : f0(v / 1e6) + 'M', fmt: rs, ml: 38 }),
       detail: [
         { t: 'COGM by shop and element', lg: EL, draw: el => colC(el, byS.map(d => d[0]), EL.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 280, rot: 1, fmt: rs }) },
         { t: 'COGM by month', lg: EL, draw: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, h: 280, cFmt: mon, fmt: rs }) },
