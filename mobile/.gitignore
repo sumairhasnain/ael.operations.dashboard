@@ -9,3 +9,8 @@ ios/App/App/public/
 ios/App/App/capacitor.config.json
 ios/App/Pods/
 ios/DerivedData/
+
+# release signing: NEVER commit
+android/keystore.properties
+*.jks
+*.keystore

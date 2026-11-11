@@ -44,3 +44,23 @@ Re-run `npm run sync` whenever `site/` changes: the app bundles the portal pages
 4. Staff-only distribution: TestFlight / Apple Business Manager (custom app) on iOS, and Google Play internal testing or a private managed app on Android.
 5. Test on a real device: simulators/emulators can fake Face ID, but confirm the prompt text and the
    enrolled-biometrics-changed path on hardware.
+
+## Android release (Google Play)
+
+1. **Create the upload key once** (keep the file and passwords safe; losing them means a support request to Google):
+   ```bash
+   keytool -genkeypair -v -keystore ~/ael-upload.jks -alias ael -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. Create `mobile/android/keystore.properties` (git-ignored):
+   ```
+   storeFile=/full/path/to/ael-upload.jks
+   storePassword=...
+   keyAlias=ael
+   keyPassword=...
+   ```
+3. `npm install && npm run android`, then in Android Studio: **Build > Generate App Bundles or APKs > Generate Bundles**, choose *release*.
+   The file is `android/app/release/app-release.aab`. Upload it in Play Console. (Terminal alternative: `cd android && ./gradlew bundleRelease`.)
+4. Bump `versionCode` (and `versionName`) in `android/app/build.gradle` for every new upload.
+5. Test on a phone first: **Run** with a USB-connected device, or `./gradlew assembleRelease` for an installable `.apk`.
+
+Icon: put a 1024x1024 `assets/icon.png` in place and run `python3 scripts/make-icons.py`.
