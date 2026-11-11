@@ -4081,10 +4081,35 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       ['Wages', 'Direct labour', 'Wages'], ['Overtime', 'Direct labour', 'Overtime'], ['Electricity', 'Utilities', 'Electricity'], ['Gas', 'Utilities', 'Gas']];
     const allS = [...new Set(R.filter(r => r.month === m && r.element !== 'Labour detail').map(r => r.shop))].filter(s => !SH || s === SH)
       .sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
-    const row = s => { const v = cols.map(([, e, k]) => sub(s, e, k)), t = d3.sum(v); return `<tr><td>${esc(s)}</td>${v.map((x, i) => `<td${i >= 7 && cur.some(r => r.element === 'Utilities' && r.estimate) ? ' class="smpc"' : ''}>${x ? pm(x) : '—'}</td>`).join('')}<td><b>${pm(t)}</b></td><td>${T ? (100 * t / T).toFixed(1) + '%' : '—'}</td></tr>`; };
+    /* 11 Nov 22:45 (Umair): hold the pointer on a value for 2 seconds to see what is behind it */
+    const LD = new Map(R.filter(r => r.month === m && r.element === 'Labour detail').map(r => [r.shop, r]));
+    const VV = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r]));
+    const f0 = d3.format(',.0f');
+    const why = (s, e, k, lab) => { const rr = cur.filter(r => r.shop === s && r.element === e && (!k || r.sub === k)); const v = d3.sum(rr, r => r.value_pkr); if (!v) return null;
+      const oem = d3.sum(rr.filter(r => !r.spd), r => r.value_pkr), spd = v - oem, d = (rr.find(r => !r.spd && r.detail) || {}).detail || {}, base = rr.find(r => !r.spd) || {}, vo = VV.get(s), st = d3.sum(cols, ([, e2, k2]) => sub(s, e2, k2));
+      const L = [`${s} · ${lab}`, `${pm(v)} PKR · ${st ? (100 * v / st).toFixed(1) : 0}% of the shop's COGM`];
+      if (spd) L.push(`OEM ${pm(oem)} · SPD ${pm(spd)} (${(100 * spd / v).toFixed(1)}%)`);
+      if (vo && vo.units) L.push(`Rs ${f0(oem / vo.units)} per OEM unit (${nf(vo.units)} units)`);
+      if (base.from_alf) L.push(`incl. ${pm(base.from_alf)} shared from Aluminium Foundry by production`);
+      if (e === 'Direct material' && d.top) { L.push(`${d.n_items} materials issued (261 less 262), top ones:`); d.top.forEach(t => L.push(`  ${t.code} ${t.part}: ${pm(t.value)}${t.qty ? ' · ' + nf(t.qty) + ' pcs' : ''}`)); }
+      if (e === 'Indirect material' && d.ccs) d.ccs.forEach(c => L.push(`  Cost centre ${c.cc}: ${pm(c.value)} · ${nf(c.lines || 0)} issue lines`));
+      const ld = LD.get(s);
+      if (k === 'Wages' && ld) L.push(`${nf(ld.people)} people x Rs ${nf(ld.wage)}${partial ? ' (working days so far)' : ''}`, `less ${d3.format(',.1f')(ld.absent_days)} absent days x Rs ${d3.format(',.0f')(ld.day_rate)} = ${pm(ld.absent_pkr)}`);
+      if (k === 'Overtime' && ld) L.push(`${d3.format(',.1f')(ld.ot_hours)} OT hours x Rs ${d3.format(',.2f')(ld.hour_rate)} x 1.5`);
+      if (k === 'Electricity') { const mw = d3.sum(rr, r => r.mwh || 0); L.push(`${d3.format(',.1f')(mw)} MWh x Rs 32/kWh${rr.some(r => r.estimate) ? ' · estimated from last month, pro rata' : ''}`); }
+      if (k === 'Gas' && d.knm3 != null) L.push(`${d3.format(',.2f')(d.knm3)} thousand Nm3 x Rs ${d.rate}/Nm3${rr.some(r => r.estimate) ? ' · estimated from last month, pro rata' : ''}`);
+      return L; };
+    const TIPS = []; const tipCell = (s, i, x) => { const L = x ? why(s, cols[i][1], cols[i][2], cols[i][0]) : null; if (!L) return ''; TIPS.push(L); return ` data-tip="${TIPS.length - 1}" style="cursor:help"`; };
+    const row = s => { const v = cols.map(([, e, k]) => sub(s, e, k)), t = d3.sum(v); return `<tr><td>${esc(s)}</td>${v.map((x, i) => `<td${i >= 7 && cur.some(r => r.element === 'Utilities' && r.estimate) ? ' class="smpc"' : ''}${tipCell(s, i, x)}>${x ? pm(x) : '—'}</td>`).join('')}<td><b>${pm(t)}</b></td><td>${T ? (100 * t / T).toFixed(1) + '%' : '—'}</td></tr>`; };
     const totV = cols.map(([, e, k]) => d3.sum(cur.filter(r => r.element === e && (!k || r.sub === k)), r => r.value_pkr));
     tb.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM</th><th>Share</th></tr></thead><tbody>${allS.map(row).join('')}
-      <tr class="tot"><td>Total</td>${totV.map(v => `<td>${pm(v)}</td>`).join('')}<td>${pm(T)}</td><td>100%</td></tr></tbody></table>`;
+      <tr class="tot"><td>Total</td>${totV.map(v => `<td>${pm(v)}</td>`).join('')}<td>${pm(T)}</td><td>100%</td></tr></tbody></table>
+      <p class="cpnote">Hold the pointer on a value for 2 seconds to see its details.</p>`;
+    let tmr = null, last = null;
+    tb.querySelectorAll('td[data-tip]').forEach(td => { const L = TIPS[+td.dataset.tip];
+      td.addEventListener('mouseenter', ev => { last = ev; clearTimeout(tmr); tmr = setTimeout(() => tip.show(last, L), 2000); });
+      td.addEventListener('mousemove', ev => { last = ev; });
+      td.addEventListener('mouseleave', () => { clearTimeout(tmr); tip.hide(); }); });
     unit(R, m, SH, cur, partial);
     // labour detail
     const tl = document.getElementById('cp-lab'), L0 = lab[0];

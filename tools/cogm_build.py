@@ -97,12 +97,19 @@ def main(upkl, mb51, data, out, asof=None):
                 if kw in d: return sh
         if not shop_of.get(mat) and 'ALUMIN' in d and 'INGOT' in d: return 'Aluminium Foundry'
         return shop_of.get(mat, '')
-    for (m, mat), v in u.groupby(['m', 'Material'])['amt'].sum().items():
-        rows[key(m, mshop(mat), 'Direct material', 'Purchased material')] += -float(v)
+    det = {}   # 11 Nov 22:45 (Umair): hover details for the Cost Elements by Shop table
+    items = collections.defaultdict(list)
+    qcol = 'Qty in unit of entry' if 'Qty in unit of entry' in u.columns else None
+    gg = u.groupby(['m', 'Material']).agg(v=('amt', 'sum'), **({'q': (qcol, 'sum')} if qcol else {}))
+    for (m, mat), r_ in gg.iterrows():
+        v = -float(r_['v']); sh_ = mshop(mat) or 'Unassigned'
+        rows[key(m, sh_, 'Direct material', 'Purchased material')] += v
+        items[(m, sh_)].append((mat, (desc.get(mat) or mdesc.get(mat, ''))[:44], v, -float(r_['q']) if qcol else None))
     # indirect material
     for r in json.load(open(data + '/sap_cc.json')):
         if FROM <= r['month'] <= cur and r['category'] in INDIRECT:
             rows[key(r['month'], r.get('shop') or '', 'Indirect material', r['category'])] += float(r['value_pkr'])
+            det.setdefault(key(r['month'], r.get('shop') or '', 'Indirect material', r['category']), {'ccs': []})['ccs'].append({'cc': r.get('cc'), 'value': round(float(r['value_pkr'])), 'lines': r.get('lines')})
     # direct labour
     day, hour = WAGE / DAYS, WAGE / DAYS / HOURS
     def wdays(m):                                   # Mon-Sat working days counted so far in month m
@@ -133,6 +140,7 @@ def main(upkl, mb51, data, out, asof=None):
         for sh, k in (gsrc or {}).items():
             g = 1.0 if m in GAS_KNM3 else f
             rows[key(m, sh, 'Utilities', 'Gas')] += k * 1000 * RATE_GAS * g
+            det[key(m, sh, 'Utilities', 'Gas')] = {'knm3': round(k * g, 3), 'rate': RATE_GAS}
     # ---- production volume per shop (11 Nov, Umair) ----
     import os; rd = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
     pick = lambda f: (data + '/' + f) if os.path.exists(data + '/' + f) else os.path.join(rd, f)   # repo data/ if not copied
@@ -191,6 +199,7 @@ def main(upkl, mb51, data, out, asof=None):
         del rows[(m, sh, e, sub)]
         for t, uu in tgt.items():
             if uu: rows[(m, t, e, sub)] += v * uu / tt; alloc[(m, t, e, sub)] = alloc.get((m, t, e, sub), 0) + v * uu / tt
+            if uu and e == 'Direct material': items[(m, t)] += [(c_, d_ + ' (Al Foundry, shared)', x_ * uu / tt, (q_ or 0) * uu / tt) for c_, d_, x_, q_ in items.get((m, 'Aluminium Foundry'), [])]
     # ---- SPD (11 Nov 22:24, Umair): SPD parts made in-house (AAL 91-codes, MB51 101 with no supplier) take their share of the shop's
     # direct and indirect material, labour and utilities, so OEM products carry only their own material. Share = SPD production at SAP standard cost /
     # (OEM finished production at standard + SPD at standard). Current month only (the MB51 file holds the current month).
@@ -235,7 +244,12 @@ def main(upkl, mb51, data, out, asof=None):
             spd_rows.append({'month': cur, 'shop': sh, 'element': 'SPD product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': mdesc.get(c, '') or desc.get(c, ''),
                              'units': round(q), 'std_pkr': round(a), 'std_unit': round(a / q, 1), 'cost_pkr': round(mat * k), 'cost_unit': round(mat * k / q, 1),
                              **{n_: round(el[e_] * k / q, 1) for n_, e_ in (('dm_unit', 'Direct material'), ('im_unit', 'Indirect material'), ('lab_unit', 'Direct labour'), ('util_unit', 'Utilities'))}, 'asof': asof})
-    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub.split('|')[0], **({'spd': True} if sub.endswith('|SPD') else {}), 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
+    for (m, sh), L in items.items():
+        L = sorted(L, key=lambda x: -x[2]); det.setdefault((m, sh, 'Direct material', 'Purchased material'), {})
+        det[(m, sh, 'Direct material', 'Purchased material')].update({'n_items': len(L), 'top': [{'code': c_, 'part': d_, 'value': round(x_), 'qty': round(q_) if q_ else None} for c_, d_, x_, q_ in L[:6]]})
+    for k_, d_ in det.items():
+        if 'ccs' in d_: d_['ccs'] = sorted(d_['ccs'], key=lambda x: -x['value'])[:5]
+    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub.split('|')[0], **({'detail': det[(m, s, e, sub)]} if (m, s, e, sub) in det else {}), **({'spd': True} if sub.endswith('|SPD') else {}), 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
                  **({'mwh': extra_u.get((m, s))} if e == 'Utilities' and sub == 'Electricity' else {}),
                  **({'from_alf': round(alloc[(m, s, e, sub)])} if (m, s, e, sub) in alloc else {}), 'asof': asof}
                 for (m, s, e, sub), v in sorted(rows.items()) if abs(v) >= 1]
