@@ -4283,17 +4283,19 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 @media (max-width:1000px){.ael #summary .ovg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;aspect-ratio:auto;max-height:none}.ael #summary .ovc{height:300px}.ovm .bg{grid-template-columns:1fr}}
 .ael #summary .ovc{padding:12px 16px 12px}
 .ael #summary .ovc .hd{margin-bottom:10px}
-.ael #summary .ovk{flex:0 0 40%;justify-content:flex-start;gap:0}
+.ael #summary .ovk{flex:0 0 35%;min-width:0;justify-content:flex-start;gap:0}
 .ael #summary .ovk .hero{padding-bottom:10px}
 .ael #summary .ovk .hero .l{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ael #summary .ovk .hero .v{font-family:var(--font-anthropic-serif);font-size:clamp(22px,2vw,32px);line-height:1.15;color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ael #summary .ovk .hero .v{font-family:var(--font-anthropic-serif);font-size:clamp(20px,1.65vw,28px);line-height:1.15;color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ael #summary .ovk .hero .s{font-size:11px;color:#5B6770;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael #summary .ovk .rows{border-top:1px solid #E2E6EB}
 .ael #summary .ovk .r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid #EEF1F4;font-size:12px;color:#5B6770}
 .ael #summary .ovk .r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ael #summary .ovk .r b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:clamp(14px,1.15vw,17px);color:#051C2C;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ael #summary .ovv .vt{font-size:10.5px;color:#8A949E;margin-bottom:4px;text-align:right}
-.ael #summary .ovb{gap:16px}
+.ael #summary .ovb{gap:12px}
+.ael #summary .ovv{background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:4px 4px 0}
+.ael #summary .ovv .vt{font-size:11px;color:#33414B;font-weight:600;margin:2px 4px 2px}
 .ael #summary .ovv .vt{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
 .ael #summary .tg{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:3px 10px;cursor:pointer;margin-right:auto;white-space:nowrap}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
@@ -4313,7 +4315,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const y = d3.scaleLinear().domain([o.min ?? Math.min(0, d3.min(all)), (d3.max(all) || 1) * 1.05]).nice().range([h - mb, mt]), x = d3.scalePoint().domain(d3.range(xs.length)).range([ml, w - 6]);
     axisY(svg, y, ml, w - 6, o.yFmt || kf, o.h && o.h > 200 ? 5 : 3);
     if (o.ref != null) svg.append('line').attr('x1', ml).attr('x2', w - 6).attr('y1', y(o.ref)).attr('y2', y(o.ref)).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
-    S.forEach(s => svg.append('path').attr('d', d3.line().defined(v => v != null).x((v, i) => x(i)).y(v => y(v))(s.values)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.width || 1.8).attr('stroke-dasharray', s.dash || null));
+    S.forEach(s => svg.append('path').attr('d', d3.line().defined(v => v != null).x((v, i) => x(i)).y(v => y(v))(s.values)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.width || 2.6).attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash || null));
     const step = Math.max(1, Math.ceil(xs.length / (w / 46)));
     xs.forEach((t, i) => { if (i % step === 0 || i === xs.length - 1) svg.append('text').attr('x', x(i)).attr('y', h - 3).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(o.xFmt ? o.xFmt(t) : t); });
     const hv = svg.append('rect').attr('x', ml).attr('y', mt).attr('width', w - ml - 6).attr('height', h - mb - mt).attr('fill', 'transparent');
@@ -4321,7 +4323,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* vertical columns: cats, series [{name,color}], get(cat, s) ; o.stack */
   function colC(el, cats, S, get, o = {}) { if (!cats.length) return none(el, o.empty || 'No data'); const { svg, w, h } = mk(el, o.h); const ml = o.ml ?? 38, mb = o.rot ? 46 : 16, mt = 6;
     const tot = c => o.stack ? d3.sum(S, s => Math.max(0, get(c, s) || 0)) : d3.max(S, s => get(c, s) || 0);
-    const y = d3.scaleLinear().domain([0, (d3.max(cats, tot) || 1) * 1.06]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(d3.range(cats.length)).range([ml, w - 4]).padding(0.22);
+    const y = d3.scaleLinear().domain([0, (d3.max(cats, tot) || 1) * 1.06]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(d3.range(cats.length)).range([ml, w - 4]).padding(cats.length > 12 ? 0.18 : 0.14);
     const x1 = d3.scaleBand().domain(S.map(s => s.name)).range([0, x.bandwidth()]).padding(0.05);
     axisY(svg, y, ml, w - 4, o.yFmt || kf, o.h && o.h > 200 ? 5 : 3);
     cats.forEach((c, i) => { let y0 = 0; const L = [o.cFmt ? o.cFmt(c) : c, ...S.map(s => `${s.name}: ${(o.fmt || kf)(get(c, s) || 0)}`)];
@@ -4334,26 +4336,26 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         else t.attr('x', x(i) + x.bandwidth() / 2).attr('y', h - 3).attr('text-anchor', 'middle').text(lb); } });
     svg.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#051C2C'); }
   /* horizontal bars: items [{label, v, plan?, color?, tip?}] ; o.pct shows v as % with 100 line */
-  function hbarC(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rh = o.rh || 20, lw = o.lw || 120, h = o.h || items.length * rh + 18; const { svg, w } = mk(el, h);
-    const mx = Math.min(o.cap || Infinity, o.max || d3.max(items, d => Math.max(d.v || 0, d.plan || 0, o.ref || 0)) || 1), x = d3.scaleLinear().domain([0, mx * 1.05]).range([lw, w - 46]);
+  function hbarC(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rh = o.rh || 20, lw = o.lw || 120, h = o.h || Math.max(items.length * rh + 18, Math.min(el.clientHeight || 0, items.length * 44 + 18)); const { svg, w } = mk(el, h);
+    const mx = Math.min(o.cap || Infinity, o.max || d3.max(items, d => Math.max(d.v || 0, d.plan || 0, o.ref || 0)) || 1), x = d3.scaleLinear().domain([0, mx * 1.05]).range([lw, w - 62]);
     const rh2 = (h - 18) / items.length;
-    items.forEach((d, i) => { const y = 4 + i * rh2, bh = Math.max(6, rh2 * 0.62);
-      svg.append('text').attr('x', lw - 6).attr('y', y + bh / 2 + 3.5).attr('text-anchor', 'end').attr('font-size', o.fs || 10.5).attr('fill', '#051C2C').text(d.label.length > (o.lc || 20) ? d.label.slice(0, (o.lc || 20) - 1) + '…' : d.label).append('title').text(d.label);
+    items.forEach((d, i) => { const y = 4 + i * rh2, bh = Math.max(8, Math.min(26, rh2 * 0.7));
+      svg.append('text').attr('x', lw - 6).attr('y', y + bh / 2 + 3.5).attr('text-anchor', 'end').attr('font-size', o.fs || 11).attr('fill', '#051C2C').text(d.label.length > (o.lc || 20) ? d.label.slice(0, (o.lc || 20) - 1) + '…' : d.label).append('title').text(d.label);
       if (d.plan != null) svg.append('rect').attr('x', lw).attr('y', y).attr('width', Math.max(0, x(d.plan) - lw)).attr('height', bh).attr('fill', '#E6E9EC');
       svg.append('rect').attr('x', lw).attr('y', y + (d.plan != null ? bh * 0.2 : 0)).attr('width', Math.max(0.5, x(Math.min(mx * 1.05, Math.max(0, d.v || 0))) - lw)).attr('height', d.plan != null ? bh * 0.6 : bh).attr('fill', d.color || C.navy)
         .on('mousemove', ev => tip.show(ev, d.tip || [d.label, (o.fmt || kf)(d.v)])).on('mouseleave', tip.hide);
-      svg.append('text').attr('x', Math.min(w - 44, x(Math.min(mx * 1.05, Math.max(d.v || 0, d.plan || 0))) + 4)).attr('y', y + bh / 2 + 3.5).attr('font-size', 9.5).attr('fill', '#33414B').text(d.lab ?? (o.fmt || kf)(d.v)); });
+      svg.append('text').attr('x', Math.min(w - 44, x(Math.min(mx * 1.05, Math.max(d.v || 0, d.plan || 0))) + 4)).attr('y', y + bh / 2 + 3.5).attr('font-size', 10.5).attr('font-weight', 600).attr('fill', '#33414B').text(d.lab ?? (o.fmt || kf)(d.v)); });
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
-  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 4, w / 4.8);
+  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 6, w / 3.1);
     const g = svg.append('g').attr('transform', `translate(${r + 6},${h / 2})`), tot = d3.sum(items, d => d.v);
     g.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r * 0.58).outerRadius(r)).attr('fill', d => d.data.color)
       .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot * 100)}`])).on('mouseleave', tip.hide);
-    g.append('text').attr('text-anchor', 'middle').attr('y', 4).attr('font-size', 11).attr('font-weight', 600).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot));
-    const lh = Math.min(16, (h - 6) / items.length); items.forEach((d, i) => { const y = h / 2 - items.length * lh / 2 + i * lh + lh / 2;
-      svg.append('rect').attr('x', 2 * r + 18).attr('y', y - 5).attr('width', 9).attr('height', 9).attr('fill', d.color);
-      svg.append('text').attr('x', 2 * r + 31).attr('y', y + 3).attr('font-size', 10).attr('fill', '#33414B').text(`${d.label.length > 16 ? d.label.slice(0, 15) + '…' : d.label} · ${pc(d.v / tot * 100)}`); }); }
+    g.append('text').attr('text-anchor', 'middle').attr('y', 4).attr('font-size', Math.max(11, Math.min(16, r / 4))).attr('font-weight', 600).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot));
+    const lh = Math.min(19, (h - 6) / items.length); items.forEach((d, i) => { const y = h / 2 - items.length * lh / 2 + i * lh + lh / 2;
+      svg.append('rect').attr('x', 2 * r + 18).attr('y', y - 5).attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', d.color);
+      svg.append('text').attr('x', 2 * r + 31).attr('y', y + 3.5).attr('font-size', 11).attr('fill', '#33414B').text(`${d.label.length > 16 ? d.label.slice(0, 15) + '…' : d.label} · ${pc(d.v / tot * 100)}`); }); }
 
   /* ---------- per-card models: {kpis:[[label,value,sub,color?]], mini(el), title, sub, detail:[{t, lg, draw(el)}], foot} ---------- */
   const PAL = [C.navy, C.blue, C.cyan, '#1F9E89', '#E0A100', '#8C6BD8', '#B9C1C9', '#D0312D'];
@@ -4482,7 +4484,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
         ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
         ['Machines over 85%', nf(util.filter(d => d.v > 85).length), 'time-study load vs capacity']],
-      vt: `Plan load vs capacity, ${mon(P.month)}`, mini: el => hbarC(el, PL.map(d => ({ label: d.label, v: d.u, lab: pc(d.u), color: d.u > 100 ? C.bad : d.u > 85 ? C.warn : C.navy, tip: [d.label, `Load ${pc(d.u)}`, `Plan ${kf(d.load)} vs capacity ${kf(d.cap)} a month`, `Bottleneck op ${d.bn}`] })).sort((a, b) => b.v - a.v), { fmt: pc, ref: 100, lw: 100, lc: 17, fs: 10 }),
+      vt: `Plan load vs capacity, ${mon(P.month)}`, mini: el => hbarC(el, PL.map(d => ({ label: d.label, v: d.u, lab: pc(d.u), color: d.u > 100 ? C.bad : d.u > 85 ? C.warn : C.navy, tip: [d.label, `Load ${pc(d.u)}`, `Plan ${kf(d.load)} vs capacity ${kf(d.cap)} a month`, `Bottleneck op ${d.bn}`] })).sort((a, b) => b.v - a.v), { fmt: pc, ref: 100, lw: 112, lc: 18 }),
       detail: [
         { t: `Part load vs capacity (${mon(P.month)} Atlas plan)`, lg: [['Capacity', '#E6E9EC'], ['Plan load', C.navy]], draw: el => hbarC(el, PL.map(d => ({ label: d.label, v: d.load, plan: d.cap, lab: pc(d.u), color: d.u > 100 ? C.bad : d.u > 85 ? C.warn : C.navy, tip: [d.label, `Plan ${kf(d.load)} vs capacity ${kf(d.cap)}`, `Load ${pc(d.u)}`, `Bottleneck op ${d.bn} · ${d.mc} machines`] })), { fmt: kf, h: 250, lw: 130 }) },
         { t: 'Machine status', draw: el => donutC(el, st.map(([s, n], i) => ({ label: s, v: n, color: { Running: C.navy, Standby: C.warn, 'Not working': C.bad }[s] || PAL[(i + 3) % PAL.length] })), { h: 250, fmt: nf, center: nf(MC.length) + ' machines' }) },
@@ -4504,7 +4506,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     return { title: `Jira${asof ? ' as of ' + dlab(asof) : ''}`, st: band(J.length ? od.length / J.length * 100 : null, 5, 15, false),
       kpis: [['Activities', nf(J.length), `${byP.length} projects`], ['Done', pc(J.length ? dn.length / J.length * 100 : null), `${nf(dn.length)} completed`, '#1E8C5A'], ['In progress', nf(ip.length), 'being worked on'], ['To do', nf(nw.length), 'not started'],
         ['Overdue', nf(od.length), 'past due date, not done', od.length ? C.bad : null]],
-      vt: 'Status by project', mini: el => hbarC(el, byP.map(([p, o]) => ({ label: p, v: d3.sum(SC, ([n]) => o[n]), lab: `${o.Done}/${d3.sum(SC, ([n]) => o[n])} done`, color: C.navy, tip: [p, ...SC.map(([n]) => `${n}: ${o[n]}`)] })), { fmt: nf, lw: 110, lc: 18, fs: 10 }),
+      vt: 'Status by project', mini: el => hbarC(el, byP.map(([p, o]) => ({ label: p, v: d3.sum(SC, ([n]) => o[n]), lab: `${o.Done}/${d3.sum(SC, ([n]) => o[n])} done`, color: C.navy, tip: [p, ...SC.map(([n]) => `${n}: ${o[n]}`)] })), { fmt: nf, lw: 120, lc: 20 }),
       detail: [
         { t: 'Activities by project and status', lg: SC.map(([n, c]) => [n, c]), draw: el => colC(el, byP.map(d => d[0]), SC.map(([n, c]) => ({ name: n, color: c })), (p, s) => new Map(byP).get(p)[s.name], { stack: 1, h: 260, fmt: nf, yFmt: nf, cFmt: p => p.length > 26 ? p.slice(0, 25) + '…' : p }) },
         { t: 'Open activities by owner (red = overdue)', draw: el => hbarC(el, own.map(([a, o]) => ({ label: a, v: o.n, lab: `${o.n}${o.o ? ' · ' + o.o + ' overdue' : ''}`, color: o.o ? C.bad : C.navy })), { fmt: nf, h: 280, lw: 150, lc: 24 }) },
@@ -4545,7 +4547,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-      <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
+      <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${id === 'inventory' ? '' : esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
     const tg = el.querySelector('.tg'); if (tg) { tg.addEventListener('click', ev => { ev.stopPropagation(); exRM = !exRM; render(); }); tg.addEventListener('keydown', ev => ev.stopPropagation()); }
     el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
