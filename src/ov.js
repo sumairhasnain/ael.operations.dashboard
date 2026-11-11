@@ -30,8 +30,8 @@
     cost: ['cogm'], capacity: ['cap_machines', 'cap_parts', 'atlas_parts_daily', 'atlas_parts'], projects: ['jira_issues'], savings: ['cr_ideas'] };
 
   const css = document.createElement('style'); css.textContent = `
-.ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;height:calc(100vh - 190px);min-height:540px;margin:12px 0 0;width:100%}   /* 11 Nov 23:40 (Umair): full screen width */
-.ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:14px 0 0;width:100%;border-bottom:2px solid #051C2C;padding-bottom:8px}
+.ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;height:calc(100vh - 170px);min-height:460px;margin:10px 0 0;width:100%}   /* 11 Nov 23:40 (Umair): full screen width */
+.ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0;width:100%;border-bottom:2px solid #051C2C;padding-bottom:8px}
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
@@ -59,7 +59,9 @@
 .ael #summary .ovv .vt{font-size:10.5px;color:#5B6770;margin-bottom:2px}
 .ael #summary .ovv .vc{flex:1;min-height:0}
 .ael #summary .ovl{position:absolute;inset:44px 14px 12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#5B6770;font-size:12.5px}
-.ael #summary .ovn{font-size:11px;color:#5B6770;margin:8px 0 0}
+.ael #summary .ovn{font-size:11px;color:#5B6770;margin:6px 0 0}
+.ael #summary{padding-top:6px !important;padding-bottom:0 !important;margin-top:0 !important}
+.ael.ovfit{min-height:0 !important;padding-bottom:0 !important}
 .ovm{position:fixed;inset:0;background:rgba(5,28,44,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
 .ovm .bx{background:#fff;border-radius:8px;border-top:5px solid var(--ac,#051C2C);width:min(1280px,96vw);max-height:92vh;overflow:auto;padding:18px 22px 20px;box-shadow:0 18px 50px rgba(0,0,0,.3);font-family:var(--font-anthropic-sans);color:#051C2C}
 .ovm .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
@@ -315,9 +317,14 @@
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
     return el; }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
-    let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2><div class="sb"></div></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
-    s.querySelector('.ovhd .sb').textContent = `${mon(P.month)} · as of ${dlab(P.actEnd)} · all shops`;
+    let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join('');
+    s.querySelector('.ovn').textContent = 'Status: Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved. Click a card for its details.';
+    /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
+    const root = document.getElementById('ael'); if (root) root.classList.add('ovfit');
+    if (window.innerWidth > 1000) { const top = g.getBoundingClientRect().top + window.scrollY, nh = s.querySelector('.ovn').offsetHeight + 8;
+      let hh = Math.max(460, Math.floor(window.innerHeight - top - nh - 6)); g.style.height = hh + 'px';
+      const over = document.documentElement.scrollHeight - window.innerHeight; if (over > 0 && hh - over >= 460) g.style.height = (hh - over) + 'px'; } else g.style.height = '';
     g.replaceChildren(...CARDS.map(([id, n]) => card(id, n, P)));
     g.querySelectorAll('.ovc').forEach(el => { const o = last[el.dataset.k], vc = el.querySelector('.vc'); if (o && vc && o.mini) try { o.mini(vc); } catch (e) { console.error(e); } });
     s.querySelector('.ovn').textContent = 'Status: Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved. Click a card for its details.'; }
@@ -335,8 +342,9 @@
     m.querySelector('.go').addEventListener('click', () => { closeD(); const t = document.querySelector(`#tabs .tab[data-p="${id}"]`); if (t) t.click(); });
     document.addEventListener('keydown', escK); m.querySelector('.x').focus();
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } }); }
+  { const tb = document.getElementById('tabs'); if (tb) tb.addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b && b.dataset.p !== 'summary') { const r_ = document.getElementById('ael'); if (r_) r_.classList.remove('ovfit'); } }, true); }
   window.__ovRender = render;
-  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page !== 'summary') { const rt_ = document.getElementById('ael'); if (rt_) rt_.classList.remove('ovfit'); } if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (window.__page === 'summary') render(); }, 200); });
   try { if (window.__page === 'summary') render(); } catch (e) {}
 })();
