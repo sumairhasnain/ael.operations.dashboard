@@ -33,6 +33,23 @@ UTIL_MWH = {
   '2026-09': {'HPDC / Die Cast': 54.91, 'Carburetor': 25.13 + 85.45, 'Aluminium Foundry': 275.36, 'Polymer': 116.41, 'Machining': 39.84, 'Ignition Coil': 25.96, 'Piston': 47.67, 'CIF Machining': 264.81},
   '2026-10': {'HPDC / Die Cast': 55.6, 'Carburetor': 44.02 + 82.22, 'Aluminium Foundry': 267.6, 'Polymer': 106.9, 'Machining': 38.64, 'Ignition Coil': 24.37, 'Piston': 47.84, 'CIF Machining': 245.13}}
 
+# Gas (Umair, 11 Nov 2026): '000 Nm3 a month from the same sheet's Gas Consumption charts (read as thousands of cubic metres),
+# costed at about Rs 55 per Nm3. HPDC -> HPDC / Die Cast, ZDC -> Carburetor, Drum Gear -> Drum Gear, Cast Iron -> CIF Machining.
+RATE_GAS = 55.0
+GAS_KNM3 = {
+  '2026-07': {'HPDC / Die Cast': 7.0, 'Carburetor': 2.48, 'Drum Gear': 2.31, 'CIF Machining': 1.5},
+  '2026-08': {'HPDC / Die Cast': 7.0, 'Carburetor': 2.48, 'Drum Gear': 2.72, 'CIF Machining': 1.6},
+  '2026-09': {'HPDC / Die Cast': 7.0, 'Carburetor': 2.48, 'Drum Gear': 2.94, 'CIF Machining': 1.43},
+  '2026-10': {'HPDC / Die Cast': 7.0, 'Carburetor': 2.28, 'Drum Gear': 2.49, 'CIF Machining': 1.58}}
+# Shop products (Umair, 11 Nov 2026): CIF makes Sleeve CG (in-house), Cylinder Pridor, Drive Plate casting and Boss Clutch
+# Center Pridor casting; their volume is the SAP MB51 101 production (current month) or the F.O.M lines (earlier months).
+# Cushion makes Front Forks and Rear Cushions: volume in motorcycle sets (F.O.M weights, 4 pieces a set).
+# Aluminium Foundry casts BFTs and Pistons: its whole cost is shared to Bridge Fork Top and Piston by their production.
+# Zinc (ZDC) belongs to Carburetor casting (Keihin / zinc die casting: carburetor body castings CD70 and CG).
+CIF_PRODUCTS = {'6590331001': 'SLEEVE CYLINDER CG125 (in-house)', '9030331000': 'CYLINDER PRIDOR', '6503800001': 'DRIVE PLATE CASTING (in-house)',
+                '6530381005': 'CLUTCH CENTER WITH BOSS PRIDOR CASTING'}
+CIF_FOM = ('ci_sleeve', 'ci_cyl', 'ci_dp', 'ci_boss')
+
 
 def main(upkl, mb51, data, out, asof=None):
     asof = asof or dt.date.today().isoformat()
@@ -57,8 +74,14 @@ def main(upkl, mb51, data, out, asof=None):
     u = pd.read_pickle(upkl); u['m'] = pd.to_datetime(u['Posting Date']).dt.strftime('%Y-%m'); u['Material'] = u['Material'].astype(str).map(st)
     u = u[(u.m >= FROM) & (u.m <= cur) & (u['Movement Type'].astype(str).isin(['261', '262']))]
     u = u[~u.Material.isin(made)]
+    desc = {st(r['code']): str(r.get('part') or '').upper() for r in json.load(open(data + '/sap_stock.json'))}
+    def mshop(mat):
+        d = desc.get(mat, '')
+        if 'ZINC' in d: return 'Carburetor'                                  # ZDC: carburetor body casting
+        if not shop_of.get(mat) and 'ALUMIN' in d and 'INGOT' in d: return 'Aluminium Foundry'
+        return shop_of.get(mat, '')
     for (m, mat), v in u.groupby(['m', 'Material'])['amt'].sum().items():
-        rows[key(m, shop_of.get(mat, ''), 'Direct material', 'Purchased material')] += -float(v)
+        rows[key(m, mshop(mat), 'Direct material', 'Purchased material')] += -float(v)
     # indirect material
     for r in json.load(open(data + '/sap_cc.json')):
         if FROM <= r['month'] <= cur and r['category'] in INDIRECT:
@@ -79,7 +102,7 @@ def main(upkl, mb51, data, out, asof=None):
         wages = max(0.0, WAGE * share[m] - ab * day); otc = ot * hour * OT_X
         rows[key(m, sh, 'Direct labour', 'Wages')] += wages
         rows[key(m, sh, 'Direct labour', 'Overtime')] += otc
-        x = extra[(m, sh or 'Unassigned')]; x['people'] += 1; x['absent_days'] += ab; x['absent_pkr'] += ab * day; x['ot_hours'] += ot
+        x = extra[(m, sh or 'Unassigned')]; x['people'] += 1; x['wages_pkr'] += wages; x['ot_pkr'] += otc; x['absent_days'] += ab; x['absent_pkr'] += ab * day; x['ot_hours'] += ot
     # utilities: electricity from the utilities sheet (MWh x 1,000 x Rs/kWh); current month estimated if not on the sheet yet
     months = sorted({k[0] for k in rows}); est = set(); last = max(UTIL_MWH)
     for m in months:
@@ -89,41 +112,74 @@ def main(upkl, mb51, data, out, asof=None):
         for sh, mwh in src.items():
             rows[key(m, sh, 'Utilities', 'Electricity')] += mwh * 1000 * RATE_KWH * f
             extra_u[(m, sh)] = round(mwh * f, 2)
-    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub, 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
-                 **({'mwh': extra_u.get((m, s))} if e == 'Utilities' else {}), 'rate_kwh': RATE_KWH if e == 'Utilities' else None, 'asof': asof}
-                for (m, s, e, sub), v in sorted(rows.items()) if abs(v) >= 1]
-    for (m, s), x in sorted(extra.items()):
-        out_rows.append({'month': m, 'shop': s, 'element': 'Labour detail', 'sub': '', 'value_pkr': 0, 'people': int(x['people']),
-                         'absent_days': round(x['absent_days'], 1), 'absent_pkr': round(x['absent_pkr']), 'ot_hours': round(x['ot_hours'], 1),
-                         'wage': WAGE, 'day_rate': round(day, 2), 'hour_rate': round(hour, 2), 'asof': asof})
-    # 11 Nov 19:08 (Umair): per finished product. Each shop's cost is divided by its actual production volume (Atlas
-    # atlas_parts_daily, prod_actual) to give Rs per unit; the volume is the shop's FINISHED products, or, for a shop that
-    # makes no finished product, its in-house parts (basis says which). Every finished product of a shop carries the
-    # shop's Rs/unit for each element (volume-based allocation).
+        gsrc = GAS_KNM3.get(m) or (GAS_KNM3[max(GAS_KNM3)] if m == cur else None)
+        for sh, k in (gsrc or {}).items():
+            g = 1.0 if m in GAS_KNM3 else f
+            rows[key(m, sh, 'Utilities', 'Gas')] += k * 1000 * RATE_GAS * g
+    # ---- production volume per shop (11 Nov, Umair) ----
+    import os; rd = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+    pick = lambda f: (data + '/' + f) if os.path.exists(data + '/' + f) else os.path.join(rd, f)   # repo data/ if not copied
     try:
-        import os; rd = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
-        pick = lambda f: (data + '/' + f) if os.path.exists(data + '/' + f) else os.path.join(rd, f)   # repo data/ if not copied
         parts = {st(q['code']): q for q in json.load(open(pick('atlas_parts.json')))}
         pdd = json.load(open(pick('atlas_parts_daily.json')))
     except Exception as e:
-        parts, pdd = {}, []; print('no production volume:', e)
+        parts, pdd = {}, []; print('no Atlas production volume:', e)
+    try: fom = json.load(open(pick('fom.json')))[0]
+    except Exception: fom = {'months': {}, 'codes': {}}
     SHOPX = {'Fuel Cock': 'Carburetor'}
     vol = collections.defaultdict(lambda: collections.defaultdict(float)); prod = collections.defaultdict(float)
     for r in pdd:
         m = r['date'][:7]; a = r.get('prod_actual') or 0
         if not (FROM <= m <= cur) or r['date'] > asof or not a: continue
         q = parts.get(st(r['code'])) or {}; sh = SHOPX.get(q.get('shop'), q.get('shop')) or ''; t = q.get('type') or ''
-        if not sh: continue
+        if not sh or sh == 'CIF Machining': continue
         vol[(m, sh)][t] += a
-        if t == 'Finished': prod[(m, sh, st(r['code']))] += a
+        if t == 'Finished': prod[(m, sh, st(r['code']), q.get('part') or '', q.get('model') or '')] += a
+    # CIF and Cushion from SAP MB51 101 production (current month) / F.O.M (earlier months)
+    p101 = collections.defaultdict(float)
+    for ln in open(mb51, encoding='utf-8'):
+        f = ln.rstrip('\n').split('|')
+        if len(f) < 11 or ln.startswith(('@@', 'file=', 'month=', 'cols=')) or f[6].strip(): continue
+        if f[7] in ('101', '102'):
+            try: p101[st(f[0])] += float(f[2] or 0) * (1 if f[7] == '101' else -1)
+            except ValueError: pass
+    cw = {st(c): w for c, w, *_ in (fom.get('codes') or {}).get('tc_cushion', [])}
+    for m in sorted({k[0] for k in rows}):
+        if m == cur:
+            for c, nm in CIF_PRODUCTS.items():
+                if p101.get(c, 0) > 0: vol[(m, 'CIF Machining')]['Finished'] += p101[c]; prod[(m, 'CIF Machining', c, nm, '')] += p101[c]
+            cu = sum(p101.get(c, 0) * w for c, w in cw.items())
+            if cu > 0: vol[(m, 'Cushion')]['Finished'] += cu; prod[(m, 'Cushion', 'FF+RC', 'FRONT FORK & REAR CUSHION (sets)', '')] += cu
+        else:
+            fm = (fom.get('months') or {}).get(m) or {}
+            for k in CIF_FOM:
+                if fm.get(k): vol[(m, 'CIF Machining')]['Finished'] += fm[k]; prod[(m, 'CIF Machining', k, {'ci_sleeve': 'SLEEVES', 'ci_cyl': 'CYLINDER', 'ci_dp': 'DRIVE PLATE CASTING', 'ci_boss': 'CLUTCH CENTER BOSS CASTING'}[k] + ' (F.O.M)', '')] += fm[k]
+            if fm.get('tc_cushion'): vol[(m, 'Cushion')]['Finished'] += fm['tc_cushion']; prod[(m, 'Cushion', 'FF+RC', 'FRONT FORK & REAR CUSHION (sets, F.O.M)', '')] += fm['tc_cushion']
+    units = {k: (o.get('Finished', 0) or sum(v for t, v in o.items() if t != 'Finished')) for k, o in vol.items()}
+    # Aluminium Foundry casts BFT and Piston: share all its cost to them by production volume
+    alloc = {}
+    for (m, sh, e, sub), v in list(rows.items()):
+        if sh != 'Aluminium Foundry': continue
+        tgt = {t: units.get((m, t), 0) for t in ('Bridge Fork Top', 'Piston')}; tt = sum(tgt.values())
+        if not tt: continue
+        del rows[(m, sh, e, sub)]
+        for t, uu in tgt.items():
+            if uu: rows[(m, t, e, sub)] += v * uu / tt; alloc[(m, t, e, sub)] = alloc.get((m, t, e, sub), 0) + v * uu / tt
+    out_rows = [{'month': m, 'shop': s, 'element': e, 'sub': sub, 'value_pkr': round(v), 'estimate': e == 'Utilities' and m in est,
+                 **({'mwh': extra_u.get((m, s))} if e == 'Utilities' and sub == 'Electricity' else {}),
+                 **({'from_alf': round(alloc[(m, s, e, sub)])} if (m, s, e, sub) in alloc else {}), 'asof': asof}
+                for (m, s, e, sub), v in sorted(rows.items()) if abs(v) >= 1]
+    for (m, s), x in sorted(extra.items()):
+        out_rows.append({'month': m, 'shop': s, 'element': 'Labour detail', 'sub': '', 'value_pkr': 0, 'people': int(x['people']),
+                         'absent_days': round(x['absent_days'], 1), 'absent_pkr': round(x['absent_pkr']), 'ot_hours': round(x['ot_hours'], 1),
+                         'wages_pkr': round(x['wages_pkr']), 'ot_pkr': round(x['ot_pkr']),
+                         'wage': WAGE, 'day_rate': round(day, 2), 'hour_rate': round(hour, 2), 'asof': asof})
     for (m, sh), o in sorted(vol.items()):
         fin = o.get('Finished', 0); ih = sum(v for k, v in o.items() if k != 'Finished')
         out_rows.append({'month': m, 'shop': sh, 'element': 'Volume', 'sub': '', 'value_pkr': 0, 'units': round(fin or ih),
-                         'basis': 'Finished' if fin else 'In-house parts', 'finished': round(fin), 'inhouse': round(ih), 'asof': asof})
-    for (m, sh, c), a in sorted(prod.items()):
-        q = parts.get(c) or {}
-        out_rows.append({'month': m, 'shop': sh, 'element': 'Product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': q.get('part') or '',
-                         'model': q.get('model') or '', 'units': round(a), 'asof': asof})
+                         'basis': 'sets' if sh == 'Cushion' else ('Finished' if fin else 'In-house parts'), 'finished': round(fin), 'inhouse': round(ih), 'asof': asof})
+    for (m, sh, c, nm, md), a in sorted(prod.items()):
+        out_rows.append({'month': m, 'shop': sh, 'element': 'Product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': nm, 'model': md, 'units': round(a), 'asof': asof})
     json.dump(out_rows, open(out, 'w'), separators=(',', ':'))
     tot = collections.defaultdict(float)
     for r in out_rows:

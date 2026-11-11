@@ -35,7 +35,7 @@
 .ael #cost .smpc{color:#8A949E;font-style:italic}`;
   document.head.appendChild(css);
   const data = () => { const d = window.dash && dash.data('cogm'); return d && d.status === 'ok' ? (Array.isArray(d.data) ? d.data : []) : d && d.status === 'error' ? 'err' : null; };
-  const leg = () => `<div class="cplg">${EL.map(([n, c]) => `<span><i style="background:${c}"></i>${n}${n === 'Utilities' ? ' (electricity)' : ''}</span>`).join('')}</div>`;
+  const leg = () => `<div class="cplg">${EL.map(([n, c]) => `<span><i style="background:${c}"></i>${n}${n === 'Utilities' ? ' (electricity & gas)' : ''}</span>`).join('')}</div>`;
 
   function render(P) {
     const sec = document.getElementById('cost'); if (!sec) return;
@@ -55,7 +55,7 @@
     const ppl = d3.sum(lab, r => r.people);
     K.innerHTML = `<div class="cpk">
       <div class="t"><div class="l">Cost of production</div><div class="v">${pm(T)} <span class="p">PKR · ${mon(m)}${partial ? ' to ' + (+asof.slice(8)) + ' ' + MN[+asof.slice(5, 7) - 1] : ''}</span></div><div class="d">${SH ? esc(SH) : 'All shops'}</div></div>
-      ${EL.map(([e, c]) => { const v = tot(e); return `<div class="t" style="border-left-color:${c}"><div class="l">${e}</div><div class="v">${pm(v)} <span class="p">${T ? Math.round(100 * v / T) : 0}%</span></div><div class="d">${e === 'Direct labour' ? (ppl ? nf(ppl) + ' people' : 'no attendance for this month') : e === 'Utilities' ? (cur.some(r => r.element === 'Utilities' && r.estimate) ? 'electricity · estimated' : 'electricity · ' + d3.format(',.0f')(d3.sum(cur.filter(r => r.element === 'Utilities'), r => r.mwh || 0)) + ' MWh') : e === 'Direct material' ? 'purchased material to production' : 'tools, consumables, spares, lubes'}</div></div>`; }).join('')}
+      ${EL.map(([e, c]) => { const v = tot(e); return `<div class="t" style="border-left-color:${c}"><div class="l">${e}</div><div class="v">${pm(v)} <span class="p">${T ? Math.round(100 * v / T) : 0}%</span></div><div class="d">${e === 'Direct labour' ? (ppl ? nf(ppl) + ' people' : 'no attendance for this month') : e === 'Utilities' ? (cur.some(r => r.element === 'Utilities' && r.estimate) ? 'electricity & gas · estimated' : 'electricity & gas · ' + d3.format(',.0f')(d3.sum(cur.filter(r => r.element === 'Utilities'), r => r.mwh || 0)) + ' MWh') : e === 'Direct material' ? 'purchased material to production' : 'tools, consumables, spares, lubes'}</div></div>`; }).join('')}
     </div>`;
     // by shop (stacked horizontal)
     const es = document.getElementById('cp-shop');
@@ -90,10 +90,10 @@
     // table by shop
     const tb = document.getElementById('cp-tab'); const sub = (s, e, k) => d3.sum(cur.filter(r => r.shop === s && r.element === e && (!k || r.sub === k)), r => r.value_pkr);
     const cols = [['Direct material', 'Direct material'], ['Tools', 'Indirect material', 'Tools'], ['Consumables', 'Indirect material', 'Consumables'], ['Spares', 'Indirect material', 'Spares'], ['Lubricants', 'Indirect material', 'Lubricants'],
-      ['Wages', 'Direct labour', 'Wages'], ['Overtime', 'Direct labour', 'Overtime'], ['Electricity', 'Utilities']];
+      ['Wages', 'Direct labour', 'Wages'], ['Overtime', 'Direct labour', 'Overtime'], ['Electricity', 'Utilities', 'Electricity'], ['Gas', 'Utilities', 'Gas']];
     const allS = [...new Set(R.filter(r => r.month === m && r.element !== 'Labour detail').map(r => r.shop))].filter(s => !SH || s === SH)
       .sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
-    const row = s => { const v = cols.map(([, e, k]) => sub(s, e, k)), t = d3.sum(v); return `<tr><td>${esc(s)}</td>${v.map((x, i) => `<td${i === 7 && cur.some(r => r.element === 'Utilities' && r.estimate) ? ' class="smpc"' : ''}>${x ? pm(x) : '—'}</td>`).join('')}<td><b>${pm(t)}</b></td><td>${T ? (100 * t / T).toFixed(1) + '%' : '—'}</td></tr>`; };
+    const row = s => { const v = cols.map(([, e, k]) => sub(s, e, k)), t = d3.sum(v); return `<tr><td>${esc(s)}</td>${v.map((x, i) => `<td${i >= 7 && cur.some(r => r.element === 'Utilities' && r.estimate) ? ' class="smpc"' : ''}>${x ? pm(x) : '—'}</td>`).join('')}<td><b>${pm(t)}</b></td><td>${T ? (100 * t / T).toFixed(1) + '%' : '—'}</td></tr>`; };
     const totV = cols.map(([, e, k]) => d3.sum(cur.filter(r => r.element === e && (!k || r.sub === k)), r => r.value_pkr));
     tb.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM</th><th>Share</th></tr></thead><tbody>${allS.map(row).join('')}
       <tr class="tot"><td>Total</td>${totV.map(v => `<td>${pm(v)}</td>`).join('')}<td>${pm(T)}</td><td>100%</td></tr></tbody></table>`;
@@ -102,9 +102,9 @@
     const tl = document.getElementById('cp-lab'), L0 = lab[0];
     if (!lab.length) tl.innerHTML = '<p class="cpnote">No attendance data for this month (the attendance workbook starts in October 2026).</p>'; else {
       const ls = lab.slice().sort((a, b) => { const ia = ORDER.indexOf(a.shop), ib = ORDER.indexOf(b.shop); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
-      const lrow = r => { const wg = sub(r.shop, 'Direct labour', 'Wages'), ot = sub(r.shop, 'Direct labour', 'Overtime');
+      const lrow = r => { const wg = r.wages_pkr || 0, ot = r.ot_pkr || 0;
         return `<tr><td>${esc(r.shop)}</td><td>${nf(r.people)}</td><td>${pm(r.people * r.wage * (partial ? 1 : 1))}</td><td>${d3.format(',.1f')(r.absent_days)}</td><td>${pm(r.absent_pkr)}</td><td>${pm(wg)}</td><td>${d3.format(',.0f')(r.ot_hours)}</td><td>${pm(ot)}</td><td><b>${pm(wg + ot)}</b></td><td>${r.people ? nf(Math.round((wg + ot) / r.people)) : '—'}</td></tr>`; };
-      const s = k => d3.sum(lab, r => r[k]), sw = d3.sum(cur.filter(r => r.element === 'Direct labour' && r.sub === 'Wages'), r => r.value_pkr), so = d3.sum(cur.filter(r => r.element === 'Direct labour' && r.sub === 'Overtime'), r => r.value_pkr);
+      const s = k => d3.sum(lab, r => r[k]), sw = d3.sum(lab, r => r.wages_pkr || 0), so = d3.sum(lab, r => r.ot_pkr || 0);
       tl.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th><th>People</th><th>Full-month wages</th><th>Absent days</th><th>Absent deduction</th><th>Wages ${partial ? 'to date' : ''}</th><th>OT hours</th><th>OT cost (1.5×)</th><th>Labour cost</th><th>Per person</th></tr></thead><tbody>${ls.map(lrow).join('')}
         <tr class="tot"><td>Total</td><td>${nf(s('people'))}</td><td>${pm(s('people') * L0.wage)}</td><td>${d3.format(',.1f')(s('absent_days'))}</td><td>${pm(s('absent_pkr'))}</td><td>${pm(sw)}</td><td>${d3.format(',.0f')(s('ot_hours'))}</td><td>${pm(so)}</td><td>${pm(sw + so)}</td><td>${s('people') ? nf(Math.round((sw + so) / s('people'))) : '—'}</td></tr></tbody></table>
         <p class="cpnote">Rs ${nf(L0.wage)} a month per person · day rate Rs ${d3.format(',.2f')(L0.day_rate)} (÷ 26) · hour rate Rs ${d3.format(',.2f')(L0.hour_rate)} (÷ 8) · overtime at 1.5× the hour rate.${partial ? ` ${mon(m)} wages are counted for the working days so far (Sundays left out), less absent days.` : ''}</p>`;
@@ -118,15 +118,15 @@
     const tu = document.getElementById('cp-unit'), tp = document.getElementById('cp-prod'); if (!tu || !tp) return;
     const V = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r]));
     const cols = [['Direct material', 'Direct material'], ['Tools', 'Indirect material', 'Tools'], ['Consumables', 'Indirect material', 'Consumables'], ['Spares', 'Indirect material', 'Spares'],
-      ['Lubricants', 'Indirect material', 'Lubricants'], ['Labour', 'Direct labour'], ['Electricity', 'Utilities']];
+      ['Lubricants', 'Indirect material', 'Lubricants'], ['Labour', 'Direct labour'], ['Electricity', 'Utilities', 'Electricity'], ['Gas', 'Utilities', 'Gas']];
     const val = (s, e, k) => d3.sum(cur.filter(r => r.shop === s && r.element === e && (!k || r.sub === k)), r => r.value_pkr);
     const rs = v => v == null || !isFinite(v) ? '—' : v >= 100 ? d3.format(',.0f')(v) : d3.format(',.1f')(v);
     const shops = [...new Set(cur.map(r => r.shop))].filter(s => !SH || s === SH).sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
     const rate = {};
     const row = s => { const v = V.get(s), u = v && v.units; const per = cols.map(([, e, k]) => u ? val(s, e, k) / u : null), t = u ? d3.sum(per) : null; if (u) rate[s] = { per, t };
-      return `<tr><td>${esc(s)}</td><td>${u ? nf(u) : '—'}</td><td style="text-align:left;color:#5B6770">${v ? (v.basis === 'Finished' ? 'finished' : 'in-house parts') : 'no Atlas production'}</td>${per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(t)}</b></td></tr>`; };
+      return `<tr><td>${esc(s)}</td><td>${u ? nf(u) : '—'}</td><td style="text-align:left;color:#5B6770">${v ? (v.basis === 'Finished' ? 'finished' : v.basis === 'sets' ? 'sets (FF + RC)' : 'in-house parts') : 'no Atlas production'}</td>${per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(t)}</b></td></tr>`; };
     tu.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th><th>Units produced</th><th style="text-align:left">Volume basis</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM Rs/unit</th></tr></thead><tbody>${shops.map(row).join('')}</tbody></table>
-      <p class="cpnote">Rs per unit = each cost element of the shop ÷ the shop's actual production${partial ? ' to date' : ''} (Atlas). Shops with no production in Atlas (e.g. Aluminium Foundry, Cushion) show — until their volume is linked to the shops they supply. Electricity ${cur.some(r => r.element === 'Utilities' && r.estimate) ? 'is estimated for this month' : 'from the utilities sheet at Rs 32/kWh'}.</p>`;
+      <p class="cpnote">Rs per unit = each cost element of the shop ÷ the shop's actual production${partial ? ' to date' : ''} (Atlas). CIF = Sleeve CG (in-house), Cylinder Pridor, Drive Plate casting and Boss Clutch Center Pridor casting (SAP production). Cushion = Front Forks and Rear Cushions in motorcycle sets. Aluminium Foundry cost is shared to Bridge Fork Top and Piston by their production. Zinc (ZDC) is under Carburetor. Electricity ${cur.some(r => r.element === 'Utilities' && r.estimate) ? 'is estimated for this month' : 'from the utilities sheet at Rs 32/kWh'}.</p>`;
     const P = R.filter(r => r.month === m && r.element === 'Product' && (!SH || r.shop === SH) && rate[r.shop]);
     const qq = pq.trim().toLowerCase(), list = P.filter(r => !qq || (r.code + ' ' + r.part + ' ' + r.model + ' ' + r.shop).toLowerCase().includes(qq))
       .sort((a, b) => { const ia = ORDER.indexOf(a.shop), ib = ORDER.indexOf(b.shop); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || b.units - a.units; });
