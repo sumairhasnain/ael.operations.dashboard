@@ -59,7 +59,7 @@
 .ael #summary .ovv .vt{font-size:10.5px;color:#5B6770;margin-bottom:2px}
 .ael #summary .ovv .vc{flex:1;min-height:0}
 .ael #summary .ovl{position:absolute;inset:44px 14px 12px;display:flex;align-items:center;justify-content:center;text-align:center;color:#5B6770;font-size:12.5px}
-.ael #summary .ovn{font-size:11px;color:#5B6770;margin:6px 0 0}
+.ael #summary .ovn{display:none}
 .ael #summary{padding-top:6px !important;padding-bottom:0 !important;margin-top:0 !important}
 .ael.ovfit{min-height:0 !important;padding-bottom:0 !important}
 .ovm{position:fixed;inset:0;background:rgba(5,28,44,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -318,16 +318,15 @@
     return el; }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
-    s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join('');
-    s.querySelector('.ovn').textContent = 'Status: Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved. Click a card for its details.';
+    s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
     const root = document.getElementById('ael'); if (root) root.classList.add('ovfit');
-    if (window.innerWidth > 1000) { const top = g.getBoundingClientRect().top + window.scrollY, nh = s.querySelector('.ovn').offsetHeight + 8;
+    if (window.innerWidth > 1000) { const top = g.getBoundingClientRect().top + window.scrollY, nh = 10;
       let hh = Math.max(460, Math.floor(window.innerHeight - top - nh - 6)); g.style.height = hh + 'px';
       const over = document.documentElement.scrollHeight - window.innerHeight; if (over > 0 && hh - over >= 460) g.style.height = (hh - over) + 'px'; } else g.style.height = '';
     g.replaceChildren(...CARDS.map(([id, n]) => card(id, n, P)));
     g.querySelectorAll('.ovc').forEach(el => { const o = last[el.dataset.k], vc = el.querySelector('.vc'); if (o && vc && o.mini) try { o.mini(vc); } catch (e) { console.error(e); } });
-    s.querySelector('.ovn').textContent = 'Status: Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved. Click a card for its details.'; }
+    }
   /* detail window */
   function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
