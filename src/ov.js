@@ -216,7 +216,7 @@
   /* 12 Nov 00:34 (Umair): 'Exclude Raw Material' toggle leaves out Raw Material, Production parts and Lubricants */
   const CATC = { 'Raw Material': '#051C2C', 'Production parts': '#2251FF', Lubricants: '#00A9F4', Tools: '#1F9E89', Consumables: '#E0A100', Spares: '#8C6BD8' };
   const EXC = ['Raw Material', 'Production parts', 'Lubricants'];
-  let exRM = (() => { try { return localStorage.getItem('ovExRM') === '1'; } catch (e) { return false; } })();
+  let exRM = true, wasOn = false;   /* on by default every time the Overview is opened (Umair, 12 Nov 00:46) */
   M.inventory = P => { const SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop') && !(exRM && EXC.includes(r.category))), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
     const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
     const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');
@@ -350,7 +350,7 @@
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
       <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
-    const tg = el.querySelector('.tg'); if (tg) { tg.addEventListener('click', ev => { ev.stopPropagation(); exRM = !exRM; try { localStorage.setItem('ovExRM', exRM ? '1' : '0'); } catch (e) {} render(); }); tg.addEventListener('keydown', ev => ev.stopPropagation()); }
+    const tg = el.querySelector('.tg'); if (tg) { tg.addEventListener('click', ev => { ev.stopPropagation(); exRM = !exRM; render(); }); tg.addEventListener('keydown', ev => ev.stopPropagation()); }
     el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
     return el; }
@@ -382,7 +382,7 @@
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } }); }
   { const tb = document.getElementById('tabs'); if (tb) tb.addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b && b.dataset.p !== 'summary') { const r_ = document.getElementById('ael'); if (r_) r_.classList.remove('ovfit'); } }, true); }
   window.__ovRender = render;
-  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page !== 'summary') { const rt_ = document.getElementById('ael'); if (rt_) rt_.classList.remove('ovfit'); } if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page !== 'summary') { const rt_ = document.getElementById('ael'); if (rt_) rt_.classList.remove('ovfit'); } if (window.__page === 'summary' && !wasOn) exRM = true; wasOn = window.__page === 'summary'; if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (window.__page === 'summary') render(); }, 200); });
   try { if (window.__page === 'summary') render(); } catch (e) {}
 })();
