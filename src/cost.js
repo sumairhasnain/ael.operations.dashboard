@@ -97,6 +97,7 @@
     const totV = cols.map(([, e, k]) => d3.sum(cur.filter(r => r.element === e && (!k || r.sub === k)), r => r.value_pkr));
     tb.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM</th><th>Share</th></tr></thead><tbody>${allS.map(row).join('')}
       <tr class="tot"><td>Total</td>${totV.map(v => `<td>${pm(v)}</td>`).join('')}<td>${pm(T)}</td><td>100%</td></tr></tbody></table>`;
+    unit(R, m, SH, cur, partial);
     // labour detail
     const tl = document.getElementById('cp-lab'), L0 = lab[0];
     if (!lab.length) tl.innerHTML = '<p class="cpnote">No attendance data for this month (the attendance workbook starts in October 2026).</p>'; else {
@@ -108,6 +109,31 @@
         <tr class="tot"><td>Total</td><td>${nf(s('people'))}</td><td>${pm(s('people') * L0.wage)}</td><td>${d3.format(',.1f')(s('absent_days'))}</td><td>${pm(s('absent_pkr'))}</td><td>${pm(sw)}</td><td>${d3.format(',.0f')(s('ot_hours'))}</td><td>${pm(so)}</td><td>${pm(sw + so)}</td><td>${s('people') ? nf(Math.round((sw + so) / s('people'))) : '—'}</td></tr></tbody></table>
         <p class="cpnote">Rs ${nf(L0.wage)} a month per person · day rate Rs ${d3.format(',.2f')(L0.day_rate)} (÷ 26) · hour rate Rs ${d3.format(',.2f')(L0.hour_rate)} (÷ 8) · overtime at 1.5× the hour rate.${partial ? ` ${mon(m)} wages are counted for the working days so far (Sundays left out), less absent days.` : ''}</p>`;
     }
+  }
+  /* 11 Nov 19:08 (Umair): finished-product level. Each shop's cost element / the shop's actual production volume (finished
+     products; in-house parts for a shop that makes no finished product) = Rs per unit; every finished product of the shop
+     carries those rates (volume-based allocation). */
+  let pq = '';
+  function unit(R, m, SH, cur, partial) {
+    const tu = document.getElementById('cp-unit'), tp = document.getElementById('cp-prod'); if (!tu || !tp) return;
+    const V = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r]));
+    const cols = [['Direct material', 'Direct material'], ['Tools', 'Indirect material', 'Tools'], ['Consumables', 'Indirect material', 'Consumables'], ['Spares', 'Indirect material', 'Spares'],
+      ['Lubricants', 'Indirect material', 'Lubricants'], ['Labour', 'Direct labour'], ['Electricity', 'Utilities']];
+    const val = (s, e, k) => d3.sum(cur.filter(r => r.shop === s && r.element === e && (!k || r.sub === k)), r => r.value_pkr);
+    const rs = v => v == null || !isFinite(v) ? '—' : v >= 100 ? d3.format(',.0f')(v) : d3.format(',.1f')(v);
+    const shops = [...new Set(cur.map(r => r.shop))].filter(s => !SH || s === SH).sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
+    const rate = {};
+    const row = s => { const v = V.get(s), u = v && v.units; const per = cols.map(([, e, k]) => u ? val(s, e, k) / u : null), t = u ? d3.sum(per) : null; if (u) rate[s] = { per, t };
+      return `<tr><td>${esc(s)}</td><td>${u ? nf(u) : '—'}</td><td style="text-align:left;color:#5B6770">${v ? (v.basis === 'Finished' ? 'finished' : 'in-house parts') : 'no Atlas production'}</td>${per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(t)}</b></td></tr>`; };
+    tu.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th><th>Units produced</th><th style="text-align:left">Volume basis</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM Rs/unit</th></tr></thead><tbody>${shops.map(row).join('')}</tbody></table>
+      <p class="cpnote">Rs per unit = each cost element of the shop ÷ the shop's actual production${partial ? ' to date' : ''} (Atlas). Shops with no production in Atlas (e.g. Aluminium Foundry, Cushion) show — until their volume is linked to the shops they supply. Electricity ${cur.some(r => r.element === 'Utilities' && r.estimate) ? 'is estimated for this month' : 'from the utilities sheet at Rs 32/kWh'}.</p>`;
+    const P = R.filter(r => r.month === m && r.element === 'Product' && (!SH || r.shop === SH) && rate[r.shop]);
+    const qq = pq.trim().toLowerCase(), list = P.filter(r => !qq || (r.code + ' ' + r.part + ' ' + r.model + ' ' + r.shop).toLowerCase().includes(qq))
+      .sort((a, b) => { const ia = ORDER.indexOf(a.shop), ib = ORDER.indexOf(b.shop); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || b.units - a.units; });
+    tp.innerHTML = `<input class="q" id="cp-pq" placeholder="Search product, code, model or shop" aria-label="Search products" value="${esc(pq)}" style="margin-bottom:8px">
+      <table class="cpt"><thead><tr><th>Product</th><th>Code</th><th>Shop</th><th>Units produced</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM Rs/unit</th><th>Total cost</th></tr></thead><tbody>
+      ${list.map(r => { const k = rate[r.shop]; return `<tr><td>${esc(r.part || r.code)}${r.model ? ` <span style="color:#5B6770">· ${esc(r.model)}</span>` : ''}</td><td>${esc(r.code)}</td><td style="text-align:left">${esc(r.shop)}</td><td>${nf(r.units)}</td>${k.per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(k.t)}</b></td><td>${pm(k.t * r.units)}</td></tr>`; }).join('') || '<tr><td colspan="13">No finished production for this selection</td></tr>'}</tbody></table>`;
+    const qi = document.getElementById('cp-pq'); if (qi) qi.oninput = () => { pq = qi.value; const pos = qi.selectionStart; unit(R, m, SH, cur, partial); const n = document.getElementById('cp-pq'); n.focus(); n.setSelectionRange(pos, pos); };
   }
   window.__costRender = render;
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'cost') { try { render(window.__P()); } catch (e) { console.error(e); } } return r; };

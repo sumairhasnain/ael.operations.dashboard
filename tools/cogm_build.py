@@ -96,10 +96,36 @@ def main(upkl, mb51, data, out, asof=None):
         out_rows.append({'month': m, 'shop': s, 'element': 'Labour detail', 'sub': '', 'value_pkr': 0, 'people': int(x['people']),
                          'absent_days': round(x['absent_days'], 1), 'absent_pkr': round(x['absent_pkr']), 'ot_hours': round(x['ot_hours'], 1),
                          'wage': WAGE, 'day_rate': round(day, 2), 'hour_rate': round(hour, 2), 'asof': asof})
+    # 11 Nov 19:08 (Umair): per finished product. Each shop's cost is divided by its actual production volume (Atlas
+    # atlas_parts_daily, prod_actual) to give Rs per unit; the volume is the shop's FINISHED products, or, for a shop that
+    # makes no finished product, its in-house parts (basis says which). Every finished product of a shop carries the
+    # shop's Rs/unit for each element (volume-based allocation).
+    try:
+        parts = {st(q['code']): q for q in json.load(open(data + '/atlas_parts.json'))}
+        pdd = json.load(open(data + '/atlas_parts_daily.json'))
+    except Exception as e:
+        parts, pdd = {}, []; print('no production volume:', e)
+    SHOPX = {'Fuel Cock': 'Carburetor'}
+    vol = collections.defaultdict(lambda: collections.defaultdict(float)); prod = collections.defaultdict(float)
+    for r in pdd:
+        m = r['date'][:7]; a = r.get('prod_actual') or 0
+        if not (FROM <= m <= cur) or r['date'] > asof or not a: continue
+        q = parts.get(st(r['code'])) or {}; sh = SHOPX.get(q.get('shop'), q.get('shop')) or ''; t = q.get('type') or ''
+        if not sh: continue
+        vol[(m, sh)][t] += a
+        if t == 'Finished': prod[(m, sh, st(r['code']))] += a
+    for (m, sh), o in sorted(vol.items()):
+        fin = o.get('Finished', 0); ih = sum(v for k, v in o.items() if k != 'Finished')
+        out_rows.append({'month': m, 'shop': sh, 'element': 'Volume', 'sub': '', 'value_pkr': 0, 'units': round(fin or ih),
+                         'basis': 'Finished' if fin else 'In-house parts', 'finished': round(fin), 'inhouse': round(ih), 'asof': asof})
+    for (m, sh, c), a in sorted(prod.items()):
+        q = parts.get(c) or {}
+        out_rows.append({'month': m, 'shop': sh, 'element': 'Product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': q.get('part') or '',
+                         'model': q.get('model') or '', 'units': round(a), 'asof': asof})
     json.dump(out_rows, open(out, 'w'), separators=(',', ':'))
     tot = collections.defaultdict(float)
     for r in out_rows:
-        if r['month'] == cur: tot[r['element']] += r['value_pkr']
+        if r['month'] == cur and r['element'] not in ('Volume', 'Product'): tot[r['element']] += r['value_pkr']
     print(json.dumps({'asof': asof, 'months': months, 'rows': len(out_rows), 'inhouse_parts_left_out': len(made),
                       'current_month_pkr_m': {k: round(v / 1e6, 1) for k, v in tot.items() if k != 'Labour detail'}}))
 
