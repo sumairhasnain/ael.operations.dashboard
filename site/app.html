@@ -4143,16 +4143,26 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     }
     // monthly trend (stacked columns)
     const et = document.getElementById('cp-trend'); document.getElementById('cp-trend-lg').innerHTML = leg();
-    const byM = months.map(mm => { const v = R.filter(r => r.month === mm && r.element !== 'Labour detail' && (!SH || r.shop === SH)); return { m: mm, ...Object.fromEntries(EL.map(([e]) => [e, d3.sum(v.filter(r => r.element === e), r => r.value_pkr)])) }; });
+    /* 12 Nov 13:49 (Umair): with a shop filter the month chart shows Rs / unit (OEM cost / OEM units, as in the iceberg). The 'Totals'
+       button at the top right of the title switches it back to the monthly PKR totals for that shop. */
+    const PU = !!SH && !window.__cpTot, th3 = document.querySelector('#c-cp-trend h3');
+    if (th3) { th3.textContent = PU ? 'COGM per Unit by Month · ' + SH + ' (OEM, Rs / unit)' : 'COGM by Month' + (SH ? ' · ' + SH : '');
+      if (SH) { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = PU ? 'Totals' : 'Per unit'; bt.title = PU ? 'Show the monthly PKR totals for ' + SH : 'Show cost per unit by month';
+        th3.parentElement.style.position = 'relative'; bt.style.cssText = 'position:absolute;right:16px;top:12px;font:inherit;font-size:11.5px;font-weight:600;padding:3px 12px;border:1px solid ' + (PU ? '#C9D1D9' : '#051C2C') + ';border-radius:14px;background:' + (PU ? '#fff' : '#051C2C') + ';color:' + (PU ? '#051C2C' : '#fff') + ';cursor:pointer';
+        bt.addEventListener('click', ev => { ev.stopPropagation(); window.__cpTot = PU; window.__draw(); }); th3.appendChild(bt); } }
+    const VM = new Map(R.filter(r => r.element === 'Volume' && r.shop === SH).map(r => [r.month, r.units]));
+    const byM = months.map(mm => { const v = R.filter(r => r.month === mm && r.element !== 'Labour detail' && (!SH || r.shop === SH) && (!PU || !r.spd)), u = PU ? VM.get(mm) : 1;
+      return { m: mm, u, ...Object.fromEntries(EL.map(([e]) => [e, PU && !u ? 0 : d3.sum(v.filter(r => r.element === e), r => r.value_pkr) / (u || 1)])) }; });
+    const rsu_ = v => v >= 100 ? d3.format(',.0f')(v) : d3.format(',.1f')(v), fv = v => PU ? 'Rs ' + rsu_(v) : pm(v), unitTxt = PU ? '/unit' : ' PKR';
     { const h = 240, mb = 34, mt = 18; const { svg, w } = box(et, h); const x = d3.scaleBand().domain(months).range([44, w - 8]).padding(0.32);
       const mx = d3.max(byM, o => d3.sum(EL, ([e]) => Math.max(0, o[e]))) || 1; const y = d3.scaleLinear().domain([0, mx * 1.08]).range([h - mb, mt]);
       y.ticks(4).forEach(t => { svg.append('line').attr('x1', 44).attr('x2', w - 8).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', '#EEF1F4');
-        svg.append('text').attr('x', 38).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('font-size', 10.5).attr('fill', '#5B6770').text(t ? d3.format(',.0f')(t / 1e6) + 'M' : '0'); });
+        svg.append('text').attr('x', 38).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('font-size', 10.5).attr('fill', '#5B6770').text(t ? (PU ? d3.format(',.0f')(t) : d3.format(',.0f')(t / 1e6) + 'M') : '0'); });
       byM.forEach(o => { let y0 = y(0); const tt = d3.sum(EL, ([e]) => Math.max(0, o[e]));
         EL.forEach(([e, c]) => { const v = Math.max(0, o[e]); if (!v) return; const hh = y(0) - y(v); y0 -= hh;
           svg.append('rect').attr('x', x(o.m)).attr('y', y0).attr('width', x.bandwidth()).attr('height', Math.max(0.5, hh)).attr('fill', c).attr('opacity', o.m === m ? 1 : 0.55)
-            .on('mousemove', ev => tip.show(ev, [mon(o.m) + (o.m === asof.slice(0, 7) ? ' (month to date)' : ''), `${e}: ${pm(v)} PKR${e === 'Utilities' && R.some(r => r.month === o.m && r.element === 'Utilities' && r.estimate) ? ' (estimate)' : ''}`, `Total: ${pm(tt)} PKR`, ...(e === 'Direct labour' || o['Direct labour'] ? [] : ['No attendance data for this month'])])).on('mouseleave', tip.hide); });
-        svg.append('text').attr('x', x(o.m) + x.bandwidth() / 2).attr('y', y(tt) - 5).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', C.navy).attr('font-weight', o.m === m ? 700 : 400).text(pm(tt));
+            .on('mousemove', ev => tip.show(ev, [mon(o.m) + (o.m === asof.slice(0, 7) ? ' (month to date)' : ''), ...(PU ? [`${nf(o.u)} OEM units produced`] : []), `${e}: ${PU ? 'Rs ' + rsu_(v) : pm(v)}${unitTxt}${e === 'Utilities' && R.some(r => r.month === o.m && r.element === 'Utilities' && r.estimate) ? ' (estimate)' : ''}`, `Total: ${PU ? 'Rs ' + rsu_(tt) : pm(tt)}${unitTxt}`, ...(e === 'Direct labour' || o['Direct labour'] ? [] : ['No attendance data for this month'])])).on('mouseleave', tip.hide); });
+        svg.append('text').attr('x', x(o.m) + x.bandwidth() / 2).attr('y', y(tt) - 5).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', C.navy).attr('font-weight', o.m === m ? 700 : 400).text(PU && !o.u ? 'no output' : fv(tt));
         svg.append('text').attr('x', x(o.m) + x.bandwidth() / 2).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#5B6770').text(mon(o.m) + (o.m === asof.slice(0, 7) ? '*' : '')); });
       svg.append('line').attr('x1', 44).attr('x2', w - 8).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy); }
     // table by shop
