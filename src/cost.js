@@ -75,9 +75,25 @@
       if (h3) h3.textContent = 'COGM per Unit by OEM Product · ' + SH + ' (Rs / unit)';
     }
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
-      const h = 330, mt = 18, mb = 62, ml = 52; const { svg, w } = box(es, h);
+      const h = 330, mt = 18, mb = 62, ml = 52; const bx = box(es, h), svg = bx.svg, w = bx.w - 50;   /* 12 Nov (Umair): light grey vertical scale slider on the left, as on the other charts */
+      es.style.position = 'relative'; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px');
+      const autoHi = d3.max(G, g => d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0))) || 1, skey = 'c-cp-shop|' + (SH || 'All'), YM = window.__ymax || (window.__ymax = {});
+      const yOver = YM[skey] > 0 ? Math.min(YM[skey], autoHi * 4) : null, hi = yOver || autoHi, kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : d3.format(',.0f')(v);
+      { const top0 = yOver || d3.scaleLinear().domain([0, autoHi]).nice().domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.height = (h - 6) + 'px';
+        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => autoHi * Math.pow(q / 1000, 3); rg.min = '10'; rg.max = '1000'; rg.step = '1';
+        rg.value = String(Math.round(1000 * Math.cbrt(Math.min(1, top0 / autoHi)))); rg.title = 'Drag down to zoom in on the vertical axis'; rg.setAttribute('aria-label', 'Vertical axis maximum'); rg.style.height = Math.max(60, h - 74) + 'px';
+        const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset vertical scale'; rs.setAttribute('aria-label', 'Reset vertical scale'); rs.disabled = !yOver;
+        const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Top of the vertical axis: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Vertical axis maximum value');
+        let tmr; const set = v => { if (v == null || !(v > 0) || v >= autoHi * 0.999) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
+        rg.addEventListener('input', () => { const v = toV(+rg.value); vx.value = kf_(v); set(v); }); rs.addEventListener('click', () => set(null));
+        vx.addEventListener('focus', () => { vx.value = String(Math.round(top0)); vx.select(); });
+        vx.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); vx.blur(); } else if (ev.key === 'Escape') { vx.value = kf_(top0); vx.blur(); } });
+        vx.addEventListener('change', () => { const t = vx.value.trim().toLowerCase().replace(/,/g, ''), mm = t.match(/^([\d.]+)\s*([km]?)$/); if (!mm) { vx.value = kf_(top0); return; } set(+mm[1] * (mm[2] === 'k' ? 1e3 : mm[2] === 'm' ? 1e6 : 1)); });
+        ctl.append(rg, rs, vx); es.appendChild(ctl); }
+      const clipId = 'cpclip' + Math.random().toString(36).slice(2, 8); svg.append('clipPath').attr('id', clipId).append('rect').attr('x', 0).attr('y', mt + 12).attr('width', w).attr('height', h - mb - mt - 12 + 1);
+      const gB = svg.append('g').attr('clip-path', `url(#${clipId})`);
       const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15);   /* 11 Nov 23:38 (Umair): stacked columns */
-      const y = d3.scaleLinear().domain([0, d3.max(G, g => d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0))) || 1]).nice().range([h - mb, mt + 14]);
+      const y = d3.scaleLinear().domain([0, hi]).range([h - mb, mt + 14]); if (!yOver) y.nice();
       svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => d3.format(',.0f')(v))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
       svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - 8).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#E6E9EC').lower();
       const f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v);
@@ -85,11 +101,11 @@
         const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
         let y0 = 0; const bw = x0.bandwidth();
         EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = y(y0 + v), hh = y(y0) - yt;
-          svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
+          gB.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
             .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: Rs ${rsu(v)}/unit (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
-          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Direct material' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
+          const ytc = Math.max(yt, mt + 12), hhc = y(y0) - ytc; if (hhc >= 14 && bw >= 30) gB.append('text').attr('x', gx + bw / 2).attr('y', ytc + hhc / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Direct material' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
           y0 += v; });
-        svg.append('text').attr('x', gx + bw / 2).attr('y', y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text('Rs ' + rsu(t));
+        const cut = y0 > y.domain()[1]; svg.append('text').attr('x', gx + bw / 2).attr('y', cut ? mt + 8 : y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text((cut ? '▲ ' : '') + 'Rs ' + rsu(t));
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
         svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 14).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
         svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub ? g.sub + ' · ' : '') + nf(g.units) + ' units');
