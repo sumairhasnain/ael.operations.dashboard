@@ -25,6 +25,8 @@
   const me = await P.guard({ admin: true }); if (!me) return;
   P.topbar(me, 'admin');
   const TN = Object.fromEntries(P.TABS.map(t => [t.id, t.name]));
+  /* 12 Nov 2026 (Umair): the activity log shows the tab's current name (e.g. 'Manpower', not the internal id 'workforce') */
+  const det = l => l.event === 'tab_view' ? (TN[l.detail] || l.detail || '') : (l.detail || '');
   let users = [], logs = [], view = 'users';
 
   const call = async body => {
@@ -105,13 +107,13 @@
       <button class="btn ghost" id="ldl">Download CSV</button></div><div id="lt"></div>`;
     const paint = () => {
       const q = el.querySelector('#lq').value.trim().toLowerCase();
-      const rs = logs.filter(l => !q || (l.email || '').toLowerCase().includes(q) || (label[l.event] || l.event).toLowerCase().includes(q) || (l.detail || '').toLowerCase().includes(q));
+      const rs = logs.filter(l => !q || (l.email || '').toLowerCase().includes(q) || (label[l.event] || l.event).toLowerCase().includes(q) || det(l).toLowerCase().includes(q));
       el.querySelector('#lt').innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>When (PKT)</th><th>User</th><th>Event</th><th>Detail</th><th>Device</th></tr></thead><tbody>
-        ${rs.slice(0, 500).map(l => `<tr><td class="small">${P.pkt(l.at)}</td><td>${esc(l.email || '')}</td><td>${esc(label[l.event] || l.event)}</td><td class="small">${esc(l.detail || '')}</td><td class="small">${device(l.user_agent)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No activity yet</td></tr>'}
+        ${rs.slice(0, 500).map(l => `<tr><td class="small">${P.pkt(l.at)}</td><td>${esc(l.email || '')}</td><td>${esc(label[l.event] || l.event)}</td><td class="small">${esc(det(l))}</td><td class="small">${device(l.user_agent)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No activity yet</td></tr>'}
         </tbody></table></div><p class="small muted">Showing the latest ${Math.min(rs.length, 500)} of ${rs.length} events. Failed sign-in attempts are in Supabase → Authentication → Logs.</p>`;
     };
     el.querySelector('#lq').oninput = paint; paint();
-    el.querySelector('#ldl').onclick = () => download('portal-activity.csv', [['When (PKT)', 'User', 'Event', 'Detail', 'Device'], ...logs.map(l => [P.pkt(l.at), l.email, label[l.event] || l.event, l.detail, device(l.user_agent)])]);
+    el.querySelector('#ldl').onclick = () => download('portal-activity.csv', [['When (PKT)', 'User', 'Event', 'Detail', 'Device'], ...logs.map(l => [P.pkt(l.at), l.email, label[l.event] || l.event, det(l), device(l.user_agent)])]);
   };
 
   /* 11 Nov 2026 (Umair): Tab usage. Which tabs each person opens, from 'tab_view' rows (one per tab per 10 minutes). */
