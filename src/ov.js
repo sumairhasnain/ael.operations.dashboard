@@ -269,7 +269,7 @@
       foot: 'Attendance workbook (SharePoint). Sundays have no attendance marks.' }; };
 
   M.cost = P => { const R = D('cogm').filter(r => inSh(SHf(P), r, 'shop')), months = [...new Set(R.map(r => r.month))].sort(), m = months.includes(P.month) ? P.month : months[months.length - 1];
-    const EL = [['Direct material', '#051C2C'], ['Indirect material', '#2251FF'], ['Direct labour', '#00A9F4'], ['Utilities', '#B9C1C9']], isC = r => EL.some(([e]) => e === r.element);
+    const EL = [['Direct material', '#CFDAE5'], ['Indirect material', '#1D3FD6'], ['Direct labour', '#C2410C'], ['Utilities', '#0B6E4F']], isC = r => EL.some(([e]) => e === r.element);
     const cur = R.filter(r => r.month === m && isC(r)), T = d3.sum(cur, r => r.value_pkr), e = n => d3.sum(cur.filter(r => r.element === n), r => r.value_pkr);
     const byM = months.map(mm => ({ m: mm, ...Object.fromEntries(EL.map(([n]) => [n, d3.sum(R.filter(r => r.month === mm && r.element === n), r => r.value_pkr)])) }));
     const byS = d3.rollups(cur, v => Object.fromEntries(EL.map(([n]) => [n, d3.sum(v.filter(r => r.element === n), r => r.value_pkr)])), r => r.shop).sort((a, b) => d3.sum(EL, ([n]) => b[1][n]) - d3.sum(EL, ([n]) => a[1][n]));

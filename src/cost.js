@@ -13,7 +13,7 @@
   const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const mon = m => MN[+m.slice(5, 7) - 1] + '-' + m.slice(2, 4);
   const pm = v => v == null ? '—' : Math.abs(v) >= 1e6 ? d3.format(',.1f')(v / 1e6) + ' M' : Math.abs(v) >= 1e3 ? d3.format(',.0f')(v / 1e3) + ' k' : nf(Math.round(v));
-  const EL = [['Direct material', '#051C2C'], ['Indirect material', '#2251FF'], ['Direct labour', '#00A9F4'], ['Utilities', '#B9C1C9']];
+  const EL = [['Direct material', '#CFDAE5'], ['Indirect material', '#1D3FD6'], ['Direct labour', '#C2410C'], ['Utilities', '#0B6E4F']];   // 12 Nov (Umair): light material, dark high-contrast others
   const COL = Object.fromEntries(EL);
   const ORDER = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Machining', 'Carburetor', 'CIF Machining', 'Cast Iron Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Aluminium Foundry', 'Piston', 'Polymer', 'Cushion'];
   const css = document.createElement('style'); css.textContent = `
@@ -87,7 +87,7 @@
         EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = y(y0 + v), hh = y(y0) - yt;
           svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
             .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: Rs ${rsu(v)}/unit (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
-          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Utilities' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
+          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', gx + bw / 2).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Direct material' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
           y0 += v; });
         svg.append('text').attr('x', gx + bw / 2).attr('y', y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text('Rs ' + rsu(t));
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
