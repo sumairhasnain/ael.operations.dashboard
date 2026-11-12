@@ -83,14 +83,14 @@
       const wl = Math.round(mt + 0.5 * (h - mb - mt)), bot = h - mb - 16, f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v), cvOf = g => d3.sum(CV, ([e]) => Math.max(0, g.v[e] || 0));
       const yu = d3.scaleLinear().domain([0, d3.max(G, cvOf) || 1]).range([wl, mt + 12]).nice();
       const mAuto = d3.max(G, g => Math.max(0, g.v['Direct material'] || 0)) || 1, skey = 'c-cp-mat|' + (SH || 'All'), YM = window.__ymax || (window.__ymax = {});
-      const mOver = YM[skey] > 0 ? Math.min(YM[skey], mAuto * 4) : null, yd = d3.scaleLinear().domain([0, mOver || mAuto]).range([wl, bot]); if (!mOver) yd.nice();
+      const mOver = YM[skey] > 0 ? Math.min(YM[skey], mAuto * 6) : null, yd = d3.scaleLinear().domain([0, mOver || mAuto]).range([wl, bot]); if (!mOver) yd.nice();
       const kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : f0(v);
       { const top0 = yd.domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.top = (wl - 2) + 'px'; ctl.style.height = (bot - wl + 6) + 'px';
-        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => mAuto * Math.pow(q / 1000, 3); rg.min = '10'; rg.max = '1000'; rg.step = '1';
-        rg.value = String(Math.round(1000 * Math.cbrt(Math.min(1, top0 / mAuto)))); rg.title = 'Material scale: drag down to stretch the material bars'; rg.setAttribute('aria-label', 'Material scale maximum'); rg.style.height = Math.max(50, bot - wl - 62) + 'px';
+        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => mAuto * Math.pow(10, q / 500); rg.min = '-1000'; rg.max = '400'; rg.step = '1';   /* 12 Nov 13:42 (Umair): both ways, from 1/100 to about 6x the auto scale */
+        rg.value = String(Math.round(500 * Math.log10(top0 / mAuto))); rg.title = 'Material scale: drag down to stretch the material bars, up to shrink them'; rg.setAttribute('aria-label', 'Material scale maximum'); rg.style.height = Math.max(50, bot - wl - 62) + 'px';
         const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset material scale'; rs.setAttribute('aria-label', 'Reset material scale'); rs.disabled = !mOver;
         const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Bottom of the material scale: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Material scale maximum value');
-        let tmr; const set = v => { if (v == null || !(v > 0) || v >= mAuto * 0.999) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
+        let tmr; const set = v => { if (v == null || !(v > 0)) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
         rg.addEventListener('input', () => { const v = toV(+rg.value); vx.value = kf_(v); set(v); }); rs.addEventListener('click', () => set(null));
         vx.addEventListener('focus', () => { vx.value = String(Math.round(top0)); vx.select(); });
         vx.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); vx.blur(); } else if (ev.key === 'Escape') { vx.value = kf_(top0); vx.blur(); } });
