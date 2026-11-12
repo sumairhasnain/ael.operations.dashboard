@@ -4297,6 +4297,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovv{background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:4px 4px 0}
 .ael #summary .ovv .vt{font-size:11px;color:#33414B;font-weight:600;margin:2px 4px 2px}
 .ael #summary .ovv .vt{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.ael #summary .ovv .vtt{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ael #summary .tg{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:3px 10px;cursor:pointer;margin-right:auto;white-space:nowrap}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -4393,7 +4394,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80),
       kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
         ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to plan', kf(Math.max(0, pp - pa)), 'plan less actual']],
-      vt: 'Cumulative FG production vs plan', mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
+      vt: 'FG Plan vs Actual', mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         { t: 'Cumulative production and dispatch (finished goods)', lg: [['Production plan', '#B9C1C9'], ['Production', C.navy], ['Dispatch', C.cyan]], draw: el => lineC(el, ds, [{ name: 'Production plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Production', color: C.navy, values: cA }, { name: 'Dispatch', color: C.cyan, values: cD }], { h: 260, xFmt: dlab }) },
         { t: 'Production compliance by shop (finished goods)', draw: el => hbarC(el, byShop.map(([s, o]) => ({ label: s, v: o.p ? o.a / o.p * 100 : 0, lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [s, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) },
@@ -4558,7 +4559,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-      <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${id === 'inventory' ? '' : esc(o.vt || '')}</div><div class="vc"></div></div></div>`}`;
+      <div class="ovv"><div class="vt">${id === 'inventory' ? `<button type="button" class="tg${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Exclude Raw Material</button>` : ''}${id === 'inventory' ? '' : `<span class="vtt" title="${esc(o.vt || '')}">${esc(o.vt || '')}</span>`}</div><div class="vc"></div></div></div>`}`;
     const tg = el.querySelector('.tg'); if (tg) { tg.addEventListener('click', ev => { ev.stopPropagation(); exRM = !exRM; render(); }); tg.addEventListener('keydown', ev => ev.stopPropagation()); }
     el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
