@@ -4348,7 +4348,18 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
-  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h); const r = Math.min(h / 2 - 6, w / 3.1);
+  function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
+    if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
+      const tot0 = d3.sum(items, d => d.v), lines = items.map(d => `${d.label} · ${pc(d.v / tot0 * 100)}`), cw = d3.max(lines, t => t.length) * 5.7 + 20, per = Math.max(1, Math.floor((w - 8) / cw)), rows = Math.ceil(items.length / per), lgH = rows * 18 + 6;
+      const r0 = Math.max(30, Math.min((h - lgH) / 2 - 8, w / 2 - 6)), cy0 = Math.max(r0 + 4, (h - lgH - 2 * r0 - 12) / 2 + r0), g0 = svg.append('g').attr('transform', `translate(${w / 2},${cy0})`);
+      g0.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r0 * 0.6).outerRadius(r0).padAngle(0.01)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
+        .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)}`])).on('mouseleave', tip.hide);
+      g0.append('text').attr('text-anchor', 'middle').attr('y', 5).attr('font-size', Math.max(12, Math.min(22, r0 / 3.6))).attr('font-weight', 600).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
+      const lx = (w - Math.min(per, items.length) * cw) / 2;
+      items.forEach((d, i) => { const cx = lx + (i % per) * cw, cy = cy0 + r0 + 14 + Math.floor(i / per) * 18;
+        svg.append('rect').attr('x', cx).attr('y', cy).attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', d.color);
+        svg.append('text').attr('x', cx + 14).attr('y', cy + 9).attr('font-size', 11).attr('fill', '#33414B').text(lines[i]); });
+      return; } const r = Math.min(h / 2 - 6, w / 3.1);
     const g = svg.append('g').attr('transform', `translate(${r + 6},${h / 2})`), tot = d3.sum(items, d => d.v);
     g.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r * 0.58).outerRadius(r)).attr('fill', d => d.data.color)
       .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot * 100)}`])).on('mouseleave', tip.hide);
@@ -4426,7 +4437,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}${exRM ? ' · excl. raw material, production parts, lubricants' : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
       kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow moving', rs(DV), 'no issue for over a year', C.bad],
         ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
-      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', '') }),
+      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'bottom' }),
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
         { t: 'Stock value by last movement', draw: el => hbarC(el, mv.map(([b, v], i) => ({ label: b, v, lab: rs(v), color: [C.navy, C.blue, C.warn, C.bad][i], tip: [b, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
