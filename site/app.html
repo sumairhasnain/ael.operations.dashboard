@@ -4066,43 +4066,80 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       G.sort((a, b) => b.units - a.units);
       if (h3) h3.textContent = 'COGM per Unit by OEM Product · ' + SH + ' (Rs / unit)';
     }
+    /* 12 Nov 13:29 (Umair): iceberg chart. Waterline = 0. Above it, indirect material + labour + utilities per unit (what the shop
+       controls) on their own scale, with a magnifier lens on hover. Below it, direct material per unit hangs down on its own scale; the
+       light grey slider on the left changes only that lower scale. */
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
-      const h = 330, mt = 18, mb = 62, ml = 52; const bx = box(es, h), svg = bx.svg, w = bx.w - 50;   /* 12 Nov (Umair): light grey vertical scale slider on the left, as on the other charts */
-      es.style.position = 'relative'; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px');
-      const autoHi = d3.max(G, g => d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0))) || 1, skey = 'c-cp-shop|' + (SH || 'All'), YM = window.__ymax || (window.__ymax = {});
-      const yOver = YM[skey] > 0 ? Math.min(YM[skey], autoHi * 4) : null, hi = yOver || autoHi, kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : d3.format(',.0f')(v);
-      { const top0 = yOver || d3.scaleLinear().domain([0, autoHi]).nice().domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.height = (h - 6) + 'px';
-        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => autoHi * Math.pow(q / 1000, 3); rg.min = '10'; rg.max = '1000'; rg.step = '1';
-        rg.value = String(Math.round(1000 * Math.cbrt(Math.min(1, top0 / autoHi)))); rg.title = 'Drag down to zoom in on the vertical axis'; rg.setAttribute('aria-label', 'Vertical axis maximum'); rg.style.height = Math.max(60, h - 74) + 'px';
-        const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset vertical scale'; rs.setAttribute('aria-label', 'Reset vertical scale'); rs.disabled = !yOver;
-        const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Top of the vertical axis: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Vertical axis maximum value');
-        let tmr; const set = v => { if (v == null || !(v > 0) || v >= autoHi * 0.999) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
+      const h = 460, mt = 34, mb = 40, ml = 56, CV = EL.filter(([e]) => e !== 'Direct material'), MC = EL.find(([e]) => e === 'Direct material')[1];
+      const bx = box(es, h), svg = bx.svg, w = bx.w - 50; es.style.position = 'relative'; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px').style('overflow', 'visible');
+      const wl = Math.round(mt + 0.5 * (h - mb - mt)), bot = h - mb - 16, f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v), cvOf = g => d3.sum(CV, ([e]) => Math.max(0, g.v[e] || 0));
+      const yu = d3.scaleLinear().domain([0, d3.max(G, cvOf) || 1]).range([wl, mt + 12]).nice();
+      const mAuto = d3.max(G, g => Math.max(0, g.v['Direct material'] || 0)) || 1, skey = 'c-cp-mat|' + (SH || 'All'), YM = window.__ymax || (window.__ymax = {});
+      const mOver = YM[skey] > 0 ? Math.min(YM[skey], mAuto * 4) : null, yd = d3.scaleLinear().domain([0, mOver || mAuto]).range([wl, bot]); if (!mOver) yd.nice();
+      const kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : f0(v);
+      { const top0 = yd.domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.top = (wl - 2) + 'px'; ctl.style.height = (bot - wl + 6) + 'px';
+        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => mAuto * Math.pow(q / 1000, 3); rg.min = '10'; rg.max = '1000'; rg.step = '1';
+        rg.value = String(Math.round(1000 * Math.cbrt(Math.min(1, top0 / mAuto)))); rg.title = 'Material scale: drag down to stretch the material bars'; rg.setAttribute('aria-label', 'Material scale maximum'); rg.style.height = Math.max(50, bot - wl - 62) + 'px';
+        const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset material scale'; rs.setAttribute('aria-label', 'Reset material scale'); rs.disabled = !mOver;
+        const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Bottom of the material scale: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Material scale maximum value');
+        let tmr; const set = v => { if (v == null || !(v > 0) || v >= mAuto * 0.999) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
         rg.addEventListener('input', () => { const v = toV(+rg.value); vx.value = kf_(v); set(v); }); rs.addEventListener('click', () => set(null));
         vx.addEventListener('focus', () => { vx.value = String(Math.round(top0)); vx.select(); });
         vx.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); vx.blur(); } else if (ev.key === 'Escape') { vx.value = kf_(top0); vx.blur(); } });
         vx.addEventListener('change', () => { const t = vx.value.trim().toLowerCase().replace(/,/g, ''), mm = t.match(/^([\d.]+)\s*([km]?)$/); if (!mm) { vx.value = kf_(top0); return; } set(+mm[1] * (mm[2] === 'k' ? 1e3 : mm[2] === 'm' ? 1e6 : 1)); });
         ctl.append(rg, rs, vx); es.appendChild(ctl); }
-      const clipId = 'cpclip' + Math.random().toString(36).slice(2, 8); svg.append('clipPath').attr('id', clipId).append('rect').attr('x', 0).attr('y', mt + 12).attr('width', w).attr('height', h - mb - mt - 12 + 1);
-      const gB = svg.append('g').attr('clip-path', `url(#${clipId})`);
-      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15);   /* 11 Nov 23:38 (Umair): stacked columns */
-      const y = d3.scaleLinear().domain([0, hi]).range([h - mb, mt + 14]); if (!yOver) y.nice();
-      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(v => d3.format(',.0f')(v))).call(g => g.select('.domain').remove()).selectAll('text').attr('font-size', 10).attr('fill', '#5B6770');
-      svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - 8).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#E6E9EC').lower();
-      const f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v);
-      G.forEach((g, i) => { const gx = x0(i), t = d3.sum(EL, ([e]) => g.v[e]);
+      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15), bw = x0.bandwidth();
+      const df = svg.append('defs'), gid = 'ice' + Math.random().toString(36).slice(2, 7), cid = 'icc' + gid;
+      const lg_ = df.append('linearGradient').attr('id', gid).attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1); lg_.append('stop').attr('offset', 0).attr('stop-color', MC); lg_.append('stop').attr('offset', 1).attr('stop-color', '#F1F5F9');
+      df.append('clipPath').attr('id', cid).append('rect').attr('x', 0).attr('y', wl).attr('width', w).attr('height', bot - wl + 1);
+      svg.append('rect').attr('x', ml - 6).attr('y', wl).attr('width', w - ml - 2).attr('height', bot - wl).attr('fill', '#F4F7FA');
+      yu.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yu(t)).attr('y2', yu(t)).attr('stroke', '#EEF1F4');
+        svg.append('text').attr('x', ml - 8).attr('y', yu(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#5B6770').text(f0(t)); });
+      yd.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yd(t)).attr('y2', yd(t)).attr('stroke', '#E4EAF0').attr('stroke-dasharray', '2 3');
+        svg.append('text').attr('x', ml - 8).attr('y', yd(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#8CA0B3').text(f0(t)); });
+      svg.append('text').attr('transform', `translate(12,${(mt + wl) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text('Conversion, Rs / unit ↑');
+      svg.append('text').attr('transform', `translate(12,${(wl + bot) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#8CA0B3').text('Material, Rs / unit ↓');
+      const gM = svg.append('g').attr('clip-path', `url(#${cid})`), gL = svg.append('g'), lens = svg.append('g').attr('pointer-events', 'none').style('display', 'none');
+      G.forEach((g, i) => { const gx = x0(i), cx = gx + bw / 2, t = d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0)), cv = cvOf(g), m = Math.max(0, g.v['Direct material'] || 0);
         const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
-        let y0 = 0; const bw = x0.bandwidth();
-        EL.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = y(y0 + v), hh = y(y0) - yt;
-          gB.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.5)
-            .on('mousemove', ev => tip.show(ev, [...L, `▸ ${e}: Rs ${rsu(v)}/unit (${t ? Math.round(100 * v / t) : 0}%)`])).on('mouseleave', tip.hide);
-          const ytc = Math.max(yt, mt + 12), hhc = y(y0) - ytc; if (hhc >= 14 && bw >= 30) gB.append('text').attr('x', gx + bw / 2).attr('y', ytc + hhc / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', e === 'Direct material' ? '#051C2C' : '#fff').attr('pointer-events', 'none').text(rsu(v));
+        // above the waterline
+        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = yu(y0 + v), hh = yu(y0) - yt;
+          svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.6).attr('pointer-events', 'none');
+          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', cx).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#fff').attr('pointer-events', 'none').text(rsu(v));
           y0 += v; });
-        const cut = y0 > y.domain()[1]; svg.append('text').attr('x', gx + bw / 2).attr('y', cut ? mt + 8 : y(y0) - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600).attr('fill', C.navy).text((cut ? '▲ ' : '') + 'Rs ' + rsu(t));
-        const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(x0.bandwidth() / (fs_ * 0.56))), nm_ = !g.spd ? g.name : g.name.replace(/\(?\bSPD\b\)?/gi, '').replace(new RegExp('^' + SH.split(/[\s/]/)[0] + '\\b\\s*(MACH\\.?\\s*)?', 'i'), '').replace(/\s+/g, ' ').trim() || g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
-        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 14).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
-        svg.append('text').attr('x', gx + x0.bandwidth() / 2).attr('y', h - mb + 27).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', g.spd ? '#B4530F' : '#5B6770').text((g.sub ? g.sub + ' · ' : '') + nf(g.units) + ' units');
-        svg.append('rect').attr('x', gx).attr('y', mt).attr('width', x0.bandwidth()).attr('height', h - mb - mt).attr('fill', 'transparent').lower(); });
-      svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy);
+        if (cv) svg.append('text').attr('x', cx).attr('y', yu(cv) - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700).attr('fill', C.navy).text('Rs ' + rsu(cv));
+        // below the waterline
+        if (m) { const yb = yd(m), cut = m > yd.domain()[1], yb2 = Math.min(yb, bot), tipD = Math.min(7, (yb2 - wl) / 3);
+          gM.append('path').attr('d', cut ? `M${gx},${wl} L${gx + bw},${wl} L${gx + bw},${bot + 2} L${gx},${bot + 2} Z` : `M${gx},${wl} L${gx + bw},${wl} L${gx + bw - 3},${yb2} L${cx + 3},${yb2 + tipD} L${gx + 3},${yb2} Z`)
+            .attr('fill', `url(#${gid})`).attr('stroke', '#AEBBC8').attr('stroke-width', 0.8)
+            .on('mousemove', ev => tip.show(ev, [...L, `▸ Direct material: Rs ${rsu(m)}/unit (${t ? Math.round(100 * m / t) : 0}%)`])).on('mouseleave', tip.hide);
+          const inB = !cut && yb2 + tipD + 13 > bot + 4; svg.append('text').attr('x', cx).attr('y', cut ? bot - 6 : inB ? yb2 - 8 : yb2 + tipD + 13).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', cut ? 700 : 400).attr('fill', '#5E7387').attr('pointer-events', 'none').text((cut ? '▼ ' : '') + rsu(m)); }
+        const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(bw / (fs_ * 0.56))), nm_ = g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
+        svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
+        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text((g.sub ? g.sub + ' · ' : '') + nf(g.units) + ' units');
+        // hover target for the upper half: opens the magnifier lens
+        gL.append('rect').attr('x', gx - 2).attr('y', mt - 4).attr('width', bw + 4).attr('height', wl - mt + 4).attr('fill', 'transparent').style('cursor', 'zoom-in')
+          .on('mouseenter', () => showLens(g, i)).on('mouseleave', () => lens.style('display', 'none'));
+      });
+      svg.append('line').attr('x1', ml - 6).attr('x2', w - 8).attr('y1', wl).attr('y2', wl).attr('stroke', '#2B6CB0').attr('stroke-width', 1.6).attr('stroke-dasharray', '7 4');
+      svg.append('text').attr('x', 2).attr('y', wl + 12).attr('text-anchor', 'start').attr('font-size', 9.5).attr('fill', '#2B6CB0').text('waterline');
+      function showLens(g, i) {   /* magnifier: the three upper elements enlarged in a round lens beside the bar */
+        lens.selectAll('*').remove(); const cv = cvOf(g); if (!cv) return; const R_ = Math.min(96, (wl - mt) / 2 + 22), gx = x0(i), cx0 = gx + bw / 2;
+        const right = cx0 + bw / 2 + R_ * 2 + 16 < w, lx = right ? cx0 + bw / 2 + R_ + 12 : cx0 - bw / 2 - R_ - 12, ly = Math.max(R_ + 4, (mt + wl) / 2);
+        lens.append('line').attr('x1', right ? gx + bw : gx).attr('y1', yu(cv)).attr('x2', lx + (right ? -R_ : R_) * 0.72).attr('y2', ly - R_ * 0.5).attr('stroke', '#8C96A0').attr('stroke-dasharray', '3 3');
+        lens.append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_ + 3).style('fill', '#fff').attr('stroke', '#8C96A0').attr('stroke-width', 3).style('filter', 'drop-shadow(0 4px 10px rgba(0,0,0,.18))');
+        const lid = 'lz' + gid; lens.append('clipPath').attr('id', lid).append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_);
+        const z = lens.append('g').attr('clip-path', `url(#${lid})`), zb = Math.min(96, R_ * 1.05), zs = d3.scaleLinear([0, cv], [ly + R_ * 0.55, ly - R_ * 0.42]);
+        z.append('rect').attr('x', lx - zb / 2).attr('y', zs(0)).attr('width', zb).attr('height', R_).attr('fill', MC);
+        z.append('text').attr('x', lx).attr('y', zs(0) + 15).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text('material ' + rsu(g.v['Direct material'] || 0));
+        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const hh = zs(y0) - zs(y0 + v);
+          z.append('rect').attr('x', lx - zb / 2).attr('y', zs(y0 + v)).attr('width', zb).attr('height', hh).attr('fill', c).attr('stroke', '#fff');
+          if (hh >= 11) z.append('text').attr('x', lx).attr('y', zs(y0 + v) + hh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 600).style('fill', '#fff').text(rsu(v) + (hh >= 26 && zb >= 80 ? ' ' + e.split(' ')[e.startsWith('Direct') ? 1 : 0].replace('Utilities', 'utilities') : ''));
+          else z.append('text').attr('x', lx + zb / 2 + 4).attr('y', zs(y0 + v / 2) + 4).attr('font-size', 10.5).attr('font-weight', 600).style('fill', c).text(rsu(v));
+          y0 += v; });
+        z.append('text').attr('x', lx).attr('y', zs(cv) - 8).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 700).attr('fill', C.navy).text('Rs ' + rsu(cv) + ' / unit');
+        const nm = g.name.length > 22 ? g.name.slice(0, 21) + '…' : g.name; z.append('text').attr('x', lx).attr('y', ly - R_ + 16).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text('🔍 ' + nm);
+        lens.raise().style('display', null); }
     }
     // monthly trend (stacked columns)
     const et = document.getElementById('cp-trend'); document.getElementById('cp-trend-lg').innerHTML = leg();
