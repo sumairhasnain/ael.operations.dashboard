@@ -266,6 +266,13 @@ def main(upkl, mb51, data, out, asof=None):
     out_rows += spd_rows
     for (m, sh, c, nm, md), a in sorted(prod.items()):
         out_rows.append({'month': m, 'shop': sh, 'element': 'Product', 'sub': '', 'value_pkr': 0, 'code': c, 'part': nm, 'model': md, 'units': round(a), 'asof': asof})
+    # 12 Nov 2026 (Umair): July-October 2026 stay at the values shown before the 12-11-26 file (frozen in tools/cogm_frozen.json);
+    # the in-house parts list from later files is not applied back to them. Review later with Umair before changing.
+    try:
+        _fz = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cogm_frozen.json')))
+        _fm = {r['month'] for r in _fz}
+        out_rows = [r for r in out_rows if r.get('month') not in _fm] + _fz
+    except FileNotFoundError: pass
     json.dump(out_rows, open(out, 'w'), separators=(',', ':'))
     tot = collections.defaultdict(float)
     for r in out_rows:
