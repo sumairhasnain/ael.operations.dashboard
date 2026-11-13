@@ -55,6 +55,81 @@
     W.forEach(x => { x.w = x.b || avg; }); const den = d3.sum(W, x => x.w * x.r.units); if (!den) return null;
     return new Map(W.map(x => [x.r.code, { dm: dmTotal * x.w / den, bom: x.b }]));
   }
+  /* 13 Nov 16:37 (Umair): the iceberg drawing is shared by 'COGM per Unit by Shop / OEM Product' and 'COGM by Month'. */
+  function ice(es, G, o) {
+      const h = o.h || 460, mt = 34, mb = 40, ml = 56, CV = EL.filter(([e]) => e !== 'Direct material'), MC = EL.find(([e]) => e === 'Direct material')[1];
+      const bx = box(es, h), svg = bx.svg, w = bx.w - 50; es.style.position = 'relative'; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px').style('overflow', 'visible');
+      const wl = Math.round(mt + 0.5 * (h - mb - mt)), bot = h - mb - 16, f0 = d3.format(',.0f'), rsu = o.f, cvOf = g => d3.sum(CV, ([e]) => Math.max(0, g.v[e] || 0));
+      const yu = d3.scaleLinear().domain([0, d3.max(G, cvOf) || 1]).range([wl, mt + 12]).nice();
+      const mAuto = d3.max(G, g => Math.max(0, g.v['Direct material'] || 0)) || 1, skey = o.skey, YM = window.__ymax || (window.__ymax = {});
+      const mOver = YM[skey] > 0 ? Math.min(YM[skey], mAuto * 6) : null, yd = d3.scaleLinear().domain([0, mOver || mAuto]).range([wl, bot]); if (!mOver) yd.nice();
+      const kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : f0(v);
+      { const top0 = yd.domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.top = (wl - 2) + 'px'; ctl.style.height = (bot - wl + 6) + 'px';
+        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => mAuto * Math.pow(10, q / 500); rg.min = '-1000'; rg.max = '400'; rg.step = '1';   /* 12 Nov 13:42 (Umair): both ways, from 1/100 to about 6x the auto scale */
+        rg.value = String(Math.round(500 * Math.log10(top0 / mAuto))); rg.title = 'Material scale: drag down to stretch the material bars, up to shrink them'; rg.setAttribute('aria-label', 'Material scale maximum'); rg.style.height = Math.max(50, bot - wl - 62) + 'px';
+        const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset material scale'; rs.setAttribute('aria-label', 'Reset material scale'); rs.disabled = !mOver;
+        const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Bottom of the material scale: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Material scale maximum value');
+        let tmr; const set = v => { if (v == null || !(v > 0)) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
+        rg.addEventListener('input', () => { const v = toV(+rg.value); vx.value = kf_(v); set(v); }); rs.addEventListener('click', () => set(null));
+        vx.addEventListener('focus', () => { vx.value = String(Math.round(top0)); vx.select(); });
+        vx.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); vx.blur(); } else if (ev.key === 'Escape') { vx.value = kf_(top0); vx.blur(); } });
+        vx.addEventListener('change', () => { const t = vx.value.trim().toLowerCase().replace(/,/g, ''), mm = t.match(/^([\d.]+)\s*([km]?)$/); if (!mm) { vx.value = kf_(top0); return; } set(+mm[1] * (mm[2] === 'k' ? 1e3 : mm[2] === 'm' ? 1e6 : 1)); });
+        ctl.append(rg, rs, vx); es.appendChild(ctl); }
+      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15), bw = x0.bandwidth();
+      const df = svg.append('defs'), gid = 'ice' + Math.random().toString(36).slice(2, 7), cid = 'icc' + gid;
+      const lg_ = df.append('linearGradient').attr('id', gid).attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1); lg_.append('stop').attr('offset', 0).attr('stop-color', MC); lg_.append('stop').attr('offset', 1).attr('stop-color', '#F1F5F9');
+      df.append('clipPath').attr('id', cid).append('rect').attr('x', 0).attr('y', wl).attr('width', w).attr('height', bot - wl + 1);
+      svg.append('rect').attr('x', ml - 6).attr('y', wl).attr('width', w - ml - 2).attr('height', bot - wl).attr('fill', '#F4F7FA');
+      yu.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yu(t)).attr('y2', yu(t)).attr('stroke', '#EEF1F4');
+        svg.append('text').attr('x', ml - 8).attr('y', yu(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#5B6770').text(o.tick(t)); });
+      yd.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yd(t)).attr('y2', yd(t)).attr('stroke', '#E4EAF0').attr('stroke-dasharray', '2 3');
+        svg.append('text').attr('x', ml - 8).attr('y', yd(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#8CA0B3').text(o.tick(t)); });
+      svg.append('text').attr('transform', `translate(12,${(mt + wl) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text(o.up);
+      svg.append('text').attr('transform', `translate(12,${(wl + bot) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#8CA0B3').text(o.down);
+      const gM = svg.append('g').attr('clip-path', `url(#${cid})`), gL = svg.append('g'), lens = svg.append('g').attr('pointer-events', 'none').style('display', 'none');
+      G.forEach((g, i) => { const gx = x0(i), cx = gx + bw / 2, t = d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0)), cv = cvOf(g), m = Math.max(0, g.v['Direct material'] || 0);
+        const L = o.tip(g, t), op = g.dim ? 0.55 : 1;
+        // above the waterline
+        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = yu(y0 + v), hh = yu(y0) - yt;
+          svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.6).attr('opacity', op).attr('pointer-events', 'none');
+          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', cx).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#fff').attr('pointer-events', 'none').text(rsu(v));
+          y0 += v; });
+        if (cv) svg.append('text').attr('x', cx).attr('y', yu(cv) - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700).attr('fill', C.navy).text(o.cvLab(cv));
+        // below the waterline
+        if (m) { const yb = yd(m), cut = m > yd.domain()[1], yb2 = Math.min(yb, bot), tipD = Math.min(7, (yb2 - wl) / 3);
+          gM.append('path').attr('d', cut ? `M${gx},${wl} L${gx + bw},${wl} L${gx + bw},${bot + 2} L${gx},${bot + 2} Z` : `M${gx},${wl} L${gx + bw},${wl} L${gx + bw - 3},${yb2} L${cx + 3},${yb2 + tipD} L${gx + 3},${yb2} Z`)
+            .attr('fill', `url(#${gid})`).attr('stroke', '#AEBBC8').attr('stroke-width', 0.8).attr('opacity', op)
+            .on('mousemove', ev => tip.show(ev, [...L, `▸ Direct material: ${o.mLab(m)} (${t ? Math.round(100 * m / t) : 0}%)`])).on('mouseleave', tip.hide);
+          const inB = !cut && yb2 + tipD + 13 > bot + 4; svg.append('text').attr('x', cx).attr('y', cut ? bot - 6 : inB ? yb2 - 8 : yb2 + tipD + 13).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', cut ? 700 : 400).attr('fill', '#5E7387').attr('pointer-events', 'none').text((cut ? '▼ ' : '') + rsu(m)); }
+        const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(bw / (fs_ * 0.56))), nm_ = g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
+        svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', g.dim ? '#5B6770' : C.navy).style('font-weight', g.bold ? 700 : 400).text(lab).append('title').text(g.name);
+        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#051C2C').style('font-weight', 600).text(o.lab2(g, t)).append('title').text(o.lab2t(g, t));  // 13 Nov 14:40 (Umair): total Rs/unit instead of units
+        // hover target for the upper half: opens the magnifier lens
+        gL.append('rect').attr('x', gx - 2).attr('y', mt - 4).attr('width', bw + 4).attr('height', wl - mt + 4).attr('fill', 'transparent').style('cursor', 'zoom-in')
+          .on('mouseenter', () => showLens(g, i)).on('mouseleave', () => lens.style('display', 'none')).on('click', () => o.click && o.click(g));
+      });
+      svg.append('line').attr('x1', ml - 6).attr('x2', w - 8).attr('y1', wl).attr('y2', wl).attr('stroke', '#2B6CB0').attr('stroke-width', 1.6).attr('stroke-dasharray', '7 4');
+      svg.append('text').attr('x', 2).attr('y', wl + 12).attr('text-anchor', 'start').attr('font-size', 9.5).attr('fill', '#2B6CB0').text('waterline');
+      function showLens(g, i) {   /* magnifier: the three upper elements enlarged in a round lens beside the bar */
+        lens.selectAll('*').remove(); const cv = cvOf(g); if (!cv) return; const R_ = Math.min(96, (wl - mt) / 2 + 22), gx = x0(i), cx0 = gx + bw / 2;
+        const right = cx0 + bw / 2 + R_ * 2 + 16 < w, lx = right ? cx0 + bw / 2 + R_ + 12 : cx0 - bw / 2 - R_ - 12, ly = Math.max(R_ + 4, (mt + wl) / 2);
+        lens.append('line').attr('x1', right ? gx + bw : gx).attr('y1', yu(cv)).attr('x2', lx + (right ? -R_ : R_) * 0.72).attr('y2', ly - R_ * 0.5).attr('stroke', '#8C96A0').attr('stroke-dasharray', '3 3');
+        lens.append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_ + 3).style('fill', '#fff').attr('stroke', '#8C96A0').attr('stroke-width', 3).style('filter', 'drop-shadow(0 4px 10px rgba(0,0,0,.18))');
+        const lid = 'lz' + gid; lens.append('clipPath').attr('id', lid).append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_);
+        const z = lens.append('g').attr('clip-path', `url(#${lid})`), zb = Math.min(96, R_ * 1.05), zs = d3.scaleLinear([0, cv], [ly + R_ * 0.55, ly - R_ * 0.42]);
+        z.append('rect').attr('x', lx - zb / 2).attr('y', zs(0)).attr('width', zb).attr('height', R_).attr('fill', MC);
+        z.append('text').attr('x', lx).attr('y', zs(0) + 15).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text('material ' + rsu(g.v['Direct material'] || 0));
+        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const hh = zs(y0) - zs(y0 + v);
+          z.append('rect').attr('x', lx - zb / 2).attr('y', zs(y0 + v)).attr('width', zb).attr('height', hh).attr('fill', c).attr('stroke', '#fff');
+          if (hh >= 11) z.append('text').attr('x', lx).attr('y', zs(y0 + v) + hh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 600).style('fill', '#fff').text(rsu(v) + (hh >= 26 && zb >= 80 ? ' ' + e.split(' ')[e.startsWith('Direct') ? 1 : 0].replace('Utilities', 'utilities') : ''));
+          else z.append('text').attr('x', lx + zb / 2 + 4).attr('y', zs(y0 + v / 2) + 4).attr('font-size', 10.5).attr('font-weight', 600).style('fill', c).text(rsu(v));
+          y0 += v; });
+        z.append('text').attr('x', lx).attr('y', zs(cv) - 8).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 700).attr('fill', C.navy).text(o.cvLab(cv) + o.unitS);
+        const nm = g.name.length > 22 ? g.name.slice(0, 21) + '…' : g.name; z.append('text').attr('x', lx).attr('y', ly - R_ + 16).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text('🔍 ' + nm);
+        lens.raise().style('display', null); }
+    
+  }
+  const rsu0 = v => v >= 100 ? d3.format(',.0f')(v) : d3.format(',.1f')(v);
   function render(P) {
     const sec = document.getElementById('cost'); if (!sec) return;
     const R = data(), K = document.getElementById('cp-kpi');
@@ -97,76 +172,10 @@
        controls) on their own scale, with a magnifier lens on hover. Below it, direct material per unit hangs down on its own scale; the
        light grey slider on the left changes only that lower scale. */
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
-      const h = 460, mt = 34, mb = 40, ml = 56, CV = EL.filter(([e]) => e !== 'Direct material'), MC = EL.find(([e]) => e === 'Direct material')[1];
-      const bx = box(es, h), svg = bx.svg, w = bx.w - 50; es.style.position = 'relative'; svg.attr('viewBox', `0 0 ${w} ${h}`).attr('width', 'calc(100% - 50px)').style('margin-left', '50px').style('overflow', 'visible');
-      const wl = Math.round(mt + 0.5 * (h - mb - mt)), bot = h - mb - 16, f0 = d3.format(',.0f'), rsu = v => v >= 100 ? f0(v) : d3.format(',.1f')(v), cvOf = g => d3.sum(CV, ([e]) => Math.max(0, g.v[e] || 0));
-      const yu = d3.scaleLinear().domain([0, d3.max(G, cvOf) || 1]).range([wl, mt + 12]).nice();
-      const mAuto = d3.max(G, g => Math.max(0, g.v['Direct material'] || 0)) || 1, skey = 'c-cp-mat|' + (SH || 'All'), YM = window.__ymax || (window.__ymax = {});
-      const mOver = YM[skey] > 0 ? Math.min(YM[skey], mAuto * 6) : null, yd = d3.scaleLinear().domain([0, mOver || mAuto]).range([wl, bot]); if (!mOver) yd.nice();
-      const kf_ = v => v >= 1e4 ? d3.format('.3~s')(v) : f0(v);
-      { const top0 = yd.domain()[1], ctl = document.createElement('div'); ctl.className = 'yscl'; ctl.style.top = (wl - 2) + 'px'; ctl.style.height = (bot - wl + 6) + 'px';
-        const rg = document.createElement('input'); rg.type = 'range'; const toV = q => mAuto * Math.pow(10, q / 500); rg.min = '-1000'; rg.max = '400'; rg.step = '1';   /* 12 Nov 13:42 (Umair): both ways, from 1/100 to about 6x the auto scale */
-        rg.value = String(Math.round(500 * Math.log10(top0 / mAuto))); rg.title = 'Material scale: drag down to stretch the material bars, up to shrink them'; rg.setAttribute('aria-label', 'Material scale maximum'); rg.style.height = Math.max(50, bot - wl - 62) + 'px';
-        const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'yrs'; rs.innerHTML = '&#x21BA;'; rs.title = 'Reset material scale'; rs.setAttribute('aria-label', 'Reset material scale'); rs.disabled = !mOver;
-        const vx = document.createElement('input'); vx.type = 'text'; vx.className = 'yv'; vx.value = kf_(top0); vx.title = 'Bottom of the material scale: click to type a value (e.g. 3000 or 3k)'; vx.setAttribute('aria-label', 'Material scale maximum value');
-        let tmr; const set = v => { if (v == null || !(v > 0)) delete YM[skey]; else YM[skey] = v; clearTimeout(tmr); tmr = setTimeout(() => window.__draw(), 40); };
-        rg.addEventListener('input', () => { const v = toV(+rg.value); vx.value = kf_(v); set(v); }); rs.addEventListener('click', () => set(null));
-        vx.addEventListener('focus', () => { vx.value = String(Math.round(top0)); vx.select(); });
-        vx.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); vx.blur(); } else if (ev.key === 'Escape') { vx.value = kf_(top0); vx.blur(); } });
-        vx.addEventListener('change', () => { const t = vx.value.trim().toLowerCase().replace(/,/g, ''), mm = t.match(/^([\d.]+)\s*([km]?)$/); if (!mm) { vx.value = kf_(top0); return; } set(+mm[1] * (mm[2] === 'k' ? 1e3 : mm[2] === 'm' ? 1e6 : 1)); });
-        ctl.append(rg, rs, vx); es.appendChild(ctl); }
-      const x0 = d3.scaleBand().domain(G.map((g, i) => i)).range([ml, w - 8]).paddingInner(G.length > 8 ? 0.35 : 0.5).paddingOuter(0.15), bw = x0.bandwidth();
-      const df = svg.append('defs'), gid = 'ice' + Math.random().toString(36).slice(2, 7), cid = 'icc' + gid;
-      const lg_ = df.append('linearGradient').attr('id', gid).attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1); lg_.append('stop').attr('offset', 0).attr('stop-color', MC); lg_.append('stop').attr('offset', 1).attr('stop-color', '#F1F5F9');
-      df.append('clipPath').attr('id', cid).append('rect').attr('x', 0).attr('y', wl).attr('width', w).attr('height', bot - wl + 1);
-      svg.append('rect').attr('x', ml - 6).attr('y', wl).attr('width', w - ml - 2).attr('height', bot - wl).attr('fill', '#F4F7FA');
-      yu.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yu(t)).attr('y2', yu(t)).attr('stroke', '#EEF1F4');
-        svg.append('text').attr('x', ml - 8).attr('y', yu(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#5B6770').text(f0(t)); });
-      yd.ticks(4).forEach(t => { if (!t) return; svg.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', yd(t)).attr('y2', yd(t)).attr('stroke', '#E4EAF0').attr('stroke-dasharray', '2 3');
-        svg.append('text').attr('x', ml - 8).attr('y', yd(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#8CA0B3').text(f0(t)); });
-      svg.append('text').attr('transform', `translate(12,${(mt + wl) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text('Conversion, Rs / unit ↑');
-      svg.append('text').attr('transform', `translate(12,${(wl + bot) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#8CA0B3').text('Material, Rs / unit ↓');
-      const gM = svg.append('g').attr('clip-path', `url(#${cid})`), gL = svg.append('g'), lens = svg.append('g').attr('pointer-events', 'none').style('display', 'none');
-      G.forEach((g, i) => { const gx = x0(i), cx = gx + bw / 2, t = d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0)), cv = cvOf(g), m = Math.max(0, g.v['Direct material'] || 0);
-        const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...(g.bom ? [`Direct material shared by SAP BOM (Rs ${rsu(g.bom)}/unit at moving average)`] : []), ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
-        // above the waterline
-        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = yu(y0 + v), hh = yu(y0) - yt;
-          svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.6).attr('pointer-events', 'none');
-          if (hh >= 14 && bw >= 30) svg.append('text').attr('x', cx).attr('y', yt + hh / 2 + 3.5).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#fff').attr('pointer-events', 'none').text(rsu(v));
-          y0 += v; });
-        if (cv) svg.append('text').attr('x', cx).attr('y', yu(cv) - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700).attr('fill', C.navy).text('Rs ' + rsu(cv));
-        // below the waterline
-        if (m) { const yb = yd(m), cut = m > yd.domain()[1], yb2 = Math.min(yb, bot), tipD = Math.min(7, (yb2 - wl) / 3);
-          gM.append('path').attr('d', cut ? `M${gx},${wl} L${gx + bw},${wl} L${gx + bw},${bot + 2} L${gx},${bot + 2} Z` : `M${gx},${wl} L${gx + bw},${wl} L${gx + bw - 3},${yb2} L${cx + 3},${yb2 + tipD} L${gx + 3},${yb2} Z`)
-            .attr('fill', `url(#${gid})`).attr('stroke', '#AEBBC8').attr('stroke-width', 0.8)
-            .on('mousemove', ev => tip.show(ev, [...L, `▸ Direct material: Rs ${rsu(m)}/unit (${t ? Math.round(100 * m / t) : 0}%)`])).on('mouseleave', tip.hide);
-          const inB = !cut && yb2 + tipD + 13 > bot + 4; svg.append('text').attr('x', cx).attr('y', cut ? bot - 6 : inB ? yb2 - 8 : yb2 + tipD + 13).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', cut ? 700 : 400).attr('fill', '#5E7387').attr('pointer-events', 'none').text((cut ? '▼ ' : '') + rsu(m)); }
-        const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(bw / (fs_ * 0.56))), nm_ = g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
-        svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
-        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#051C2C').style('font-weight', 600).text((g.sub ? g.sub + ' · ' : '') + 'Rs ' + rsu(t) + ' / unit').append('title').text(`Total cost per unit (material + indirect material + labour + utilities): Rs ${rsu(t)} · ${nf(g.units)} units`);  // 13 Nov 14:40 (Umair): total Rs/unit instead of units
-        // hover target for the upper half: opens the magnifier lens
-        gL.append('rect').attr('x', gx - 2).attr('y', mt - 4).attr('width', bw + 4).attr('height', wl - mt + 4).attr('fill', 'transparent').style('cursor', 'zoom-in')
-          .on('mouseenter', () => showLens(g, i)).on('mouseleave', () => lens.style('display', 'none'));
-      });
-      svg.append('line').attr('x1', ml - 6).attr('x2', w - 8).attr('y1', wl).attr('y2', wl).attr('stroke', '#2B6CB0').attr('stroke-width', 1.6).attr('stroke-dasharray', '7 4');
-      svg.append('text').attr('x', 2).attr('y', wl + 12).attr('text-anchor', 'start').attr('font-size', 9.5).attr('fill', '#2B6CB0').text('waterline');
-      function showLens(g, i) {   /* magnifier: the three upper elements enlarged in a round lens beside the bar */
-        lens.selectAll('*').remove(); const cv = cvOf(g); if (!cv) return; const R_ = Math.min(96, (wl - mt) / 2 + 22), gx = x0(i), cx0 = gx + bw / 2;
-        const right = cx0 + bw / 2 + R_ * 2 + 16 < w, lx = right ? cx0 + bw / 2 + R_ + 12 : cx0 - bw / 2 - R_ - 12, ly = Math.max(R_ + 4, (mt + wl) / 2);
-        lens.append('line').attr('x1', right ? gx + bw : gx).attr('y1', yu(cv)).attr('x2', lx + (right ? -R_ : R_) * 0.72).attr('y2', ly - R_ * 0.5).attr('stroke', '#8C96A0').attr('stroke-dasharray', '3 3');
-        lens.append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_ + 3).style('fill', '#fff').attr('stroke', '#8C96A0').attr('stroke-width', 3).style('filter', 'drop-shadow(0 4px 10px rgba(0,0,0,.18))');
-        const lid = 'lz' + gid; lens.append('clipPath').attr('id', lid).append('circle').attr('cx', lx).attr('cy', ly).attr('r', R_);
-        const z = lens.append('g').attr('clip-path', `url(#${lid})`), zb = Math.min(96, R_ * 1.05), zs = d3.scaleLinear([0, cv], [ly + R_ * 0.55, ly - R_ * 0.42]);
-        z.append('rect').attr('x', lx - zb / 2).attr('y', zs(0)).attr('width', zb).attr('height', R_).attr('fill', MC);
-        z.append('text').attr('x', lx).attr('y', zs(0) + 15).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#5B6770').text('material ' + rsu(g.v['Direct material'] || 0));
-        let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const hh = zs(y0) - zs(y0 + v);
-          z.append('rect').attr('x', lx - zb / 2).attr('y', zs(y0 + v)).attr('width', zb).attr('height', hh).attr('fill', c).attr('stroke', '#fff');
-          if (hh >= 11) z.append('text').attr('x', lx).attr('y', zs(y0 + v) + hh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 600).style('fill', '#fff').text(rsu(v) + (hh >= 26 && zb >= 80 ? ' ' + e.split(' ')[e.startsWith('Direct') ? 1 : 0].replace('Utilities', 'utilities') : ''));
-          else z.append('text').attr('x', lx + zb / 2 + 4).attr('y', zs(y0 + v / 2) + 4).attr('font-size', 10.5).attr('font-weight', 600).style('fill', c).text(rsu(v));
-          y0 += v; });
-        z.append('text').attr('x', lx).attr('y', zs(cv) - 8).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('font-weight', 700).attr('fill', C.navy).text('Rs ' + rsu(cv) + ' / unit');
-        const nm = g.name.length > 22 ? g.name.slice(0, 21) + '…' : g.name; z.append('text').attr('x', lx).attr('y', ly - R_ + 16).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text('🔍 ' + nm);
-        lens.raise().style('display', null); }
+      ice(es, G, { skey: 'c-cp-mat|' + (SH || 'All'), f: rsu0, tick: d3.format(',.0f'), up: 'Conversion, Rs / unit ↑', down: 'Material, Rs / unit ↓', unitS: ' / unit',
+        cvLab: v => 'Rs ' + rsu0(v), mLab: v => 'Rs ' + rsu0(v) + '/unit', lab2: (g, t) => (g.sub ? g.sub + ' · ' : '') + 'Rs ' + rsu0(t) + ' / unit',
+        lab2t: (g, t) => `Total cost per unit (material + indirect material + labour + utilities): Rs ${rsu0(t)} · ${nf(g.units)} units`,
+        tip: (g, t) => [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...(g.bom ? [`Direct material shared by SAP BOM (Rs ${rsu0(g.bom)}/unit at moving average)`] : []), ...EL.map(([e]) => `${e}: Rs ${rsu0(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu0(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`] });
     }
     // monthly trend (stacked columns)
     const et = document.getElementById('cp-trend'); document.getElementById('cp-trend-lg').innerHTML = leg();
@@ -181,17 +190,16 @@
     const byM = months.map(mm => { const v = R.filter(r => r.month === mm && r.element !== 'Labour detail' && (!SH || r.shop === SH) && (!PU || !r.spd)), u = PU ? VM.get(mm) : 1;
       return { m: mm, u, ...Object.fromEntries(EL.map(([e]) => [e, PU && !u ? 0 : d3.sum(v.filter(r => r.element === e), r => r.value_pkr) / (u || 1)])) }; });
     const rsu_ = v => v >= 100 ? d3.format(',.0f')(v) : d3.format(',.1f')(v), fv = v => PU ? 'Rs ' + rsu_(v) : pm(v), unitTxt = PU ? '/unit' : ' PKR';
-    { const h = 240, mb = 34, mt = 18; const { svg, w } = box(et, h); const x = d3.scaleBand().domain(months).range([44, w - 8]).padding(0.32);
-      const mx = d3.max(byM, o => d3.sum(EL, ([e]) => Math.max(0, o[e]))) || 1; const y = d3.scaleLinear().domain([0, mx * 1.08]).range([h - mb, mt]);
-      y.ticks(4).forEach(t => { svg.append('line').attr('x1', 44).attr('x2', w - 8).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', '#EEF1F4');
-        svg.append('text').attr('x', 38).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('font-size', 10.5).attr('fill', '#5B6770').text(t ? (PU ? d3.format(',.0f')(t) : d3.format(',.0f')(t / 1e6) + 'M') : '0'); });
-      byM.forEach(o => { let y0 = y(0); const tt = d3.sum(EL, ([e]) => Math.max(0, o[e]));
-        EL.forEach(([e, c]) => { const v = Math.max(0, o[e]); if (!v) return; const hh = y(0) - y(v); y0 -= hh;
-          svg.append('rect').attr('x', x(o.m)).attr('y', y0).attr('width', x.bandwidth()).attr('height', Math.max(0.5, hh)).attr('fill', c).attr('opacity', o.m === m ? 1 : 0.55)
-            .on('mousemove', ev => tip.show(ev, [mon(o.m) + (o.m === asof.slice(0, 7) ? ' (month to date)' : ''), ...(PU ? [`${nf(o.u)} OEM units produced`] : []), `${e}: ${PU ? 'Rs ' + rsu_(v) : pm(v)}${unitTxt}${e === 'Utilities' && R.some(r => r.month === o.m && r.element === 'Utilities' && r.estimate) ? ' (estimate)' : ''}`, `Total: ${PU ? 'Rs ' + rsu_(tt) : pm(tt)}${unitTxt}`, ...(e === 'Direct labour' || o['Direct labour'] ? [] : ['No attendance data for this month'])])).on('mouseleave', tip.hide); });
-        svg.append('text').attr('x', x(o.m) + x.bandwidth() / 2).attr('y', y(tt) - 5).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', C.navy).attr('font-weight', o.m === m ? 700 : 400).text(PU && !o.u ? 'no output' : fv(tt));
-        svg.append('text').attr('x', x(o.m) + x.bandwidth() / 2).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#5B6770').text(mon(o.m) + (o.m === asof.slice(0, 7) ? '*' : '')); });
-      svg.append('line').attr('x1', 44).attr('x2', w - 8).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', C.navy); }
+    /* 13 Nov 16:37 (Umair): the month chart is an iceberg too - direct material hangs below the waterline, indirect material,
+       labour and utilities stand above it; the filters and the Totals / Per unit button apply as before. */
+    { const asM = asof.slice(0, 7), mF = v => PU ? rsu_(v) : d3.format('.3~s')(v).replace('G', 'B'), fvT = v => PU ? 'Rs ' + rsu_(v) : pm(v);
+      const GM = byM.map(o => ({ name: mon(o.m) + (o.m === asM ? '*' : ''), mm: o.m, u: o.u, dim: o.m !== m, bold: o.m === m, v: Object.fromEntries(EL.map(([e]) => [e, PU && !o.u ? 0 : o[e]])) }));
+      if (!GM.some(g => d3.sum(EL, ([e]) => g.v[e]))) empty(et, 'No cost data'); else
+      ice(et, GM, { h: 400, skey: 'c-cp-trm|' + (SH || 'All') + (PU ? '|u' : '|t'), f: mF, tick: v => PU ? d3.format(',.0f')(v) : d3.format('.2~s')(v).replace('G', 'B'),
+        up: 'Conversion, ' + (PU ? 'Rs / unit' : 'PKR') + ' ↑', down: 'Material, ' + (PU ? 'Rs / unit' : 'PKR') + ' ↓', unitS: PU ? ' / unit' : '',
+        cvLab: v => PU ? 'Rs ' + rsu_(v) : pm(v), mLab: v => fvT(v) + unitTxt, lab2: (g, t) => PU && !g.u ? 'no output' : fvT(t) + (PU ? ' / unit' : ''),
+        lab2t: (g, t) => `Total cost${PU ? ' per unit' : ''} (material + indirect material + labour + utilities): ${fvT(t)}${unitTxt}${PU ? ' · ' + nf(g.u || 0) + ' OEM units' : ''}`,
+        tip: (g, t) => [mon(g.mm) + (g.mm === asM ? ' (month to date)' : ''), ...(PU ? [`${nf(g.u || 0)} OEM units produced`] : []), ...EL.map(([e]) => `${e}: ${fvT(g.v[e])}${unitTxt}${e === 'Utilities' && R.some(r => r.month === g.mm && r.element === 'Utilities' && r.estimate) ? ' (estimate)' : ''}`), `Total: ${fvT(t)}${unitTxt}`, ...(g.v['Direct labour'] ? [] : ['No attendance data for this month'])] }); }
     // table by shop
     const tb = document.getElementById('cp-tab'); const sub = (s, e, k) => d3.sum(cur.filter(r => r.shop === s && r.element === e && (!k || r.sub === k)), r => r.value_pkr);
     const cols = [['Direct material', 'Direct material'], ['Tools', 'Indirect material', 'Tools'], ['Consumables', 'Indirect material', 'Consumables'], ['Spares', 'Indirect material', 'Spares'], ['Lubricants', 'Indirect material', 'Lubricants'],
