@@ -379,7 +379,9 @@
   /* 13 Nov 19:39 (Umair): shop compliance strip beside the page title - one bar per shop, finished-goods production month to date
      against plan to date (as the Production card), greener as compliance rises above 100%, yellow then red below it.
      Shops in the Production tab's order; click a bar to filter the dashboard to that shop, click it again to clear. */
-  const stCol = d3.scaleLinear([80, 90, 100, 115], ['#D0312D', '#E8A33A', '#9CCB8A', '#1E7F57']).clamp(true);
+  /* 14 Nov 01:01 (Umair): heat-map greens - from 100% the green gets steadily darker as compliance rises (100% pale, 300%+ darkest) */
+  const stRed = d3.scaleLinear([80, 90, 100], ['#D0312D', '#E8A33A', '#C7E9C0']).clamp(true);
+  const stCol = v => v < 100 ? stRed(v) : d3.interpolateGreens(0.3 + 0.7 * Math.min(1, Math.log(v / 100) / Math.log(3)));
   function shopStrip(s, P) {
     const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
     if (!st) { st = document.createElement('div'); st.className = 'ovst'; st.setAttribute('aria-label', 'Production compliance by shop'); box.appendChild(st); }
