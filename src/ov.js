@@ -405,7 +405,7 @@
   }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
-    { const h2 = s.querySelector('.ovhd h2'), sh = SHf(P); h2.innerHTML = 'Operations Overview' + (sh ? ` <span style="font-family:var(--font-anthropic-sans);font-size:13px;color:#fff;background:#051C2C;border-radius:12px;padding:3px 10px;vertical-align:4px;margin-left:8px">${esc(sh)}</span>` : ''); }
+    { const h2 = s.querySelector('.ovhd h2'); h2.textContent = 'Operations Overview'; }   // 14 Nov 00:58 (Umair): no shop-name chip; the strip and its label already show the shop
     try { shopStrip(s, P); } catch (e) { console.error('ovstrip', e); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
