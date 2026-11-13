@@ -38,13 +38,13 @@
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
-.ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;padding-bottom:4px}
-.ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer}
+.ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;justify-content:center;padding-bottom:4px;height:40px;box-sizing:border-box}
+.ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer;flex:0 0 auto;transition:width .15s ease,height .15s ease}
 .ael #summary .ovsum{display:flex;align-items:center;gap:12px;margin-left:10px;padding-bottom:1px}
 .ael #summary .ovsum .t{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;line-height:1;color:#051C2C;white-space:nowrap}
 .ael #summary .ovsum .ln{width:2px;height:28px;background:#051C2C}
 .ael #summary .ovst button.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3px #051C2C}
-.ael #summary .ovst button:hover{filter:brightness(1.1);transform:scaleY(1.08)}
+.ael #summary .ovst button:hover{width:13.5px;height:36px}   /* 14 Nov 01:12 (Umair): hovered bar 1.5x, neighbours pushed left and right */
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
 .ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
@@ -391,7 +391,7 @@
     const by = d3.rollups(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0) }), r => parts.get(String(r.code)).shop || '?')
       .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 }))
       .sort((x, y) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = z => { const i = SEQ.indexOf(z.sh); return i < 0 ? SEQ.length : i; }; return ix(x) - ix(y) || x.sh.localeCompare(y.sh); });   /* 13 Nov 19:44 (Umair): same shop order as Production Plan Vs Actual - By Shop */
-    const cur = SHf(P);
+    const cur = SHf(P); st.style.width = (by.length * 13 + 1) + 'px';   /* room for one bar at 1.5x, split both sides */
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
