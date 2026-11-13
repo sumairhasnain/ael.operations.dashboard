@@ -4220,6 +4220,24 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   const data = () => { const d = window.dash && dash.data('cogm'); return d && d.status === 'ok' ? (Array.isArray(d.data) ? d.data : []) : d && d.status === 'error' ? 'err' : null; };
   const leg = () => `<div class="cplg">${EL.map(([n, c]) => `<span><i style="background:${c}"></i>${n}${n === 'Utilities' ? ' (electricity & gas)' : ''}</span>`).join('')}</div>`;
 
+  /* 13 Nov 15:55 (Umair): direct material per finished product follows its SAP BOM (sap_bom_cost: level-1 parts at the
+     moving-average MB51 261 rate). The shop's actual OEM direct material is kept as the total and shared across products in
+     proportion to units x BOM material per unit; CD70's three BOM alternatives are weighted by that month's drive-plate issues.
+     Products with no SAP BOM yet keep the shop average. Indirect material, labour and utilities stay at the shop average. */
+  const bomOf = () => { const d = window.dash && dash.data('sap_bom_cost'); if (!d || d.status !== 'ok') return null; let k = Array.isArray(d.data) ? d.data[0] : d.data; if (typeof k === 'string') { try { k = JSON.parse(k); } catch (e) { return null; } } return k; };
+  function bomMat(code, m) {
+    const K = bomOf(); if (!K) return null; const fc = (typeof K.fg_cost === 'string' ? JSON.parse(K.fg_cost) : K.fg_cost || []).filter(x => x.fg === code); if (!fc.length) return null;
+    const U = typeof K.usage === 'string' ? JSON.parse(K.usage) : K.usage || {}, w = (U[m] || {}).alt_w;
+    if (fc.length === 1 || !w) return (fc.find(x => x.alt === '1') || fc[0]).mat_unit;
+    const tw = d3.sum(fc, x => w[x.alt] || 0); return tw ? d3.sum(fc, x => x.mat_unit * (w[x.alt] || 0)) / tw : fc[0].mat_unit;
+  }
+  /* returns Map code -> direct material Rs/unit for the shop's OEM products, or null when no product has a BOM */
+  function dmSplit(prods, dmTotal, m) {
+    const W = prods.map(r => ({ r, b: bomMat(r.code, m) })); if (!W.some(x => x.b)) return null;
+    const avg = d3.sum(W.filter(x => x.b), x => x.b * x.r.units) / (d3.sum(W.filter(x => x.b), x => x.r.units) || 1);
+    W.forEach(x => { x.w = x.b || avg; }); const den = d3.sum(W, x => x.w * x.r.units); if (!den) return null;
+    return new Map(W.map(x => [x.r.code, { dm: dmTotal * x.w / den, bom: x.b }]));
+  }
   function render(P) {
     const sec = document.getElementById('cost'); if (!sec) return;
     const R = data(), K = document.getElementById('cp-kpi');
@@ -4253,7 +4271,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       if (h3) h3.textContent = 'COGM per Unit by Shop (OEM, Rs / unit)';
     } else {
       const vo = VU.get(SH), T = oemBy(SH), rate = Object.fromEntries(EL.map(([e]) => [e, vo ? T[e] / vo : 0]));
-      R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH).forEach(r => G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', v: { ...rate }, pk: Object.fromEntries(EL.map(([e]) => [e, rate[e] * r.units])) }));
+      const PR = R.filter(r => r.month === m && r.element === 'Product' && r.shop === SH), DS = dmSplit(PR, T['Direct material'] || 0, m);
+      PR.forEach(r => { const v = { ...rate }, q = DS && DS.get(r.code); if (q) v['Direct material'] = q.dm; G.push({ name: r.part || r.code, code: r.code, units: r.units, sub: r.model || 'OEM', bom: q && q.bom, v, pk: Object.fromEntries(EL.map(([e]) => [e, v[e] * r.units])) }); });
       G.sort((a, b) => b.units - a.units);
       if (h3) h3.textContent = 'COGM per Unit by OEM Product · ' + SH + ' (Rs / unit)';
     }
@@ -4292,7 +4311,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       svg.append('text').attr('transform', `translate(12,${(wl + bot) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', '#8CA0B3').text('Material, Rs / unit ↓');
       const gM = svg.append('g').attr('clip-path', `url(#${cid})`), gL = svg.append('g'), lens = svg.append('g').attr('pointer-events', 'none').style('display', 'none');
       G.forEach((g, i) => { const gx = x0(i), cx = gx + bw / 2, t = d3.sum(EL, ([e]) => Math.max(0, g.v[e] || 0)), cv = cvOf(g), m = Math.max(0, g.v['Direct material'] || 0);
-        const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
+        const L = [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...(g.bom ? [`Direct material shared by SAP BOM (Rs ${rsu(g.bom)}/unit at moving average)`] : []), ...EL.map(([e]) => `${e}: Rs ${rsu(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`];
         // above the waterline
         let y0 = 0; CV.forEach(([e, c]) => { const v = Math.max(0, g.v[e] || 0); if (!v) return; const yt = yu(y0 + v), hh = yu(y0) - yt;
           svg.append('rect').attr('x', gx).attr('y', yt).attr('width', bw).attr('height', Math.max(1, hh)).attr('fill', c).attr('stroke', '#fff').attr('stroke-width', 0.6).attr('pointer-events', 'none');
@@ -4422,11 +4441,13 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     tu.innerHTML = `<table class="cpt"><thead><tr><th>Shop</th><th>Units produced</th><th style="text-align:left">Volume basis</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM Rs/unit</th></tr></thead><tbody>${shops.map(row).join('')}</tbody></table>
       <p class="cpnote">Rs per unit = each cost element of the shop ÷ the shop's actual production${partial ? ' to date' : ''} (Atlas). CIF = Sleeve CG (in-house), Cylinder Pridor, Drive Plate casting and Boss Clutch Center Pridor casting (SAP production). Cushion = Front Forks and Rear Cushions in motorcycle sets. Aluminium Foundry cost is shared to Bridge Fork Top and Piston by their production. Zinc (ZDC) is under Carburetor. ${cur.some(r => r.spd) ? 'SPD parts made in-house take their share of every cost element (by SAP standard cost of SPD vs OEM production), so these rates are for OEM products only. ' : ''}Electricity ${cur.some(r => r.element === 'Utilities' && r.estimate) ? 'is estimated for this month' : 'from the utilities sheet at Rs 32/kWh'}.</p>`;
     const P = R.filter(r => r.month === m && r.element === 'Product' && (!SH || r.shop === SH) && rate[r.shop]);
+    const iDM = cols.findIndex(([, e]) => e === 'Direct material'), DSP = new Map();
+    if (iDM >= 0) [...new Set(P.map(r => r.shop))].forEach(s => { const d = dmSplit(P.filter(r => r.shop === s), val(s, 'Direct material', cols[iDM][2]), m); if (d) DSP.set(s, d); });
     const qq = pq.trim().toLowerCase(), list = P.filter(r => !qq || (r.code + ' ' + r.part + ' ' + r.model + ' ' + r.shop).toLowerCase().includes(qq))
       .sort((a, b) => { const ia = ORDER.indexOf(a.shop), ib = ORDER.indexOf(b.shop); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || b.units - a.units; });
     tp.innerHTML = `<input class="q" id="cp-pq" placeholder="Search product, code, model or shop" aria-label="Search products" value="${esc(pq)}" style="margin-bottom:8px">
       <table class="cpt"><thead><tr><th>Product</th><th>Code</th><th>Shop</th><th>Units produced</th>${cols.map(([n]) => `<th>${n}</th>`).join('')}<th>COGM Rs/unit</th><th>Total cost</th></tr></thead><tbody>
-      ${list.map(r => { const k = rate[r.shop]; return `<tr><td>${esc(r.part || r.code)}${r.model ? ` <span style="color:#5B6770">· ${esc(r.model)}</span>` : ''}</td><td>${esc(r.code)}</td><td style="text-align:left">${esc(r.shop)}</td><td>${nf(r.units)}</td>${k.per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(k.t)}</b></td><td>${pm(k.t * r.units)}</td></tr>`; }).join('') || '<tr><td colspan="13">No finished production for this selection</td></tr>'}</tbody></table>${spdT(R, m, SH, V, qq, rs)}`;
+      ${list.map(r => { let k = rate[r.shop]; const q = DSP.get(r.shop) && DSP.get(r.shop).get(r.code); if (q) { const per = k.per.slice(); per[iDM] = q.dm; k = { per, t: d3.sum(per) }; } return `<tr><td>${esc(r.part || r.code)}${r.model ? ` <span style="color:#5B6770">· ${esc(r.model)}</span>` : ''}</td><td>${esc(r.code)}</td><td style="text-align:left">${esc(r.shop)}</td><td>${nf(r.units)}</td>${k.per.map(x => `<td>${rs(x)}</td>`).join('')}<td><b>${rs(k.t)}</b></td><td>${pm(k.t * r.units)}</td></tr>`; }).join('') || '<tr><td colspan="13">No finished production for this selection</td></tr>'}</tbody></table>${spdT(R, m, SH, V, qq, rs)}`;
     const qi = document.getElementById('cp-pq'); if (qi) qi.oninput = () => { pq = qi.value; const pos = qi.selectionStart; unit(R, m, SH, cur, partial); const n = document.getElementById('cp-pq'); n.focus(); n.setSelectionRange(pos, pos); };
   }
   /* 11 Nov 22:24 (Umair): SPD parts made in-house carry their own share of the shop's material; OEM rates exclude it */
