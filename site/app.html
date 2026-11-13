@@ -295,7 +295,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-i-crit"><h3>Critical Parts <span class="chip snap" data-asof="atlas_stock_critical">14 Oct</span></h3><input class="q" id="q-crit" placeholder="Search part" aria-label="Search critical parts"><div class="tbox"><table class="tb" id="tb-crit" data-source="atlas_stock_critical" data-row-key="code"><thead><tr><th data-field="code">Code</th><th data-field="part">Part</th><th data-field="shop">Shop</th><th class="n" data-field="safety_stock">Safety</th><th class="n" data-field="stock">Stock</th><th class="n" data-field="vendor_stock">At vendor</th><th class="n" data-field="cover_pct">Cover %</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 </section>
-<section class="page" id="cost">
+<section class="page" id="cost"><i hidden data-source="sap_bom"></i><i hidden data-source="sap_bom_cost"></i>
 <div class="grid">
 <div class="card wide kpicard" id="c-cp-kpi"><h3 title="Cost of Goods Manufactured = direct material (SAP 261 less 262 of purchased material) + indirect material (SAP cost-centre issues: tools, consumables, spares, lubricants) + direct labour (attendance: Rs 42,500 a month, less absent days at 42,500/26, plus overtime at 1.5x the hour rate of 42,500/26/8) + utilities (electricity: MWh per shop from the utilities sheet x Rs 32/kWh; gas: thousand Nm3 x Rs 55/Nm3; the current month is estimated from October until its figures are given). Aluminium Foundry cost is shared to Bridge Fork Top and Piston by their production." style="cursor:help">Cost of Goods Manufactured</h3><div id="cp-kpi" data-source="cogm"></div></div>
 <div class="card wide" id="c-cp-shop"><h3>COGM by Shop</h3><div id="cp-shop-lg"></div><div class="chart" id="cp-shop" data-source="cogm"></div></div>
@@ -322,7 +322,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div id="j-gantts" style="grid-column:1/-1;display:grid;gap:14px" data-source="jira_issues"></div>
 </div>
 </section>
-<section class="page" id="bom">
+<section class="page" id="bom"><i hidden data-source="sap_bom"></i><i hidden data-source="sap_bom_cost"></i>
 <div class="grid">
 <div class="card wide" id="c-b-kpi"><div class="chd"><h3>Bill of Material - Check Sheet <span class="chip smp">Temporary</span></h3><label style="font-size:12px;color:#5A6670">Show <select id="s-bomv" class="csel" aria-label="BOM view"><option value="all">All links</option><option value="check">Needs check only</option><option value="none">Finished parts with no components</option></select></label></div>
 <p style="font-size:12px;color:#5A6670;margin:0 0 8px">Level 1 is the finished part; level 2 its machined, assembled or bought-in components; level 3 castings and raw parts. "Shop + model" links were matched by shop and model name because Atlas has no BOM link for them, so check those first.</p><div class="kpis" id="k-b" data-source="atlas_bom atlas_parts"></div></div>
@@ -3731,6 +3731,191 @@ ${tbl([{ t: 'Severity' }, { t: 'Sheet' }, { t: 'Where' }, { t: 'Shows' }, { t: '
     if (both !== was) { if (!t.hidden && window.__trRender) window.__trRender(P); if (!s.hidden) render(P); } }
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'production') { try { const P = window.__P(); render(P); pair(P); } catch (e) {} } return r; };
   try { if (window.__page === 'production' && window.__P) render(window.__P()); } catch (e) {}
+})();
+
+</script><script>
+/* SAP BOM (CS03) - multi-level, BOM tab (Umair, 13 Nov 2026).
+   Dataset sap_bom: the clutch finished goods' BOMs read from SAP CS03 (plant KHI, usage 1) screen by screen, every level
+   down to raw material; sap_bom_cost: rates from SAP MB51 only. 13 Nov 14:37 (Umair): cost uses the moving-average price
+   SAP issues at (261 less 262 amount / quantity, last 60 days); the receipt rate is shown as the latest supplier price.
+   Cost columns show only to people who may see the Cost tab. Material / unit = level-1 components x moving-average rate. */
+(() => {
+  const AK = window.AK; if (!AK) return;
+  const { C, tip, empty } = AK;
+  const nf = d3.format(','), r2 = d3.format(',.2f'), r0 = d3.format(',.0f');
+  const qf = v => v == null ? '—' : (Math.abs(v - Math.round(v)) < 1e-9 ? nf(v) : d3.format(',.4~f')(v));
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const obj = v => { if (typeof v === 'string') { try { return JSON.parse(v); } catch (e) { return null; } } return v; };
+  const css = document.createElement('style'); css.textContent = `
+.ael #c-b-sap .sbsub{font-size:12px;color:var(--mut);margin:-4px 0 10px;line-height:1.45}
+.ael #c-b-sap .sbsub b{color:var(--navy);font-weight:600}
+.ael #c-b-sap .sbsum{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px}
+.ael #c-b-sap .sbsum th,.ael #c-b-sap .sbtree th{text-align:left;font-weight:600;color:#5A6670;font-size:11.5px;padding:6px 8px;border-bottom:1px solid #DDE3EA;background:#F7F9FB;position:sticky;top:0}
+.ael #c-b-sap .sbsum td,.ael #c-b-sap .sbtree td{padding:5px 8px;border-bottom:1px solid #EEF1F4}
+.ael #c-b-sap .n{text-align:right;font-variant-numeric:tabular-nums}
+.ael #c-b-sap .sbsum tr{cursor:pointer}.ael #c-b-sap .sbsum tr.on td{background:#EEF4FF;font-weight:600}
+.ael #c-b-sap .sbbox{max-height:620px;overflow:auto}
+.ael #c-b-sap .sbtree{width:100%;border-collapse:collapse;font-size:12.5px}
+.ael #c-b-sap .lv{display:inline-block;min-width:24px;text-align:center;border-radius:9px;font-size:11px;font-weight:600;padding:1px 6px;color:#fff}
+.ael #c-b-sap .st-p{color:#B45309;font-weight:600}.ael #c-b-sap .st-r{color:#5A6670}
+.ael #c-b-sap tr.l1 td{background:#F3F6FC}
+.ael #c-b-sap .in{color:#8A94A0;font-style:italic}
+.ael #c-b-sap .rm{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.ael #c-b-sap .rm span{background:#F3F6FC;border:1px solid #DDE3EA;border-radius:6px;padding:4px 8px;font-size:12px}
+.ael #c-b-sap .rm b{color:var(--navy)}`;
+  document.head.appendChild(css);
+  const LVC = ['#0B2E8A', '#1D3FD6', '#4F6FE8', '#7F95F0', '#A9B8F5', '#C9D3F8'];
+  let sel = null;
+  function ensure() {
+    const grid = document.querySelector('#bom .grid'); if (!grid || document.getElementById('c-b-sap')) return;
+    const card = document.createElement('div'); card.className = 'card wide'; card.id = 'c-b-sap';
+    card.innerHTML = `<h3>SAP BOM (CS03) - Multi-level <span class="chip snap" id="sb-asof"></span></h3><div class="sbsub" id="sb-sub"></div>
+<div class="tbox"><table class="sbsum" id="sb-sum"><thead></thead><tbody></tbody></table></div><div class="rm" id="sb-rm"></div>
+<div class="sbbox"><table class="sbtree" id="sb-tree"><thead></thead><tbody></tbody></table></div>`;
+    grid.prepend(card);
+  }
+  function render(P) {
+    ensure(); const card = document.getElementById('c-b-sap'); if (!card) return;
+    if (P && P.shop && P.shop !== 'All' && P.shop !== 'Clutch') { card.hidden = true; return; } card.hidden = false;
+    const d = window.dash && dash.data('sap_bom'), sub = document.getElementById('sb-sub'), box = card.querySelector('.sbbox');
+    if (!d || d.status !== 'ok') { sub.textContent = d && d.status === 'error' ? '● Failed to load' : 'Loading…'; return; }
+    const B = obj((Array.isArray(d.data) ? d.data[0] : d.data) || {}) || {}; const fgs = obj(B.fgs) || [], tree = obj(B.tree) || [];
+    const dc = dash.data('sap_bom_cost'), K = dc && dc.status === 'ok' ? obj((Array.isArray(dc.data) ? dc.data[0] : dc.data) || {}) : null;
+    const R = K ? obj(K.rates) || {} : null, FC = K ? new Map((obj(K.fg_cost) || []).map(x => [x.fg + '|' + x.alt, x])) : null;
+    document.getElementById('sb-asof').textContent = 'SAP ' + (B.asof || '');
+    const pend = new Set(); fgs.forEach(f => (f.pending || []).forEach(c => pend.add(c)));
+    sub.innerHTML = `<b>Clutch</b> · ${new Set(fgs.map(f => f.fg)).size} finished goods (${fgs.length} BOMs incl. alternatives) from ${esc(B.source || 'SAP CS03')}, every level read from SAP · ` +
+      (pend.size ? `<b style="color:#B45309">${pend.size} sub-assemblies</b> still to be opened in CS03 (shown in amber; their own rate is used meanwhile)` : 'all levels complete') +
+      (R ? ' · rates: SAP MB51 moving average (261 issues)' : '');
+    if (!sel || !fgs.some(f => f.fg + '|' + f.alt === sel)) sel = fgs.length ? fgs[0].fg + '|' + fgs[0].alt : null;
+    // summary
+    const sh = card.querySelector('#sb-sum thead'), sb = card.querySelector('#sb-sum tbody');
+    sh.innerHTML = `<tr><th>Finished good</th><th>Code</th><th>Alt</th><th class="n">Levels</th><th class="n">Level-1 items</th><th class="n">Pending</th>` +
+      (R ? `<th class="n">Material / unit (moving avg)</th><th class="n">At latest receipt prices</th><th class="n">FG MB51 receipt rate</th><th class="n">FG rate less material</th>` : '') + `</tr>`;
+    sb.replaceChildren(...fgs.map(f => { const k = f.fg + '|' + f.alt, tr = document.createElement('tr'), fc = FC && FC.get(k), fr = R && R[f.fg];
+      if (k === sel) tr.className = 'on';
+      tr.innerHTML = `<td>${esc(f.part)}${f.alt_note ? ` <span style="color:#5A6670">· ${esc(f.alt_note)}</span>` : ''}</td><td>${f.fg}</td><td>${f.alt}</td><td class="n">${f.levels}</td><td class="n">${f.l1}</td><td class="n" style="${(f.pending || []).length ? 'color:#B45309;font-weight:600' : ''}">${(f.pending || []).length}</td>` +
+        (R ? `<td class="n">${fc ? r2(fc.mat_unit) : '—'}</td><td class="n">${fc ? r2(fc.mat_unit_rcv) : '—'}</td><td class="n">${fr ? r2(fr.rate) : '—'}</td><td class="n">${fc && fr ? r2(fr.rate - fc.mat_unit) : '—'}</td>` : '');
+      tr.addEventListener('click', () => { sel = k; render(window.__P ? window.__P() : P); });
+      if (R && fr) tr.addEventListener('mousemove', ev => tip.show(ev, [f.part + ' · alt ' + f.alt, `Material from the BOM at moving-average (MB51 261) rates: Rs ${fc ? r2(fc.mat_unit) : '—'}`, `Same BOM at latest receipt prices: Rs ${fc ? r2(fc.mat_unit_rcv) : '—'}`, `The FG's own MB51 receipt rate (SAP valuation): Rs ${r2(fr.rate)}`, 'FG rate less material is roughly the conversion SAP adds at assembly']));
+      tr.addEventListener('mouseleave', tip.hide); return tr; }));
+    // raw material content for the selected FG
+    const [sf, sa] = (sel || '|').split('|'), rows = tree.filter(t => t.fg === sf && t.alt === sa);
+    const raw = new Map(); rows.filter(t => t.status !== 'Exploded' && /^1/.test(t.code)).forEach(t => { const o = raw.get(t.code) || { part: t.part, uom: t.uom, q: 0 }; o.q += t.qty_fg; raw.set(t.code, o); });
+    document.getElementById('sb-rm').innerHTML = raw.size ? '<span style="background:none;border:0;padding-left:0;color:#5A6670">Raw material per unit (levels read so far):</span>' + [...raw.entries()].map(([c, o]) => `<span title="${c}"><b>${qf(+o.q.toFixed(4))} ${esc(o.uom)}</b> ${esc(o.part)}</span>`).join('') : '';
+    // tree
+    const th = card.querySelector('#sb-tree thead'), tb = card.querySelector('#sb-tree tbody');
+    th.innerHTML = `<tr><th>Level</th><th>Component</th><th>Description</th><th>Parent</th><th class="n">Qty / parent</th><th>UoM</th><th class="n">Qty / 1 FG</th>` +
+      (R ? `<th class="n">Moving avg rate</th><th class="n">Value / 1 FG</th>` : '') + `<th>Status</th></tr>`;
+    tb.replaceChildren(...rows.map(t => { const tr = document.createElement('tr'), rr = R && R[t.code]; if (t.lvl === 1) tr.className = 'l1';
+      const val = rr ? t.qty_fg * rr.rate : null, stc = t.status === 'Sub-levels pending' ? 'st-p' : t.status === 'Exploded' ? '' : 'st-r';
+      tr.innerHTML = `<td><span class="lv" style="background:${LVC[Math.min(t.lvl - 1, LVC.length - 1)]}">L${t.lvl}</span></td><td style="padding-left:${8 + (t.lvl - 1) * 14}px">${t.code}</td><td>${esc(t.part)}</td><td>${t.parent}</td><td class="n">${qf(t.qty)}</td><td>${esc(t.uom)}</td><td class="n">${qf(t.qty_fg)}</td>` +
+        (R ? `<td class="n">${rr ? r2(rr.rate) : '—'}</td><td class="n ${t.lvl > 1 ? 'in' : ''}">${val == null ? '—' : r2(val)}</td>` : '') +
+        `<td class="${stc}">${esc(t.status)}</td>`;
+      if (rr) { tr.addEventListener('mousemove', ev => tip.show(ev, [t.part, `${t.code} · level ${t.lvl} · in ${t.parent}`, `Moving average Rs ${r2(rr.rate)} per ${t.uom} (${rr.basis}, last ${rr.last})`, ...(rr.rate_rcv != null ? [`Latest receipt price Rs ${r2(rr.rate_rcv)} (${rr.rcv_last})`] : []), t.lvl > 1 ? 'Already inside its level-1 parent\'s rate - not added again' : 'Counted in material / unit'])); tr.addEventListener('mouseleave', tip.hide); }
+      return tr; }));
+    if (!rows.length) empty(box, 'No BOM rows');
+  }
+  window.__sbRender = render;
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'bom') { try { render(window.__P ? window.__P() : {}); } catch (e) { console.error(e); } } return r; };
+  try { if (window.__page === 'bom') render(window.__P ? window.__P() : {}); } catch (e) {}
+})();
+
+</script><script>
+/* Clutch - material against the SAP BOM (Cost tab; Umair, 13 Nov 2026 14:37).
+   Shows when the Shop filter is Clutch (or All). Datasets sap_bom + sap_bom_cost (tools/sap_bom_build.py).
+   Rates: moving-average price SAP issues at (MB51 261 less 262 amount / quantity). Never the receipt rate for cost.
+   Standard = clutch output that month (MB51 101 less 102 of the 5 clutch FG codes) x level-1 BOM quantity; CD70's three BOM
+   alternatives are weighted by that month's issues of the three drive plates. Actual = 261 less 262 of the same components.
+   A component also used in SPD clutch assemblies (9110/9120/9130… codes, not yet read from CS03) shows extra issues. */
+(() => {
+  const AK = window.AK; if (!AK) return;
+  const { tip } = AK;
+  const nf = d3.format(','), r2 = d3.format(',.2f'), pc = d3.format('+.1%');
+  const mk = v => { const a = Math.abs(v); return (v < 0 ? '-' : '') + (a >= 1e6 ? d3.format(',.1f')(a / 1e6) + 'M' : a >= 1e3 ? d3.format(',.0f')(a / 1e3) + 'k' : d3.format(',.0f')(a)); };
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const obj = v => { if (typeof v === 'string') { try { return JSON.parse(v); } catch (e) { return null; } } return v; };
+  const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], ml = m => MN[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
+  const FGN = { '9010113004': 'CD70', '9020113004': 'CG125', '9030113004': 'Pridor (INH)', '9030113005': 'Pridor (INH parts)', '9070113004': 'CB150F' };
+  const css = document.createElement('style'); css.textContent = `
+.ael #c-cp-bom .sbsub{font-size:12px;color:var(--mut);margin:-4px 0 10px;line-height:1.45}
+.ael #c-cp-bom .sbsub b{color:var(--navy);font-weight:600}
+.ael #c-cp-bom h4{font-size:13px;margin:14px 0 6px;color:var(--navy)}
+.ael #c-cp-bom table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ael #c-cp-bom th{text-align:left;font-weight:600;color:#5A6670;font-size:11.5px;padding:6px 8px;border-bottom:1px solid #DDE3EA;background:#F7F9FB;position:sticky;top:0;cursor:pointer}
+.ael #c-cp-bom td{padding:5px 8px;border-bottom:1px solid #EEF1F4}
+.ael #c-cp-bom .n{text-align:right;font-variant-numeric:tabular-nums}
+.ael #c-cp-bom .vbox{max-height:420px;overflow:auto}
+.ael #c-cp-bom .bad{color:#D0312D;font-weight:600}.ael #c-cp-bom .ok{color:#0B6E4F;font-weight:600}
+.ael #c-cp-bom .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px}
+@media (max-width:900px){.ael #c-cp-bom .two{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+  let sk = 'vv', sd = -1;
+  function ensure() {
+    const grid = document.querySelector('#cost .grid'); if (!grid || document.getElementById('c-cp-bom')) return;
+    const card = document.createElement('div'); card.className = 'card wide'; card.id = 'c-cp-bom'; card.hidden = true;
+    card.innerHTML = `<h3 title="Standard = clutch output (MB51 101 of the clutch FG codes) x level-1 BOM quantity from SAP CS03. Actual = MB51 261 less 262 of the same components. Both valued at the moving-average price SAP issues at." style="cursor:help">Clutch - Material against SAP BOM <span class="chip snap" id="cb-asof"></span></h3>
+<div class="sbsub" id="cb-sub"></div><div class="ktiles" id="cb-kt"></div>
+<div class="two"><div><h4>Standard vs actual material by month (Rs)</h4><div class="chart" id="cb-trend"></div></div>
+<div><h4>Material per clutch (BOM x moving average)</h4><div class="tbox"><table id="cb-fg"><thead></thead><tbody></tbody></table></div></div></div>
+<h4 id="cb-vh">Component usage against BOM</h4><div class="vbox"><table id="cb-var"><thead></thead><tbody></tbody></table></div>`;
+    const after = document.getElementById('c-cp-unit'); if (after) after.after(card); else grid.appendChild(card);
+  }
+  function render(P) {
+    ensure(); const card = document.getElementById('c-cp-bom'); if (!card) return;
+    if (P.shop && P.shop !== 'All' && P.shop !== 'Clutch') { card.hidden = true; return; }
+    const db = window.dash && dash.data('sap_bom'), dc = window.dash && dash.data('sap_bom_cost');
+    if (!db || !dc || db.status !== 'ok' || dc.status !== 'ok') { card.hidden = true; return; } card.hidden = false;
+    const B = obj(Array.isArray(db.data) ? db.data[0] : db.data) || {}, K = obj(Array.isArray(dc.data) ? dc.data[0] : dc.data) || {};
+    const fgs = obj(B.fgs) || [], R = obj(K.rates) || {}, FC = obj(K.fg_cost) || [], U = obj(K.usage) || {}, part = new Map();
+    (obj(B.tree) || []).forEach(t => part.set(t.code, t.part));
+    const months = Object.keys(U).sort(), M = U[P.month] ? P.month : months[months.length - 1];
+    document.getElementById('cb-asof').textContent = 'SAP MB51 to ' + (K.mb51_to || '');
+    const pend = new Set(); fgs.forEach(f => (f.pending || []).forEach(c => pend.add(c)));
+    document.getElementById('cb-sub').innerHTML = `<b>${ml(M)}${M === months[months.length - 1] ? ' (to date)' : ''}</b> · BOM from SAP CS03 for ${Object.keys(FGN).length} clutch finished goods, valued at the <b>moving-average price</b> SAP issues at (MB51 261)` +
+      (pend.size ? ` · ${pend.size} sub-assemblies still to be read in CS03 (they sit below level 1, so this card is not affected)` : '') + (P.shop === 'All' ? ' · Clutch shop only' : '');
+    const val = (x, i) => x.lines.reduce((s, l) => s + (l[i] || 0) * (l[3] || 0), 0);
+    const u = U[M], sv = val(u, 1), av = val(u, 2), units = d3.sum(Object.values(u.units || {}));
+    // tiles
+    const kt = document.getElementById('cb-kt'); kt.replaceChildren();
+    const tile = (l, v, s, col) => { const t = document.createElement('div'); t.className = 'ktile'; t.innerHTML = '<div class="tl"></div><div class="tv"></div><div class="ts"></div>'; t.querySelector('.tl').textContent = l; const e = t.querySelector('.tv'); e.textContent = v; if (col) e.style.color = col; t.querySelector('.ts').textContent = s; kt.appendChild(t); };
+    tile('Clutch output (SAP)', nf(units), Object.entries(u.units).filter(([, v]) => v).map(([k, v]) => `${FGN[k]} ${nf(v)}`).join(' · '));
+    tile('Material as per BOM', 'Rs ' + mk(sv), `Rs ${r2(units ? sv / units : 0)} per clutch`);
+    tile('Material issued (261)', 'Rs ' + mk(av), `Rs ${r2(units ? av / units : 0)} per clutch`);
+    tile('Issued over BOM', 'Rs ' + mk(av - sv), sv ? pc(av / sv - 1) + ' of BOM' : '', av - sv > 0.02 * sv ? '#D0312D' : '#0B6E4F');
+    // trend
+    { const el = document.getElementById('cb-trend'), h = 230, mt = 14, mb = 26, ml_ = 46; el.replaceChildren(); const w = Math.max(300, el.clientWidth || 500);
+      const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`).attr('height', h);
+      const D = months.map(m => ({ m, s: val(U[m], 1), a: val(U[m], 2) })), x = d3.scaleBand(months, [ml_, w - 6]).padding(0.25), x1 = d3.scaleBand(['s', 'a'], [0, x.bandwidth()]).padding(0.08);
+      const y = d3.scaleLinear([0, d3.max(D, d => Math.max(d.s, d.a)) || 1], [h - mb, mt]).nice();
+      y.ticks(4).forEach(t => { svg.append('line').attr('x1', ml_).attr('x2', w - 6).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', '#EEF1F4'); svg.append('text').attr('x', ml_ - 6).attr('y', y(t) + 3.5).attr('text-anchor', 'end').attr('font-size', 10).style('fill', '#5A6670').text(mk(t)); });
+      D.forEach(d => { const g = svg.append('g').attr('transform', `translate(${x(d.m)},0)`), on = d.m === M;
+        [['s', '#A9B8F5', d.s], ['a', '#1D3FD6', d.a]].forEach(([k, c, v]) => g.append('rect').attr('x', x1(k)).attr('y', y(v)).attr('width', x1.bandwidth()).attr('height', y(0) - y(v)).attr('fill', c).attr('opacity', on ? 1 : 0.55));
+        const dv = d.s ? d.a / d.s - 1 : 0; g.append('text').attr('x', x.bandwidth() / 2).attr('y', y(Math.max(d.s, d.a)) - 4).attr('text-anchor', 'middle').attr('font-size', 10).style('fill', dv > 0.02 ? '#D0312D' : '#0B6E4F').style('font-weight', 600).text(pc(dv));
+        svg.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', h - 8).attr('text-anchor', 'middle').attr('font-size', 10.5).style('fill', on ? '#051C2C' : '#5A6670').style('font-weight', on ? 700 : 400).text(ml(d.m) + (d.m === months[months.length - 1] ? '*' : ''));
+        svg.append('rect').attr('x', x(d.m)).attr('y', mt).attr('width', x.bandwidth()).attr('height', h - mb - mt).attr('fill', 'transparent').style('cursor', 'pointer')
+          .on('mousemove', ev => tip.show(ev, [ml(d.m), `As per BOM: Rs ${nf(Math.round(d.s))}`, `Issued (261): Rs ${nf(Math.round(d.a))}`, `Difference: Rs ${nf(Math.round(d.a - d.s))} (${pc(dv)})`, 'Click to show this month'])).on('mouseleave', tip.hide)
+          .on('click', () => { tip.hide(); dash.setParams({ month: d.m }); }); });
+      const lg = svg.append('g').attr('transform', `translate(${ml_},4)`); [['As per BOM', '#A9B8F5'], ['Issued (261)', '#1D3FD6']].forEach(([t, c], i) => { lg.append('rect').attr('x', i * 110).attr('y', 0).attr('width', 10).attr('height', 10).attr('fill', c); lg.append('text').attr('x', i * 110 + 14).attr('y', 9).attr('font-size', 10.5).style('fill', '#5A6670').text(t); }); }
+    // per-FG material per unit
+    { const tb = document.querySelector('#cb-fg tbody'); document.querySelector('#cb-fg thead').innerHTML = '<tr><th>Clutch</th><th class="n">Rs / unit</th><th class="n">At latest prices</th><th class="n">SAP FG rate</th><th>Biggest items</th></tr>';
+      tb.replaceChildren(...FC.map(c => { const f = fgs.find(x => x.fg === c.fg && x.alt === c.alt) || {}, fr = R[c.fg], tr = document.createElement('tr'), dv = c.mat_unit_rcv / c.mat_unit - 1;
+        tr.innerHTML = `<td>${FGN[c.fg]}${f.alt_note ? ` <span style="color:#5A6670">· ${esc(f.alt_note.replace(' drive plate', ''))}</span>` : ''}</td><td class="n"><b>${r2(c.mat_unit)}</b></td><td class="n ${Math.abs(dv) > 0.02 ? (dv > 0 ? 'bad' : 'ok') : ''}">${r2(c.mat_unit_rcv)}</td><td class="n">${fr ? r2(fr.rate) : '—'}</td><td style="font-size:11.5px;color:#5A6670">${(c.lines || []).slice(0, 3).map(l => esc((l.part || l.code).slice(0, 24)) + ' ' + d3.format('.0%')((l.v || 0) / c.mat_unit)).join(' · ')}</td>`;
+        tr.addEventListener('mousemove', ev => tip.show(ev, [`${FGN[c.fg]} (${c.fg}) · BOM alt ${c.alt}`, ...(c.lines || []).map(l => `${l.code} ${(l.part || '').slice(0, 30)}: ${l.qty_fg} x = Rs ${r2(l.v || 0)}`), `Total at moving average: Rs ${r2(c.mat_unit)}`, `At latest receipt prices: Rs ${r2(c.mat_unit_rcv)} (${pc(dv)})`])); tr.addEventListener('mouseleave', tip.hide); return tr; })); }
+    // component variance
+    { document.getElementById('cb-vh').textContent = `Component usage against BOM - ${ml(M)}${M === months[months.length - 1] ? ' to date' : ''} (level 1, sorted by Rs over BOM)`;
+      const rows = u.lines.map(([c, s, a, r]) => ({ c, p: part.get(c) || '', s, a, r, vq: a - s, vp: s ? a / s - 1 : null, vv: (a - s) * (r || 0) }));
+      const cols = [['c', 'Code'], ['p', 'Part'], ['s', 'As per BOM', 1], ['a', 'Issued (261)', 1], ['vq', 'Difference', 1], ['vp', '%', 1], ['r', 'Moving avg Rs', 1], ['vv', 'Rs over BOM', 1]];
+      const th = document.querySelector('#cb-var thead'); th.innerHTML = '<tr>' + cols.map(([k, l, n]) => `<th data-k="${k}" class="${n ? 'n' : ''}">${l}${sk === k ? (sd > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr>';
+      th.querySelectorAll('th').forEach(t => t.onclick = () => { const k = t.dataset.k; sd = sk === k ? -sd : -1; sk = k; render(window.__P ? window.__P() : P); });
+      rows.sort((x, y) => { const a = x[sk], b = y[sk]; return (typeof a === 'number' || typeof b === 'number' ? ((a ?? -1e18) - (b ?? -1e18)) : String(a).localeCompare(String(b))) * sd; });
+      document.querySelector('#cb-var tbody').replaceChildren(...rows.map(o => { const tr = document.createElement('tr'), big = o.vp != null && Math.abs(o.vp) > 0.05;
+        tr.innerHTML = `<td>${o.c}</td><td>${esc(o.p)}</td><td class="n">${nf(Math.round(o.s))}</td><td class="n">${nf(Math.round(o.a))}</td><td class="n">${nf(Math.round(o.vq))}</td><td class="n ${big ? (o.vp > 0 ? 'bad' : 'ok') : ''}">${o.vp == null ? '—' : pc(o.vp)}</td><td class="n">${o.r == null ? '—' : r2(o.r)}</td><td class="n ${o.vv > 0 && big ? 'bad' : ''}">${nf(Math.round(o.vv))}</td>`;
+        tr.addEventListener('mousemove', ev => tip.show(ev, [o.p, o.c, `As per BOM: ${nf(Math.round(o.s))} (clutch output x BOM qty)`, `Issued to production orders (261 less 262): ${nf(Math.round(o.a))}`, ...(o.vp > 0.05 ? ['Over BOM: issued ahead of output, scrap, or also used in SPD clutch assemblies not yet in this BOM'] : o.vp < -0.05 ? ['Under BOM: output made from stock issued in an earlier month'] : [])])); tr.addEventListener('mouseleave', tip.hide); return tr; })); }
+  }
+  window.__cbRender = render;
+  const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page === 'cost') { try { render(window.__P ? window.__P() : {}); } catch (e) { console.error(e); } } return r; };
+  try { if (window.__page === 'cost' && window.__P) render(window.__P()); } catch (e) {}
 })();
 
 </script><script>
