@@ -395,7 +395,7 @@
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
-      b.addEventListener('mousemove', ev => tip.show(ev, [o.sh, `Production ${d3.format('.1f')(o.v)}% of plan to date`, `${kf(o.a)} made of ${kf(o.p)} planned (finished goods)`, cur === o.sh ? 'Click to clear the shop filter' : 'Click to filter the dashboard to this shop']));
+      b.addEventListener('mousemove', ev => tip.show(ev, [`${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 01:08 (Umair): bar tooltip shows only plan / actual */);
       b.addEventListener('mouseleave', tip.hide);
       b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
       return b; }));
