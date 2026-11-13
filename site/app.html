@@ -4307,7 +4307,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
           const inB = !cut && yb2 + tipD + 13 > bot + 4; svg.append('text').attr('x', cx).attr('y', cut ? bot - 6 : inB ? yb2 - 8 : yb2 + tipD + 13).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', cut ? 700 : 400).attr('fill', '#5E7387').attr('pointer-events', 'none').text((cut ? '▼ ' : '') + rsu(m)); }
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(bw / (fs_ * 0.56))), nm_ = g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
         svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', C.navy).text(lab).append('title').text(g.name);
-        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text((g.sub ? g.sub + ' · ' : '') + nf(g.units) + ' units');
+        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#051C2C').style('font-weight', 600).text((g.sub ? g.sub + ' · ' : '') + 'Rs ' + rsu(t) + ' / unit').append('title').text(`Total cost per unit (material + indirect material + labour + utilities): Rs ${rsu(t)} · ${nf(g.units)} units`);  // 13 Nov 14:40 (Umair): total Rs/unit instead of units
         // hover target for the upper half: opens the magnifier lens
         gL.append('rect').attr('x', gx - 2).attr('y', mt - 4).attr('width', bw + 4).attr('height', wl - mt + 4).attr('fill', 'transparent').style('cursor', 'zoom-in')
           .on('mouseenter', () => showLens(g, i)).on('mouseleave', () => lens.style('display', 'none'));
