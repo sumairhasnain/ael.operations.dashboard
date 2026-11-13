@@ -74,6 +74,25 @@ for ln in ppl_txt.split('\n'):
     if len(f) >= 14:   # overtime while absent (28 Oct): OT hours in weeks with an absence, absent days in weeks with OT, days absent with OT
         row.update(ot_in_abs_weeks=float(f[11]), abs_in_ot_weeks=float(f[12]), absent_with_ot_days=int(f[13]))
     ppl.append(row)
+def _merge_unmarked(rows):
+    """13 Nov 2026 (Umair): a name with no present, absent or leave in the month is not a separate person. HR left the old
+    'Carburetor' list in the November sheet (attendance now on Carburetor Assembly / Machining) and overtime is still entered
+    there. Such a row's overtime goes to the same person's marked row (same emp_id + name, else the only row with that name)
+    and the row is dropped; a row with no marks and no overtime is dropped; one with overtime but no marked row stays."""
+    key = lambda r: (r['month'], r['emp_id'], r['name'].strip().upper())
+    mk = [r for r in rows if r['present'] + r['absent'] + r['leave'] > 0]
+    by_k = {key(r): r for r in mk}; by_n = {}
+    for r in mk: by_n.setdefault((r['month'], r['name'].strip().upper()), []).append(r)
+    out = []
+    for r in rows:
+        if r['present'] + r['absent'] + r['leave'] > 0: out.append(r); continue
+        t = by_k.get(key(r)) or (lambda c: c[0] if len(c) == 1 else None)(by_n.get((r['month'], r['name'].strip().upper()), []))
+        if t is not None:
+            for f in ('ot_hours', 'ot_days', 'ot_in_abs_weeks', 'abs_in_ot_weeks', 'absent_with_ot_days'):
+                if f in r: t[f] = round(t.get(f, 0) + r[f], 2)
+        elif r['ot_hours'] > 0: out.append(r)
+    return out
+ppl = _merge_unmarked(ppl)
 if ppl:
     new_m = {r['month'] for r in ppl}
     if os.path.exists('sp_attendance_people_prev.json'):

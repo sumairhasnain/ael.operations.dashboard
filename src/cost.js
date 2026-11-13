@@ -175,8 +175,8 @@
        light grey slider on the left changes only that lower scale. */
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
       { const old = document.getElementById('cp-shop-clr'); if (old) old.remove();   /* 13 Nov 18:13 (Umair): Clear filter at the top right, same pill as Totals */
-        if (SH && h3) { const bt = document.createElement('button'); bt.type = 'button'; bt.id = 'cp-shop-clr'; bt.textContent = 'Clear filter'; bt.title = 'Back to all shops';
-          h3.parentElement.style.position = 'relative'; bt.style.cssText = 'position:absolute;right:16px;top:12px;font:inherit;font-size:11.5px;font-weight:600;padding:3px 12px;border:1px solid #C9D1D9;border-radius:14px;background:#fff;color:#051C2C;cursor:pointer';
+        if (SH && h3) { const bt = document.createElement('button'); bt.type = 'button'; bt.id = 'cp-shop-clr'; bt.className = 'qclr fon'; bt.textContent = 'Clear filter'; bt.title = 'Back to all shops';
+          h3.parentElement.style.position = 'relative'; bt.style.cssText = 'position:absolute;right:16px;top:12px';   /* red, as Clear filters in the filter pane (13 Nov 18:20) */
           bt.addEventListener('click', ev => { ev.stopPropagation(); dash.setParams({ shop: 'All', model: 'All', sf: 0, pf: 0 }); }); h3.parentElement.appendChild(bt); } }
       ice(es, G, { labClick: g => !SH && (window.__SHOPS || []).includes(g.name) ? () => dash.setParams({ shop: g.name, sf: 0, pf: 0 }) : null, skey: 'c-cp-mat|' + (SH || 'All'), f: rsu0, tick: d3.format(',.0f'), up: 'Conversion, Rs / unit ↑', down: 'Material, Rs / unit ↓', unitS: ' / unit',
         cvLab: v => 'Rs ' + rsu0(v), mLab: v => 'Rs ' + rsu0(v) + '/unit', lab2: (g, t) => (g.sub ? g.sub + ' · ' : '') + 'Rs ' + rsu0(t) + ' / unit',
