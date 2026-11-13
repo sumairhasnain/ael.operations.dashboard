@@ -76,6 +76,12 @@ for c in codes:
         v = rt(d, 'Qty in unit of entry', 'amt')
         if v: rates[c] = dict(rate=round(v[0], 4), basis=basis, last=v[1]); break
     if c not in rates and c in recv: rates[c] = dict(rate=round(recv[c][0], 4), basis='MB51 receipts (no issues to production in 180 days)', last=recv[c][1])
+    # 13 Nov 22:40: carburetor kit parts (3xxx) are issued at Rs 0 and never received through MB51 101 - SAP carries them at no
+    # value, so they are rated 0 (shown as such) rather than left blank
+    if c not in rates and c not in recv:
+        y0 = u[(u.Material == c) & u['Movement Type'].astype(str).isin(['261', '262'])]
+        if len(y0) and float(y0['amt'].abs().sum()) == 0:
+            rates[c] = dict(rate=0.0, basis='SAP issues it at Rs 0 (no MB51 receipt value) - kit part carried at no cost', last=y0['Posting Date'].max().strftime('%Y-%m-%d'))
     if c in recv and c in rates:
         rates[c]['rate_rcv'] = round(recv[c][0], 4); rates[c]['rcv_last'] = recv[c][1]
 cost = []
@@ -97,7 +103,8 @@ for SH_ in sorted(set(SHOP.values())):
       w = {a: (max(0, v) / tq if tq else (1.0 if a == '1' else 0.0)) for a, v in dq.items()}
       std = collections.Counter()
       for t in tree:
-          if t['lvl'] == 1 and t['fg'] in units: std[t['code']] += units[t['fg']] * t['qty_fg'] * (w[t['alt']] if t['fg'] == '9010113004' else 1)
+          # other finished goods with several alternatives (carburetor CD70 / CG125, case air cleaner) are split evenly across them
+          if t['lvl'] == 1 and t['fg'] in units: std[t['code']] += units[t['fg']] * t['qty_fg'] * (w[t['alt']] if t['fg'] == '9010113004' else 1 / len(bom[t['fg']]))
       lines = []
       for c, sq in std.items():
           y = clean_issues(u[(u.Material == c) & (u.m == M)], c); aq = -float(y['Qty in unit of entry'].sum()); aa = -float(y['amt'].sum())
