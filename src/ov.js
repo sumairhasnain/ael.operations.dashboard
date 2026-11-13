@@ -375,7 +375,7 @@
     return el; }
   /* 13 Nov 19:39 (Umair): shop compliance strip beside the page title - one bar per shop, finished-goods production month to date
      against plan to date (as the Production card), greener as compliance rises above 100%, yellow then red below it.
-     Worst shop first; click a bar to filter the dashboard to that shop, click it again to clear. */
+     Shops in the Production tab's order; click a bar to filter the dashboard to that shop, click it again to clear. */
   const stCol = d3.scaleLinear([80, 90, 100, 115], ['#D0312D', '#E8A33A', '#9CCB8A', '#1E7F57']).clamp(true);
   function shopStrip(s, P) {
     const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
@@ -384,7 +384,8 @@
     const end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end, parts = new Map(pa_.filter(r => r.type === 'Finished').map(r => [String(r.code), r]));
     const rows = pd_.filter(r => r.date >= P.start && r.date <= end && parts.has(String(r.code)));
     const by = d3.rollups(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0) }), r => parts.get(String(r.code)).shop || '?')
-      .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 })).sort((x, y) => x.v - y.v);
+      .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 }))
+      .sort((x, y) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = z => { const i = SEQ.indexOf(z.sh); return i < 0 ? SEQ.length : i; }; return ix(x) - ix(y) || x.sh.localeCompare(y.sh); });   /* 13 Nov 19:44 (Umair): same shop order as Production Plan Vs Actual - By Shop */
     const cur = SHf(P);
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
