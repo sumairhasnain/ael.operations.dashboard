@@ -40,6 +40,9 @@
 .ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;padding-bottom:4px}
 .ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer}
+.ael #summary .ovsum{display:flex;align-items:center;gap:12px;margin-left:10px;padding-bottom:1px}
+.ael #summary .ovsum .t{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;line-height:1;color:#051C2C;white-space:nowrap}
+.ael #summary .ovsum .ln{width:2px;height:28px;background:#051C2C}
 .ael #summary .ovst button.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3px #051C2C}
 .ael #summary .ovst button:hover{filter:brightness(1.1);transform:scaleY(1.08)}
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
@@ -394,6 +397,11 @@
       b.addEventListener('mouseleave', tip.hide);
       b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
       return b; }));
+    /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
+    let sm = box.querySelector('.ovsum'); if (!sm) { sm = document.createElement('div'); sm.className = 'ovsum'; box.appendChild(sm); }
+    const sel = cur && by.find(o => o.sh === cur), tp = sel ? sel.p : d3.sum(by, o => o.p), ta = sel ? sel.a : d3.sum(by, o => o.a), tv = tp ? ta / tp * 100 : null;
+    sm.innerHTML = by.length ? `<span class="t">${esc(sel ? cur : 'All Shops')}</span><span class="ln"></span><span class="t">${tv == null ? '—' : (tv >= 1000 ? d3.format(',.0f')(tv) : d3.format('.0f')(tv)) + '%'}</span>` : '';
+    sm.title = tv == null ? '' : `${sel ? cur : 'All shops'}: finished goods ${kf(ta)} made of ${kf(tp)} planned to date (${d3.format('.1f')(tv)}%)`;
   }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
