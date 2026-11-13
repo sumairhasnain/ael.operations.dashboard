@@ -4522,6 +4522,13 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0;width:100%;border-bottom:2px solid #051C2C;padding-bottom:8px}
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
+.ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;flex-wrap:wrap;padding-bottom:2px}
+.ael #summary .ovst button{font:inherit;border:0;border-radius:5px;padding:3px 7px 2px;min-width:52px;cursor:pointer;line-height:1.15;text-align:center;box-shadow:inset 0 0 0 1px rgba(5,28,44,.08)}
+.ael #summary .ovst button .n{display:block;font-size:10px;white-space:nowrap;max-width:92px;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovst button b{display:block;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.ael #summary .ovst button.on{box-shadow:0 0 0 2px #051C2C}
+.ael #summary .ovst button:hover{filter:brightness(1.06)}
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
 .ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
@@ -4853,9 +4860,31 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     el.title = (o.title ? o.title + ' · ' : '') + 'click for details';
     el.addEventListener('click', () => openD(id, name)); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openD(id, name); } });
     return el; }
+  /* 13 Nov 19:39 (Umair): shop compliance strip beside the page title - one bar per shop, finished-goods production month to date
+     against plan to date (as the Production card), greener as compliance rises above 100%, yellow then red below it.
+     Worst shop first; click a bar to filter the dashboard to that shop, click it again to clear. */
+  const stCol = d3.scaleLinear([80, 90, 100, 115], ['#D0312D', '#E8A33A', '#9CCB8A', '#1E7F57']).clamp(true);
+  function shopStrip(s, P) {
+    const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
+    if (!st) { st = document.createElement('div'); st.className = 'ovst'; st.setAttribute('aria-label', 'Production compliance by shop'); box.appendChild(st); }
+    const pa_ = D('atlas_parts'), pd_ = D('atlas_parts_daily'); if (!pa_ || !pd_) { st.replaceChildren(); return; }
+    const end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end, parts = new Map(pa_.filter(r => r.type === 'Finished').map(r => [String(r.code), r]));
+    const rows = pd_.filter(r => r.date >= P.start && r.date <= end && parts.has(String(r.code)));
+    const by = d3.rollups(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0) }), r => parts.get(String(r.code)).shop || '?')
+      .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 })).sort((x, y) => x.v - y.v);
+    const cur = SHf(P);
+    st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v), lum = d3.hsl(c).l; b.type = 'button'; if (cur === o.sh) b.className = 'on';
+      b.style.background = c; b.style.color = lum > 0.62 ? '#051C2C' : '#fff';
+      b.innerHTML = `<span class="n">${esc(o.sh)}</span><b>${o.v >= 1000 ? d3.format(',.0f')(o.v) : d3.format('.0f')(o.v)}%</b>`;
+      b.addEventListener('mousemove', ev => tip.show(ev, [o.sh, `Production ${d3.format('.1f')(o.v)}% of plan to date`, `${kf(o.a)} made of ${kf(o.p)} planned (finished goods)`, cur === o.sh ? 'Click to clear the shop filter' : 'Click to filter the dashboard to this shop']));
+      b.addEventListener('mouseleave', tip.hide);
+      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
+      return b; }));
+  }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
     { const h2 = s.querySelector('.ovhd h2'), sh = SHf(P); h2.innerHTML = 'Operations Overview' + (sh ? ` <span style="font-family:var(--font-anthropic-sans);font-size:13px;color:#fff;background:#051C2C;border-radius:12px;padding:3px 10px;vertical-align:4px;margin-left:8px">${esc(sh)}</span>` : ''); }
+    try { shopStrip(s, P); } catch (e) { console.error('ovstrip', e); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
     const root = document.getElementById('ael'); if (root) root.classList.add('ovfit');
