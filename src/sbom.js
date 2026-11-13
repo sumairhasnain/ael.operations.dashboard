@@ -1,8 +1,8 @@
 /* SAP BOM (CS03) - multi-level, BOM tab (Umair, 13 Nov 2026).
    Dataset sap_bom: the clutch finished goods' BOMs read from SAP CS03 (plant KHI, usage 1) screen by screen, every level
-   down to raw material; sap_bom_cost: rates from SAP MB51 only (receipts 101 less 102 amount / quantity over 180 days,
-   else all receipts since Jan 2024, else 261 issues). Cost columns show only to people who may see the Cost tab.
-   Material / unit = level-1 components x their MB51 rate. The FG's own MB51 receipt rate is shown beside it as a check. */
+   down to raw material; sap_bom_cost: rates from SAP MB51 only. 13 Nov 14:37 (Umair): cost uses the moving-average price
+   SAP issues at (261 less 262 amount / quantity, last 60 days); the receipt rate is shown as the latest supplier price.
+   Cost columns show only to people who may see the Cost tab. Material / unit = level-1 components x moving-average rate. */
 (() => {
   const AK = window.AK; if (!AK) return;
   const { C, tip, empty } = AK;
@@ -50,18 +50,18 @@
     const pend = new Set(); fgs.forEach(f => (f.pending || []).forEach(c => pend.add(c)));
     sub.innerHTML = `<b>Clutch</b> · ${new Set(fgs.map(f => f.fg)).size} finished goods (${fgs.length} BOMs incl. alternatives) from ${esc(B.source || 'SAP CS03')}, every level read from SAP · ` +
       (pend.size ? `<b style="color:#B45309">${pend.size} sub-assemblies</b> still to be opened in CS03 (shown in amber; their own rate is used meanwhile)` : 'all levels complete') +
-      (R ? ' · rates from SAP MB51 only' : '');
+      (R ? ' · rates: SAP MB51 moving average (261 issues)' : '');
     if (!sel || !fgs.some(f => f.fg + '|' + f.alt === sel)) sel = fgs.length ? fgs[0].fg + '|' + fgs[0].alt : null;
     // summary
     const sh = card.querySelector('#sb-sum thead'), sb = card.querySelector('#sb-sum tbody');
     sh.innerHTML = `<tr><th>Finished good</th><th>Code</th><th>Alt</th><th class="n">Levels</th><th class="n">Level-1 items</th><th class="n">Pending</th>` +
-      (R ? `<th class="n">Material / unit (BOM × MB51 rate)</th><th class="n">FG MB51 receipt rate</th><th class="n">Difference</th>` : '') + `</tr>`;
+      (R ? `<th class="n">Material / unit (moving avg)</th><th class="n">At latest receipt prices</th><th class="n">FG MB51 receipt rate</th><th class="n">FG rate less material</th>` : '') + `</tr>`;
     sb.replaceChildren(...fgs.map(f => { const k = f.fg + '|' + f.alt, tr = document.createElement('tr'), fc = FC && FC.get(k), fr = R && R[f.fg];
       if (k === sel) tr.className = 'on';
       tr.innerHTML = `<td>${esc(f.part)}${f.alt_note ? ` <span style="color:#5A6670">· ${esc(f.alt_note)}</span>` : ''}</td><td>${f.fg}</td><td>${f.alt}</td><td class="n">${f.levels}</td><td class="n">${f.l1}</td><td class="n" style="${(f.pending || []).length ? 'color:#B45309;font-weight:600' : ''}">${(f.pending || []).length}</td>` +
-        (R ? `<td class="n">${fc ? r2(fc.mat_unit) : '—'}</td><td class="n">${fr ? r2(fr.rate) : '—'}</td><td class="n">${fc && fr ? r2(fr.rate - fc.mat_unit) : '—'}</td>` : '');
+        (R ? `<td class="n">${fc ? r2(fc.mat_unit) : '—'}</td><td class="n">${fc ? r2(fc.mat_unit_rcv) : '—'}</td><td class="n">${fr ? r2(fr.rate) : '—'}</td><td class="n">${fc && fr ? r2(fr.rate - fc.mat_unit) : '—'}</td>` : '');
       tr.addEventListener('click', () => { sel = k; render(window.__P ? window.__P() : P); });
-      if (R && fr) tr.addEventListener('mousemove', ev => tip.show(ev, [f.part + ' · alt ' + f.alt, `Material from the BOM at MB51 rates: Rs ${fc ? r2(fc.mat_unit) : '—'}`, `The FG's own MB51 receipt rate: Rs ${r2(fr.rate)} (${fr.basis})`, 'The difference is roughly conversion added at assembly']));
+      if (R && fr) tr.addEventListener('mousemove', ev => tip.show(ev, [f.part + ' · alt ' + f.alt, `Material from the BOM at moving-average (MB51 261) rates: Rs ${fc ? r2(fc.mat_unit) : '—'}`, `Same BOM at latest receipt prices: Rs ${fc ? r2(fc.mat_unit_rcv) : '—'}`, `The FG's own MB51 receipt rate (SAP valuation): Rs ${r2(fr.rate)}`, 'FG rate less material is roughly the conversion SAP adds at assembly']));
       tr.addEventListener('mouseleave', tip.hide); return tr; }));
     // raw material content for the selected FG
     const [sf, sa] = (sel || '|').split('|'), rows = tree.filter(t => t.fg === sf && t.alt === sa);
@@ -70,13 +70,13 @@
     // tree
     const th = card.querySelector('#sb-tree thead'), tb = card.querySelector('#sb-tree tbody');
     th.innerHTML = `<tr><th>Level</th><th>Component</th><th>Description</th><th>Parent</th><th class="n">Qty / parent</th><th>UoM</th><th class="n">Qty / 1 FG</th>` +
-      (R ? `<th class="n">MB51 rate</th><th class="n">Value / 1 FG</th>` : '') + `<th>Status</th></tr>`;
+      (R ? `<th class="n">Moving avg rate</th><th class="n">Value / 1 FG</th>` : '') + `<th>Status</th></tr>`;
     tb.replaceChildren(...rows.map(t => { const tr = document.createElement('tr'), rr = R && R[t.code]; if (t.lvl === 1) tr.className = 'l1';
       const val = rr ? t.qty_fg * rr.rate : null, stc = t.status === 'Sub-levels pending' ? 'st-p' : t.status === 'Exploded' ? '' : 'st-r';
       tr.innerHTML = `<td><span class="lv" style="background:${LVC[Math.min(t.lvl - 1, LVC.length - 1)]}">L${t.lvl}</span></td><td style="padding-left:${8 + (t.lvl - 1) * 14}px">${t.code}</td><td>${esc(t.part)}</td><td>${t.parent}</td><td class="n">${qf(t.qty)}</td><td>${esc(t.uom)}</td><td class="n">${qf(t.qty_fg)}</td>` +
-        (R ? `<td class="n">${rr ? r2(rr.rate) + (rr.check ? ' ⚠' : '') : '—'}</td><td class="n ${t.lvl > 1 ? 'in' : ''}">${val == null ? '—' : r2(val)}</td>` : '') +
+        (R ? `<td class="n">${rr ? r2(rr.rate) : '—'}</td><td class="n ${t.lvl > 1 ? 'in' : ''}">${val == null ? '—' : r2(val)}</td>` : '') +
         `<td class="${stc}">${esc(t.status)}</td>`;
-      if (rr) { tr.addEventListener('mousemove', ev => tip.show(ev, [t.part, `${t.code} · level ${t.lvl} · in ${t.parent}`, `MB51 rate Rs ${r2(rr.rate)} per ${t.uom} (${rr.basis}, last ${rr.last})`, ...(rr.check ? ['⚠ ' + rr.check] : []), t.lvl > 1 ? 'Already inside its level-1 parent\'s rate - not added again' : 'Counted in material / unit'])); tr.addEventListener('mouseleave', tip.hide); }
+      if (rr) { tr.addEventListener('mousemove', ev => tip.show(ev, [t.part, `${t.code} · level ${t.lvl} · in ${t.parent}`, `Moving average Rs ${r2(rr.rate)} per ${t.uom} (${rr.basis}, last ${rr.last})`, ...(rr.rate_rcv != null ? [`Latest receipt price Rs ${r2(rr.rate_rcv)} (${rr.rcv_last})`] : []), t.lvl > 1 ? 'Already inside its level-1 parent\'s rate - not added again' : 'Counted in material / unit'])); tr.addEventListener('mouseleave', tip.hide); }
       return tr; }));
     if (!rows.length) empty(box, 'No BOM rows');
   }

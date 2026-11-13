@@ -1,6 +1,6 @@
 {
   "_note": "Which dashboard tabs need each dataset. A viewer can read a dataset only if they may open one of these tabs. Cost and Savings data are deliberately NOT linked to Overview. Manpower (workforce) is open to everyone, so its attendance data is listed under every tab.",
-  "sap_bom": ["bom"],
+  "sap_bom": ["bom", "cost"],
   "sap_bom_cost": ["cost"],
   "_default": [
     "overview"

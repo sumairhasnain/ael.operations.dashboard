@@ -27,37 +27,66 @@ fgs = [dict(fg=f, part=FG[f], alt=a, alt_note=ALT.get((f, a), ''), levels=max(t[
             l1=sum(1 for t in tree if t['fg'] == f and t['alt'] == a and t['lvl'] == 1),
             pending=sorted({t['code'] for t in tree if t['fg'] == f and t['alt'] == a and t['status'] == 'Sub-levels pending'})) for f in FG for a in sorted(bom[f])]
 json.dump([dict(asof=asof, source='SAP CS03, plant KHI, usage 1', fgs=fgs, tree=tree)], open(out + '/sap_bom.json', 'w'), separators=(',', ':'))
-# rates from MB51
+# rates from MB51. 13 Nov 2026 14:37 (Umair): production cost carries the moving-average price SAP values issues at (261),
+# not the latest supplier price on receipts. So: rate = 261/262 amount / quantity over the last 60 days (else 180 days);
+# the receipt rate is kept beside it as the latest price. A KG material issued in grams in some months shows a rate ~1000x
+# below its receipt rate: those issue lines are dropped, not converted.
 r = pd.read_pickle(rpk); u = pd.read_pickle(upk); today = pd.Timestamp(asof)
 for df in (r, u): df['Material'] = df['Material'].astype(str); df['Posting Date'] = pd.to_datetime(df['Posting Date'])
 r = r[r['Posting Date'] <= today]; u = u[u['Posting Date'] <= today]
+u['m'] = u['Posting Date'].dt.strftime('%Y-%m'); r['m'] = r['Posting Date'].dt.strftime('%Y-%m')
 codes = sorted({t['code'] for t in tree} | set(FG))
-rates = {}
 def rt(d, qc, ac):
     q = d[qc].sum(); a = d[ac].sum()
     return (abs(a) / abs(q), d['Posting Date'].max().strftime('%Y-%m-%d'), round(abs(q), 3)) if abs(q) > 0 and abs(a) > 0 and (q > 0) == (a > 0) else None
+recv = {}
 for c in codes:
-    x = r[r.Material == c]; y = u[u.Material == c]; d180 = today - pd.Timedelta(days=179)
-    for basis, d, qc, ac in (('MB51 receipts, last 180 days', x[x['Posting Date'] >= d180], 'Qty in unit of entry', 'Amt.in Loc.Cur.'),
-                             ('MB51 receipts since Jan 2024', x, 'Qty in unit of entry', 'Amt.in Loc.Cur.'),
-                             ('MB51 issues to production (261), last 180 days', y[y['Posting Date'] >= d180], 'Qty in unit of entry', 'amt')):
-        v = rt(d, qc, ac)
-        if v: rates[c] = dict(rate=round(v[0], 4), basis=basis, last=v[1], qty=v[2]); break
-    iv = rt(y[y['Posting Date'] >= d180], 'Qty in unit of entry', 'amt')
-    if c in rates and iv:
-        rates[c]['rate_261'] = round(iv[0], 4); g = rates[c]['rate'] / iv[0]
-        # a KG item issued in grams shows ~1000x apart: a unit difference, not a price difference
-        if 0.75 <= g <= 1.33 or 600 <= g <= 1700: pass
-        else: rates[c]['check'] = f"MB51 receipt rate {rates[c]['rate']:,.2f} vs issue (261) rate {iv[0]:,.2f}"
-# unit check: a KG item whose 261 rate is ~1000x below its receipt rate was issued in grams; receipts are used, so nothing to fix
+    x = r[r.Material == c]; d180 = today - pd.Timedelta(days=179)
+    v = rt(x[x['Posting Date'] >= d180], 'Qty in unit of entry', 'Amt.in Loc.Cur.') or rt(x, 'Qty in unit of entry', 'Amt.in Loc.Cur.')
+    if v: recv[c] = v
+def clean_issues(y, c):
+    """drop issue lines priced as grams (rate under 1/100 of the receipt rate)"""
+    if c in recv and len(y):
+        lr = (y['amt'] / y['Qty in unit of entry']).abs()
+        y = y[~((lr > 0) & (lr < recv[c][0] / 100))]
+    return y
+rates = {}
+for c in codes:
+    y = clean_issues(u[u.Material == c], c)
+    for basis, d in (('MB51 issues (261 less 262), last 60 days', y[y['Posting Date'] >= today - pd.Timedelta(days=59)]),
+                     ('MB51 issues (261 less 262), last 180 days', y[y['Posting Date'] >= today - pd.Timedelta(days=179)])):
+        v = rt(d, 'Qty in unit of entry', 'amt')
+        if v: rates[c] = dict(rate=round(v[0], 4), basis=basis, last=v[1]); break
+    if c not in rates and c in recv: rates[c] = dict(rate=round(recv[c][0], 4), basis='MB51 receipts (no issues to production in 180 days)', last=recv[c][1])
+    if c in recv and c in rates:
+        rates[c]['rate_rcv'] = round(recv[c][0], 4); rates[c]['rcv_last'] = recv[c][1]
 cost = []
 for f in fgs:
     t1 = [t for t in tree if t['fg'] == f['fg'] and t['alt'] == f['alt'] and t['lvl'] == 1]
-    lines = [dict(code=t['code'], qty_fg=t['qty_fg'], rate=(rates.get(t['code']) or {}).get('rate')) for t in t1]
-    mat = sum(l['qty_fg'] * l['rate'] for l in lines if l['rate'] is not None)
-    cost.append(dict(fg=f['fg'], alt=f['alt'], mat_unit=round(mat, 2), missing=[l['code'] for l in lines if l['rate'] is None]))
-json.dump([dict(asof=asof, rule='MB51 receipts (101 less 102) amount / quantity, last 180 days; else all receipts since Jan 2024; else 261 issues', rates=rates, fg_cost=cost)],
-          open(out + '/sap_bom_cost.json', 'w'), separators=(',', ':'))
+    lines = [dict(code=t['code'], part=t['part'], qty_fg=t['qty_fg'], v=round(t['qty_fg'] * rates[t['code']]['rate'], 2) if t['code'] in rates else None,
+                  v_rcv=round(t['qty_fg'] * rates[t['code']].get('rate_rcv', rates[t['code']]['rate']), 2) if t['code'] in rates else None) for t in t1]
+    cost.append(dict(fg=f['fg'], alt=f['alt'], mat_unit=round(sum(l['v'] or 0 for l in lines), 2), mat_unit_rcv=round(sum(l['v_rcv'] or 0 for l in lines), 2),
+                     lines=sorted(lines, key=lambda l: -(l['v'] or 0)), missing=[l['code'] for l in lines if l['v'] is None]))
+# monthly usage at level 1: standard = FG output (MB51 101 less 102 of the FG) x BOM qty; actual = 261 less 262 of the component.
+# CD70's three BOM alternatives are weighted by that month's issues of the three drive plates (in-house 6510213002, OSP 6510213012, vendor 6510213011).
+DP = {'1': '6510213002', '2': '6510213012', '3': '6510213011'}
+usage = {}
+for M in sorted(m for m in u['m'].unique() if m >= '2026-06'):
+    units = {f: float(r[(r.Material == f) & (r.m == M)]['Qty in unit of entry'].sum()) for f in FG}
+    dq = {a: -float(u[(u.Material == c) & (u.m == M)]['Qty in unit of entry'].sum()) for a, c in DP.items()}; tq = sum(max(0, v) for v in dq.values())
+    w = {a: (max(0, v) / tq if tq else (1.0 if a == '1' else 0.0)) for a, v in dq.items()}
+    std = collections.Counter()
+    for t in tree:
+        if t['lvl'] == 1: std[t['code']] += units[t['fg']] * t['qty_fg'] * (w[t['alt']] if t['fg'] == '9010113004' else 1)
+    lines = []
+    for c, sq in std.items():
+        y = clean_issues(u[(u.Material == c) & (u.m == M)], c); aq = -float(y['Qty in unit of entry'].sum()); aa = -float(y['amt'].sum())
+        mr = aa / aq if aq > 0 and aa > 0 else (rates.get(c) or {}).get('rate')
+        lines.append([c, round(sq, 3), round(aq, 3), round(mr, 4) if mr else None])
+    usage[M] = dict(units={k: round(v) for k, v in units.items()}, alt_w={k: round(v, 3) for k, v in w.items()}, lines=lines)
+json.dump([dict(asof=asof, mb51_to=str(u['Posting Date'].max().date()), rule='Moving-average price SAP issues at: MB51 261 less 262 amount / quantity, last 60 days (else 180); receipt rate kept as latest supplier price',
+                rates=rates, fg_cost=cost, usage=usage)], open(out + '/sap_bom_cost.json', 'w'), separators=(',', ':'))
 print(len(tree), 'tree rows;', len(rates), 'of', len(codes), 'codes rated')
-for cst in cost: print(cst)
-miss = [c for c in codes if c not in rates]; print('no MB51 rate:', miss)
+for cst in cost: print(cst['fg'], cst['alt'], cst['mat_unit'], cst['mat_unit_rcv'], cst['missing'])
+for M, x in usage.items():
+    sv = sum(l[1] * (l[3] or 0) for l in x['lines']); av = sum(l[2] * (l[3] or 0) for l in x['lines']); print(M, x['units'], round(sv / 1e6, 1), round(av / 1e6, 1))
