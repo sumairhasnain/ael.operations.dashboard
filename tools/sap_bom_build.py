@@ -15,6 +15,7 @@ for f in tsv.split(','):   # a sub-assembly read in two shops' files (e.g. resin
         if r and r[0] != 'parent' and seen.setdefault((r[0], r[2]), f) == f: rows.append(r)
 bom = collections.defaultdict(lambda: collections.defaultdict(list)); desc = {}; base = {}; buom = {}
 for p, pl, alt, b, bu, it, ic, c, d, q, u, a in rows:
+    if u == 'CM': q, u = float(q) / 100, 'M'     # 13 Nov 23:05: airn cord is stocked and priced per metre in SAP
     bom[p][alt].append(dict(item=it, code=c, qty=float(q), uom=u, asm=a)); desc[c] = d.strip(); base[(p, alt)] = float(b); buom[p] = bu
 comps = {r[7] for r in rows}
 try: AP = {str(r['code']): r for r in json.load(open(os.path.join(out, 'atlas_parts.json')))}

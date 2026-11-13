@@ -52,7 +52,8 @@ CIF_FOM = ('ci_sleeve', 'ci_cyl', 'ci_dp', 'ci_boss')
 # Bought-in material SAP does not tie to a shop (Umair confirmed 11 Nov 2026): codes, then description keywords
 MAT_SHOP = {'5090910011': 'Ignition Coil', '5090910010': 'Ignition Coil', '5020910009': 'Ignition Coil', '5090910005': 'Ignition Coil',
             '5090910007': 'Ignition Coil', '5020910015': 'Ignition Coil', '5020910014': 'Ignition Coil', '5020910007': 'Ignition Coil',
-            '6020840003': 'Cushion', '6020850003': 'Cushion', '6110271034': 'Cushion', '5010210002': 'Clutch', '1010510033': 'Polymer'}
+            '6020840003': 'Cushion', '6020850003': 'Cushion', '6110271034': 'Cushion', '5010210002': 'Clutch', '1010510033': 'Polymer',
+            '1010380013': 'CIF Machining', '1010380015': 'CIF Machining', '1010380010': 'CIF Machining'}
 KW_SHOP = [('WIRE MAGNET', 'Ignition Coil'), ('RESIN', 'Ignition Coil'), ('BOBBIN', 'Ignition Coil'), ('CASE COIL', 'Ignition Coil'),
            ('CASE BOTTOM', 'Cushion'), ('CUSHION', 'Cushion'), ('FRONT FORK', 'Cushion'), ('PLASTIC', 'Polymer'), ('PP MATERIAL', 'Polymer')]
 
@@ -169,25 +170,23 @@ def main(upkl, mb51, data, out, asof=None):
             try: p101[st(f[0])] += float(f[2] or 0) * (1 if f[7] == '101' else -1)
             except ValueError: pass
     cw = {st(c): w for c, w, *_ in (fom.get('codes') or {}).get('tc_cushion', [])}
-    # 13 Nov 2026 22:55 (Umair): hub castings are poured in HPDC, so their aluminium (HD2 BS1) and the drum-brake insert were issued
-    # to HPDC and the Hubs shop carried only its own few purchased parts. Move that material to Hubs: hub castings received
-    # (MB51 101 less 102, current month) x SAP CS03 BOM (kg ingot + 1 insert) x that month's issue rate (261 less 262).
-    HUB_BOM = {'6590102006': (0.984, '6090102001'), '6590102005': (1.170, '6090102001'),
-               '6520101002': (1.620, '6090102001'), '6520101003': (1.500, '6020100002')}
-    def _irate(m_, c_):
-        z_ = u[(u.m == m_) & (u.Material == c_)]; q_ = float(z_[qcol].sum()) if qcol else 0.0
-        return float(z_['amt'].sum()) / q_ if q_ else None
-    hq = {c_: p101.get(c_, 0.0) for c_ in HUB_BOM if p101.get(c_, 0.0) > 0}
-    if hq:
-        ri = _irate(cur, '1000601006'); mv = 0.0; hub_items = []
-        for c_, n_ in hq.items():
-            kg_, ins_ = HUB_BOM[c_]; rr_ = 0.0 if ins_ in made else (_irate(cur, ins_) or 0.0)   # an insert made in-house is not in HPDC's DM
-            v_ = n_ * (kg_ * (ri or 0.0) + rr_); mv += v_
-            hub_items.append((c_, 'Hub casting ' + c_ + ': ingot ' + str(kg_) + ' kg + insert (BOM)', v_, n_))
-        if mv:
-            rows[key(cur, 'HPDC / Die Cast', 'Direct material', 'Purchased material')] -= mv
-            rows[key(cur, 'Hubs', 'Direct material', 'Hub castings from HPDC (SAP BOM)')] += mv
-            items[(cur, 'Hubs')] += hub_items
+    # 13 Nov 2026 22:58 (Umair): material follows the product - a casting's raw material issued to the casting shop is moved
+    # to the shop whose finished goods use it, by the SAP CS03 BOM (tools/bom_transfer.py). Current month only.
+    try:
+        import bom_transfer
+        _sb = json.load(open(data + '/sap_bom.json'))[0]; _sc = json.load(open(data + '/sap_bom_cost.json'))[0]
+        fgu = collections.defaultdict(float)
+        for (m_, sh_, c_, nm_, md_), a_ in prod.items():
+            if m_ == cur: fgu[c_] += a_
+        for c_, q_ in p101.items():
+            if c_ not in fgu and q_ > 0: fgu[c_] = q_
+        booked = {mat: (mshop(mat) or 'Unassigned', -float(r_['v'])) for (m_, mat), r_ in gg.iterrows() if m_ == cur}
+        for c_, nm_, frm_, to_, v_, q_ in bom_transfer.transfers(_sb, _sc, fgu, booked, made, SHOPX):
+            rows[key(cur, frm_, 'Direct material', 'Purchased material')] -= v_
+            rows[key(cur, to_, 'Direct material', 'From ' + frm_ + ' (SAP BOM)')] += v_
+            items[(cur, to_)].append((c_, (nm_ + ' (from ' + frm_ + ')')[:60], v_, q_))
+            items[(cur, frm_)] = [(a, b, (x - v_) if a == c_ else x, y) for a, b, x, y in items[(cur, frm_)]]
+    except FileNotFoundError: pass
     for m in sorted({k[0] for k in rows}):
         if m == cur:
             for c, nm in CIF_PRODUCTS.items():
