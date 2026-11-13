@@ -102,8 +102,10 @@
             .on('mousemove', ev => tip.show(ev, [...L, `▸ Direct material: ${o.mLab(m)} (${t ? Math.round(100 * m / t) : 0}%)`])).on('mouseleave', tip.hide);
           const inB = !cut && yb2 + tipD + 13 > bot + 4; svg.append('text').attr('x', cx).attr('y', cut ? bot - 6 : inB ? yb2 - 8 : yb2 + tipD + 13).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', cut ? 700 : 400).attr('fill', '#5E7387').attr('pointer-events', 'none').text((cut ? '▼ ' : '') + rsu(m)); }
         const fs_ = G.length > 12 ? 9.5 : 11, mc = Math.max(6, Math.floor(bw / (fs_ * 0.56))), nm_ = g.name, lab = nm_.length > mc ? nm_.slice(0, mc - 1) + '…' : nm_;
-        svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', g.dim ? '#5B6770' : C.navy).style('font-weight', g.bold ? 700 : 400).text(lab).append('title').text(g.name);
-        svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#051C2C').style('font-weight', 600).text(o.lab2(g, t)).append('title').text(o.lab2t(g, t));  // 13 Nov 14:40 (Umair): total Rs/unit instead of units
+        const lc = o.labClick && o.labClick(g);   /* 13 Nov 18:13 (Umair): clicking a shop name or its Rs / unit applies the Shop filter */
+        const t1 = svg.append('text').attr('x', cx).attr('y', h - mb + 16).attr('text-anchor', 'middle').attr('font-size', fs_).attr('fill', g.dim ? '#5B6770' : C.navy).style('font-weight', g.bold ? 700 : 400).text(lab); t1.append('title').text(lc ? g.name + ' - click to filter the dashboard to this shop' : g.name);
+        const t2 = svg.append('text').attr('x', cx).attr('y', h - mb + 29).attr('text-anchor', 'middle').attr('font-size', 9.5).style('fill', '#051C2C').style('font-weight', 600).text(o.lab2(g, t)); t2.append('title').text(o.lab2t(g, t) + (lc ? ' - click to filter the dashboard to this shop' : ''));
+        if (lc) [t1, t2].forEach(e => e.style('cursor', 'pointer').on('mouseenter', () => { t1.style('text-decoration', 'underline'); t2.style('text-decoration', 'underline'); }).on('mouseleave', () => { t1.style('text-decoration', null); t2.style('text-decoration', null); }).on('click', ev => { ev.stopPropagation(); tip.hide(); lc(); }));  // 13 Nov 14:40 (Umair): total Rs/unit instead of units
         // hover target for the upper half: opens the magnifier lens
         gL.append('rect').attr('x', gx - 2).attr('y', mt - 4).attr('width', bw + 4).attr('height', wl - mt + 4).attr('fill', 'transparent').style('cursor', 'zoom-in')
           .on('mouseenter', () => showLens(g, i)).on('mouseleave', () => lens.style('display', 'none')).on('click', () => o.click && o.click(g));
@@ -172,7 +174,11 @@
        controls) on their own scale, with a magnifier lens on hover. Below it, direct material per unit hangs down on its own scale; the
        light grey slider on the left changes only that lower scale. */
     if (!G.length) empty(es, SH ? 'No finished production for ' + SH + ' this month' : 'No cost data for this month'); else {
-      ice(es, G, { skey: 'c-cp-mat|' + (SH || 'All'), f: rsu0, tick: d3.format(',.0f'), up: 'Conversion, Rs / unit ↑', down: 'Material, Rs / unit ↓', unitS: ' / unit',
+      { const old = document.getElementById('cp-shop-clr'); if (old) old.remove();   /* 13 Nov 18:13 (Umair): Clear filter at the top right, same pill as Totals */
+        if (SH && h3) { const bt = document.createElement('button'); bt.type = 'button'; bt.id = 'cp-shop-clr'; bt.textContent = 'Clear filter'; bt.title = 'Back to all shops';
+          h3.parentElement.style.position = 'relative'; bt.style.cssText = 'position:absolute;right:16px;top:12px;font:inherit;font-size:11.5px;font-weight:600;padding:3px 12px;border:1px solid #C9D1D9;border-radius:14px;background:#fff;color:#051C2C;cursor:pointer';
+          bt.addEventListener('click', ev => { ev.stopPropagation(); dash.setParams({ shop: 'All', model: 'All', sf: 0, pf: 0 }); }); h3.parentElement.appendChild(bt); } }
+      ice(es, G, { labClick: g => !SH && (window.__SHOPS || []).includes(g.name) ? () => dash.setParams({ shop: g.name, sf: 0, pf: 0 }) : null, skey: 'c-cp-mat|' + (SH || 'All'), f: rsu0, tick: d3.format(',.0f'), up: 'Conversion, Rs / unit ↑', down: 'Material, Rs / unit ↓', unitS: ' / unit',
         cvLab: v => 'Rs ' + rsu0(v), mLab: v => 'Rs ' + rsu0(v) + '/unit', lab2: (g, t) => (g.sub ? g.sub + ' · ' : '') + 'Rs ' + rsu0(t) + ' / unit',
         lab2t: (g, t) => `Total cost per unit (material + indirect material + labour + utilities): Rs ${rsu0(t)} · ${nf(g.units)} units`,
         tip: (g, t) => [g.name + (g.code ? ' · ' + g.code : ''), `${nf(g.units)} units produced`, ...(g.bom ? [`Direct material shared by SAP BOM (Rs ${rsu0(g.bom)}/unit at moving average)`] : []), ...EL.map(([e]) => `${e}: Rs ${rsu0(g.v[e])}/unit · ${pm(g.pk[e])} PKR`), `Total: Rs ${rsu0(t)}/unit · ${pm(d3.sum(EL, ([e]) => g.pk[e]))} PKR`] });
