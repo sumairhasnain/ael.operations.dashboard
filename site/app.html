@@ -4523,12 +4523,10 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
-.ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;flex-wrap:wrap;padding-bottom:2px}
-.ael #summary .ovst button{font:inherit;border:0;border-radius:5px;padding:3px 7px 2px;min-width:52px;cursor:pointer;line-height:1.15;text-align:center;box-shadow:inset 0 0 0 1px rgba(5,28,44,.08)}
-.ael #summary .ovst button .n{display:block;font-size:10px;white-space:nowrap;max-width:92px;overflow:hidden;text-overflow:ellipsis}
-.ael #summary .ovst button b{display:block;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.ael #summary .ovst button.on{box-shadow:0 0 0 2px #051C2C}
-.ael #summary .ovst button:hover{filter:brightness(1.06)}
+.ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;padding-bottom:4px}
+.ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer}
+.ael #summary .ovst button.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3px #051C2C}
+.ael #summary .ovst button:hover{filter:brightness(1.1);transform:scaleY(1.08)}
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
 .ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
@@ -4873,9 +4871,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const by = d3.rollups(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0) }), r => parts.get(String(r.code)).shop || '?')
       .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 })).sort((x, y) => x.v - y.v);
     const cur = SHf(P);
-    st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v), lum = d3.hsl(c).l; b.type = 'button'; if (cur === o.sh) b.className = 'on';
-      b.style.background = c; b.style.color = lum > 0.62 ? '#051C2C' : '#fff';
-      b.innerHTML = `<span class="n">${esc(o.sh)}</span><b>${o.v >= 1000 ? d3.format(',.0f')(o.v) : d3.format('.0f')(o.v)}%</b>`;
+    /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
+    st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
+      b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
       b.addEventListener('mousemove', ev => tip.show(ev, [o.sh, `Production ${d3.format('.1f')(o.v)}% of plan to date`, `${kf(o.a)} made of ${kf(o.p)} planned (finished goods)`, cur === o.sh ? 'Click to clear the shop filter' : 'Click to filter the dashboard to this shop']));
       b.addEventListener('mouseleave', tip.hide);
       b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
