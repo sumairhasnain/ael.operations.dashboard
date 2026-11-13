@@ -278,7 +278,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-i-crit"><h3>Critical Parts <span class="chip snap" data-asof="atlas_stock_critical">14 Oct</span></h3><input class="q" id="q-crit" placeholder="Search part" aria-label="Search critical parts"><div class="tbox"><table class="tb" id="tb-crit" data-source="atlas_stock_critical" data-row-key="code"><thead><tr><th data-field="code">Code</th><th data-field="part">Part</th><th data-field="shop">Shop</th><th class="n" data-field="safety_stock">Safety</th><th class="n" data-field="stock">Stock</th><th class="n" data-field="vendor_stock">At vendor</th><th class="n" data-field="cover_pct">Cover %</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 </section>
-<section class="page" id="cost"><i hidden data-source="sap_bom"></i><i hidden data-source="sap_bom_cost"></i>
+<section class="page" id="cost">
 <div class="grid">
 <div class="card wide kpicard" id="c-cp-kpi"><h3 title="Cost of Goods Manufactured = direct material (SAP 261 less 262 of purchased material) + indirect material (SAP cost-centre issues: tools, consumables, spares, lubricants) + direct labour (attendance: Rs 42,500 a month, less absent days at 42,500/26, plus overtime at 1.5x the hour rate of 42,500/26/8) + utilities (electricity: MWh per shop from the utilities sheet x Rs 32/kWh; gas: thousand Nm3 x Rs 55/Nm3; the current month is estimated from October until its figures are given). Aluminium Foundry cost is shared to Bridge Fork Top and Piston by their production." style="cursor:help">Cost of Goods Manufactured</h3><div id="cp-kpi" data-source="cogm"></div></div>
 <div class="card wide" id="c-cp-shop"><h3>COGM by Shop</h3><div id="cp-shop-lg"></div><div class="chart" id="cp-shop" data-source="cogm"></div></div>
@@ -305,7 +305,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div id="j-gantts" style="grid-column:1/-1;display:grid;gap:14px" data-source="jira_issues"></div>
 </div>
 </section>
-<section class="page" id="bom"><i hidden data-source="sap_bom"></i><i hidden data-source="sap_bom_cost"></i>
+<section class="page" id="bom">
 <div class="grid">
 <div class="card wide" id="c-b-kpi"><div class="chd"><h3>Bill of Material - Check Sheet <span class="chip smp">Temporary</span></h3><label style="font-size:12px;color:#5A6670">Show <select id="s-bomv" class="csel" aria-label="BOM view"><option value="all">All links</option><option value="check">Needs check only</option><option value="none">Finished parts with no components</option></select></label></div>
 <p style="font-size:12px;color:#5A6670;margin:0 0 8px">Level 1 is the finished part; level 2 its machined, assembled or bought-in components; level 3 castings and raw parts. "Shop + model" links were matched by shop and model name because Atlas has no BOM link for them, so check those first.</p><div class="kpis" id="k-b" data-source="atlas_bom atlas_parts"></div></div>
@@ -1628,7 +1628,7 @@ window.addEventListener('resize', () => window.__draw());
 <script src="crb.js"></script>
 <script src="os.js"></script>
 <script src="transit.js"></script>
-<script src="spd.js"></script><script src="sbom.js"></script><script src="sbomcost.js"></script><script src="compopen.js"></script>
+<script src="spd.js"></script><script src="compopen.js"></script>
 <script src="mplan.js"></script><script src="trend.js"></script><script src="cost.js"></script>
 <script src="ov.js"></script>
 <script src="fom.js"></script>
