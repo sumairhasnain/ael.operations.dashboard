@@ -169,6 +169,25 @@ def main(upkl, mb51, data, out, asof=None):
             try: p101[st(f[0])] += float(f[2] or 0) * (1 if f[7] == '101' else -1)
             except ValueError: pass
     cw = {st(c): w for c, w, *_ in (fom.get('codes') or {}).get('tc_cushion', [])}
+    # 13 Nov 2026 22:55 (Umair): hub castings are poured in HPDC, so their aluminium (HD2 BS1) and the drum-brake insert were issued
+    # to HPDC and the Hubs shop carried only its own few purchased parts. Move that material to Hubs: hub castings received
+    # (MB51 101 less 102, current month) x SAP CS03 BOM (kg ingot + 1 insert) x that month's issue rate (261 less 262).
+    HUB_BOM = {'6590102006': (0.984, '6090102001'), '6590102005': (1.170, '6090102001'),
+               '6520101002': (1.620, '6090102001'), '6520101003': (1.500, '6020100002')}
+    def _irate(m_, c_):
+        z_ = u[(u.m == m_) & (u.Material == c_)]; q_ = float(z_[qcol].sum()) if qcol else 0.0
+        return float(z_['amt'].sum()) / q_ if q_ else None
+    hq = {c_: p101.get(c_, 0.0) for c_ in HUB_BOM if p101.get(c_, 0.0) > 0}
+    if hq:
+        ri = _irate(cur, '1000601006'); mv = 0.0; hub_items = []
+        for c_, n_ in hq.items():
+            kg_, ins_ = HUB_BOM[c_]; rr_ = 0.0 if ins_ in made else (_irate(cur, ins_) or 0.0)   # an insert made in-house is not in HPDC's DM
+            v_ = n_ * (kg_ * (ri or 0.0) + rr_); mv += v_
+            hub_items.append((c_, 'Hub casting ' + c_ + ': ingot ' + str(kg_) + ' kg + insert (BOM)', v_, n_))
+        if mv:
+            rows[key(cur, 'HPDC / Die Cast', 'Direct material', 'Purchased material')] -= mv
+            rows[key(cur, 'Hubs', 'Direct material', 'Hub castings from HPDC (SAP BOM)')] += mv
+            items[(cur, 'Hubs')] += hub_items
     for m in sorted({k[0] for k in rows}):
         if m == cur:
             for c, nm in CIF_PRODUCTS.items():
