@@ -21,8 +21,12 @@ try: AP = {str(r['code']): r for r in json.load(open(os.path.join(out, 'atlas_pa
 except Exception: AP = {}
 FGN = {'9010113004': 'CLUTCH ASSY CD70 GGJX (INH)', '9020113004': 'CLUTCH ASSY CG125', '9030113004': 'CLUTCH ASSY PRIDOR (INH)',
       '9030113005': 'CLUTCH ASSY PRIDOR (INH PARTS)', '9070113004': 'CLUTCH ASSY CB150F'}
-FG = {p: FGN.get(p) or (AP.get(p) or {}).get('part') or p for p in sorted(bom) if p.startswith('9') and p not in comps}
-SHOP = {p: (AP.get(p) or {}).get('shop') or ('Clutch' if p in FGN else '') for p in FG}
+# 13 Nov 22:45: inventory-only items (not in Atlas parts list) placed in the shop that makes them
+XSHOP = {'6590510025': 'Polymer', '6590510030': 'Polymer', '6590510031': 'Polymer', '6590510032': 'Polymer', '9090510182': 'Polymer',
+         '9010510016': 'Polymer', '9110510001': 'Polymer', '9110510002': 'Polymer', '9110510004': 'Polymer', '9120510001': 'Polymer',
+         '9120510002': 'Polymer', '9010118004': 'Drum Gear', '9010410008': 'Carb Child Parts', '9190213003': 'Clutch', '6520321001': 'Piston'}
+FG = {p: FGN.get(p) or (AP.get(p) or {}).get('part') or desc.get(p) or p for p in sorted(bom) if (p.startswith('9') or p in XSHOP) and p not in comps}
+SHOP = {p: (AP.get(p) or {}).get('shop') or XSHOP.get(p) or ('Clutch' if p in FGN else '') for p in FG}
 ALT = {('9010113004', '1'): 'In-house drive plate', ('9010113004', '2'): 'OSP drive plate', ('9010113004', '3'): 'Vendor drive plate'}
 tree = []
 def walk(fg, alt, p, palt, mult, lvl):
