@@ -698,7 +698,13 @@ const sShop = document.getElementById('f-shop'), sMonth = document.getElementByI
 sShop.replaceChildren(new Option('All shops', 'All'), ...SHOPS.map(s => new Option(s, s)));
 sModel.replaceChildren(new Option('All models', 'All'), ...MODELS.map(s => new Option(s, s)));
 sMonth.replaceChildren(...MONTHS.map(m => new Option(d3.utcFormat('%b %Y')(new Date(m + '-01T00:00:00Z')), m)));
-const setDefaults = () => { const p = dash.params(); if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: window.__TODAY.slice(0, 7), asof: window.__TODAY, shift: 'All' }); };
+/* 13 Nov 2026 (Umair): the dashboard always opens on today's date (Pakistan time), never yesterday's. __TODAY is today from the viewer's
+   clock (never earlier than the date the refresh wrote), and every page load resets the month and date filters to today. A date the
+   viewer picks still applies until the page is reloaded. */
+{ const pk = new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(pk) && pk > (window.__TODAY || '')) window.__TODAY = pk; }
+const setDefaults = () => { const p = dash.params(), t = window.__TODAY, m = t.slice(0, 7);
+  if (!p.month) dash.setParams({ shop: 'All', model: 'All', month: m, asof: t, shift: 'All' });
+  else if (p.asof !== t || p.month !== m) dash.setParams({ month: m, asof: t }); };
 setDefaults();
 sShop.addEventListener('change', () => dash.setParams({ shop: sShop.value, sf: 0, pf: 0 }));
 sModel.addEventListener('change', () => dash.setParams({ model: sModel.value, mf: 0, pf: 0 }));
