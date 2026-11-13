@@ -27,7 +27,7 @@ def tree_sheet(ws, rows):
     ws.freeze_panes = 'A2'; ws.auto_filter.ref = ws.dimensions
 
 for sh in shops:
-    tree_sheet(wb.create_sheet(sh + ' BOM'), [t for t in B['tree'] if fgd[t['fg']].get('shop', '') == sh])
+    tree_sheet(wb.create_sheet((sh.replace(' / ', ' - ').replace('/', '-') + ' BOM')[:31]), [t for t in B['tree'] if fgd[t['fg']].get('shop', '') == sh])
 s = wb.create_sheet('Cost per FG'); s.append(['Shop', 'FG code', 'FG description', 'Alt', 'Note', 'Levels', 'Material / unit (moving avg)', 'At latest receipt prices', 'FG MB51 receipt rate'])
 fc = {(c['fg'], c['alt']): c for c in K['fg_cost']}
 for f in B['fgs']:

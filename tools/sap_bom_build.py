@@ -9,7 +9,10 @@ import pandas as pd
 tsv, rpk, upk, asof, out = sys.argv[1:6]
 # 13 Nov 2026 21:13 (Umair): more shops - tsv may be a comma list (bom/clutch_..., bom/ignition_...). Finished goods are the
 # top parents (codes starting 9 that are nobody's component); their shop and name come from data/atlas_parts.json.
-rows = [r for f in tsv.split(',') for r in csv.reader(open(f), delimiter='\t') if r and r[0] != 'parent']
+rows, seen = [], {}
+for f in tsv.split(','):   # a sub-assembly read in two shops' files (e.g. resin sand mix) is kept once, from the first file
+    for r in csv.reader(open(f), delimiter='\t'):
+        if r and r[0] != 'parent' and seen.setdefault((r[0], r[2]), f) == f: rows.append(r)
 bom = collections.defaultdict(lambda: collections.defaultdict(list)); desc = {}; base = {}; buom = {}
 for p, pl, alt, b, bu, it, ic, c, d, q, u, a in rows:
     bom[p][alt].append(dict(item=it, code=c, qty=float(q), uom=u, asm=a)); desc[c] = d.strip(); base[(p, alt)] = float(b); buom[p] = bu
@@ -43,6 +46,14 @@ for df in (r, u): df['Material'] = df['Material'].astype(str); df['Posting Date'
 r = r[r['Posting Date'] <= today]; u = u[u['Posting Date'] <= today]
 u['m'] = u['Posting Date'].dt.strftime('%Y-%m'); r['m'] = r['Posting Date'].dt.strftime('%Y-%m')
 codes = sorted({t['code'] for t in tree} | set(FG))
+# 13 Nov 22:30: materials the BOM carries in grams (granules, resins, magnet wire). MB51 books them in G, KG or TON depending
+# on the document, so every MB51 line for them is brought to grams first, judged by its own price per unit
+# (over Rs 20 a unit means it was entered in KG, over Rs 20,000 in TON). Rates for these are then per gram, matching the BOM.
+GU = {k['code'] for p_ in bom for a_ in bom[p_] for k in bom[p_][a_] if k['uom'] == 'G'}
+for df, ac in ((r, 'Amt.in Loc.Cur.'), (u, 'amt')):
+    mk = df['Material'].isin(GU) & (df['Qty in unit of entry'] != 0)
+    lr = (df.loc[mk, ac] / df.loc[mk, 'Qty in unit of entry']).abs()
+    df.loc[mk, 'Qty in unit of entry'] = df.loc[mk, 'Qty in unit of entry'] * lr.map(lambda v: 1e6 if v > 20000 else 1e3 if v > 20 else 1.0)
 def rt(d, qc, ac):
     q = d[qc].sum(); a = d[ac].sum()
     return (abs(a) / abs(q), d['Posting Date'].max().strftime('%Y-%m-%d'), round(abs(q), 3)) if abs(q) > 0 and abs(a) > 0 and (q > 0) == (a > 0) else None
