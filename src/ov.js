@@ -396,12 +396,17 @@
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
       b.addEventListener('mousemove', ev => tip.show(ev, [`${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 01:08 (Umair): bar tooltip shows only plan / actual */);
-      b.addEventListener('mouseleave', tip.hide);
+      /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
+      b.addEventListener('mouseenter', () => { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v); });
+      b.addEventListener('mouseleave', () => { tip.hide(); const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); });
       b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
       return b; }));
     /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
     let sm = box.querySelector('.ovsum'); if (!sm) { sm = document.createElement('div'); sm.className = 'ovsum'; box.appendChild(sm); }
     const sel = cur && by.find(o => o.sh === cur), tp = sel ? sel.p : d3.sum(by, o => o.p), ta = sel ? sel.a : d3.sum(by, o => o.a), tv = tp ? ta / tp * 100 : null;
+    const pf = v => v == null ? '—' : (v >= 1000 ? d3.format(',.0f')(v) : d3.format('.0f')(v)) + '%';
+    const show = (nm, v) => { sm.innerHTML = `<span class="t">${esc(nm)}</span><span class="ln"></span><span class="t">${pf(v)}</span>`; };
+    sm.__show = show; sm.__base = () => by.length ? show(sel ? cur : 'All Shops', tv) : (sm.innerHTML = '');
     sm.innerHTML = by.length ? `<span class="t">${esc(sel ? cur : 'All Shops')}</span><span class="ln"></span><span class="t">${tv == null ? '—' : (tv >= 1000 ? d3.format(',.0f')(tv) : d3.format('.0f')(tv)) + '%'}</span>` : '';
     sm.title = tv == null ? '' : `${sel ? cur : 'All shops'}: finished goods ${kf(ta)} made of ${kf(tp)} planned to date (${d3.format('.1f')(tv)}%)`;
   }
