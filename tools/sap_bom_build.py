@@ -1,18 +1,25 @@
 """SAP multi-level BOM (CS03, read screen by screen) -> data/sap_bom.json and data/sap_bom_cost.json.
-Usage: python3 tools/sap_bom_build.py bom/clutch_cs03_single_level.tsv <MB51 receipts r2.pkl> <MB51 261 u2.pkl> <asof> data
+Usage: python3 tools/sap_bom_build.py bom/clutch_cs03_single_level.tsv,bom/ignition_cs03_single_level.tsv <MB51 receipts r2.pkl> <MB51 261 u2.pkl> <asof> data
 13 Nov 2026 (Umair): rates only from SAP MB51 (or Atlas if it ever carries prices - it does not today).
 Rate per base unit = MB51 receipts (101 less 102) amount / quantity over the last 180 days; if none, all receipts since
 Jan 2024; if none, issues to production orders (261 less 262) over 180 days. Structure and cost are separate datasets so
 that the BOM tab can show the tree to people who may not see cost."""
-import sys, csv, json, collections
+import sys, os, csv, json, collections
 import pandas as pd
 tsv, rpk, upk, asof, out = sys.argv[1:6]
-rows = [r for r in csv.reader(open(tsv), delimiter='\t') if r and r[0] != 'parent']
+# 13 Nov 2026 21:13 (Umair): more shops - tsv may be a comma list (bom/clutch_..., bom/ignition_...). Finished goods are the
+# top parents (codes starting 9 that are nobody's component); their shop and name come from data/atlas_parts.json.
+rows = [r for f in tsv.split(',') for r in csv.reader(open(f), delimiter='\t') if r and r[0] != 'parent']
 bom = collections.defaultdict(lambda: collections.defaultdict(list)); desc = {}; base = {}; buom = {}
 for p, pl, alt, b, bu, it, ic, c, d, q, u, a in rows:
     bom[p][alt].append(dict(item=it, code=c, qty=float(q), uom=u, asm=a)); desc[c] = d.strip(); base[(p, alt)] = float(b); buom[p] = bu
-FG = {'9010113004': 'CLUTCH ASSY CD70 GGJX (INH)', '9020113004': 'CLUTCH ASSY CG125', '9030113004': 'CLUTCH ASSY PRIDOR (INH)',
+comps = {r[7] for r in rows}
+try: AP = {str(r['code']): r for r in json.load(open(os.path.join(out, 'atlas_parts.json')))}
+except Exception: AP = {}
+FGN = {'9010113004': 'CLUTCH ASSY CD70 GGJX (INH)', '9020113004': 'CLUTCH ASSY CG125', '9030113004': 'CLUTCH ASSY PRIDOR (INH)',
       '9030113005': 'CLUTCH ASSY PRIDOR (INH PARTS)', '9070113004': 'CLUTCH ASSY CB150F'}
+FG = {p: FGN.get(p) or (AP.get(p) or {}).get('part') or p for p in sorted(bom) if p.startswith('9') and p not in comps}
+SHOP = {p: (AP.get(p) or {}).get('shop') or ('Clutch' if p in FGN else '') for p in FG}
 ALT = {('9010113004', '1'): 'In-house drive plate', ('9010113004', '2'): 'OSP drive plate', ('9010113004', '3'): 'Vendor drive plate'}
 tree = []
 def walk(fg, alt, p, palt, mult, lvl):
@@ -23,10 +30,10 @@ def walk(fg, alt, p, palt, mult, lvl):
         if has and lvl < 15: walk(fg, alt, c, '1', ext, lvl + 1)
 for fg in FG:
     for alt in sorted(bom[fg]): walk(fg, alt, fg, alt, 1.0, 1)
-fgs = [dict(fg=f, part=FG[f], alt=a, alt_note=ALT.get((f, a), ''), levels=max(t['lvl'] for t in tree if t['fg'] == f and t['alt'] == a),
+fgs = [dict(fg=f, part=FG[f], shop=SHOP[f], alt=a, alt_note=ALT.get((f, a), ''), levels=max(t['lvl'] for t in tree if t['fg'] == f and t['alt'] == a),
             l1=sum(1 for t in tree if t['fg'] == f and t['alt'] == a and t['lvl'] == 1),
             pending=sorted({t['code'] for t in tree if t['fg'] == f and t['alt'] == a and t['status'] == 'Sub-levels pending'})) for f in FG for a in sorted(bom[f])]
-json.dump([dict(asof=asof, source='SAP CS03, plant KHI, usage 1', fgs=fgs, tree=tree)], open(out + '/sap_bom.json', 'w'), separators=(',', ':'))
+json.dump([dict(asof=asof, source='SAP CS03, plant KHI, usage 1', shops=sorted(set(SHOP.values())), fgs=fgs, tree=tree)], open(out + '/sap_bom.json', 'w'), separators=(',', ':'))
 # rates from MB51. 13 Nov 2026 14:37 (Umair): production cost carries the moving-average price SAP values issues at (261),
 # not the latest supplier price on receipts. So: rate = 261/262 amount / quantity over the last 60 days (else 180 days);
 # the receipt rate is kept beside it as the latest price. A KG material issued in grams in some months shows a rate ~1000x
@@ -71,22 +78,24 @@ for f in fgs:
 # CD70's three BOM alternatives are weighted by that month's issues of the three drive plates (in-house 6510213002, OSP 6510213012, vendor 6510213011).
 DP = {'1': '6510213002', '2': '6510213012', '3': '6510213011'}
 usage = {}
-for M in sorted(m for m in u['m'].unique() if m >= '2026-06'):
-    units = {f: float(r[(r.Material == f) & (r.m == M)]['Qty in unit of entry'].sum()) for f in FG}
-    dq = {a: -float(u[(u.Material == c) & (u.m == M)]['Qty in unit of entry'].sum()) for a, c in DP.items()}; tq = sum(max(0, v) for v in dq.values())
-    w = {a: (max(0, v) / tq if tq else (1.0 if a == '1' else 0.0)) for a, v in dq.items()}
-    std = collections.Counter()
-    for t in tree:
-        if t['lvl'] == 1: std[t['code']] += units[t['fg']] * t['qty_fg'] * (w[t['alt']] if t['fg'] == '9010113004' else 1)
-    lines = []
-    for c, sq in std.items():
-        y = clean_issues(u[(u.Material == c) & (u.m == M)], c); aq = -float(y['Qty in unit of entry'].sum()); aa = -float(y['amt'].sum())
-        mr = aa / aq if aq > 0 and aa > 0 else (rates.get(c) or {}).get('rate')
-        lines.append([c, round(sq, 3), round(aq, 3), round(mr, 4) if mr else None])
-    usage[M] = dict(units={k: round(v) for k, v in units.items()}, alt_w={k: round(v, 3) for k, v in w.items()}, lines=lines)
+for SH_ in sorted(set(SHOP.values())):
+  FGS = [f for f in FG if SHOP[f] == SH_]; usage[SH_] = {}
+  for M in sorted(m for m in u['m'].unique() if m >= '2026-06'):
+      units = {f: float(r[(r.Material == f) & (r.m == M)]['Qty in unit of entry'].sum()) for f in FGS}
+      dq = {a: -float(u[(u.Material == c) & (u.m == M)]['Qty in unit of entry'].sum()) for a, c in DP.items()}; tq = sum(max(0, v) for v in dq.values())
+      w = {a: (max(0, v) / tq if tq else (1.0 if a == '1' else 0.0)) for a, v in dq.items()}
+      std = collections.Counter()
+      for t in tree:
+          if t['lvl'] == 1 and t['fg'] in units: std[t['code']] += units[t['fg']] * t['qty_fg'] * (w[t['alt']] if t['fg'] == '9010113004' else 1)
+      lines = []
+      for c, sq in std.items():
+          y = clean_issues(u[(u.Material == c) & (u.m == M)], c); aq = -float(y['Qty in unit of entry'].sum()); aa = -float(y['amt'].sum())
+          mr = aa / aq if aq > 0 and aa > 0 else (rates.get(c) or {}).get('rate')
+          lines.append([c, round(sq, 3), round(aq, 3), round(mr, 4) if mr else None])
+      usage[SH_][M] = dict(units={k: round(v) for k, v in units.items()}, alt_w={k: round(v, 3) for k, v in w.items()}, lines=lines)
 json.dump([dict(asof=asof, mb51_to=str(u['Posting Date'].max().date()), rule='Moving-average price SAP issues at: MB51 261 less 262 amount / quantity, last 60 days (else 180); receipt rate kept as latest supplier price',
                 rates=rates, fg_cost=cost, usage=usage)], open(out + '/sap_bom_cost.json', 'w'), separators=(',', ':'))
 print(len(tree), 'tree rows;', len(rates), 'of', len(codes), 'codes rated')
 for cst in cost: print(cst['fg'], cst['alt'], cst['mat_unit'], cst['mat_unit_rcv'], cst['missing'])
-for M, x in usage.items():
+for M, x in [(sh + ' ' + m, v) for sh, d in usage.items() for m, v in d.items()]:
     sv = sum(l[1] * (l[3] or 0) for l in x['lines']); av = sum(l[2] * (l[3] or 0) for l in x['lines']); print(M, x['units'], round(sv / 1e6, 1), round(av / 1e6, 1))

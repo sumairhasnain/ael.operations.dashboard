@@ -40,15 +40,17 @@
   }
   function render(P) {
     ensure(); const card = document.getElementById('c-b-sap'); if (!card) return;
-    if (P && P.shop && P.shop !== 'All' && P.shop !== 'Clutch') { card.hidden = true; return; } card.hidden = false;
     const d = window.dash && dash.data('sap_bom'), sub = document.getElementById('sb-sub'), box = card.querySelector('.sbbox');
     if (!d || d.status !== 'ok') { sub.textContent = d && d.status === 'error' ? '● Failed to load' : 'Loading…'; return; }
-    const B = obj((Array.isArray(d.data) ? d.data[0] : d.data) || {}) || {}; const fgs = obj(B.fgs) || [], tree = obj(B.tree) || [];
+    const B = obj((Array.isArray(d.data) ? d.data[0] : d.data) || {}) || {}; const SH = P && P.shop && P.shop !== 'All' ? P.shop : '', fgA = obj(B.fgs) || [];
+    /* 13 Nov 21:13 (Umair): more shops (Clutch, Ignition Coil); the Shop filter picks one */
+    const fgs = fgA.filter(f => !SH || (f.shop || 'Clutch') === SH), fgSet = new Set(fgs.map(f => f.fg)), tree = (obj(B.tree) || []).filter(t => fgSet.has(t.fg));
+    if (!fgs.length) { card.hidden = true; return; } card.hidden = false;
     const dc = dash.data('sap_bom_cost'), K = dc && dc.status === 'ok' ? obj((Array.isArray(dc.data) ? dc.data[0] : dc.data) || {}) : null;
     const R = K ? obj(K.rates) || {} : null, FC = K ? new Map((obj(K.fg_cost) || []).map(x => [x.fg + '|' + x.alt, x])) : null;
     document.getElementById('sb-asof').textContent = 'SAP ' + (B.asof || '');
     const pend = new Set(); fgs.forEach(f => (f.pending || []).forEach(c => pend.add(c)));
-    sub.innerHTML = `<b>Clutch</b> · ${new Set(fgs.map(f => f.fg)).size} finished goods (${fgs.length} BOMs incl. alternatives) from ${esc(B.source || 'SAP CS03')}, every level read from SAP · ` +
+    sub.innerHTML = `<b>${esc(SH || [...new Set(fgs.map(f => f.shop || 'Clutch'))].join(', '))}</b> · ${new Set(fgs.map(f => f.fg)).size} finished goods (${fgs.length} BOMs incl. alternatives) from ${esc(B.source || 'SAP CS03')}, every level read from SAP · ` +
       (pend.size ? `<b style="color:#B45309">${pend.size} sub-assemblies</b> still to be opened in CS03 (shown in amber; their own rate is used meanwhile)` : 'all levels complete') +
       (R ? ' · rates: SAP MB51 moving average (261 issues)' : '');
     if (!sel || !fgs.some(f => f.fg + '|' + f.alt === sel)) sel = fgs.length ? fgs[0].fg + '|' + fgs[0].alt : null;
