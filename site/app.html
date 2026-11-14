@@ -4893,7 +4893,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
-      b.addEventListener('mousemove', ev => tip.show(ev, [`${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 01:08 (Umair): bar tooltip shows only plan / actual */);
+      b.addEventListener('mousemove', ev => tip.show(ev, [o.sh, `${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 05:27 (Umair): bar tooltip shows the shop name, then plan / actual */);
       /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
       /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
          selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
