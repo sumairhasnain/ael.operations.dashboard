@@ -142,7 +142,9 @@ CCR = [{'month': m, 'cc': cc, 'category': cat, 'shop': CC.get(cc, ''), 'label': 
         'value_pkr': round(v), 'lines': n, 'asof': ASOF_FLOW} for (m, cc, cat), (v, n) in ccr.items() if abs(v) >= 1]
 
 # ---- purchase receipts by supplier, last 3 months ----
-vn = json.load(open('/home/claude/inv/vendor_names.json'))
+import os as _os   # 14 Nov: fall back to the repo copy when the run did not copy vendor_names.json next to this script
+_vp = next((q for q in ('/home/claude/inv/vendor_names.json', _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'sap_vendor_names.json'), '/home/claude/ael.operations.dashboard/tools/sap_vendor_names.json') if _os.path.exists(q)), None)
+vn = json.load(open(_vp)) if _vp else {}
 for q in json.load(open(DATA + 'atlas_vendors.json')): vn.setdefault(str(q['vendor_code']).lstrip('0'), q['vendor'].strip())
 p3 = months[-3:]
 sup = {}
