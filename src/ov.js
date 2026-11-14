@@ -258,9 +258,12 @@
       lg.append('text').attr('text-anchor', 'middle').attr('y', fs + 1).attr('font-size', fs - 1).attr('fill', '#fff').attr('opacity', .9).text(d => pc(d.data.v / tot0 * 100));
       g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
-      const SD = o.side || [], lx = cx0 + r0 + 18, rw = w - lx - 2; if (!SD.length || rw < 120) return;
-      const mx = d3.max(SD, d => d.cons) || 1, top0 = 40, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
-      svg.append('text').attr('x', lx).attr('y', 34).attr('font-size', 9.5).attr('font-weight', 700).attr('letter-spacing', '.07em').attr('fill', '#5B6770').text((o.sideTitle || 'Consumption').toUpperCase());
+      const SD = o.side || [], tx = cx0 + r0 + 12, lx = tx + 28, rw = w - lx - 2; if (!SD.length || rw < 120) return;
+      const mx = d3.max(SD, d => d.cons) || 1, top0 = 4, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
+      /* 14 Nov 23:44 (Umair): the bar heading is a vertical navy tab on the left of the bars, like the Vendors / Parts tabs on Supply Watch */
+      const th = Math.min(h - 8, Math.max(150, rh * SD.length + 30)), ty = (h - th) / 2;
+      svg.append('rect').attr('x', tx).attr('y', ty).attr('width', 20).attr('height', th).attr('rx', 6).attr('fill', '#051C2C');
+      svg.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((o.sideTitle || 'Consumption').toUpperCase());
       SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
         g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
         g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
