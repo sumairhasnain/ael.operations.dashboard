@@ -4527,7 +4527,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   const band = (v, g, w, hiGood = true) => v == null ? 'info' : hiGood ? (v >= g ? 'good' : v >= w ? 'watch' : 'bad') : (v <= g ? 'good' : v <= w ? 'watch' : 'bad');
   /* 12 Nov 00:06 (Umair): less text on the cards. One headline figure + 3 short rows; sub-lines, card subtitle and 'View details' are gone (hover for the notes, the detail window keeps everything) */
   const SHORT = { 'Direct material': 'Material', 'Indirect material': 'Indirect', 'Direct labour': 'Labour', 'Excess stock': 'Excess', 'Slow moving': 'Slow', 'Total potential': 'Potential', 'Absent latest day': 'Latest day', 'Vendors under 80%': 'Under 80%', 'Parts over capacity': 'Parts over', 'Machines over 85%': 'M/c over 85%', 'Machines studied': 'Machines', 'In-house parts': 'In-house' };
-  const PICK = { production: [0, 1, 2, 4], vendor: [0, 1, 2, 4], inventory: [0, 1, 2, 3], workforce: [1, 0, 3, 2], cost: [0, 1, 2, 3], capacity: [2, 0, 3, 4], projects: [1, 0, 2, 4], savings: [2, 1, 3, 0] };
+  const PICK = { production: [0, 1],   /* 14 Nov 06:27 (Umair): Production card shows FG production and Dispatch only (In-house parts and Short to plan removed) */
+                  vendor: [0, 1, 2, 4], inventory: [0, 1, 2, 3], workforce: [1, 0, 3, 2], cost: [0, 1, 2, 3], capacity: [2, 0, 3, 4], projects: [1, 0, 2, 4], savings: [2, 1, 3, 0] };
   const NEED = { production: ['atlas_parts_daily', 'atlas_parts'], vendor: ['atlas_vendor_supply'], inventory: ['sap_stock'], workforce: ['sp_attendance'],
     cost: ['cogm'], capacity: ['cap_machines', 'cap_parts', 'atlas_parts_daily', 'atlas_parts'], projects: ['jira_issues'], savings: ['cr_ideas'] };
 
