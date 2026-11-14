@@ -128,6 +128,12 @@
 .ael #summary .ovkh b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C;font-variant-numeric:tabular-nums}
 .ael #summary .ovbh{flex:0 0 auto;font-size:12px;color:#33414B;background:#FBE7E6;border-radius:4px;padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael #summary .ovbh b{color:#B3261E;font-weight:600}
+.ael #summary .ovbh.tk{display:flex;gap:6px;align-items:center}
+.ael #summary .ovbh .tkw{flex:1;min-width:0;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent)}
+.ael #summary .ovbh .tkt{display:inline-flex;white-space:nowrap;animation:ovtk linear infinite;will-change:transform}
+.ael #summary .ovbh .tkw:hover .tkt{animation-play-state:paused}
+@keyframes ovtk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ael #summary .ovbh .tkt{animation:none}}
 .ael #summary .ovbh.ok{background:#E6F4EC;color:#1E8C5A}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
@@ -394,7 +400,10 @@
     if (id === 'production' && !o.none) {
       el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div><div class="ovb ovbc"><div class="ovkh">${K.map(([l, v, sb, c]) =>
         `<div style="border-left-color:${c || '#051C2C'}" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return ''; return b.list.length
-          ? `<div class="ovbh" title="Below 95% of plan to date"><b>Behind:</b> ${b.list.map(x => `<span style="color:${x.v < 80 ? C.bad : '#9A6B00'}">${esc(x.k)} ${pc(x.v)}</span>`).join(' · ')}</div>`
+          ? (() => { const it = b.list.map(x => `<span style="color:${x.v < 80 ? C.bad : '#9A6B00'}">${esc(x.k)} ${pc(x.v)}</span>`).join(' · ');
+              /* 14 Nov 10:41 (Umair): more than 2 behind - the names run as a ticker, right to left, without stopping (hover pauses it) */
+              if (b.list.length <= 2) return `<div class="ovbh" title="Below 95% of plan to date"><b>Behind:</b> ${it}</div>`;
+              return `<div class="ovbh tk" title="Below 95% of plan to date"><b>Behind:</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, b.list.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()
           : `<div class="ovbh ok">All ${b.what} at 95%+ of plan</div>`; })()}</div>`;
     } else
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
