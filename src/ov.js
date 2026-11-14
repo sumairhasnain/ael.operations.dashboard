@@ -247,22 +247,26 @@
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
-    if (o.legend === 'side') { /* 14 Nov 19:29 (Umair): donut on the left, category value list on the right (Inventory card) */
-      const tot0 = d3.sum(items, d => d.v), r0 = Math.max(26, Math.min(h / 2 - 6, w * 0.2)), g0 = svg.append('g').attr('transform', `translate(${r0 + 8},${h / 2})`);
-      g0.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r0 * 0.62).outerRadius(r0).padAngle(0.01)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
-        .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)}`])).on('mouseleave', tip.hide);
-      /* 14 Nov 23:23 (Umair): % of current stock value printed on each slice */
-      const lab0 = d3.arc().innerRadius(r0 * 0.81).outerRadius(r0 * 0.81);
-      g0.selectAll('text.sl').data(d3.pie().sort(null).value(d => d.v)(items).filter(d => d.endAngle - d.startAngle > 0.32)).join('text').attr('class', 'sl')
-        .attr('transform', d => `translate(${lab0.centroid(d)})`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', Math.max(9, Math.min(11.5, r0 / 5.5))).attr('font-weight', 700).attr('fill', '#fff').attr('pointer-events', 'none')
-        .text(d => pc(d.data.v / tot0 * 100));
-      g0.append('text').attr('text-anchor', 'middle').attr('y', 5).attr('font-size', Math.max(12, Math.min(18, r0 / 3.4))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
-      const lx = 2 * r0 + 26, rx = w - 4, rh = Math.min(34, (h - 8) / items.length), y0 = h / 2 - rh * items.length / 2;
-      items.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(0,${y0 + i * rh})`);
-        g.append('rect').attr('x', lx).attr('y', rh / 2 - 9).attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', d.color);
-        g.append('text').attr('x', lx + 16).attr('y', rh / 2).attr('font-size', 12).attr('fill', '#33414B').text(d.label);
-        g.append('text').attr('x', rx).attr('y', rh / 2).attr('text-anchor', 'end').attr('font-size', 12).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.v));
-        g.append('text').attr('x', rx).attr('y', rh / 2 + 12).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#8A949E').text(pc(d.v / tot0 * 100) + ' of value'); });
+    if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
+      const tot0 = d3.sum(items, d => d.v), r0 = Math.max(30, Math.min(h / 2 - 4, w * 0.21)), cx0 = r0 + 4, g0 = svg.append('g').attr('transform', `translate(${cx0},${h / 2})`);
+      const pie0 = d3.pie().sort(null).value(d => d.v)(items), ri = r0 * 0.5;
+      g0.selectAll('path').data(pie0).join('path').attr('d', d3.arc().innerRadius(ri).outerRadius(r0).padAngle(0.012)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
+        .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)} of stock value`])).on('mouseleave', tip.hide);
+      const lab0 = d3.arc().innerRadius((ri + r0) / 2).outerRadius((ri + r0) / 2), fs = Math.max(8.5, Math.min(11, r0 / 6.2));
+      const lg = g0.selectAll('g.sl').data(pie0.filter(d => d.endAngle - d.startAngle > 0.42)).join('g').attr('class', 'sl').attr('transform', d => `translate(${lab0.centroid(d)})`).attr('pointer-events', 'none');
+      lg.append('text').attr('text-anchor', 'middle').attr('y', -1).attr('font-size', fs).attr('font-weight', 700).attr('fill', '#fff').text(d => d.data.v >= 1e6 ? d3.format(',.0f')(d.data.v / 1e6) + 'M' : (o.fmt || kf)(d.data.v).replace('Rs ', ''));
+      lg.append('text').attr('text-anchor', 'middle').attr('y', fs + 1).attr('font-size', fs - 1).attr('fill', '#fff').attr('opacity', .9).text(d => pc(d.data.v / tot0 * 100));
+      g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
+      g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
+      const SD = o.side || [], lx = cx0 + r0 + 18, rw = w - lx - 2; if (!SD.length || rw < 120) return;
+      const mx = d3.max(SD, d => d.cons) || 1, top0 = 40, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
+      svg.append('text').attr('x', lx).attr('y', 34).attr('font-size', 9.5).attr('font-weight', 700).attr('letter-spacing', '.07em').attr('fill', '#5B6770').text((o.sideTitle || 'Consumption').toUpperCase());
+      SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 96) * d.cons / mx);
+        g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
+        g.append('text').attr('x', rw).attr('y', 9).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A').attr('font-weight', 700).text(d.dit == null ? 'DIT —' : `DIT ${d3.format(',.0f')(d.dit)} d`);
+        g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
+        g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`).append('tspan').attr('font-weight', 400).attr('fill', '#8A949E').text(` · ${pc(d.share)}`);
+        g.append('rect').attr('y', 11).attr('width', rw).attr('height', 15).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)} (${pc(d.share)} of the total)`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
       return; }
     if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
       const tot0 = d3.sum(items, d => d.v), lines = items.map(d => `${d.label} · ${pc(d.v / tot0 * 100)}`), cw = d3.max(lines, t => t.length) * 5.7 + 20, per = Math.max(1, Math.floor((w - 8) / cw)), rows = Math.ceil(items.length / per), lgH = rows * 18 + 6;
@@ -385,7 +389,12 @@
     return { health, cat, title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}${exRM ? ' · excl. raw material, production parts, lubricants' : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
       kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow moving', rs(DV), 'no issue for over a year', C.bad],
         ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
-      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side' }),
+      vt: 'Stock value by category', mini: el => { /* consumption = cost-centre issues (MB51) of the last complete month, shop filter applied; DIT = stock value / (that month's issues / days in month) */
+        const cm = P.month && P.month < (window.__TODAY || '').slice(0, 7) ? P.month : d3.utcFormat('%Y-%m')(d3.utcMonth.offset(new Date((P.month || (window.__TODAY || '').slice(0, 7)) + '-01T00:00:00Z'), -1));
+        const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
+        const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
+        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · DIT`,
+          side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
         { t: 'Stock value by last movement', draw: el => hbarC(el, mv.map(([b, v], i) => ({ label: b, v, lab: rs(v), color: [C.navy, C.blue, C.warn, C.bad][i], tip: [b, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
