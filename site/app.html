@@ -4615,6 +4615,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovv .vt{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
 .ael #summary .ovv .vtt{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ael #summary .tg{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:3px 10px;cursor:pointer;margin-right:auto;white-space:nowrap}
+.ael #summary .ovbc{flex-direction:column;gap:8px}
+.ael #summary .ovkh{display:flex;flex-wrap:wrap;gap:8px 22px;flex:0 0 auto}
+.ael #summary .ovkh div{border-left:3px solid #051C2C;padding:2px 0 2px 10px;min-width:0}
+.ael #summary .ovkh span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770;white-space:nowrap}
+.ael #summary .ovkh b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C;font-variant-numeric:tabular-nums}
+.ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
 .ael #summary .tg.on::before{content:'✓ '}`;
@@ -4873,6 +4879,11 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     let o; try { o = M[id](P); } catch (e) { console.error('overview', id, e); el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">Could not summarise this tab</div>`; return el; }
     last[id] = o;
     const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
+    /* 14 Nov 06:36 (Umair): Production card - FG production and Dispatch side by side above a full-width, shorter chart, in the Overtime While Absent KPI style */
+    if (id === 'production' && !o.none) {
+      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div><div class="ovb ovbc"><div class="ovkh">${K.map(([l, v, sb, c]) =>
+        `<div style="border-left-color:${c || '#051C2C'}" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div><div class="ovv"><div class="vc"></div></div></div>`;
+    } else
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
       <div class="rows">${rest.map(([l, v, sb, c]) => `<div class="r" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(SHORT[l] || l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
