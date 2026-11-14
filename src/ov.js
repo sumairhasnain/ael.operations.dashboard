@@ -187,7 +187,8 @@
 .ael #summary .ovf3:hover .ovff{animation-play-state:paused}
 @keyframes ov3{0%,29%{opacity:1;transform:none}33%,96%{opacity:0;transform:rotateX(90deg)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovkh .ovf3 .ovff{animation:none}.ael #summary .ovkh .ovf3 .f1,.ael #summary .ovkh .ovf3 .f2{display:none}}
-.ael #summary .hd .tgc{margin:0 0 0 10px;font-size:9.5px;padding:3px 8px}
+.ael #summary .ovvt{position:relative}
+.ael #summary .ovvt .tgc{position:absolute;top:4px;right:6px;z-index:1;margin:0;font-size:9.5px;padding:3px 8px}   /* raw-material switch sits in the chart's top-right corner so the header keeps room for the KPI and symbol */
 .ael #summary .hd .tgc.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
 .ael #summary .ovhb{flex:0 0 auto;display:flex;gap:3px;margin-top:2px}
 .ael #summary .ovhb div{min-width:0;display:flex;flex-direction:column}
@@ -535,10 +536,10 @@
       const F = [o.kpis[0], o.kpis[1], o.kpis[2]], HV = d3.sum(o.health, d => d[1]);
       el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovf3" title="${esc(F.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}">${F.map(([l, v, sb, c], i) =>
           `<div class="ovff f${i}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-        <button type="button" class="tg tgc${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">${exRM ? '✓ ' : ''}Excl. raw material</button>${pill(o.st)}</div>
-        <div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${pill(o.st)}</div>
+        <div class="ovb ovbc"><div class="ovv ovvt"><button type="button" class="tg tgc${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Excl. raw material</button><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i><span>${esc(l)}</span><em>${rs(v)}</em></div>`).join('')}</div></div>`;
-   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
+    } else if (id === 'vendor' && !o.none && o.watch) { /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = wRowH;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
       el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh" role="tablist"><button type="button" role="tab" data-k="v" title="Weakest vendors against schedule to date">Vendors</button><button type="button" role="tab" data-k="p" title="Vendor parts that run out soonest at this month's plan (tick = next expected delivery)">Parts</button></div>
