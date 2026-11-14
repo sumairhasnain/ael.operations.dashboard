@@ -409,8 +409,9 @@
            selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
         /* 14 Nov 05:24 (Umair): a click locks that shop - hovering other bars then changes nothing until the Clear filter button (or the Shop list) changes the shop */
         /* 14 Nov 05:41 (Umair): the bar grows first (0.15 s); the filter, and with it the ring, comes in only once it is fully grown (0.2 s) */
-        b.addEventListener('mouseenter', () => { hvSh = O().sh; st.querySelectorAll('button.hv').forEach(x => x !== b && x.classList.remove('hv')); b.classList.add('hv'); if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(O().sh, O().v);
-          clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); }, 200); });
+        b.addEventListener('mouseenter', () => { hvSh = O().sh; st.querySelectorAll('button.hv').forEach(x => x !== b && x.classList.remove('hv')); b.classList.add('hv'); if (hvLock) return;
+          clearTimeout(hvT); hvT = setTimeout(() => { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(O().sh, O().v);   /* 14 Nov 05:44 (Umair): the name on the right changes together with the ring */
+            if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); }, 200); });
         b.addEventListener('mouseleave', () => { tip.hide(); if (hvSh === O().sh) hvSh = ''; b.classList.remove('hv'); });
         b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); hvLock = O().sh; hvBase = undefined; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); else render(); }); }
       const nw = !old.has(o.sh); b.__o = o; b.className = [cur === o.sh ? 'on' : '', hvSh === o.sh ? 'hv' : '', nw && hvSh === o.sh ? 'nt' : ''].filter(Boolean).join(' ');
