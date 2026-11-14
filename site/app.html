@@ -4645,11 +4645,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovkh .ovff.bk{transform:rotateX(180deg)}
 @keyframes ovflip{0%,42%{transform:rotateX(0)}50%,92%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovfl .ovfi{animation:none}}
-.ael #summary .ovwl{flex:1;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:6px 8px 4px;margin:0 -10px;overflow:hidden}
-.ael #summary .ovwl .wh{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.ael #summary .ovwl .wh span{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5B6770;margin-right:auto}
-.ael #summary .ovwl .wh button{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:2px 9px;cursor:pointer}
-.ael #summary .ovwl[data-on="v"] .wh button[data-k="v"],.ael #summary .ovwl[data-on="p"] .wh button[data-k="p"]{background:#051C2C;border-color:#051C2C;color:#fff}
+.ael #summary .ovwl{flex:1;min-height:0;display:flex;gap:8px;background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:4px 8px 4px 0;margin:0 -10px;overflow:hidden}
+/* 14 Nov 13:08 (Umair): no 'Watch list' heading; Vendors / Parts are thin vertical tabs on the left edge so the list gets the full height */
+.ael #summary .ovwl .wh{flex:0 0 20px;display:flex;flex-direction:column;gap:3px}
+.ael #summary .ovwl .wh button{flex:1;writing-mode:vertical-rl;transform:rotate(180deg);font:600 9.5px var(--font-anthropic-sans);letter-spacing:.08em;text-transform:uppercase;border:0;background:#E9EDF1;color:#5B6770;border-radius:6px 0 0 6px;padding:0;cursor:pointer}
+.ael #summary .ovwl .wh button:hover{color:#051C2C}
+.ael #summary .ovwl[data-on="v"] .wh button[data-k="v"],.ael #summary .ovwl[data-on="p"] .wh button[data-k="p"]{background:#051C2C;color:#fff}
 .ael #summary .ovwl .wps{position:relative;flex:1;min-height:0}
 .ael #summary .ovwl .wp{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-around;transition:opacity .35s,transform .35s}
 .ael #summary .ovwl[data-on="v"] .wp[data-p="p"],.ael #summary .ovwl[data-on="p"] .wp[data-p="v"]{opacity:0;transform:translateY(6px);pointer-events:none}
@@ -4781,11 +4782,11 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     /* 14 Nov 12:11 (Umair): watch list - the 4 weakest vendors against schedule to date, and the 4 critical vendor-supplied parts lowest against safety stock (shop filter applies) */
     const sn = v => String(v).replace(/\s*\((PVT|PRIVATE)\b.*$/i, '').replace(/\s+(\(?PVT\)?|PRIVATE|LIMITED|LIMIT|LTD\.?|LT|CO\.?)\s*$/i, '').replace(/\s+/g, ' ').trim();
     const vRows = byV.map(([v, o]) => ({ k: sn(v), v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
-    const wVend = vRows.filter(x => x.v < 100).sort((a, b) => a.v - b.v).slice(0, 4);
+    const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
     const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop')), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
     const wPart = (D('atlas_stock_critical') || []).filter(r => inSh(SH, r, 'shop') && vOf.has(String(r.code)) && +r.safety_stock > 0)
       .map(r => ({ k: r.part, sub: sn(vOf.get(String(r.code)) || ''), v: (+r.stock || 0) / +r.safety_stock * 100, tip: `${r.part} (${r.code}) · ${r.shop}: stock ${nf(+r.stock || 0)} of ${nf(+r.safety_stock)} safety stock${+r.vendor_stock ? ` · ${nf(+r.vendor_stock)} at vendor` : ''} · vendor ${vOf.get(String(r.code))}` }))
-      .filter(x => x.v < 100).sort((a, b) => a.v - b.v).slice(0, 4);
+      .sort((a, b) => a.v - b.v).slice(0, 4);
     return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
@@ -4956,7 +4957,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = x => `<div class="wr" title="${esc(x.tip)}"><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.min(100, x.v / 1.5)}%;background:${okc(x.v)}"></span><em></em></span><b style="color:${okc(x.v)}">${pc(x.v)}</b></div>`;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
-      el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh"><span>Watch list</span><button type="button" data-k="v">Vendors</button><button type="button" data-k="p">Parts</button></div>
+      el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh" role="tablist"><button type="button" role="tab" data-k="v" title="Weakest vendors against schedule to date">Vendors</button><button type="button" role="tab" data-k="p" title="Critical vendor parts lowest against safety stock">Parts</button></div>
         <div class="wps">${pane('v', W.vendors, 'No vendor short of schedule')}${pane('p', W.parts, 'No critical part below safety stock')}</div></div>
         ${o.tick.bad.length ? tickS('Under 80%:', o.tick.bad.map(x => `<span style="color:${C.bad}">${esc(x.k)} ${pc(x.v)}</span>`), '', 'Vendors under 80% of schedule to date')
           : tickS('All vendors 80%+:', o.tick.all.map(x => `<span style="color:${okc(x.v)}">${esc(x.k)} ${pc(x.v)}</span>`), 'ok', 'Every scheduled vendor at 80%+ of schedule to date')}</div>`;
