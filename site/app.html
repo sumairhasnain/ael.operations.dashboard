@@ -4636,6 +4636,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .hd .ovkh + .stsym{margin-left:10px}
 .ael #summary .hd h3.ovh3{flex:0 0 auto;white-space:nowrap;overflow:visible}   /* 14 Nov 11:14 (Umair): title always shown in full; the KPI takes what is left */
 .ael #summary .hd .ovkh .ovff{padding-left:8px}
+.ael #summary .hd h3.ovh3.two{line-height:1.02}
 .ael #summary .hd .ovkh span{font-size:9.5px}
 .ael #summary .hd .ovkh b{font-size:20px;line-height:1.1}
 .ael #summary .ovfl .ovfi{display:grid;transform-style:preserve-3d;animation:ovflip 8s ease-in-out infinite}
@@ -4941,7 +4942,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     last[id] = o;
     const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
     /* 14 Nov 06:36 (Umair): Production card - FG production and Dispatch side by side above a full-width, shorter chart, in the Overtime While Absent KPI style */
-    if (id === 'vendor' && !o.none && o.watch) K.splice(0, K.length, o.kpis[0], o.kpis[4]);
+    if (id === 'vendor' && !o.none && o.watch) K.splice(0, K.length, ['Compliance', ...o.kpis[0].slice(1)], o.kpis[4]);   /* 14 Nov 13:01 (Umair): 'Compliance', not 'Supply compliance' */
     if (id === 'production' && !o.none) {   /* 14 Nov 11:09 (Umair): the flipping KPI sits right of the card title, on the same line */
       el.innerHTML = hdrF(id, name, K, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return '';
           /* 14 Nov 10:41/10:45 (Umair): more than 2 names run as a ticker, right to left, without stopping (hover pauses it).
@@ -4955,7 +4956,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = x => `<div class="wr" title="${esc(x.tip)}"><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.min(100, x.v / 1.5)}%;background:${okc(x.v)}"></span><em></em></span><b style="color:${okc(x.v)}">${pc(x.v)}</b></div>`;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
-      el.innerHTML = hdrF(id, name, K, o) + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh"><span>Watch list</span><button type="button" data-k="v">Vendors</button><button type="button" data-k="p">Parts</button></div>
+      el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh"><span>Watch list</span><button type="button" data-k="v">Vendors</button><button type="button" data-k="p">Parts</button></div>
         <div class="wps">${pane('v', W.vendors, 'No vendor short of schedule')}${pane('p', W.parts, 'No critical part below safety stock')}</div></div>
         ${o.tick.bad.length ? tickS('Under 80%:', o.tick.bad.map(x => `<span style="color:${C.bad}">${esc(x.k)} ${pc(x.v)}</span>`), '', 'Vendors under 80% of schedule to date')
           : tickS('All vendors 80%+:', o.tick.all.map(x => `<span style="color:${okc(x.v)}">${esc(x.k)} ${pc(x.v)}</span>`), 'ok', 'Every scheduled vendor at 80%+ of schedule to date')}</div>`;
