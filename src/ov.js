@@ -150,6 +150,22 @@
 .ael #summary .ovkh .ovff.bk{transform:rotateX(180deg)}
 @keyframes ovflip{0%,42%{transform:rotateX(0)}50%,92%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovfl .ovfi{animation:none}}
+.ael #summary .ovwl{flex:1;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:6px 8px 4px;margin:0 -10px;overflow:hidden}
+.ael #summary .ovwl .wh{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.ael #summary .ovwl .wh span{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5B6770;margin-right:auto}
+.ael #summary .ovwl .wh button{font:600 10.5px var(--font-anthropic-sans);border:1px solid #C9D1D9;background:#fff;color:#33414B;border-radius:12px;padding:2px 9px;cursor:pointer}
+.ael #summary .ovwl[data-on="v"] .wh button[data-k="v"],.ael #summary .ovwl[data-on="p"] .wh button[data-k="p"]{background:#051C2C;border-color:#051C2C;color:#fff}
+.ael #summary .ovwl .wps{position:relative;flex:1;min-height:0}
+.ael #summary .ovwl .wp{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-around;transition:opacity .35s,transform .35s}
+.ael #summary .ovwl[data-on="v"] .wp[data-p="p"],.ael #summary .ovwl[data-on="p"] .wp[data-p="v"]{opacity:0;transform:translateY(6px);pointer-events:none}
+.ael #summary .ovwl .wr{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(50px,1fr) 44px;align-items:center;gap:8px}
+.ael #summary .ovwl .wn{font-size:12.5px;color:#051C2C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+.ael #summary .ovwl .wn i{display:block;font-style:normal;font-size:10px;color:#8A949E;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovwl .wb{position:relative;height:9px;background:#E9EDF1;border-radius:5px}
+.ael #summary .ovwl .wb span{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.ael #summary .ovwl .wb em{position:absolute;left:66.7%;top:-4px;bottom:-4px;width:1.5px;background:#051C2C}
+.ael #summary .ovwl .wr b{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.ael #summary .ovwl .we{font-size:12px;color:#1E8C5A;text-align:center}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -267,7 +283,16 @@
     const byS = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.shop || '—').filter(([, o]) => o.s > 0);
     const c = sc ? rc / sc * 100 : null, col = v => v < 70 ? C.bad : v < 85 ? C.warn : C.navy;
     let cs = 0, cr = 0; const cS = ds.map(d => (cs += d <= pEnd ? (byD.get(d) || {}).s || 0 : 0)), cR = ds.map(d => (cr += (byD.get(d) || {}).r || 0));
-    return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80),
+    /* 14 Nov 12:11 (Umair): watch list - the 4 weakest vendors against schedule to date, and the 4 critical vendor-supplied parts lowest against safety stock (shop filter applies) */
+    const sn = v => String(v).replace(/\s*\((PVT|PRIVATE)\b.*$/i, '').replace(/\s+(\(?PVT\)?|PRIVATE|LIMITED|LIMIT|LTD\.?|LT|CO\.?)\s*$/i, '').replace(/\s+/g, ' ').trim();
+    const vRows = byV.map(([v, o]) => ({ k: sn(v), v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
+    const wVend = vRows.filter(x => x.v < 100).sort((a, b) => a.v - b.v).slice(0, 4);
+    const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop')), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
+    const wPart = (D('atlas_stock_critical') || []).filter(r => inSh(SH, r, 'shop') && vOf.has(String(r.code)) && +r.safety_stock > 0)
+      .map(r => ({ k: r.part, sub: sn(vOf.get(String(r.code)) || ''), v: (+r.stock || 0) / +r.safety_stock * 100, tip: `${r.part} (${r.code}) · ${r.shop}: stock ${nf(+r.stock || 0)} of ${nf(+r.safety_stock)} safety stock${+r.vendor_stock ? ` · ${nf(+r.vendor_stock)} at vendor` : ''} · vendor ${vOf.get(String(r.code))}` }))
+      .filter(x => x.v < 100).sort((a, b) => a.v - b.v).slice(0, 4);
+    return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
+      tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
@@ -404,6 +429,15 @@
   function sec() { return document.getElementById('summary'); }
   let last = {};
   let hvBase, hvT, hvLock = '', hvSh = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
+  /* 14 Nov 12:11: card header with the flipping KPI (Production, Vendor Supply) */
+  const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl" title="${esc(K.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
+        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
+  /* ticker strip used at the foot of the Production and Vendor Supply cards: still when 2 names or fewer, scrolling right to left above that */
+  const tickS = (lab, items, cls, tt) => { if (!items.length) return ''; const it = items.join(' · ');
+    if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
+    return `<div class="ovbh ${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, items.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; };
+  const okc = v => v < 80 ? C.bad : v < 100 ? '#9A6B00' : '#1E8C5A';
+  if (!window.__ovWL) window.__ovWL = setInterval(() => document.querySelectorAll('#summary .ovwl').forEach(w => { if (w.dataset.hold || w.matches(':hover')) return; w.dataset.on = w.dataset.on === 'v' ? 'p' : 'v'; }), 7000);
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -413,9 +447,9 @@
     last[id] = o;
     const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
     /* 14 Nov 06:36 (Umair): Production card - FG production and Dispatch side by side above a full-width, shorter chart, in the Overtime While Absent KPI style */
+    if (id === 'vendor' && !o.none && o.watch) K.splice(0, K.length, o.kpis[0], o.kpis[4]);
     if (id === 'production' && !o.none) {   /* 14 Nov 11:09 (Umair): the flipping KPI sits right of the card title, on the same line */
-      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl" title="${esc(K.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
-        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div></div>${pill(o.st)}</div><div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return '';
+      el.innerHTML = hdrF(id, name, K, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return '';
           /* 14 Nov 10:41/10:45 (Umair): more than 2 names run as a ticker, right to left, without stopping (hover pauses it).
              Nobody below 95% -> 'Ahead:' with every shop (or model) and its %, in green */
           const bad = b.list.length > 0, L = bad ? b.list : b.ahead, lab = bad ? 'Behind:' : 'Ahead:';
@@ -424,6 +458,14 @@
           const cls = 'ovbh' + (bad ? '' : ' ok'), tt = bad ? 'Short of plan to date' : `All ${b.what} at or above plan to date`;
           if (L.length <= 2) return `<div class="${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
+    } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
+      const W = o.watch, row = x => `<div class="wr" title="${esc(x.tip)}"><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.min(100, x.v / 1.5)}%;background:${okc(x.v)}"></span><em></em></span><b style="color:${okc(x.v)}">${pc(x.v)}</b></div>`;
+      const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
+      el.innerHTML = hdrF(id, name, K, o) + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh"><span>Watch list</span><button type="button" data-k="v">Vendors</button><button type="button" data-k="p">Parts</button></div>
+        <div class="wps">${pane('v', W.vendors, 'No vendor short of schedule')}${pane('p', W.parts, 'No critical part below safety stock')}</div></div>
+        ${o.tick.bad.length ? tickS('Under 80%:', o.tick.bad.map(x => `<span style="color:${C.bad}">${esc(x.k)} ${pc(x.v)}</span>`), '', 'Vendors under 80% of schedule to date')
+          : tickS('All vendors 80%+:', o.tick.all.map(x => `<span style="color:${okc(x.v)}">${esc(x.k)} ${pc(x.v)}</span>`), 'ok', 'Every scheduled vendor at 80%+ of schedule to date')}</div>`;
+      const wl = el.querySelector('.ovwl'); wl.querySelectorAll('.wh button').forEach(bt => bt.addEventListener('click', ev => { ev.stopPropagation(); wl.dataset.on = bt.dataset.k; wl.dataset.hold = '1'; }));
     } else
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
