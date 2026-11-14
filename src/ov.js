@@ -29,7 +29,7 @@
     watch: '<path d="M9 4.6v5.4" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="9" cy="13.2" r="1.25" fill="#fff"/>',
     bad: '<path d="M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' };
   const pill = k => { const x = STA[k] || STA.info; if (!SYM[k]) return `<span class="pill" style="color:${x[1]};background:${x[2]}"><i></i>${x[0]}</span>`;
-    return `<span class="stsym" title="${x[0]}" role="img" aria-label="${x[0]}"><svg viewBox="0 0 18 18" width="22" height="22"><circle cx="9" cy="9" r="9" fill="${x[1]}"/>${SYM[k]}</svg></span>`; };
+    return `<span class="stsym" title="${x[0]}" role="img" aria-label="${x[0]}"><svg viewBox="0 0 18 18" width="22" height="22"><circle cx="9" cy="9" r="9" fill="${k === 'watch' ? '#E8A33A' : x[1]}"/>${SYM[k]}</svg></span>`; };
   const band = (v, g, w, hiGood = true) => v == null ? 'info' : hiGood ? (v >= g ? 'good' : v >= w ? 'watch' : 'bad') : (v <= g ? 'good' : v <= w ? 'watch' : 'bad');
   /* 12 Nov 00:06 (Umair): less text on the cards. One headline figure + 3 short rows; sub-lines, card subtitle and 'View details' are gone (hover for the notes, the detail window keeps everything) */
   const SHORT = { 'Direct material': 'Material', 'Indirect material': 'Indirect', 'Direct labour': 'Labour', 'Excess stock': 'Excess', 'Slow moving': 'Slow', 'Total potential': 'Potential', 'Absent latest day': 'Latest day', 'Vendors under 80%': 'Under 80%', 'Parts over capacity': 'Parts over', 'Machines over 85%': 'M/c over 85%', 'Machines studied': 'Machines', 'In-house parts': 'In-house' };
