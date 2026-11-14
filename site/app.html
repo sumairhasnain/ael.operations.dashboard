@@ -4533,12 +4533,13 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;justify-content:center;padding-bottom:4px;height:40px;box-sizing:border-box}
-.ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer;flex:0 0 auto;transition:width .15s ease,height .15s ease}
+.ael #summary .ovst button{border:0;border-radius:3px;padding:0;width:9px;height:24px;cursor:pointer;flex:0 0 auto;transition:width .15s ease,height .15s ease,box-shadow .12s ease}
+.ael #summary .ovst button.nt{transition:none}
 .ael #summary .ovsum{display:flex;align-items:center;gap:12px;margin-left:10px;padding-bottom:1px}
 .ael #summary .ovsum .t{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;line-height:1;color:#051C2C;white-space:nowrap}
 .ael #summary .ovsum .ln{width:2px;height:28px;background:#051C2C}
 .ael #summary .ovst button.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3px #051C2C}
-.ael #summary .ovst button:hover{width:13.5px;height:36px}   /* 14 Nov 01:12 (Umair): hovered bar 1.5x, neighbours pushed left and right */
+.ael #summary .ovst button.hv{width:13.5px;height:36px}   /* 14 Nov 01:12 (Umair): hovered bar 1.5x, neighbours pushed left and right. 05:41: a class set by script, not :hover, so a redraw cannot shrink and regrow it */
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
 .ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
@@ -4854,7 +4855,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* ---------- page ---------- */
   function sec() { return document.getElementById('summary'); }
   let last = {};
-  let hvBase, hvT, hvLock = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
+  let hvBase, hvT, hvLock = '', hvSh = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -4880,7 +4881,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   function shopStrip(s, P) {
     const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
     if (!st) { st = document.createElement('div'); st.className = 'ovst'; st.setAttribute('aria-label', 'Production compliance by shop'); box.appendChild(st); }
-    if (!st.__hv) { st.__hv = 1; st.addEventListener('mouseleave', () => { clearTimeout(hvT); if (hvLock) { hvBase = undefined; return; } hvT = setTimeout(() => { if (hvBase === undefined) { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); return; }
+    if (!st.__hv) { st.__hv = 1; st.addEventListener('mouseleave', () => { clearTimeout(hvT); hvSh = ''; st.querySelectorAll('button.hv').forEach(x => x.classList.remove('hv')); if (hvLock) { hvBase = undefined; return; } hvT = setTimeout(() => { if (hvBase === undefined) { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); return; }
       const b = hvBase; hvBase = undefined; if ((SHf(window.__P()) || 'All') !== b) dash.setParams({ shop: b, sf: 0, pf: 0 }); else { const sm_ = s.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); } }, 160); }); }
     const pa_ = D('atlas_parts'), pd_ = D('atlas_parts_daily'); if (!pa_ || !pd_) { st.replaceChildren(); return; }
     const end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end, parts = new Map(pa_.filter(r => r.type === 'Finished').map(r => [String(r.code), r]));
@@ -4901,11 +4902,13 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
            selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
         /* 14 Nov 05:24 (Umair): a click locks that shop - hovering other bars then changes nothing until the Clear filter button (or the Shop list) changes the shop */
-        b.addEventListener('mouseenter', () => { if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(O().sh, O().v);
-          clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); }, 140); });
-        b.addEventListener('mouseleave', () => { tip.hide(); });
+        /* 14 Nov 05:41 (Umair): the bar grows first (0.15 s); the filter, and with it the ring, comes in only once it is fully grown (0.2 s) */
+        b.addEventListener('mouseenter', () => { hvSh = O().sh; st.querySelectorAll('button.hv').forEach(x => x !== b && x.classList.remove('hv')); b.classList.add('hv'); if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(O().sh, O().v);
+          clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); }, 200); });
+        b.addEventListener('mouseleave', () => { tip.hide(); if (hvSh === O().sh) hvSh = ''; b.classList.remove('hv'); });
         b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); hvLock = O().sh; hvBase = undefined; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); else render(); }); }
-      b.__o = o; b.className = cur === o.sh ? 'on' : ''; b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
+      const nw = !old.has(o.sh); b.__o = o; b.className = [cur === o.sh ? 'on' : '', hvSh === o.sh ? 'hv' : '', nw && hvSh === o.sh ? 'nt' : ''].filter(Boolean).join(' ');
+      if (b.classList.contains('nt')) requestAnimationFrame(() => requestAnimationFrame(() => b.classList.remove('nt'))); b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
       return b; });
     if (bars.length !== st.children.length || bars.some((b, k) => st.children[k] !== b)) st.replaceChildren(...bars);
     /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
