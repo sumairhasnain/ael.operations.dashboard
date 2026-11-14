@@ -201,6 +201,8 @@
 .ael #summary .ovhb i{display:block;height:20px;border-radius:3px;color:#fff;font:700 10.5px var(--font-anthropic-sans);font-style:normal;padding:4px 5px 0;white-space:nowrap;overflow:hidden}
 .ael #summary .ovhb span{font-size:10.5px;font-weight:600;color:#33414B;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ael #summary .ovhb em{font-style:normal;font-size:10px;color:#5B6770;white-space:nowrap}
+#summary svg.ovflp .pA,#summary svg.ovflp .pB{transition:opacity .5s ease}
+#summary svg.ovflp[data-on="a"] .pB,#summary svg.ovflp[data-on="b"] .pA{opacity:0;pointer-events:none}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -265,26 +267,52 @@
       g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
       const SD = o.side || [], tx = cx0 + r0 + 12, lx = tx + 28, rw = w - lx - 2; if (!SD.length || rw < 120) return;
+      /* 15 Nov 00:06 (Umair): the right side flips between the consumption bars (pane A) and an inventory-days gauge (pane B) */
+      svg.classed('ovflp', true).attr('data-on', 'a');
+      const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB');
+      const drawB = () => { const G = o.gauge; if (!G) { svg.classed('ovflp', false); return; }
+        const tab = (gg, label) => { gg.append('rect').attr('x', tx).attr('y', (h - Math.max(40, Math.min(h - 6, 150))) / 2).attr('width', 20).attr('height', Math.max(40, Math.min(h - 6, 150))).attr('rx', 6).attr('fill', '#051C2C');
+          gg.append('text').attr('transform', `translate(${tx + 10},${h / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text(label.toUpperCase()); };
+        tab(pB, 'Inventory days');
+        const dd = G.days, tg = G.target, mxd = Math.max(90, Math.ceil(Math.max(dd || 0, tg * 2) / 30) * 30), col = dd == null ? '#8A949E' : dd <= tg ? '#1E8C5A' : dd <= tg * 2 ? '#E0A100' : C.bad;
+        /* gauge on top, three KPI lines under it (the card is too narrow for them side by side) */
+        const gr = Math.max(26, Math.min(rw * 0.36, h * 0.27)), gcx = lx + rw / 2, gcy = gr + 6, A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd);
+        const arc = d3.arc().innerRadius(gr * 0.76).outerRadius(gr).cornerRadius(2), g2 = pB.append('g').attr('transform', `translate(${gcx},${gcy})`);
+        g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E9EDF1');
+        if (dd != null) g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: A(dd) })).attr('fill', col);
+        const ta = A(tg); g2.append('line').attr('x1', Math.sin(ta) * gr * 0.7).attr('y1', -Math.cos(ta) * gr * 0.7).attr('x2', Math.sin(ta) * gr * 1.07).attr('y2', -Math.cos(ta) * gr * 1.07).attr('stroke', '#051C2C').attr('stroke-width', 2);
+        g2.append('text').attr('x', Math.sin(ta) * gr * 1.2).attr('y', -Math.cos(ta) * gr * 1.2).attr('text-anchor', ta < -0.2 ? 'end' : ta > 0.2 ? 'start' : 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(`target ${tg}`);
+        if (dd != null) { const na = A(dd); g2.append('line').attr('x2', Math.sin(na) * gr * 0.66).attr('y2', -Math.cos(na) * gr * 0.66).attr('stroke', '#051C2C').attr('stroke-width', 2.2).attr('stroke-linecap', 'round'); g2.append('circle').attr('r', 3.5).attr('fill', '#051C2C'); }
+        g2.append('text').attr('x', -gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text('0');
+        g2.append('text').attr('x', gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text(mxd + ' d');
+        g2.append('text').attr('y', 22).attr('text-anchor', 'middle').attr('font-size', Math.max(14, Math.min(19, gr / 2.4))).attr('font-weight', 700).attr('fill', col).text(dd == null ? '—' : d3.format(',.0f')(dd)).append('tspan').attr('font-size', 9.5).attr('font-weight', 400).attr('fill', '#5B6770').text(' days of stock');
+        const K3 = [['Turns (annual)', dd ? d3.format('.1f')(365 / dd) + '×' : '—', '#051C2C'], ['Cash above target', G.cash > 0 ? (o.fmt || kf)(G.cash) : 'none', G.cash > 0 ? C.bad : '#1E8C5A'], [`${G.mon} issues`, (o.fmt || kf)(G.cons), '#051C2C']];
+        const ky0 = gcy + 34, kh = Math.max(14, Math.min(20, (h - ky0 - 2) / 3));
+        K3.forEach(([l, v, c], i) => { const y = ky0 + i * kh;
+          pB.append('line').attr('x1', lx).attr('x2', w - 2).attr('y1', y + kh - 3).attr('y2', y + kh - 3).attr('stroke', '#EEF1F4');
+          pB.append('text').attr('x', lx).attr('y', y + kh - 7).attr('font-size', 10).attr('fill', '#5B6770').text(l);
+          pB.append('text').attr('x', w - 2).attr('y', y + kh - 7).attr('text-anchor', 'end').attr('font-size', 11.5).attr('font-weight', 700).attr('fill', c).text(v); });
+        pB.append('rect').attr('x', lx).attr('width', w - lx).attr('height', h).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, ['Inventory days', `Stock ${(o.fmt || kf)(G.stock)} ÷ ${G.mon} issues ${(o.fmt || kf)(G.cons)} per ${G.nd} days`, `Target ${tg} days (provisional)`])).on('mouseleave', tip.hide); };
       const mx = d3.max(SD, d => d.cons) || 1, top0 = 4, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
       /* 14 Nov 23:44 (Umair): the bar heading is a vertical navy tab on the left of the bars, like the Vendors / Parts tabs on Supply Watch */
       const th = Math.max(40, Math.min(h - 6, Math.max(150, rh * SD.length + 30))), ty = (h - th) / 2;
-      svg.append('rect').attr('x', tx).attr('y', ty).attr('width', 20).attr('height', th).attr('rx', 6).attr('fill', '#051C2C');
-      svg.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((th >= (o.sideTitle || '').length * 6.6 + 16 ? o.sideTitle : o.sideShort || o.sideTitle || 'Consumption').toUpperCase());
+      pA.append('rect').attr('x', tx).attr('y', ty).attr('width', 20).attr('height', th).attr('rx', 6).attr('fill', '#051C2C');
+      pA.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((th >= (o.sideTitle || '').length * 6.6 + 16 ? o.sideTitle : o.sideShort || o.sideTitle || 'Consumption').toUpperCase());
       const dcol = d => d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A', dtx = d => d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`;
       if (SD.length > 3) { /* raw material included: one line per category - name, bar, value · days */
         const r1 = Math.min(26, (h - 8) / SD.length), yy = (h - r1 * SD.length) / 2, nw = Math.min(74, rw * 0.29), vw = 112, bwm = Math.max(16, rw - nw - vw - 6);
-        SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${yy + i * r1})`), bw = Math.max(2, bwm * d.cons / mx);
+        SD.forEach((d, i) => { const g = pA.append('g').attr('transform', `translate(${lx},${yy + i * r1})`), bw = Math.max(2, bwm * d.cons / mx);
           g.append('text').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 10).attr('fill', '#33414B').text(d.label.length > 9 ? d.label.slice(0, 7) + '…' : d.label).append('title').text(d.label);
           g.append('rect').attr('x', nw).attr('y', r1 / 2 - 5).attr('width', bw).attr('height', 10).attr('rx', 2).attr('fill', d.color);
           g.append('text').attr('x', rw).attr('text-anchor', 'end').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.cons)).append('tspan').attr('fill', dcol(d)).text(dtx(d));
           g.append('rect').attr('width', rw).attr('height', r1).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)}`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
-        return; }
-      SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
+        drawB(); return; }
+      SD.forEach((d, i) => { const g = pA.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
         g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
         g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
         g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`).append('tspan').attr('fill', d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A').text(d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`);   /* 14 Nov 23:37 (Umair): no share %, days of stock right after the value */
         g.append('rect').attr('y', 11).attr('width', rw).attr('height', 15).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)} (${pc(d.share)} of the total)`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
-      return; }
+      drawB(); return; }
     if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
       const tot0 = d3.sum(items, d => d.v), lines = items.map(d => `${d.label} · ${pc(d.v / tot0 * 100)}`), cw = d3.max(lines, t => t.length) * 5.7 + 20, per = Math.max(1, Math.floor((w - 8) / cw)), rows = Math.ceil(items.length / per), lgH = rows * 18 + 6;
       const r0 = Math.max(30, Math.min((h - lgH) / 2 - 8, w / 2 - 6)), cy0 = Math.max(r0 + 4, (h - lgH - 2 * r0 - 12) / 2 + r0), g0 = svg.append('g').attr('transform', `translate(${w / 2},${cy0})`);
@@ -411,6 +439,8 @@
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
         donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · days`, sideShort: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} use · days`,
+          gauge: (() => { const cons = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0)), d = cons > 0 ? V / (cons / nd) : null, T = 30;   /* 15 Nov: target 30 days, provisional until AEL gives one */
+            return { days: d, target: T, stock: V, cons, nd, mon: d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z')), cash: cons > 0 ? Math.max(0, V - T * cons / nd) : 0 }; })(),
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
@@ -530,6 +560,7 @@
     if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
     return `<div class="ovbh ${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, items.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; };
   const okc = v => v < 80 ? C.bad : v < 100 ? '#9A6B00' : '#1E8C5A';
+  if (!window.__ovFL) window.__ovFL = setInterval(() => document.querySelectorAll('#summary svg.ovflp').forEach(v => { if (v.matches(':hover')) return; v.setAttribute('data-on', v.getAttribute('data-on') === 'a' ? 'b' : 'a'); }), 8000);
   if (!window.__ovWL) window.__ovWL = setInterval(() => document.querySelectorAll('#summary .ovwl').forEach(w => { if (w.dataset.hold || w.matches(':hover')) return; w.dataset.on = w.dataset.on === 'v' ? 'p' : 'v'; }), 7000);
   const vpOvH = () => { const pop = document.getElementById('vpop'); if (pop) { pop.style.display = 'none'; pop.dataset.code = ''; } };
   const vpOv = (ev, cd, part) => { const VP = window.__vendPanel; if (!VP || !cd) return;
