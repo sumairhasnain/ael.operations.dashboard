@@ -4747,6 +4747,11 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       const tot0 = d3.sum(items, d => d.v), r0 = Math.max(26, Math.min(h / 2 - 6, w * 0.2)), g0 = svg.append('g').attr('transform', `translate(${r0 + 8},${h / 2})`);
       g0.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r0 * 0.62).outerRadius(r0).padAngle(0.01)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
         .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)}`])).on('mouseleave', tip.hide);
+      /* 14 Nov 23:23 (Umair): % of current stock value printed on each slice */
+      const lab0 = d3.arc().innerRadius(r0 * 0.81).outerRadius(r0 * 0.81);
+      g0.selectAll('text.sl').data(d3.pie().sort(null).value(d => d.v)(items).filter(d => d.endAngle - d.startAngle > 0.32)).join('text').attr('class', 'sl')
+        .attr('transform', d => `translate(${lab0.centroid(d)})`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', Math.max(9, Math.min(11.5, r0 / 5.5))).attr('font-weight', 700).attr('fill', '#fff').attr('pointer-events', 'none')
+        .text(d => pc(d.data.v / tot0 * 100));
       g0.append('text').attr('text-anchor', 'middle').attr('y', 5).attr('font-size', Math.max(12, Math.min(18, r0 / 3.4))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       const lx = 2 * r0 + 26, rx = w - 4, rh = Math.min(34, (h - 8) / items.length), y0 = h / 2 - rh * items.length / 2;
       items.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(0,${y0 + i * rh})`);
