@@ -4891,18 +4891,23 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const cur = SHf(P); if (hvLock && cur !== hvLock) hvLock = '';   /* shop changed elsewhere (Clear filter, Shop list): unlock */
     st.style.width = (by.length * 13 + 1) + 'px';   /* room for one bar at 1.5x, split both sides */
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
-    st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
-      b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
-      b.addEventListener('mousemove', ev => tip.show(ev, [o.sh, `${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 05:27 (Umair): bar tooltip shows the shop name, then plan / actual */);
-      /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
-      /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
-         selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
-      /* 14 Nov 05:24 (Umair): a click locks that shop - hovering other bars then changes nothing until the Clear filter button (or the Shop list) changes the shop */
-      b.addEventListener('mouseenter', () => { if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v);
-        clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== o.sh) dash.setParams({ shop: o.sh, sf: 0, pf: 0 }); }, 140); });
-      b.addEventListener('mouseleave', () => { tip.hide(); });
-      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); hvLock = o.sh; hvBase = undefined; if (SHf(window.__P()) !== o.sh) dash.setParams({ shop: o.sh, sf: 0, pf: 0 }); else render(); });
-      return b; }));
+    /* 14 Nov 05:29 (Umair): the bars are kept and updated in place when the dashboard redraws. Before, a hover filter redrew the strip with new
+       buttons, so the hovered bar grew, snapped back and grew a second time. Listeners read the bar's current data from b.__o. */
+    const old = new Map([...st.children].map(b => [b.__sh, b]));
+    const bars = by.map(o => { let b = old.get(o.sh); const c = stCol(o.v);
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.__sh = o.sh; const O = () => b.__o;
+        b.addEventListener('mousemove', ev => tip.show(ev, [O().sh, `${kf(O().p)} / ${kf(O().a)}`])   /* 14 Nov 05:27 (Umair): bar tooltip shows the shop name, then plan / actual */);
+        /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
+        /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
+           selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
+        /* 14 Nov 05:24 (Umair): a click locks that shop - hovering other bars then changes nothing until the Clear filter button (or the Shop list) changes the shop */
+        b.addEventListener('mouseenter', () => { if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(O().sh, O().v);
+          clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); }, 140); });
+        b.addEventListener('mouseleave', () => { tip.hide(); });
+        b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); hvLock = O().sh; hvBase = undefined; if (SHf(window.__P()) !== O().sh) dash.setParams({ shop: O().sh, sf: 0, pf: 0 }); else render(); }); }
+      b.__o = o; b.className = cur === o.sh ? 'on' : ''; b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
+      return b; });
+    if (bars.length !== st.children.length || bars.some((b, k) => st.children[k] !== b)) st.replaceChildren(...bars);
     /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
     let sm = box.querySelector('.ovsum'); if (!sm) { sm = document.createElement('div'); sm.className = 'ovsum'; box.appendChild(sm); }
     const sel = cur && by.find(o => o.sh === cur), tp = sel ? sel.p : d3.sum(by, o => o.p), ta = sel ? sel.a : d3.sum(by, o => o.a), tv = tp ? ta / tp * 100 : null;
