@@ -126,6 +126,9 @@
 .ael #summary .ovkh div{border-left:3px solid #051C2C;padding:2px 0 2px 10px;min-width:0}
 .ael #summary .ovkh span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5B6770;white-space:nowrap}
 .ael #summary .ovkh b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;color:#051C2C;font-variant-numeric:tabular-nums}
+.ael #summary .ovbh{flex:0 0 auto;font-size:12px;color:#33414B;background:#FBE7E6;border-radius:4px;padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovbh b{color:#B3261E;font-weight:600}
+.ael #summary .ovbh.ok{background:#E6F4EC;color:#1E8C5A}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -219,7 +222,9 @@
     const byShop = agg(fin, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
     const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
-    return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80),
+    /* 14 Nov 10:34 (Umair): shops below 95% of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
+    const bh = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100 })).filter(x => x.v < 95).sort((a, b) => a.v - b.v);
+    return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80), behind: { what: SH ? 'models' : 'shops', list: bh },
       kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
         ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to plan', kf(Math.max(0, pp - pa)), 'plan less actual']],
       vt: '', /* 14 Nov 06:32 (Umair): no chart title on the Production card */ mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
@@ -388,7 +393,9 @@
     /* 14 Nov 06:36 (Umair): Production card - FG production and Dispatch side by side above a full-width, shorter chart, in the Overtime While Absent KPI style */
     if (id === 'production' && !o.none) {
       el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${pill(o.st)}</div><div class="ovb ovbc"><div class="ovkh">${K.map(([l, v, sb, c]) =>
-        `<div style="border-left-color:${c || '#051C2C'}" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div><div class="ovv"><div class="vc"></div></div></div>`;
+        `<div style="border-left-color:${c || '#051C2C'}" title="${esc(l + (sb ? ' · ' + sb : ''))}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return ''; return b.list.length
+          ? `<div class="ovbh" title="Below 95% of plan to date"><b>Behind:</b> ${b.list.map(x => `<span style="color:${x.v < 80 ? C.bad : '#9A6B00'}">${esc(x.k)} ${pc(x.v)}</span>`).join(' · ')}</div>`
+          : `<div class="ovbh ok">All ${b.what} at 95%+ of plan</div>`; })()}</div>`;
     } else
     el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3>${o.none ? '' : pill(o.st)}</div>${o.none ? `<div class="ovl">${esc(o.none)}</div>` : `<div class="ovb"><div class="ovk">
       <div class="hero" title="${esc(h0[2] || '')}"><div class="l">${esc(h0[0])}</div><div class="v"${h0[3] ? ` style="color:${h0[3]}"` : ''}>${esc(h0[1])}</div><div class="s">${esc(h0[2] || '')}</div></div>
