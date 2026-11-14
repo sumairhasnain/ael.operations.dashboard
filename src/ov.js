@@ -139,7 +139,9 @@
 /* 14 Nov 11:06 (Umair): one KPI that flips FG Production -> Dispatch -> FG Production (4 s each; hover holds it) */
 .ael #summary .ovfl{perspective:600px}
 .ael #summary .hd .ovkh{margin-left:auto;flex:0 0 auto}
-.ael #summary .hd .ovkh + .stsym{margin-left:14px}
+.ael #summary .hd .ovkh + .stsym{margin-left:10px}
+.ael #summary .hd h3.ovh3{flex:0 0 auto;white-space:nowrap;overflow:visible}   /* 14 Nov 11:14 (Umair): title always shown in full; the KPI takes what is left */
+.ael #summary .hd .ovkh .ovff{padding-left:8px}
 .ael #summary .hd .ovkh span{font-size:9.5px}
 .ael #summary .hd .ovkh b{font-size:20px;line-height:1.1}
 .ael #summary .ovfl .ovfi{display:grid;transform-style:preserve-3d;animation:ovflip 8s ease-in-out infinite}
@@ -412,7 +414,7 @@
     const K = (PICK[id] || [0, 1, 2, 3]).map(i => o.kpis[i]).filter(Boolean), [h0, ...rest] = K;
     /* 14 Nov 06:36 (Umair): Production card - FG production and Dispatch side by side above a full-width, shorter chart, in the Overtime While Absent KPI style */
     if (id === 'production' && !o.none) {   /* 14 Nov 11:09 (Umair): the flipping KPI sits right of the card title, on the same line */
-      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3><div class="ovkh"><div class="ovfl" title="${esc(K.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
+      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl" title="${esc(K.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
         `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div></div>${pill(o.st)}</div><div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>${(() => { const b = o.behind; if (!b) return '';
           /* 14 Nov 10:41/10:45 (Umair): more than 2 names run as a ticker, right to left, without stopping (hover pauses it).
              Nobody below 95% -> 'Ahead:' with every shop (or model) and its %, in green */
