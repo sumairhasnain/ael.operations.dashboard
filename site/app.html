@@ -4684,6 +4684,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 @keyframes ov3{0%,29%{opacity:1;transform:none}33%,96%{opacity:0;transform:rotateX(90deg)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovkh .ovf3 .ovff{animation:none}.ael #summary .ovkh .ovf3 .f1,.ael #summary .ovkh .ovf3 .f2{display:none}}
 .ael #summary .ovvt{position:relative}
+/* 14 Nov 23:54 (Umair): the raw-material switch is a small round 'RM' button in the header; struck through = raw material left out */
+.ael #summary .hd .tgrm{flex:0 0 auto;width:26px;height:26px;border-radius:50%;padding:0;margin:0 0 0 10px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-anthropic-sans),Arial,sans-serif;font-size:9.5px;font-weight:700;line-height:1;letter-spacing:.02em;background:#fff;border:1.5px solid #C9D1D9;color:#5B6770;position:relative}
+.ael #summary .hd .tgrm:hover{border-color:#1F9E89;color:#1F9E89}
+.ael #summary .hd .tgrm.on{background:#E3F3F0;border-color:#1F9E89;color:#1F9E89}
+.ael #summary .hd .tgrm.on span::after{content:'';position:absolute;left:5px;right:5px;top:50%;height:1.5px;background:currentColor;transform:rotate(-35deg)}
+.ael #summary .hd .tgrm.tgrm::before,.ael #summary .hd .tgrm.tgrm.on::before{content:none;display:none}
 .ael #summary .ovvt .tgc{position:absolute;top:4px;right:6px;z-index:1;margin:0;font-size:9.5px;padding:3px 8px}   /* raw-material switch sits in the chart's top-right corner so the header keeps room for the KPI and symbol */
 .ael #summary .hd .tgc.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
 .ael #summary .ovhb{flex:0 0 auto;display:flex;gap:3px;margin-top:2px}
@@ -4750,16 +4756,25 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)} of stock value`])).on('mouseleave', tip.hide);
       const lab0 = d3.arc().innerRadius((ri + r0) / 2).outerRadius((ri + r0) / 2), fs = Math.max(8.5, Math.min(11, r0 / 6.2));
       const lg = g0.selectAll('g.sl').data(pie0.filter(d => d.endAngle - d.startAngle > 0.42)).join('g').attr('class', 'sl').attr('transform', d => `translate(${lab0.centroid(d)})`).attr('pointer-events', 'none');
-      lg.append('text').attr('text-anchor', 'middle').attr('y', -1).attr('font-size', fs).attr('font-weight', 700).attr('fill', '#fff').text(d => d.data.v >= 1e6 ? d3.format(',.0f')(d.data.v / 1e6) + 'M' : (o.fmt || kf)(d.data.v).replace('Rs ', ''));
+      lg.append('text').attr('text-anchor', 'middle').attr('y', -1).attr('font-size', fs).attr('font-weight', 700).attr('fill', '#fff').text(d => d.data.v >= 1e9 ? d3.format('.1f')(d.data.v / 1e9) + 'B' : d.data.v >= 1e6 ? d3.format(',.0f')(d.data.v / 1e6) + 'M' : (o.fmt || kf)(d.data.v).replace('Rs ', ''));
       lg.append('text').attr('text-anchor', 'middle').attr('y', fs + 1).attr('font-size', fs - 1).attr('fill', '#fff').attr('opacity', .9).text(d => pc(d.data.v / tot0 * 100));
       g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
       const SD = o.side || [], tx = cx0 + r0 + 12, lx = tx + 28, rw = w - lx - 2; if (!SD.length || rw < 120) return;
       const mx = d3.max(SD, d => d.cons) || 1, top0 = 4, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
       /* 14 Nov 23:44 (Umair): the bar heading is a vertical navy tab on the left of the bars, like the Vendors / Parts tabs on Supply Watch */
-      const th = Math.min(h - 8, Math.max(150, rh * SD.length + 30)), ty = (h - th) / 2;
+      const th = Math.max(40, Math.min(h - 6, Math.max(150, rh * SD.length + 30))), ty = (h - th) / 2;
       svg.append('rect').attr('x', tx).attr('y', ty).attr('width', 20).attr('height', th).attr('rx', 6).attr('fill', '#051C2C');
-      svg.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((o.sideTitle || 'Consumption').toUpperCase());
+      svg.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((th >= (o.sideTitle || '').length * 6.6 + 16 ? o.sideTitle : o.sideShort || o.sideTitle || 'Consumption').toUpperCase());
+      const dcol = d => d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A', dtx = d => d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`;
+      if (SD.length > 3) { /* raw material included: one line per category - name, bar, value · days */
+        const r1 = Math.min(26, (h - 8) / SD.length), yy = (h - r1 * SD.length) / 2, nw = Math.min(74, rw * 0.29), vw = 112, bwm = Math.max(16, rw - nw - vw - 6);
+        SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${yy + i * r1})`), bw = Math.max(2, bwm * d.cons / mx);
+          g.append('text').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 10).attr('fill', '#33414B').text(d.label.length > 9 ? d.label.slice(0, 7) + '…' : d.label).append('title').text(d.label);
+          g.append('rect').attr('x', nw).attr('y', r1 / 2 - 5).attr('width', bw).attr('height', 10).attr('rx', 2).attr('fill', d.color);
+          g.append('text').attr('x', rw).attr('text-anchor', 'end').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.cons)).append('tspan').attr('fill', dcol(d)).text(dtx(d));
+          g.append('rect').attr('width', rw).attr('height', r1).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)}`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
+        return; }
       SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
         g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
         g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
@@ -4891,7 +4906,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         const cm = P.month && P.month < (window.__TODAY || '').slice(0, 7) ? P.month : d3.utcFormat('%Y-%m')(d3.utcMonth.offset(new Date((P.month || (window.__TODAY || '').slice(0, 7)) + '-01T00:00:00Z'), -1));
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
-        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · days`,
+        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · days`, sideShort: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} use · days`,
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
@@ -5048,9 +5063,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       const F = [o.kpis[0], o.kpis[1], o.kpis[2]], HV = d3.sum(o.health, d => d[1]);
       el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovf3" title="${esc(F.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}">${F.map(([l, v, sb, c], i) =>
           `<div class="ovff f${i}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-        ${pill(o.st)}</div>
-        <div class="ovb ovbc"><div class="ovv ovvt"><button type="button" class="tg tgc${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">Excl. raw material</button><div class="vc"></div></div>
-        <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i><span>${esc(l)}</span><em>${rs(v)}</em></div>`).join('')}</div></div>`;
+        <button type="button" class="tg tgrm${exRM ? ' on' : ''}" aria-pressed="${exRM}" aria-label="Exclude raw material" title="${exRM ? 'Raw material, production parts and lubricants are left out - click to include them' : 'Raw material, production parts and lubricants are included - click to leave them out'}"><span>RM</span></button>${pill(o.st)}</div>
+        <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
+        <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
     } else if (id === 'vendor' && !o.none && o.watch) { /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = wRowH;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
