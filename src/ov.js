@@ -181,6 +181,19 @@
 #vpop .ovrw{display:block;position:static;width:440px;box-shadow:0 6px 20px rgba(5,28,44,.18)}
 .ael #summary .ovwl .wr[data-c]{cursor:help}
 .ael #summary .ovwl .we{font-size:12px;color:#1E8C5A;text-align:center}
+.ael #summary .ovf3{display:grid}
+.ael #summary .ovkh .ovf3 .ovff{grid-area:1/1;background:#fff;animation:ov3 12s ease-in-out infinite}
+.ael #summary .ovkh .ovf3 .f1{animation-delay:-8s}.ael #summary .ovkh .ovf3 .f2{animation-delay:-4s}
+.ael #summary .ovf3:hover .ovff{animation-play-state:paused}
+@keyframes ov3{0%,29%{opacity:1;transform:none}33%,96%{opacity:0;transform:rotateX(90deg)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ael #summary .ovkh .ovf3 .ovff{animation:none}.ael #summary .ovkh .ovf3 .f1,.ael #summary .ovkh .ovf3 .f2{display:none}}
+.ael #summary .hd .tgc{margin:0 0 0 10px;font-size:9.5px;padding:3px 8px}
+.ael #summary .hd .tgc.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
+.ael #summary .ovhb{flex:0 0 auto;display:flex;gap:3px;margin-top:2px}
+.ael #summary .ovhb div{min-width:0;display:flex;flex-direction:column}
+.ael #summary .ovhb i{display:block;height:20px;border-radius:3px;color:#fff;font:700 10.5px var(--font-anthropic-sans);font-style:normal;padding:4px 5px 0;white-space:nowrap;overflow:hidden}
+.ael #summary .ovhb span{font-size:10.5px;font-weight:600;color:#33414B;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ael #summary .ovhb em{font-style:normal;font-size:10px;color:#5B6770;white-space:nowrap}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -233,6 +246,18 @@
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
+    if (o.legend === 'side') { /* 14 Nov 19:29 (Umair): donut on the left, category value list on the right (Inventory card) */
+      const tot0 = d3.sum(items, d => d.v), r0 = Math.max(26, Math.min(h / 2 - 6, w * 0.2)), g0 = svg.append('g').attr('transform', `translate(${r0 + 8},${h / 2})`);
+      g0.selectAll('path').data(d3.pie().sort(null).value(d => d.v)(items)).join('path').attr('d', d3.arc().innerRadius(r0 * 0.62).outerRadius(r0).padAngle(0.01)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
+        .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)}`])).on('mouseleave', tip.hide);
+      g0.append('text').attr('text-anchor', 'middle').attr('y', 5).attr('font-size', Math.max(12, Math.min(18, r0 / 3.4))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
+      const lx = 2 * r0 + 26, rx = w - 4, rh = Math.min(34, (h - 8) / items.length), y0 = h / 2 - rh * items.length / 2;
+      items.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(0,${y0 + i * rh})`);
+        g.append('rect').attr('x', lx).attr('y', rh / 2 - 9).attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', d.color);
+        g.append('text').attr('x', lx + 16).attr('y', rh / 2).attr('font-size', 12).attr('fill', '#33414B').text(d.label);
+        g.append('text').attr('x', rx).attr('y', rh / 2).attr('text-anchor', 'end').attr('font-size', 12).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.v));
+        g.append('text').attr('x', rx).attr('y', rh / 2 + 12).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', '#8A949E').text(pc(d.v / tot0 * 100) + ' of value'); });
+      return; }
     if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
       const tot0 = d3.sum(items, d => d.v), lines = items.map(d => `${d.label} · ${pc(d.v / tot0 * 100)}`), cw = d3.max(lines, t => t.length) * 5.7 + 20, per = Math.max(1, Math.floor((w - 8) / cw)), rows = Math.ceil(items.length / per), lgH = rows * 18 + 6;
       const r0 = Math.max(30, Math.min((h - lgH) / 2 - 8, w / 2 - 6)), cy0 = Math.max(r0 + 4, (h - lgH - 2 * r0 - 12) / 2 + r0), g0 = svg.append('g').attr('transform', `translate(${w / 2},${cy0})`);
@@ -349,10 +374,12 @@
     const stg = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.stage || 'Not classed').sort((a, b) => b[1] - a[1]);
     const top = S.filter(r => +r.excess_pkr > 0).sort((a, b) => b.excess_pkr - a.excess_pkr).slice(0, 12);
     const asof = (S.find(r => r.asof) || {}).asof || '';
-    return { title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}${exRM ? ' · excl. raw material, production parts, lubricants' : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
+    /* 14 Nov 19:29 (Umair): stock health - slow / no move = value of items with no issue for over a year; excess = excess value of the other items; working = the rest. The three add up to the stock value. */
+    const deadS = new Set(dead), hEX = d3.sum(S.filter(r => !deadS.has(r)), r => Math.min(+r.excess_pkr || 0, +r.value_pkr || 0)), health = [['Working', Math.max(0, V - DV - hEX), '#1F9E89'], ['Excess', hEX, '#E0A100'], ['Slow / no move', DV, '#B3261E']];
+    return { health, cat, title: `SAP stock${asof ? ' as of ' + dlab(asof) : ''}${exRM ? ' · excl. raw material, production parts, lubricants' : ''}`, st: band(V ? EX / V * 100 : null, 10, 25, false),
       kpis: [['Stock value', rs(V), `${nf(S.length)} materials`], ['Excess stock', rs(EX), `${pc(V ? EX / V * 100 : null)} of value`, C.warn], ['Slow moving', rs(DV), 'no issue for over a year', C.bad],
         ['Low cover', nf(low.length), 'under 15 days or out of stock', low.length ? C.bad : null], ['Moved in 90 days', rs(mv[0][1]), `${pc(V ? mv[0][1] / V * 100 : null)} of value`]],
-      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'bottom' }),
+      vt: 'Stock value by category', mini: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side' }),
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
         { t: 'Stock value by last movement', draw: el => hbarC(el, mv.map(([b, v], i) => ({ label: b, v, lab: rs(v), color: [C.navy, C.blue, C.warn, C.bad][i], tip: [b, rs(v), pc(v / V * 100) + ' of stock'] })), { fmt: rs, h: 250, lw: 170, lc: 28 }) },
@@ -504,7 +531,14 @@
           const cls = 'ovbh' + (bad ? '' : ' ok'), tt = bad ? 'Short of plan to date' : `All ${b.what} at or above plan to date`;
           if (L.length <= 2) return `<div class="${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
-    } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
+    } else if (id === 'inventory' && !o.none && o.health) {   /* 14 Nov 19:29 (Umair): Inventory - 3-face flipping KPI and raw-material chip in the header, donut + values full width, stock health bar at the foot */
+      const F = [o.kpis[0], o.kpis[1], o.kpis[2]], HV = d3.sum(o.health, d => d[1]);
+      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovf3" title="${esc(F.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}">${F.map(([l, v, sb, c], i) =>
+          `<div class="ovff f${i}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
+        <button type="button" class="tg tgc${exRM ? ' on' : ''}" aria-pressed="${exRM}" title="Leave out Raw Material, Production parts and Lubricants">${exRM ? '✓ ' : ''}Excl. raw material</button>${pill(o.st)}</div>
+        <div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i><span>${esc(l)}</span><em>${rs(v)}</em></div>`).join('')}</div></div>`;
+   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = wRowH;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
       el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh" role="tablist"><button type="button" role="tab" data-k="v" title="Weakest vendors against schedule to date">Vendors</button><button type="button" role="tab" data-k="p" title="Vendor parts that run out soonest at this month's plan (tick = next expected delivery)">Parts</button></div>
