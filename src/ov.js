@@ -167,6 +167,17 @@
 .ael #summary .ovwl .wb span{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
 .ael #summary .ovwl .wb em{position:absolute;left:66.7%;top:-4px;bottom:-4px;width:1.5px;background:#051C2C}
 .ael #summary .ovwl .wr b{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.ovm .ovwd{max-height:420px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;scrollbar-color:#D5DBE1 transparent}
+.ovm .ovwd::-webkit-scrollbar{width:7px}.ovm .ovwd::-webkit-scrollbar-track{background:transparent}.ovm .ovwd::-webkit-scrollbar-thumb{background:#D5DBE1;border-radius:4px}.ovm .ovwd::-webkit-scrollbar-thumb:hover{background:#B9C1C9}
+.ovm .ovwd .wr{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(80px,1fr) 52px;align-items:center;gap:10px;height:28px;border-bottom:1px solid #F1F3F5}
+.ovm .ovwd .wr[data-c]{cursor:help}
+.ovm .ovwd .wn{font-size:12.5px;color:#051C2C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.ovm .ovwd .wn i{display:block;font-style:normal;font-size:10px;color:#8A949E;overflow:hidden;text-overflow:ellipsis}
+.ovm .ovwd .wb{position:relative;height:9px;background:#E9EDF1;border-radius:5px}
+.ovm .ovwd .wb span{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.ovm .ovwd .wb em{position:absolute;left:66.7%;top:-4px;bottom:-4px;width:1.5px;background:#051C2C}
+.ovm .ovwd .wr b{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+#vpop{z-index:260}
 #vpop .ovrw{display:block;position:static;width:440px;box-shadow:0 6px 20px rgba(5,28,44,.18)}
 .ael #summary .ovwl .wr[data-c]{cursor:help}
 .ael #summary .ovwl .we{font-size:12px;color:#1E8C5A;text-align:center}
@@ -302,16 +313,24 @@
         return { code: cd, k: nm_.get(cd) || it.part || cd, sub: sn(vOf.get(cd) || ''), days: dd, col: RWC[it.lvl] || RWC.ok, w: Math.min(100, dd / 30 * 100), mk: it.nxd != null ? Math.min(100, it.nxd / 30 * 100) : null, lab,
           tip: `${nm_.get(cd) || it.part} (${cd}): stock ${nf(it.stock)}${it.vstock ? ` + ${nf(it.vstock)} at vendor` : ''}, need ${nf(it.need)} a day -> ${dd >= 30 ? 'lasts 30+ working days' : 'runs out ' + (it.out ? ddf(new Date(it.out + 'T00:00:00Z')) : '')}${it.nx ? ` · next delivery ${ddf(new Date(it.nx + 'T00:00:00Z'))} (${it.how})` : ' · no delivery expected'} · vendor ${vOf.get(cd)}` }; })
       .filter(Boolean).sort((a, b) => a.days - b.days || a.k.localeCompare(b.k)) : [];
+    const allP = wPart.slice();   /* 14 Nov 15:44: full lists for the detail window */
     wPart.splice(4);
     /* vendors: fewer than 4 with a schedule -> add the shop's vendors that delivered with nothing scheduled yet */
     if (wVend.length < 4) d3.rollups(rows, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byV.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
       .forEach(([v, q]) => { if (wVend.length < 4) wVend.push({ k: sn(v), v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` }); });
+    const allV = vRows.slice().sort((a, b) => a.v - b.v).concat(d3.rollups(rows, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byV.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
+      .map(([v, q]) => ({ k: sn(v), v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` })));
+    const wlist = (L, parts) => el => { el.innerHTML = L.length ? `<div class="ovwd">${L.map(wRowH).join('')}</div>` : '<div class="em">Nothing to show</div>';
+      if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { r.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k)); r.addEventListener('mouseleave', vpOvH); }); };
     return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
+        /* 14 Nov 15:44 (Umair): the card's watch lists in full - 15 rows in view, scroll for the rest */
+        { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV) },
+        { t: `Vendor parts · soonest run-out first (${allP.length})`, lg: [['Runs out before next delivery', C.bad], ['Under 7 working days', '#E0A100'], ['Covered', '#1E8C5A']], draw: wlist(allP, true) },
         { t: 'Cumulative receipts vs schedule', lg: [['Schedule', '#B9C1C9'], ['Received', C.navy]], draw: el => lineC(el, ds, [{ name: 'Schedule', color: '#B9C1C9', values: cS, dash: '4 3' }, { name: 'Received', color: C.navy, values: cR }], { h: 260, xFmt: dlab }) },
         { t: 'Weakest 12 vendors (compliance, month to date)', draw: el => hbarC(el, byV.map(([v, o]) => ({ label: v, v: o.r / o.s * 100 })).sort((a, b) => a.v - b.v).slice(0, 12).map(d => { const o = new Map(byV).get(d.label); return { ...d, lab: pc(d.v), color: col(d.v), tip: [d.label, `Compliance ${pc(d.v)}`, `${kf(o.r)} received of ${kf(o.s)} scheduled`, `${o.n} parts`] }; }), { fmt: pc, ref: 100, h: 270, lw: 170, lc: 26 }) },
         { t: 'Compliance by shop', draw: el => hbarC(el, byS.map(([s, o]) => ({ label: s, v: o.r / o.s * 100, lab: pc(o.r / o.s * 100), color: col(o.r / o.s * 100), tip: [s, `${kf(o.r)} received of ${kf(o.s)} scheduled`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130 }) },
@@ -463,6 +482,8 @@
       const rh = window.__rwHTML && window.__rwHTML(cd, part); if (rh) { const b = document.createElement('div'); b.className = 'rwpop ovrw'; b.innerHTML = rh; pop.appendChild(b); } }
     pop.style.display = 'flex'; const w = pop.offsetWidth, h = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12;
     if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); pop.style.left = x + 'px'; pop.style.top = y + 'px'; };
+  const wRowH = x => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
+        return `<div class="wr"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -484,8 +505,7 @@
           if (L.length <= 2) return `<div class="${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
     } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
-      const W = o.watch, row = x => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
-        return `<div class="wr"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
+      const W = o.watch, row = wRowH;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
       el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh" role="tablist"><button type="button" role="tab" data-k="v" title="Weakest vendors against schedule to date">Vendors</button><button type="button" role="tab" data-k="p" title="Vendor parts that run out soonest at this month's plan (tick = next expected delivery)">Parts</button></div>
         <div class="wps">${pane('v', W.vendors, 'No vendor short of schedule')}${pane('p', W.parts, 'No vendor part in use this month')}</div></div>
