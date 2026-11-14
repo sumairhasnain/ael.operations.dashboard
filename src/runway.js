@@ -116,6 +116,8 @@
   /* Part Compliance - Other Parts (29 Oct, Umair): the runway sits beside the vendor-receiving panel in the same row tooltip
      (#vpop, built by __vendHover). Rows with no vendor panel show the runway on its own. */
   window.__rwHTML = build;
+  /* 14 Nov 13:51 (Umair): the Overview's Supply Watch card asks for one part's run-out (same model as this hover) */
+  window.__rwItem = c => { try { const M = model(); return grpItem(M, String(c)) || item(M, String(c)); } catch (e) { return null; } };
   const orig = window.__vendHover;
   if (orig) window.__vendHover = tables => { orig(tables);
     tables.filter(t => t && ['tb-parts', 'tb-parts2', 'tb-vs'].includes(t.id) && !t.__rwh).forEach(T => { T.__rwh = 1; /* 6 Nov (Umair): Part Compliance - Finished Goods and Vendor Supply > Vendor Parts Stock too */
