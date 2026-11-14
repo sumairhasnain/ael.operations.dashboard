@@ -288,11 +288,24 @@
     /* 14 Nov 12:11 (Umair): watch list - the 4 weakest vendors against schedule to date, and the 4 critical vendor-supplied parts lowest against safety stock (shop filter applies) */
     const sn = v => String(v).replace(/\s*\((PVT|PRIVATE)\b.*$/i, '').replace(/\s+(\(?PVT\)?|PRIVATE|LIMITED|LIMIT|LTD\.?|LT|CO\.?)\s*$/i, '').replace(/\s+/g, ' ').trim();
     const vRows = byV.map(([v, o]) => ({ k: sn(v), v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
-    const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
+    const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* green (100%+) ones fill in when fewer are behind */   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
     const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop')), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
     const wPart = (D('atlas_stock_critical') || []).filter(r => inSh(SH, r, 'shop') && vOf.has(String(r.code)) && +r.safety_stock > 0)
-      .map(r => ({ k: r.part, sub: sn(vOf.get(String(r.code)) || ''), v: (+r.stock || 0) / +r.safety_stock * 100, tip: `${r.part} (${r.code}) · ${r.shop}: stock ${nf(+r.stock || 0)} of ${nf(+r.safety_stock)} safety stock${+r.vendor_stock ? ` · ${nf(+r.vendor_stock)} at vendor` : ''} · vendor ${vOf.get(String(r.code))}` }))
-      .sort((a, b) => a.v - b.v).slice(0, 4);
+      .map(r => ({ code: String(r.code), k: r.part, sub: sn(vOf.get(String(r.code)) || ''), v: (+r.stock || 0) / +r.safety_stock * 100, tip: `${r.part} (${r.code}) · ${r.shop}: stock ${nf(+r.stock || 0)} of ${nf(+r.safety_stock)} safety stock${+r.vendor_stock ? ` · ${nf(+r.vendor_stock)} at vendor` : ''} · vendor ${vOf.get(String(r.code))}` }))
+      .sort((a, b) => a.v - b.v);
+    /* 14 Nov 13:15 (Umair): fewer than 4 critical parts -> carry on with this shop's vendor parts that are at or above safety stock (green), lowest first */
+    if (wPart.length < 4) { const have = new Set(wPart.map(x => x.code)), nm = new Map([...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_stock_critical') || [])].map(r => [String(r.code), r.part]));
+      (D('atlas_part_stock') || []).filter(r => vOf.has(String(r.code)) && !have.has(String(r.code)) && +r.safety > 0 && nm.has(String(r.code)))
+        .map(r => ({ code: String(r.code), k: nm.get(String(r.code)), sub: sn(vOf.get(String(r.code)) || ''), v: (+r.stock || 0) / +r.safety * 100, tip: `${nm.get(String(r.code))} (${r.code}): stock ${nf(+r.stock || 0)} of ${nf(+r.safety)} safety stock · vendor ${vOf.get(String(r.code))}` }))
+        .sort((a, b) => a.v - b.v).forEach(x => { if (wPart.length < 4) wPart.push(x); }); }
+    if (wPart.length < 4) { const have = new Set(wPart.map(x => x.code)), nm = new Map([...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_stock_critical') || [])].map(r => [String(r.code), r.part]));
+      d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), vd: v[0].vendor }), r => String(r.code))
+        .filter(([cd, o]) => !have.has(cd) && (o.s > 0 || o.r > 0)).map(([cd, o]) => ({ code: cd, k: nm.get(cd) || cd, sub: sn(o.vd), v: o.s ? o.r / o.s * 100 : null, lab: o.s ? null : '+' + kf(o.r), tip: `${nm.get(cd) || cd} (${cd}): ${kf(o.r)} received of ${kf(o.s)} scheduled to date · vendor ${o.vd}` }))
+        .sort((a, b) => (a.v == null) - (b.v == null) || (b.v >= 100) - (a.v >= 100) || a.v - b.v).forEach(x => { if (wPart.length < 4) wPart.push(x); }); }
+    wPart.splice(4);
+    /* vendors: fewer than 4 with a schedule -> add the shop's vendors that delivered with nothing scheduled yet */
+    if (wVend.length < 4) d3.rollups(rows, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byV.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
+      .forEach(([v, q]) => { if (wVend.length < 4) wVend.push({ k: sn(v), v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` }); });
     return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
@@ -461,7 +474,8 @@
           if (L.length <= 2) return `<div class="${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
     } else if (id === 'vendor' && !o.none && o.watch) {   /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
-      const W = o.watch, row = x => `<div class="wr" title="${esc(x.tip)}"><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.min(100, x.v / 1.5)}%;background:${okc(x.v)}"></span><em></em></span><b style="color:${okc(x.v)}">${pc(x.v)}</b></div>`;
+      const W = o.watch, row = x => { const c = x.v == null ? '#1E8C5A' : okc(x.v), w = x.v == null ? 100 : Math.min(100, x.v / 1.5);
+        return `<div class="wr" title="${esc(x.tip)}"><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${w}%;background:${c}"></span><em></em></span><b style="color:${c}">${x.v == null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
       el.innerHTML = hdrF(id, name, K, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Supply<br>Watch</h3>') + `<div class="ovb ovbc"><div class="ovwl" data-on="v"><div class="wh" role="tablist"><button type="button" role="tab" data-k="v" title="Weakest vendors against schedule to date">Vendors</button><button type="button" role="tab" data-k="p" title="Critical vendor parts lowest against safety stock">Parts</button></div>
         <div class="wps">${pane('v', W.vendors, 'No vendor short of schedule')}${pane('p', W.parts, 'No critical part below safety stock')}</div></div>
