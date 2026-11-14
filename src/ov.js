@@ -360,7 +360,7 @@
   /* ---------- page ---------- */
   function sec() { return document.getElementById('summary'); }
   let last = {};
-  let hvBase, hvT;   /* hover preview: shop selected before the hover, and the delay timer */
+  let hvBase, hvT, hvLock = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -386,7 +386,7 @@
   function shopStrip(s, P) {
     const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
     if (!st) { st = document.createElement('div'); st.className = 'ovst'; st.setAttribute('aria-label', 'Production compliance by shop'); box.appendChild(st); }
-    if (!st.__hv) { st.__hv = 1; st.addEventListener('mouseleave', () => { clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); return; }
+    if (!st.__hv) { st.__hv = 1; st.addEventListener('mouseleave', () => { clearTimeout(hvT); if (hvLock) { hvBase = undefined; return; } hvT = setTimeout(() => { if (hvBase === undefined) { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); return; }
       const b = hvBase; hvBase = undefined; if ((SHf(window.__P()) || 'All') !== b) dash.setParams({ shop: b, sf: 0, pf: 0 }); else { const sm_ = s.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); } }, 160); }); }
     const pa_ = D('atlas_parts'), pd_ = D('atlas_parts_daily'); if (!pa_ || !pd_) { st.replaceChildren(); return; }
     const end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end, parts = new Map(pa_.filter(r => r.type === 'Finished').map(r => [String(r.code), r]));
@@ -394,7 +394,8 @@
     const by = d3.rollups(rows, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0) }), r => parts.get(String(r.code)).shop || '?')
       .filter(([sh, o]) => o.p > 0 && sh !== '?').map(([sh, o]) => ({ sh, ...o, v: o.a / o.p * 100 }))
       .sort((x, y) => { const SEQ = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'], ix = z => { const i = SEQ.indexOf(z.sh); return i < 0 ? SEQ.length : i; }; return ix(x) - ix(y) || x.sh.localeCompare(y.sh); });   /* 13 Nov 19:44 (Umair): same shop order as Production Plan Vs Actual - By Shop */
-    const cur = SHf(P); st.style.width = (by.length * 13 + 1) + 'px';   /* room for one bar at 1.5x, split both sides */
+    const cur = SHf(P); if (hvLock && cur !== hvLock) hvLock = '';   /* shop changed elsewhere (Clear filter, Shop list): unlock */
+    st.style.width = (by.length * 13 + 1) + 'px';   /* room for one bar at 1.5x, split both sides */
     /* 13 Nov 19:42 (Umair): thin bars, no names or percentages on them (hover shows both) */
     st.replaceChildren(...by.map(o => { const b = document.createElement('button'), c = stCol(o.v); b.type = 'button'; if (cur === o.sh) b.className = 'on';
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
@@ -402,10 +403,11 @@
       /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
       /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
          selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
-      b.addEventListener('mouseenter', () => { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v);
+      /* 14 Nov 05:24 (Umair): a click locks that shop - hovering other bars then changes nothing until the Clear filter button (or the Shop list) changes the shop */
+      b.addEventListener('mouseenter', () => { if (hvLock) return; const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v);
         clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== o.sh) dash.setParams({ shop: o.sh, sf: 0, pf: 0 }); }, 140); });
       b.addEventListener('mouseleave', () => { tip.hide(); });
-      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); const keep = hvBase === o.sh ? 'All' : o.sh; hvBase = keep; if ((SHf(window.__P()) || 'All') !== keep) dash.setParams({ shop: keep, sf: 0, pf: 0 }); else render(); });
+      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); hvLock = o.sh; hvBase = undefined; if (SHf(window.__P()) !== o.sh) dash.setParams({ shop: o.sh, sf: 0, pf: 0 }); else render(); });
       return b; }));
     /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
     let sm = box.querySelector('.ovsum'); if (!sm) { sm = document.createElement('div'); sm.className = 'ovsum'; box.appendChild(sm); }
