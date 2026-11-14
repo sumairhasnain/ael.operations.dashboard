@@ -4723,9 +4723,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const byShop = agg(fin, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
     const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
-    /* 14 Nov 10:34 (Umair): shops below 95% of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
-    const all_ = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100 }));
-    const bh = all_.filter(x => x.v < 95).sort((a, b) => a.v - b.v), ah = all_.filter(x => x.v >= 95).sort((a, b) => b.v - a.v);   /* 14 Nov 10:45: none behind - list everyone as 'Ahead' */
+    /* 14 Nov 10:34 (Umair): shops short of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
+    const all_ = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100, a: o.a, p: o.p }));
+    const bh = all_.filter(x => x.a < x.p).sort((a, b) => a.v - b.v), ah = all_.filter(x => x.a >= x.p).sort((a, b) => b.v - a.v);   /* 14 Nov 10:59 (Umair): behind = even one piece short of plan to date */   /* 14 Nov 10:45: none behind - list everyone as 'Ahead' */
     return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80), behind: { what: SH ? 'models' : 'shops', list: bh, ahead: ah },
       kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
         ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to plan', kf(Math.max(0, pp - pa)), 'plan less actual']],
@@ -4900,8 +4900,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
              Nobody below 95% -> 'Ahead:' with every shop (or model) and its %, in green */
           const bad = b.list.length > 0, L = bad ? b.list : b.ahead, lab = bad ? 'Behind:' : 'Ahead:';
           if (!L.length) return '';
-          const it = L.map(x => `<span style="color:${!bad ? '#1E8C5A' : x.v < 80 ? C.bad : '#9A6B00'}">${esc(x.k)} ${pc(x.v)}</span>`).join(' · ');
-          const cls = 'ovbh' + (bad ? '' : ' ok'), tt = bad ? 'Below 95% of plan to date' : `All ${b.what} at 95%+ of plan to date`;
+          const it = L.map(x => `<span style="color:${!bad ? '#1E8C5A' : x.v < 80 ? C.bad : '#9A6B00'}">${esc(x.k)} ${bad && x.v >= 99.5 ? Math.min(99.9, Math.floor(x.v * 10) / 10).toFixed(1) + '%' : pc(x.v)}</span>`).join(' · ');   /* a shop one piece short never shows as 100% */
+          const cls = 'ovbh' + (bad ? '' : ' ok'), tt = bad ? 'Short of plan to date' : `All ${b.what} at or above plan to date`;
           if (L.length <= 2) return `<div class="${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
     } else
