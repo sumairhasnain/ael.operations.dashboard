@@ -281,7 +281,7 @@
         g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E9EDF1');
         if (dd != null) g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: A(dd) })).attr('fill', col);
         const ta = A(tg); g2.append('line').attr('x1', Math.sin(ta) * gr * 0.7).attr('y1', -Math.cos(ta) * gr * 0.7).attr('x2', Math.sin(ta) * gr * 1.07).attr('y2', -Math.cos(ta) * gr * 1.07).attr('stroke', '#051C2C').attr('stroke-width', 2);
-        g2.append('text').attr('y', 24).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(`target ${tg} d`);   /* 15 Nov 00:23: target noted under the dial */
+        g2.append('text').attr('x', Math.sin(ta) * gr * 1.16).attr('y', -Math.cos(ta) * gr * 1.16).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600).attr('fill', '#051C2C').text(`${tg} d`);   /* 15 Nov 00:28 (Umair): '30 d' just above the target tick */
         if (dd != null) { const na = A(dd); g2.append('line').attr('x2', Math.sin(na) * gr * 0.66).attr('y2', -Math.cos(na) * gr * 0.66).attr('stroke', '#051C2C').attr('stroke-width', 2.2).attr('stroke-linecap', 'round'); g2.append('circle').attr('r', 3.5).attr('fill', '#051C2C'); }
         g2.append('text').attr('x', -gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text('0');
         g2.append('text').attr('x', gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text(mxd + ' d');
