@@ -813,7 +813,7 @@ const IGC = { '6010910025': 'Ignition Coil Cord CD70', '6010910011': 'Noise Supp
 Object.entries(IGC).forEach(([c, lab]) => { VPAN['igc' + c] = [lab + ' · Millenium', c, null]; VHOV[c] = ['igc' + c]; });
 const HUBV = { '6090102001': 'Hub Drum Brake Rear CG125', '6020102002': 'Bush Rear Hub CG125', '6020100002': 'Hub Drum Brake Front CG125' };
 Object.entries(HUBV).forEach(([c, lab]) => { VPAN['hub' + c] = [lab + ' · Deen Co.', c, null]; VHOV[c] = ['hub' + c]; });
-window.__CCP = CCP; window.__PLT = PLT; 
+window.__CCP = CCP; window.__PLT = PLT; window.__vendPanel = vendPanel; window.__VPAN = VPAN; window.__VHOV = VHOV; 
 Object.entries(CCP).forEach(([vc, [lab, ...ih]]) => { const k = 'ccp' + vc;
 if (PLT[vc]) { VPAN[k] = [lab + ' · Alsons (net of in-house plated)', vc, null]; VPAN[k + 'p'] = [lab + ' · machining → plating (Adamjee)', PLT[vc], { own: ih[0] }]; [vc, PLT[vc], ...ih].forEach(c => { VHOV[c] = [k + 'p', k]; }); }
 else { VPAN[k] = [lab + ' (in-house vs Alsons)', vc, { own: ih[0] }]; [vc, ...ih].forEach(c => { VHOV[c] = [k]; }); } });
