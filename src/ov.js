@@ -360,6 +360,7 @@
   /* ---------- page ---------- */
   function sec() { return document.getElementById('summary'); }
   let last = {};
+  let hvBase, hvT;   /* hover preview: shop selected before the hover, and the delay timer */
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -385,6 +386,8 @@
   function shopStrip(s, P) {
     const box = s.querySelector('.ovhd > div:first-child'); if (!box) return; let st = box.querySelector('.ovst');
     if (!st) { st = document.createElement('div'); st.className = 'ovst'; st.setAttribute('aria-label', 'Production compliance by shop'); box.appendChild(st); }
+    if (!st.__hv) { st.__hv = 1; st.addEventListener('mouseleave', () => { clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); return; }
+      const b = hvBase; hvBase = undefined; if ((SHf(window.__P()) || 'All') !== b) dash.setParams({ shop: b, sf: 0, pf: 0 }); else { const sm_ = s.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); } }, 160); }); }
     const pa_ = D('atlas_parts'), pd_ = D('atlas_parts_daily'); if (!pa_ || !pd_) { st.replaceChildren(); return; }
     const end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end, parts = new Map(pa_.filter(r => r.type === 'Finished').map(r => [String(r.code), r]));
     const rows = pd_.filter(r => r.date >= P.start && r.date <= end && parts.has(String(r.code)));
@@ -397,9 +400,12 @@
       b.style.background = c; b.setAttribute('aria-label', `${o.sh} ${d3.format('.0f')(o.v)}%`);
       b.addEventListener('mousemove', ev => tip.show(ev, [`${kf(o.p)} / ${kf(o.a)}`])   /* 14 Nov 01:08 (Umair): bar tooltip shows only plan / actual */);
       /* 14 Nov 01:17 (Umair): hovering shows the shop and its % in the label on the right; only a click filters */
-      b.addEventListener('mouseenter', () => { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v); });
-      b.addEventListener('mouseleave', () => { tip.hide(); const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__base) sm_.__base(); });
-      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); dash.setParams({ shop: cur === o.sh ? 'All' : o.sh, sf: 0, pf: 0 }); });
+      /* 14 Nov 05:12 (Umair): hovering a bar applies that shop's filter to the whole dashboard; leaving the strip puts back the shop that was
+         selected before; a click keeps the shop (click the kept shop again to clear). A short delay stops a quick sweep across the bars from redrawing every shop. */
+      b.addEventListener('mouseenter', () => { const sm_ = box.querySelector('.ovsum'); if (sm_ && sm_.__show) sm_.__show(o.sh, o.v);
+        clearTimeout(hvT); hvT = setTimeout(() => { if (hvBase === undefined) hvBase = SHf(window.__P()) || 'All'; if (SHf(window.__P()) !== o.sh) dash.setParams({ shop: o.sh, sf: 0, pf: 0 }); }, 140); });
+      b.addEventListener('mouseleave', () => { tip.hide(); });
+      b.addEventListener('click', ev => { ev.stopPropagation(); tip.hide(); clearTimeout(hvT); const keep = hvBase === o.sh ? 'All' : o.sh; hvBase = keep; if ((SHf(window.__P()) || 'All') !== keep) dash.setParams({ shop: keep, sf: 0, pf: 0 }); else render(); });
       return b; }));
     /* 13 Nov 20:05 (Umair): 'All Shops' | overall compliance, in the page title's serif, right of the bars */
     let sm = box.querySelector('.ovsum'); if (!sm) { sm = document.createElement('div'); sm.className = 'ovsum'; box.appendChild(sm); }
