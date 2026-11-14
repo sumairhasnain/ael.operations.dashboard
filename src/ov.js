@@ -261,11 +261,10 @@
       const SD = o.side || [], lx = cx0 + r0 + 18, rw = w - lx - 2; if (!SD.length || rw < 120) return;
       const mx = d3.max(SD, d => d.cons) || 1, top0 = 40, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
       svg.append('text').attr('x', lx).attr('y', 34).attr('font-size', 9.5).attr('font-weight', 700).attr('letter-spacing', '.07em').attr('fill', '#5B6770').text((o.sideTitle || 'Consumption').toUpperCase());
-      SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 96) * d.cons / mx);
+      SD.forEach((d, i) => { const g = svg.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
         g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
-        g.append('text').attr('x', rw).attr('y', 9).attr('text-anchor', 'end').attr('font-size', 10).attr('fill', d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A').attr('font-weight', 700).text(d.dit == null ? 'DIT —' : `DIT ${d3.format(',.0f')(d.dit)} d`);
         g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
-        g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`).append('tspan').attr('font-weight', 400).attr('fill', '#8A949E').text(` · ${pc(d.share)}`);
+        g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`).append('tspan').attr('fill', d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A').text(d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`);   /* 14 Nov 23:37 (Umair): no share %, days of stock right after the value */
         g.append('rect').attr('y', 11).attr('width', rw).attr('height', 15).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)} (${pc(d.share)} of the total)`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
       return; }
     if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
@@ -393,7 +392,7 @@
         const cm = P.month && P.month < (window.__TODAY || '').slice(0, 7) ? P.month : d3.utcFormat('%Y-%m')(d3.utcMonth.offset(new Date((P.month || (window.__TODAY || '').slice(0, 7)) + '-01T00:00:00Z'), -1));
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
-        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · DIT`,
+        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · days`,
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
