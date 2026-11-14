@@ -24,7 +24,12 @@
     projects: '<path d="M2 3h12v10H2zM6 3v10M10 3v10M3.5 5.5h1.5M7.5 5.5h1.5M7.5 8h1.5M11.5 5.5h1.5"/>', savings: '<path d="M3 13c0-6 4-9 10-10-1 6-4 10-10 10zM3 13l6-6"/>' };
   const ico = id => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[id] || ''}</svg>`;
   const STA = { good: ['On track', '#1E8C5A', '#E6F4EC'], watch: ['Watch', '#9A6B00', '#FDF3D6'], bad: ['Needs action', '#B3261E', '#FBE7E6'], info: ['Month to date', '#33414B', '#EEF1F4'] };
-  const pill = k => { const x = STA[k] || STA.info; return `<span class="pill" style="color:${x[1]};background:${x[2]}"><i></i>${x[0]}</span>`; };
+  /* 14 Nov 06:15 (Umair): status shown as a coloured symbol instead of the words - green tick (on track), amber ! (watch), red cross (needs action); the word stays as the hover text */
+  const SYM = { good: '<path d="M5.2 9.3l2.4 2.4 5.2-5.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+    watch: '<path d="M9 4.6v5.4" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="9" cy="13.2" r="1.25" fill="#fff"/>',
+    bad: '<path d="M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' };
+  const pill = k => { const x = STA[k] || STA.info; if (!SYM[k]) return `<span class="pill" style="color:${x[1]};background:${x[2]}"><i></i>${x[0]}</span>`;
+    return `<span class="stsym" title="${x[0]}" role="img" aria-label="${x[0]}"><svg viewBox="0 0 18 18" width="22" height="22"><circle cx="9" cy="9" r="9" fill="${x[1]}"/>${SYM[k]}</svg></span>`; };
   const band = (v, g, w, hiGood = true) => v == null ? 'info' : hiGood ? (v >= g ? 'good' : v >= w ? 'watch' : 'bad') : (v <= g ? 'good' : v <= w ? 'watch' : 'bad');
   /* 12 Nov 00:06 (Umair): less text on the cards. One headline figure + 3 short rows; sub-lines, card subtitle and 'View details' are gone (hover for the notes, the detail window keeps everything) */
   const SHORT = { 'Direct material': 'Material', 'Indirect material': 'Indirect', 'Direct labour': 'Labour', 'Excess stock': 'Excess', 'Slow moving': 'Slow', 'Total potential': 'Potential', 'Absent latest day': 'Latest day', 'Vendors under 80%': 'Under 80%', 'Parts over capacity': 'Parts over', 'Machines over 85%': 'M/c over 85%', 'Machines studied': 'Machines', 'In-house parts': 'In-house' };
@@ -48,6 +53,9 @@
 .ael #summary .ovst button.hv{width:13.5px;height:36px}   /* 14 Nov 01:12 (Umair): hovered bar 1.5x, neighbours pushed left and right. 05:41: a class set by script, not :hover, so a redraw cannot shrink and regrow it */
 .ael #summary .ovhd .lgd{display:flex;gap:12px;font-size:11px;color:#5B6770;align-items:center;flex-wrap:wrap}
 .ael #summary .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-anthropic-sans);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.ael #summary .stsym,.ovm .stsym{display:inline-flex;line-height:0;flex:0 0 auto;margin-left:auto}
+.ovm .stsym{margin-left:10px;vertical-align:-4px}
+.ael #summary .ovhd .lgd .stsym{margin-left:0}
 .ael #summary .pill i,.ovm .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
 .ovm .pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-left:10px;vertical-align:4px}
 .ael #summary .ovc{background:#fff;border:1px solid #D5DBE1;border-top:4px solid var(--ac,#051C2C);border-radius:6px;padding:10px 14px 8px;overflow:hidden;display:flex;flex-direction:column;min-width:0;min-height:0;cursor:pointer;transition:box-shadow .15s,border-color .15s;position:relative}
