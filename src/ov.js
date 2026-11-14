@@ -276,16 +276,16 @@
         tab(pB, 'Inventory days');
         const dd = G.days, tg = G.target, mxd = Math.max(90, Math.ceil(Math.max(dd || 0, tg * 2) / 30) * 30), col = dd == null ? '#8A949E' : dd <= tg ? '#1E8C5A' : dd <= tg * 2 ? '#E0A100' : C.bad;
         /* gauge on top, three KPI lines under it (the card is too narrow for them side by side) */
-        const gr = Math.max(26, Math.min(rw * 0.4, h * 0.4)), gcx = lx + rw / 2 + 4, gcy = h / 2 + gr * 0.3,   /* 15 Nov 00:19 (Umair): gauge only - no turns / cash / issues lines */ A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd);
+        const gr = Math.max(26, Math.min(rw * 0.42, h * 0.46)), gcx = lx + rw / 2 + 4, gcy = h / 2 + gr * 0.38,   /* 15 Nov 00:19 (Umair): gauge only - no turns / cash / issues lines */ A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd);
         const arc = d3.arc().innerRadius(gr * 0.76).outerRadius(gr).cornerRadius(2), g2 = pB.append('g').attr('transform', `translate(${gcx},${gcy})`);
         g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E9EDF1');
         if (dd != null) g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: A(dd) })).attr('fill', col);
         const ta = A(tg); g2.append('line').attr('x1', Math.sin(ta) * gr * 0.7).attr('y1', -Math.cos(ta) * gr * 0.7).attr('x2', Math.sin(ta) * gr * 1.07).attr('y2', -Math.cos(ta) * gr * 1.07).attr('stroke', '#051C2C').attr('stroke-width', 2);
-        g2.append('text').attr('x', Math.sin(ta) * gr * 0.52).attr('y', -Math.cos(ta) * gr * 0.52 + 3).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(`target ${tg}`);
+        g2.append('text').attr('y', 24).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(`target ${tg} d`);   /* 15 Nov 00:23: target noted under the dial */
         if (dd != null) { const na = A(dd); g2.append('line').attr('x2', Math.sin(na) * gr * 0.66).attr('y2', -Math.cos(na) * gr * 0.66).attr('stroke', '#051C2C').attr('stroke-width', 2.2).attr('stroke-linecap', 'round'); g2.append('circle').attr('r', 3.5).attr('fill', '#051C2C'); }
         g2.append('text').attr('x', -gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text('0');
         g2.append('text').attr('x', gr * 0.88).attr('y', 11).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#8A949E').text(mxd + ' d');
-        g2.append('text').attr('y', 22).attr('text-anchor', 'middle').attr('font-size', Math.max(14, Math.min(19, gr / 2.4))).attr('font-weight', 700).attr('fill', col).text(dd == null ? '—' : d3.format(',.0f')(dd)).append('tspan').attr('font-size', 9.5).attr('font-weight', 400).attr('fill', '#5B6770').text(' days of stock');
+        g2.append('text').attr('y', -gr * 0.3).attr('text-anchor', 'middle').attr('font-size', Math.max(14, Math.min(22, gr / 2.3))).attr('font-weight', 700).attr('fill', col).text(dd == null ? '—' : d3.format(',.0f')(dd));   /* 15 Nov 00:23 (Umair): the number sits inside the arc, above the pivot; no 'days of stock' */
         pB.append('rect').attr('x', lx).attr('width', w - lx).attr('height', h).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, ['Inventory days', `Stock ${(o.fmt || kf)(G.stock)} ÷ ${G.mon} issues ${(o.fmt || kf)(G.cons)} per ${G.nd} days`, `Target ${tg} days (provisional)`])).on('mouseleave', tip.hide); };
       const mx = d3.max(SD, d => d.cons) || 1, top0 = 4, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
       /* 14 Nov 23:44 (Umair): the bar heading is a vertical navy tab on the left of the bars, like the Vendors / Parts tabs on Supply Watch */
