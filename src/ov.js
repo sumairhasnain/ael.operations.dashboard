@@ -189,10 +189,10 @@
 @media (prefers-reduced-motion:reduce){.ael #summary .ovkh .ovf3 .ovff{animation:none}.ael #summary .ovkh .ovf3 .f1,.ael #summary .ovkh .ovf3 .f2{display:none}}
 .ael #summary .ovvt{position:relative}
 /* 14 Nov 23:54 (Umair): the raw-material switch is a small round 'RM' button in the header; struck through = raw material left out */
-.ael #summary .hd .tgrm{flex:0 0 auto;width:26px;height:26px;border-radius:50%;padding:0;margin:0 0 0 10px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-anthropic-sans),Arial,sans-serif;font-size:9.5px;font-weight:700;line-height:1;letter-spacing:.02em;background:#fff;border:1.5px solid #C9D1D9;color:#5B6770;position:relative}
+.ael #summary .hd .tgrm{flex:0 0 auto;width:32px;height:32px;border-radius:50%;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-anthropic-sans),Arial,sans-serif;font-size:10.5px;font-weight:700;line-height:1;letter-spacing:.02em;background:#fff;border:1.5px solid #C9D1D9;color:#5B6770;position:relative}
 .ael #summary .hd .tgrm:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .hd .tgrm.on{background:#E3F3F0;border-color:#1F9E89;color:#1F9E89}
-.ael #summary .hd .tgrm.on span::after{content:'';position:absolute;left:5px;right:5px;top:50%;height:1.5px;background:currentColor;transform:rotate(-35deg)}
+.ael #summary .hd .tgrm.on span::after{content:'';position:absolute;left:6px;right:6px;top:50%;height:1.5px;background:currentColor;transform:rotate(-35deg)}
 .ael #summary .hd .tgrm.tgrm::before,.ael #summary .hd .tgrm.tgrm.on::before{content:none;display:none}
 .ael #summary .ovvt .tgc{position:absolute;top:4px;right:6px;z-index:1;margin:0;font-size:9.5px;padding:3px 8px}   /* raw-material switch sits in the chart's top-right corner so the header keeps room for the KPI and symbol */
 .ael #summary .hd .tgc.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -256,8 +256,8 @@
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
-      const tot0 = d3.sum(items, d => d.v), r0 = Math.max(30, Math.min(h / 2 - 4, w * 0.21)), cx0 = r0 + 4, g0 = svg.append('g').attr('transform', `translate(${cx0},${h / 2})`);
-      const pie0 = d3.pie().sort(null).value(d => d.v)(items), ri = r0 * 0.5;
+      const tot0 = d3.sum(items, d => d.v), r0 = Math.max(30, Math.min(h / 2 - 1, w * 0.215)), cx0 = r0 + 3,   /* 15 Nov 09:46 (Umair): donut a little larger and thicker */ g0 = svg.append('g').attr('transform', `translate(${cx0},${h / 2})`);
+      const pie0 = d3.pie().sort(null).value(d => d.v)(items), ri = r0 * 0.44;
       g0.selectAll('path').data(pie0).join('path').attr('d', d3.arc().innerRadius(ri).outerRadius(r0).padAngle(0.012)).attr('fill', d => d.data.color).attr('stroke', '#fff').attr('stroke-width', 1)
         .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)} of stock value`])).on('mouseleave', tip.hide);
       const lab0 = d3.arc().innerRadius((ri + r0) / 2).outerRadius((ri + r0) / 2), fs = Math.max(8.5, Math.min(11, r0 / 6.2));
@@ -266,7 +266,7 @@
       lg.append('text').attr('text-anchor', 'middle').attr('y', fs + 1).attr('font-size', fs - 1).attr('fill', '#fff').attr('opacity', .9).text(d => pc(d.data.v / tot0 * 100));
       g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
-      const SD = o.side || [], tx = cx0 + r0 + 12, lx = tx + 28, rw = w - lx - 2; if (!SD.length || rw < 120) return;
+      const SD = o.side || [], tx = cx0 + r0 + 10, lx = tx + 26, rw = w - lx - 2; if (!SD.length || rw < 100) return;
       /* 15 Nov 00:06 (Umair): the right side flips between the consumption bars (pane A) and an inventory-days gauge (pane B) */
       svg.classed('ovflp', true).attr('data-on', 'a');
       const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB');
@@ -594,9 +594,9 @@
           return `<div class="${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, L.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; })()}</div>`;
     } else if (id === 'inventory' && !o.none && o.health) {   /* 14 Nov 19:29 (Umair): Inventory - 3-face flipping KPI and raw-material chip in the header, donut + values full width, stock health bar at the foot */
       const F = [o.kpis[0], o.kpis[1], o.kpis[2]], HV = d3.sum(o.health, d => d[1]);
-      el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovf3" title="${esc(F.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}">${F.map(([l, v, sb, c], i) =>
+      el.innerHTML = `<div class="hd"><button type="button" class="tg tgrm${exRM ? ' on' : ''}" aria-pressed="${exRM}" aria-label="Exclude raw material" title="${exRM ? 'Raw material, production parts and lubricants are left out - click to include them' : 'Raw material, production parts and lubricants are included - click to leave them out'}"><span>RM</span></button><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovf3" title="${esc(F.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}">${F.map(([l, v, sb, c], i) =>
           `<div class="ovff f${i}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div>
-        <button type="button" class="tg tgrm${exRM ? ' on' : ''}" aria-pressed="${exRM}" aria-label="Exclude raw material" title="${exRM ? 'Raw material, production parts and lubricants are left out - click to include them' : 'Raw material, production parts and lubricants are included - click to leave them out'}"><span>RM</span></button>${pill(o.st)}</div>
+        ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
     } else if (id === 'vendor' && !o.none && o.watch) { /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
