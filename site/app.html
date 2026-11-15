@@ -4792,6 +4792,37 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       pB.append('text').attr('x', bw >= 0 ? ax + bw + 4 : ax + 4).attr('y', yy + rh / 2).attr('dy', '0.35em').attr('font-size', 10).attr('font-weight', 700).attr('fill', '#051C2C').text(`${d.v >= 0 ? '+' : '−'}${f0(Math.abs(d.v))}%`);
       pB.append('rect').attr('x', 24).attr('y', yy).attr('width', w - 24).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T)).on('mouseleave', tip.hide); });
     pB.append('line').attr('x1', ax).attr('x2', ax).attr('y1', 0).attr('y2', h - 2).attr('stroke', '#051C2C'); }
+  /* 15 Nov 17:42 (Umair): VA/CR card body - pane A savings landing line (completed vs plan by target month), pane B shops by stage */
+  function savFlip(el, sv) { if (!sv) return none(el, 'No data'); const { svg, w, h } = mk(el);
+    svg.classed('ovflp', true).attr('data-on', 'a'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB');
+    const G = '#1E8C5A', A = '#E0A100', Q = '#9AA5B1', ml = 34, mb = 30, mt = 16;
+    const mx = d3.max([...sv.planC, ...sv.doneC.filter(v => v != null)]) || 1, y = d3.scaleLinear().domain([0, mx * 1.08]).nice().range([h - mb, mt]), x = d3.scalePoint().domain(d3.range(12)).range([ml + 4, w - 10]);
+    const yf = v => v >= 1e6 ? f0(v / 1e6) + 'M' : kf(v); axisY(pA, y, ml, w - 4, yf, 3);
+    pA.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#c5ccd4');
+    pA.append('path').attr('d', d3.line().x((v, i) => x(i)).y(v => y(v))(sv.planC)).attr('fill', 'none').attr('stroke', Q).attr('stroke-width', 2).attr('stroke-dasharray', '5 4');
+    pA.append('path').attr('d', d3.line().defined(v => v != null).x((v, i) => x(i)).y(v => y(v))(sv.doneC)).attr('fill', 'none').attr('stroke', G).attr('stroke-width', 3.2).attr('stroke-linejoin', 'round');
+    const ci = sv.FM.indexOf(sv.cm);
+    if (ci >= 0) { pA.append('circle').attr('cx', x(ci)).attr('cy', y(sv.doneNow)).attr('r', 4.5).attr('fill', G);
+      pA.append('text').attr('x', x(ci) + 7).attr('y', y(sv.doneNow) + 14).attr('font-size', 10).attr('font-weight', 700).attr('fill', G).text(yf(sv.doneNow) + ' today');
+      if (sv.gap > 0) { pA.append('line').attr('x1', x(ci)).attr('x2', x(ci)).attr('y1', y(sv.planNow)).attr('y2', y(sv.doneNow)).attr('stroke', C.bad).attr('stroke-width', 2);
+        pA.append('text').attr('x', x(ci) - 5).attr('y', y(sv.planNow) - 5).attr('text-anchor', 'end').attr('font-size', 10).attr('font-weight', 700).attr('fill', C.bad).text('gap ' + yf(sv.gap)); } }
+    pA.append('text').attr('x', x(11)).attr('y', y(sv.planC[11]) - 6).attr('text-anchor', 'end').attr('font-size', 9.5).attr('fill', '#33414B').text(`plan ${yf(sv.planC[11])} by ${mon(sv.FM[11]).slice(0, 3)}`);
+    sv.FM.forEach((m, i) => { if (w < 330 && i % 2) return; pA.append('text').attr('x', x(i)).attr('y', h - mb + 12).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(mon(m).slice(0, 3)); });
+    pA.append('text').attr('x', ml).attr('y', h - 4).attr('font-size', 9).attr('fill', '#5B6770').text('Annual saving switched on: — completed   - - ideas by target month');
+    const hv = pA.append('rect').attr('x', ml).attr('y', mt).attr('width', w - ml).attr('height', h - mb - mt).attr('fill', 'transparent');
+    hv.on('mousemove', ev => { const [mx_] = d3.pointer(ev); const i = d3.minIndex(d3.range(12), j => Math.abs(x(j) - mx_)); tip.show(ev, [mon(sv.FM[i]), `Plan (ideas due by then): ${rs(sv.planC[i])} a year`, ...(sv.doneC[i] != null ? [`Completed: ${rs(sv.doneC[i])} a year`] : [])]); }).on('mouseleave', tip.hide);
+    /* pane B */
+    const S = sv.shops.filter(d => d.c + d.p + d.q > 0), n = Math.min(S.length, Math.max(3, Math.floor((h - 22) / 22))), L = S.slice(0, n), rh = (h - 22) / Math.max(1, L.length), lw = Math.min(112, w * 0.32);
+    const sx = d3.scaleLinear().domain([0, d3.max(L, d => d.c + d.p + d.q) || 1]).range([0, w - lw - 46]);
+    L.forEach((d, i) => { const yy = i * rh, bh = Math.min(16, rh * 0.62), y0 = yy + (rh - bh) / 2, T_ = [d.k, `Completed ${rs(d.c)}`, `In progress ${rs(d.p)}`, `Pending / proposal ${rs(d.q)}`, `Total ${rs(d.c + d.p + d.q)} a year`];
+      const t = pB.append('text').attr('x', 0).attr('y', yy + rh / 2).attr('dy', '0.35em').attr('font-size', 10.5).attr('fill', '#33414B').text(d.k);
+      try { while (t.node().getComputedTextLength() > lw - 6 && t.text().length > 4) t.text(t.text().slice(0, -2) + '…'); } catch (e) {}
+      let x0 = lw; [[d.c, G], [d.p, A], [d.q, Q]].forEach(([v, c]) => { if (v > 0) { pB.append('rect').attr('x', x0).attr('y', y0).attr('width', Math.max(1, sx(v))).attr('height', bh).attr('fill', c); x0 += sx(v); } });
+      pB.append('text').attr('x', x0 + 4).attr('y', yy + rh / 2).attr('dy', '0.35em').attr('font-size', 10).attr('font-weight', 700).attr('fill', '#051C2C').text(yf(d.c + d.p + d.q));
+      pB.append('rect').attr('x', 0).attr('y', yy).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T_)).on('mouseleave', tip.hide); });
+    const lg = pB.append('g').attr('transform', `translate(0,${h - 6})`); let lx = 0;
+    [['Completed', G], ['In progress', A], ['Pending / proposal', Q]].forEach(([k, c]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`); g.append('rect').attr('y', -7).attr('width', 8).attr('height', 8).attr('fill', c);
+      const t = g.append('text').attr('x', 11).attr('font-size', 9).attr('fill', '#33414B').text(k); let tw = 50; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 22; }); }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
@@ -5097,7 +5128,19 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const byC = d3.rollups(R, v => ann(v), r => r.category || '—').sort((a, b) => b[1] - a[1]);
     const top = d3.rollups(R, v => ({ a: ann(v), st: v[0].status, shop: v[0].shop, item: v[0].item }), r => r.key).sort((a, b) => b[1].a - a[1].a).slice(0, 12);
     const T = ann(R);
-    return { title: 'Cost reduction ideas', st: band(T ? ann(done) / T * 100 : null, 50, 25),
+    /* 15 Nov 17:42 (Umair): card = achieved run-rate vs plan by target month (landing line), shops by stage, overdue ideas */
+    const cm = (P && P.month) || new Date().toISOString().slice(0, 7), fy0 = +cm.slice(5, 7) >= 7 ? +cm.slice(0, 4) : +cm.slice(0, 4) - 1;
+    const FM = d3.range(12).map(i => { const mm = 7 + i; return `${fy0 + (mm > 12 ? 1 : 0)}-${String((mm - 1) % 12 + 1).padStart(2, '0')}`; });
+    const tgt = r => (r.target || r.fin_target || '').slice(0, 7);
+    const planC = FM.map(m => ann(R.filter(r => tgt(r) && tgt(r) <= m))), doneC = FM.map(m => m > cm ? null : ann(done.filter(r => (tgt(r) && tgt(r) < cm ? tgt(r) : cm) <= m)));
+    const ci_ = FM.indexOf(cm), planNow = ci_ >= 0 ? planC[ci_] : null, doneNow = ann(done), gap = planNow != null ? planNow - doneNow : null;
+    const odL = d3.rollups(R.filter(r => r.status !== 'Completed' && tgt(r) && tgt(r) < cm), v => ({ a: ann(v), item: v[0].item, shop: v[0].dash_shop || v[0].shop, t: tgt(v[0]), st: v[0].status }), r => r.key).sort((a, b) => b[1].a - a[1].a);
+    const odV = d3.sum(odL, d => d[1].a), gp = planNow ? gap / planNow * 100 : null;
+    const sv = { FM, cm, planC, doneC, planNow, doneNow, gap, T, od: odL, odV,
+      shops: byS.map(([k, o]) => ({ k, c: o.Completed || 0, p: o['In Progress'] || 0, q: (o.Pending || 0) + (o.Proposal || 0) })) };
+    return { title: 'Cost reduction ideas', st: band(gp, 5, 15, false), sv,
+      kh: [['Achieved run-rate', `${rs(doneNow)} · ${T ? f0(doneNow / T * 100) : 0}%`, `Annual saving of the ${nf(keys(done))} completed ideas, ${T ? f0(doneNow / T * 100) : 0}% of the ${rs(T)} pipeline${gap != null ? ` · plan to ${mon(cm)}: ${rs(planNow)} (${gap > 0 ? rs(gap) + ' behind' : 'on plan'})` : ''}`, gp == null ? '#1E8C5A' : gp > 15 ? C.bad : gp > 5 ? '#9A6B00' : '#1E8C5A'],
+        ['Overdue', `${rs(odV)} · ${nf(odL.length)} ideas`, 'Ideas not completed whose target month has passed', odL.length ? C.bad : '#1E8C5A']],
       kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Total potential', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
         ['In progress', rs(ann(ip)), `${nf(keys(ip))} ideas`, '#B07D00'], ['Pending + proposals', rs(ann(pend)), `${nf(keys(pend))} ideas`]],
       vt: 'Annual saving by shop and status', mini: el => colC(el, byS.map(d => d[0]), STC.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, fmt: rs, yFmt: kf, rot: 1, ml: 32 }),
@@ -5161,6 +5204,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
+    } else if (id === 'savings' && !o.none && o.sv) {   /* 15 Nov 17:42 (Umair): VA/CR - flipping KPI, landing line / shops, overdue ticker */
+      const od = o.sv.od;
+      o.mini = el2 => savFlip(el2, o.sv);
+      el.innerHTML = hdrF(id, name, o.kh, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">VA/CR<br>Activities</h3>') + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${od.length ? tickS(`Overdue ${od.length} · ${rs(o.sv.odV)}:`, od.map(([k, x]) => `<span style="color:${C.bad}" title="${esc(k)} · ${esc(x.shop)} · due ${mon(x.t)} · ${esc(x.st)}">${esc(x.shop)}: ${esc(x.item)} ${kf(x.a)}</span>`), '', 'Ideas not completed whose target month has passed (annual saving)')
+          : tickS('On time:', ['no idea is past its target month'], 'ok', '')}</div>`;
     } else if (id === 'cost' && !o.none && o.cv) {   /* 15 Nov 11:29 (Umair): Cost of Production - flipping KPI, flipping chart (conversion by month / shop ranking), cost-up ticker */
       const S = o.cv.shops, up = S.filter(d => d.v > 0), dn = S.filter(d => d.v <= 0).sort((a, b) => a.v - b.v);
       o.mini = el2 => costFlip(el2, o.cv);
