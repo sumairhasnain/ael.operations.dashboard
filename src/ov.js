@@ -275,15 +275,14 @@
           gg.append('text').attr('transform', `translate(${tx + 10},${h / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text(label.toUpperCase()); };
         tab(pB, 'Inventory days');
         /* 15 Nov 00:32 (Umair): one gauge per category, arc in the category's donut colour; number = days of stock, coloured by status against the target */
-        const tg = G.target, n = SD.length, cols = 1, rows = Math.ceil(n / cols), cw = rw / cols, chh = (h - 4) / rows;   /* gauges stacked: one row per category, name to the right */
+        const n = SD.length, cols = 1, rows = Math.ceil(n / cols), cw = rw / cols, chh = (h - 4) / rows;   /* gauges stacked: one row per category, name to the right */
         const gr = Math.max(12, Math.min(chh * 0.68, cw * 0.205)), lf = n > 3 ? 10 : 11;
-        SD.forEach((d, i) => { const dd = d.dit, mxd = Math.max(90, Math.ceil(Math.max(dd || 0, tg * 2) / 30) * 30), sc = dd == null ? '#8A949E' : dd <= tg ? '#1E8C5A' : dd <= tg * 2 ? '#9A6B00' : C.bad;
+        SD.forEach((d, i) => { const tg = (G.targets || {})[d.label] ?? G.target, dd = d.dit, mxd = Math.max(90, Math.ceil(Math.max(dd || 0, tg * 2) / 30) * 30), sc = dd == null ? '#8A949E' : dd <= tg ? '#1E8C5A' : dd <= tg * 2 ? '#9A6B00' : C.bad;
           const A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd), gx = lx + cw * (i % cols) + gr + 6, gy = 2 + chh * Math.floor(i / cols) + chh / 2 + gr * 0.42;
           const arc = d3.arc().innerRadius(gr * 0.74).outerRadius(gr).cornerRadius(1.5), g2 = pB.append('g').attr('transform', `translate(${gx},${gy})`);
           g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E9EDF1');
           if (dd != null) g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: A(dd) })).attr('fill', d.color);
-          const ta = A(tg); g2.append('line').attr('x1', Math.sin(ta) * gr * 0.68).attr('y1', -Math.cos(ta) * gr * 0.68).attr('x2', Math.sin(ta) * gr * 1.08).attr('y2', -Math.cos(ta) * gr * 1.08).attr('stroke', '#051C2C').attr('stroke-width', 1.6);
-          if (gr >= 24) g2.append('text').attr('x', Math.sin(ta) * gr * 1.2).attr('y', -Math.cos(ta) * gr * 1.2).attr('text-anchor', 'middle').attr('font-size', 8).attr('font-weight', 600).attr('fill', '#051C2C').text(`${tg} d`);
+          const ta = A(tg); g2.append('line').attr('x1', Math.sin(ta) * gr * 0.68).attr('y1', -Math.cos(ta) * gr * 0.68).attr('x2', Math.sin(ta) * gr * 1.1).attr('y2', -Math.cos(ta) * gr * 1.1).attr('stroke', dd != null && dd > tg ? C.bad : '#051C2C').attr('stroke-width', 2.2);   /* 15 Nov 09:35 (Umair): target line red when over target, black when within; no target text */
           if (dd != null) { const na = A(dd); g2.append('line').attr('x2', Math.sin(na) * gr * 0.62).attr('y2', -Math.cos(na) * gr * 0.62).attr('stroke', '#051C2C').attr('stroke-width', 1.8).attr('stroke-linecap', 'round'); }
           g2.append('circle').attr('r', 2.6).attr('fill', '#051C2C');
           const dtxt = dd == null ? '—' : d3.format(',.0f')(dd), big = gr >= 24;
@@ -440,8 +439,8 @@
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
         donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: 'Monthly consumption', sideShort: 'Monthly use',   /* 15 Nov 09:28 (Umair) */
-          gauge: (() => { const cons = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0)), d = cons > 0 ? V / (cons / nd) : null, T = 30;   /* 15 Nov: target 30 days, provisional until AEL gives one */
-            return { days: d, target: T, stock: V, cons, nd, mon: d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z')), cash: cons > 0 ? Math.max(0, V - T * cons / nd) : 0 }; })(),
+          gauge: (() => { const cons = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0)), d = cons > 0 ? V / (cons / nd) : null, T = 30;   /* 15 Nov 09:35 (Umair): targets Tools 60, Consumables 45, Spares 180 days; others 30 */
+            return { days: d, target: T, targets: { Tools: 60, Consumables: 45, Spares: 180 }, stock: V, cons, nd, mon: d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z')), cash: cons > 0 ? Math.max(0, V - T * cons / nd) : 0 }; })(),
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
       detail: [
         { t: 'Stock value by category', draw: el => donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { h: 250, fmt: rs, center: rs(V) }) },
