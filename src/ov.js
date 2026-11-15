@@ -153,16 +153,16 @@
 /* 15 Nov 18:11 (Umair): four-step KPI - label stays, value flips sideways; then the whole KPI flips up to the next label */
 .ael #summary .ovfl.q4 .ovfi{animation:ov4 16s ease-in-out infinite}
 @keyframes ov4{0%,46%{transform:rotateX(0)}50%,96%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
-.ael #summary .ovkh .ovff b.hv{display:block;perspective:500px}
-.ael #summary .ovkh .ovff b.hv>i{display:grid;font-style:normal;transform-style:preserve-3d}
-.ael #summary .ovkh .ovff b.hv>i>i{grid-area:1/1;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;white-space:nowrap}
-.ael #summary .ovkh .ovff b.hv>i>i+i{transform:rotateY(180deg)}
-.ael #summary .ovkh .ovff:not(.bk) b.hv>i{animation:ovhA 16s ease-in-out infinite}
-.ael #summary .ovkh .ovff.bk b.hv>i{animation:ovhB 16s ease-in-out infinite}
+.ael #summary .ovkh .ovff .hv{display:block;perspective:500px}
+.ael #summary .ovkh .ovff .hv>i{display:grid;font-style:normal;transform-style:preserve-3d}
+.ael #summary .ovkh .ovff .hv>i>i{grid-area:1/1;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;white-space:nowrap}
+.ael #summary .ovkh .ovff .hv>i>i+i{transform:rotateY(180deg)}
+.ael #summary .ovkh .ovff:not(.bk) .hv>i{animation:ovhA 16s ease-in-out infinite}
+.ael #summary .ovkh .ovff.bk .hv>i{animation:ovhB 16s ease-in-out infinite}
 @keyframes ovhA{0%,21%{transform:rotateY(0)}25%,73%{transform:rotateY(180deg)}75%,100%{transform:rotateY(0)}}
 @keyframes ovhB{0%,71%{transform:rotateY(0)}75%,100%{transform:rotateY(180deg)}}
-.ael #summary .ovfl.q4:hover .ovfi,.ael #summary .ovfl.q4:hover b.hv>i{animation-play-state:paused}
-@media (prefers-reduced-motion:reduce){.ael #summary .ovfl.q4 .ovfi,.ael #summary .ovkh .ovff b.hv>i{animation:none}}
+.ael #summary .ovfl.q4:hover .ovfi,.ael #summary .ovfl.q4:hover .hv>i{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.ael #summary .ovfl.q4 .ovfi,.ael #summary .ovkh .ovff .hv>i{animation:none}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovfl .ovfi{animation:none}}
 .ael #summary .ovwl{flex:1;min-height:0;display:flex;gap:8px;background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:4px 8px 4px 0;margin:0 -10px;overflow:hidden}
 /* 14 Nov 13:08 (Umair): no 'Watch list' heading; Vendors / Parts are thin vertical tabs on the left edge so the list gets the full height */
@@ -748,7 +748,7 @@
     const cp = { PB, top, lines, el: el_, nd, end, n: { run: run.length, all: MC.length, down: down.length, sb: MC.filter(r => r.status === 'Standby').length, ns: nostudy.length }, tk };
     const shortN = s_ => s_.replace(/ (CG125|CD70)$/, '');
     return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good', cp,
-      kh: [['Highest load', [top && top.u != null ? pc(top.u) : '—', top ? shortN(top.k) : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
+      kh: [[top ? ['Highest load', top.k] : 'Highest load', [top && top.u != null ? pc(top.u) : '—', top && top.plan > top.cap ? `▼ ${kf(top.plan - top.cap)} pcs` : top ? `${pc(top.u)} of capacity` : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
         ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `▼ ${kf(short)} pcs` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
       kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
         ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
@@ -819,8 +819,8 @@
   let last = {};
   let hvBase, hvT, hvLock = '', hvSh = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
   /* 14 Nov 12:11: card header with the flipping KPI (Production, Vendor Supply) */
-  const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl${K.some(k => Array.isArray(k[1])) ? ' q4' : ''}" title="${esc(K.map(([l, v, sb]) => l + ' ' + [].concat(v).join(' / ') + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
-        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span>${Array.isArray(v) ? `<b class="hv"${c ? ` style="color:${c}"` : ''}><i><i>${esc(v[0])}</i><i>${esc(v[1])}</i></i></b>` : `<b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b>`}</div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
+  const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl${K.some(k => Array.isArray(k[1])) ? ' q4' : ''}" title="${esc(K.map(([l, v, sb]) => [].concat(l).join(' / ') + ' ' + [].concat(v).join(' / ') + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
+        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}">${Array.isArray(l) ? `<span class="hv"><i><i>${esc(l[0])}</i><i>${esc(l[1])}</i></i></span>` : `<span>${esc(l)}</span>`}${Array.isArray(v) ? `<b class="hv"${c ? ` style="color:${c}"` : ''}><i><i>${esc(v[0])}</i><i>${esc(v[1])}</i></i></b>` : `<b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b>`}</div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
   /* ticker strip used at the foot of the Production and Vendor Supply cards: still when 2 names or fewer, scrolling right to left above that */
   const tickS = (lab, items, cls, tt) => { if (!items.length) return ''; const it = items.join(' · ');
     if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
