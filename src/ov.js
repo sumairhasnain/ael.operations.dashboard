@@ -438,6 +438,63 @@
         g.append('rect').attr('y', -8).attr('width', 9).attr('height', 9).attr('rx', 2).attr('fill', c); const t = g.append('text').attr('x', 12).attr('font-size', 9).attr('fill', '#33414B').text(k); let tw = 30; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 20; });
       if (lx > w) lg.attr('transform', `translate(0,${h - 20}) scale(${w / lx},1)`);
       pC.append('text').attr('x', 0).attr('y', h - 3).attr('font-size', 9.5).attr('font-weight', 700).attr('fill', cp.n.down ? R : '#5B6770').text(`${cp.n.run} running · ${cp.n.down} not working · ${cp.n.sb} standby · ${cp.n.ns} without a time study`); } }
+  /* 15 Nov 23:03 (Umair): Projects - A activity timeline (plan bar, % sub-tasks done, where it should be today), B sub-task burn-up (due vs done), C overdue tasks by owner */
+  function pjFlip(el, pj) { if (!pj) return none(el, 'No data'); const { svg, w, h } = mk(el);
+    svg.classed('ovflp', true).attr('data-on', 'a').attr('data-n', '3'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB'), pC = svg.append('g').attr('class', 'pC');
+    const R = C.bad, A = '#E0A100', G = '#1E8C5A', N = '#051C2C', pd = d => new Date(d + 'T00:00:00Z');
+    /* A */
+    { const L = pj.acts.filter(a => a.s && a.e), lw = Math.min(160, w * 0.4), x0 = lw, x1 = w - 34, top = 14, bot = 16, rh = Math.min(28, (h - top - bot) / Math.max(1, L.length)), bh = Math.min(12, rh * 0.55);
+      const t0 = d3.min(L, a => a.s), t1c = d3.timeMonth.offset(pd(pj.today), 2), sx = d3.scaleTime().domain([d3.timeMonth.floor(pd(t0)), t1c]).range([x0, x1]).clamp(true);
+      sx.ticks(d3.timeMonth.every(1)).forEach(m => { pA.append('line').attr('x1', sx(m)).attr('x2', sx(m)).attr('y1', top - 3).attr('y2', top + L.length * rh).attr('stroke', '#EEF1F4');
+        pA.append('text').attr('x', sx(m) + 2).attr('y', top - 5).attr('font-size', 8.5).attr('fill', '#6B7680').text(d3.timeFormat('%b')(m)); });
+      L.forEach((a, i) => { const y = top + i * rh + rh / 2, c = a.col, xs = sx(pd(a.s)), xe = sx(pd(a.e)), bw = Math.max(4, xe - xs), past = pd(a.e) > t1c;
+        const T = [a.key + ' · ' + a.full, `${a.status} · ${a.owner || 'Unassigned'}`, `Plan ${dlab(a.s)} to ${dlab(a.e)}`, a.n ? `${a.nd} of ${a.n} sub-tasks done (${f0(a.p * 100)}%) · ${f0(a.x * 100)}% expected by today` : 'No sub-tasks', a.late ? `${a.late} days past due` : ''].filter(Boolean);
+        const t = pA.append('text').attr('x', 0).attr('y', y).attr('dy', '0.35em').attr('font-size', 9.5).attr('fill', '#33414B').text(a.name);
+        try { while (t.node().getComputedTextLength() > lw - 6 && t.text().length > 4) t.text(t.text().slice(0, -2) + '…'); } catch (e) {}
+        pA.append('rect').attr('x', xs).attr('y', y - bh / 2).attr('width', bw).attr('height', bh).attr('rx', 2).attr('fill', c).attr('opacity', .25);
+        const f = a.done ? 1 : a.n ? a.p : 0; if (f) pA.append('rect').attr('x', xs).attr('y', y - bh / 2).attr('width', bw * f).attr('height', bh).attr('rx', 2).attr('fill', c);
+        if (!a.done && a.n) pA.append('line').attr('x1', xs + bw * a.x).attr('x2', xs + bw * a.x).attr('y1', y - bh / 2 - 2).attr('y2', y + bh / 2 + 2).attr('stroke', N).attr('stroke-width', 1.5);
+        if (past) pA.append('text').attr('x', x1 + 1).attr('y', y).attr('dy', '0.35em').attr('font-size', 8).attr('fill', c).text('▶');
+        pA.append('text').attr('x', Math.min(xe, x1) + (past ? 10 : 3)).attr('y', y).attr('dy', '0.35em').attr('font-size', 8.5).attr('font-weight', 700).attr('fill', c).text(a.done ? 'done' : a.n ? f0(a.p * 100) + '%' : a.late ? 'late' : '');
+        pA.append('rect').attr('x', 0).attr('y', y - rh / 2).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T)).on('mouseleave', tip.hide); });
+      const tx = sx(pd(pj.today)); pA.append('line').attr('x1', tx).attr('x2', tx).attr('y1', top - 3).attr('y2', top + L.length * rh + 2).attr('stroke', R).attr('stroke-width', 1.5);
+      const lg = pA.append('g').attr('transform', `translate(0,${h - 3})`); let lx = 0;
+      [['done / on track', G], ['behind', A], ['late', R], ['should be today', N], ['today', R]].forEach(([k, c]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`), ln = k === 'should be today' || k === 'today';
+        g.append('rect').attr('y', ln ? -10 : -8).attr('width', ln ? 1.5 : 9).attr('height', ln ? 11 : 9).attr('fill', c); const t = g.append('text').attr('x', ln ? 5 : 12).attr('font-size', 8.5).attr('fill', '#33414B').text(k);
+        let tw = 40; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + (ln ? 14 : 20); });
+      if (lx > w) lg.attr('transform', `translate(0,${h - 3}) scale(${w / lx},1)`); }
+    /* B */
+    { const B = pj.burn; if (B.length > 1) { const top = 16, x0 = 26, x1 = w - 62, y1 = h - 16, mx = d3.max(B, b => Math.max(b.due, b.done)) || 1;
+      const sx = d3.scaleTime().domain([pd(B[0].d), pd(B[B.length - 1].d)]).range([x0, x1]), sy = d3.scaleLinear().domain([0, mx * 1.08]).range([y1, top]).nice();
+      pB.append('text').attr('x', 0).attr('y', 9).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text('Sub-tasks: due vs done (cumulative)');
+      axisY(pB, sy, x0, x1, nf, 4);
+      sx.ticks(d3.timeMonth.every(1)).forEach(m => pB.append('text').attr('x', sx(m)).attr('y', h - 3).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#6B7680').text(d3.timeFormat('%b')(m)));
+      pB.append('path').attr('d', d3.area().x(b => sx(pd(b.d))).y0(b => sy(b.done)).y1(b => sy(b.due)).curve(d3.curveStepAfter)(B)).attr('fill', R).attr('opacity', .12);
+      pB.append('path').attr('d', d3.line().x(b => sx(pd(b.d))).y(b => sy(b.due)).curve(d3.curveStepAfter)(B)).attr('fill', 'none').attr('stroke', N).attr('stroke-width', 1.6).attr('stroke-dasharray', '4 2');
+      pB.append('path').attr('d', d3.line().x(b => sx(pd(b.d))).y(b => sy(b.done)).curve(d3.curveStepAfter)(B)).attr('fill', 'none').attr('stroke', G).attr('stroke-width', 2.4);
+      const L_ = B[B.length - 1], gx = sx(pd(L_.d));
+      pB.append('text').attr('x', gx + 5).attr('y', sy(L_.due)).attr('dy', '0.35em').attr('font-size', 10).attr('font-weight', 700).attr('fill', N).text(`${L_.due} due`);
+      pB.append('text').attr('x', gx + 5).attr('y', sy(L_.done)).attr('dy', '0.35em').attr('font-size', 10).attr('font-weight', 700).attr('fill', G).text(`${L_.done} done`);
+      if (L_.due > L_.done) { pB.append('line').attr('x1', gx).attr('x2', gx).attr('y1', sy(L_.due)).attr('y2', sy(L_.done)).attr('stroke', R).attr('stroke-width', 2);
+        pB.append('text').attr('x', gx - 5).attr('y', (sy(L_.due) + sy(L_.done)) / 2).attr('dy', '0.35em').attr('text-anchor', 'end').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', R).text(`${L_.due - L_.done} behind`); }
+      pB.append('text').attr('x', w).attr('y', 9).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', '#5B6770').text(pj.cm ? `${pj.cm} done this month` : 'none done this month');
+      pB.append('rect').attr('x', x0).attr('y', top).attr('width', x1 - x0).attr('height', y1 - top).attr('fill', 'transparent').on('mousemove', ev => { const [mx_] = d3.pointer(ev), dd = sx.invert(mx_).toISOString().slice(0, 10), b = B.filter(q => q.d <= dd).pop() || B[0];
+        tip.show(ev, [dlab(b.d), `${b.due} due by then`, `${b.done} done`, `${b.due - b.done} behind`]); }).on('mouseleave', tip.hide); } else pB.append('text').attr('x', w / 2).attr('y', h / 2).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#8A949E').text('No sub-task dates'); }
+    /* C */
+    { const O = pj.own, lw = Math.min(118, w * 0.32), x0 = lw, x1 = w - 66, top = 20, rh = Math.min(36, (h - top - 16) / Math.max(1, O.length)), bh = Math.min(14, rh * 0.6), mx = d3.max(O, o => o.open) || 1, sx = v => v / mx * (x1 - x0);
+      pC.append('text').attr('x', 0).attr('y', 9).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text('Open sub-tasks by owner');
+      pC.append('text').attr('x', w).attr('y', 9).attr('text-anchor', 'end').attr('font-size', 8.5).attr('fill', '#5B6770').text('last update');
+      O.forEach((o, i) => { const y = top + i * rh + rh / 2, st = o.days > 21;
+        pC.append('text').attr('x', 0).attr('y', y).attr('dy', '0.35em').attr('font-size', 10).attr('fill', '#33414B').text(o.k);
+        pC.append('rect').attr('x', x0).attr('y', y - bh / 2).attr('width', sx(o.open)).attr('height', bh).attr('rx', 2).attr('fill', '#D5DBE1');
+        if (o.od) pC.append('rect').attr('x', x0).attr('y', y - bh / 2).attr('width', sx(o.od)).attr('height', bh).attr('rx', 2).attr('fill', R);
+        pC.append('text').attr('x', x0 + sx(o.open) + 4).attr('y', y).attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', o.od ? R : N).text(o.od ? `${o.od} late of ${o.open}` : `${o.open} open`);
+        pC.append('text').attr('x', w).attr('y', y).attr('dy', '0.35em').attr('text-anchor', 'end').attr('font-size', 9).attr('font-weight', st ? 700 : 400).attr('fill', st ? R : '#5B6770').text(o.last ? dlab(o.last) : '—');
+        pC.append('rect').attr('x', 0).attr('y', y - rh / 2).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [o.k, `${o.open} open sub-tasks, ${o.od} past due`, o.last ? `Last Jira update ${dlab(o.last)} (${o.days} days ago)` : ''])).on('mouseleave', tip.hide); });
+      const lg = pC.append('g').attr('transform', `translate(0,${h - 3})`);
+      lg.append('rect').attr('y', -8).attr('width', 9).attr('height', 9).attr('fill', R); lg.append('text').attr('x', 12).attr('font-size', 8.5).attr('fill', '#33414B').text('past due');
+      lg.append('rect').attr('x', 66).attr('y', -8).attr('width', 9).attr('height', 9).attr('fill', '#D5DBE1'); lg.append('text').attr('x', 78).attr('font-size', 8.5).attr('fill', '#33414B').text('open, not yet due');
+      lg.append('text').attr('x', w).attr('text-anchor', 'end').attr('font-size', 8.5).attr('fill', R).text('red date = no update for 3+ weeks'); } }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
@@ -772,7 +829,30 @@
     const asof = (J.find(r => r.asof) || {}).asof || '';
     const wk = d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };
     const wks = [...new Set([...J.map(r => r.created && wk(r.created)), ...dn.map(r => r.resolved && wk(r.resolved.slice(0, 10)))].filter(Boolean))].sort().slice(-12);
-    return { title: `Jira${asof ? ' as of ' + dlab(asof) : ''}`, st: band(J.length ? od.length / J.length * 100 : null, 5, 15, false),
+    /* 15 Nov 23:03 (Umair): activity status (Tasks + Epics) alongside sub-task status */
+    const dd_ = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5);
+    const SUB = J.filter(r => r.type === 'Sub-task'), ACT = J.filter(r => r.type !== 'Sub-task');
+    const acts = ACT.map(r => { const k = SUB.filter(x => x.parent === r.key), nd = k.filter(x => x.cat === 'done').length, done = r.cat === 'done';
+      const s_ = r.start || d3.min(k, x => x.start || x.created) || r.created, e_ = r.due || d3.max(k, x => x.due) || null;
+      const p = k.length ? nd / k.length : null, x = s_ && e_ ? Math.max(0, Math.min(1, dd_(s_, today) / Math.max(1, dd_(s_, e_)))) : 0, late = !done && e_ && e_ < today ? dd_(e_, today) : 0;
+      const col = done ? '#1E8C5A' : late ? C.bad : p != null ? (p < x - 0.25 ? C.bad : p < x - 0.05 ? '#E0A100' : '#1E8C5A') : '#E0A100';
+      return { key: r.key, name: r.summary.replace(/\s+Task$/i, '').replace(/^(Observation|Changeover) of /i, '').replace(/\s+for\s+.*$/i, '').replace(/Re-?Layouting/i, 'Re-layout').replace(/^Line Automation of /i, 'Automation: ').replace(/ - /g, ', '), full: r.summary, status: r.status, owner: (r.assignee || '').replace(/\b([A-Z])([A-Z]+)\b/g, (m, a, b) => a + b.toLowerCase()), s: s_, e: e_, n: k.length, nd, p, x, late, done, col }; })
+      .sort((a, b) => (a.s || '9') < (b.s || '9') ? -1 : 1);
+    const subDue = SUB.filter(r => r.due && r.due <= today), subOd = SUB.filter(r => r.cat !== 'done' && r.due && r.due < today), subDn = SUB.filter(r => r.cat === 'done');
+    const evd = [...new Set([...SUB.map(r => r.due), ...subDn.map(r => (r.resolved || '').slice(0, 10))].filter(d => d && d <= today)), today].sort();
+    const burn = evd.map(d => ({ d, due: SUB.filter(r => r.due && r.due <= d).length, done: subDn.filter(r => (r.resolved || '').slice(0, 10) <= d).length }));
+    const own2 = d3.rollups(SUB.filter(r => r.cat !== 'done'), v => ({ open: v.length, od: v.filter(r => r.due && r.due < today).length, last: d3.max(v, r => (r.updated || '').slice(0, 10)) }), r => r.assignee || 'Unassigned')
+      .map(([k, o]) => ({ k: k.replace(/\b([A-Z])([A-Z]+)\b/g, (m, a, b) => a + b.toLowerCase()), ...o, days: o.last ? dd_(o.last, today) : null })).sort((a, b) => b.od - a.od || b.open - a.open).slice(0, 8);
+    const aDone = acts.filter(a => a.done).length, aLate = acts.filter(a => a.late), aBeh = acts.filter(a => !a.done && !a.late && a.n && a.p < a.x - 0.05);
+    const lastUp = d3.max(SUB.filter(r => r.cat !== 'done'), r => (r.updated || '').slice(0, 10));
+    const tkP = [...aBeh.sort((a, b) => (a.p - a.x) - (b.p - b.x)).map(a => `<b>${esc(a.name)}: ${f0(a.p * 100)}% done vs ${f0(a.x * 100)}% expected${a.e ? ', due ' + dlab(a.e) : ''}</b>`),
+      ...aLate.sort((a, b) => b.late - a.late).map(a => `${esc(a.name)}: ${a.late} days past due (${esc(a.owner || 'Unassigned')})`),
+      ...(lastUp && dd_(lastUp, today) > 14 ? [`<span style="color:#5B6770">no open sub-task updated in Jira since ${dlab(lastUp)}</span>`] : [])];
+    const pj = { acts, burn, own: own2, today, cm: subDn.filter(r => (r.resolved || '').slice(0, 7) === today.slice(0, 7)).length, tk: tkP };
+    const pdue = subDue.length;
+    return { title: `Jira${asof ? ' as of ' + dlab(asof) : ''}`, st: band(acts.length ? aLate.length / acts.length * 100 : null, 5, 15, false), pj,
+      kh: [['Activities done', [`${aDone} of ${acts.length}`, `${aLate.length} late`], `${aDone} of ${acts.length} project activities done · ${aLate.length} past their due date${aBeh.length ? ` · ${aBeh.length} behind plan` : ''}`, aLate.length ? C.bad : '#1E8C5A'],
+        ['Sub-tasks done', [`${subDn.filter(r => r.due && r.due <= today).length} of ${pdue}`, `${subOd.length} late`], `Sub-tasks done of the ${pdue} due by ${dlab(today)} (${subDn.length} done of ${SUB.length} in all) · ${subOd.length} past due`, subOd.length ? C.bad : '#1E8C5A']],
       kpis: [['Activities', nf(J.length), `${byP.length} projects`], ['Done', pc(J.length ? dn.length / J.length * 100 : null), `${nf(dn.length)} completed`, '#1E8C5A'], ['In progress', nf(ip.length), 'being worked on'], ['To do', nf(nw.length), 'not started'],
         ['Overdue', nf(od.length), 'past due date, not done', od.length ? C.bad : null]],
       vt: 'Status by project', mini: el => hbarC(el, byP.map(([p, o]) => ({ label: p, v: d3.sum(SC, ([n]) => o[n]), lab: `${o.Done}/${d3.sum(SC, ([n]) => o[n])} done`, color: C.navy, tip: [p, ...SC.map(([n]) => `${n}: ${o[n]}`)] })), { fmt: nf, lw: 120, lc: 20 }),
@@ -867,6 +947,10 @@
         ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
+    } else if (id === 'projects' && !o.none && o.pj) {   /* 15 Nov 23:03 (Umair): Projects - 4-step KPI, 3-face chart (activities / sub-task burn-up / owners), action ticker */
+      o.mini = el2 => pjFlip(el2, o.pj);
+      el.innerHTML = hdrF(id, name, o.kh, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${o.pj.tk.length ? tickS('Act:', o.pj.tk.map(t => `<span style="color:${C.bad}">${t}</span>`), '', 'Activities behind plan or past due, and Jira not being updated') : tickS('On track:', ['every activity on plan'], 'ok', '')}</div>`;
     } else if (id === 'capacity' && !o.none && o.cp) {   /* 15 Nov 22:17 (Umair): Capacity - 4-step KPI, 3-face chart, action ticker */
       o.mini = el2 => capFlip(el2, o.cp);
       el.innerHTML = hdrF(id, name, o.kh, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
