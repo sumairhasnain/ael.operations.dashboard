@@ -216,6 +216,8 @@
 .ael #summary .ovhb em{font-style:normal;font-size:10px;color:#5B6770;white-space:nowrap}
 #summary svg.ovflp .pA,#summary svg.ovflp .pB{transition:opacity .5s ease}
 #summary svg.ovflp[data-on="a"] .pB,#summary svg.ovflp[data-on="b"] .pA{opacity:0;pointer-events:none}
+#summary svg.ovflp .pC{transition:opacity .5s ease}
+#summary svg.ovflp:not([data-on="c"]) .pC,#summary svg.ovflp[data-on="c"] .pA,#summary svg.ovflp[data-on="c"] .pB{opacity:0;pointer-events:none}
 .ael #summary .ovbc .ovv{margin:0 -10px;padding-top:6px}
 .ael #summary .tg:hover{border-color:#1F9E89;color:#1F9E89}
 .ael #summary .tg.on{background:#1F9E89;border-color:#1F9E89;color:#fff}
@@ -336,6 +338,60 @@
     const lg = pB.append('g').attr('transform', `translate(0,${h - 6})`); let lx = 0;
     [['Completed', G], ['In progress', A], ['Pending / proposal', Q]].forEach(([k, c]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`); g.append('rect').attr('y', -7).attr('width', 8).attr('height', 8).attr('fill', c);
       const t = g.append('text').attr('x', 11).attr('font-size', 9).attr('fill', '#33414B').text(k); let tw = 50; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 22; }); }
+  /* 15 Nov 19:19 (Umair): Manpower card body - pane A labour hours bridge, pane B weekly overtime bought vs hours lost, pane C shop quadrant */
+  function wfFlip(el, wf) { if (!wf) return none(el, 'No data'); const { svg, w, h } = mk(el);
+    svg.classed('ovflp', true).attr('data-on', 'a').attr('data-n', '3'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB'), pC = svg.append('g').attr('class', 'pC');
+    const R = C.bad, N = '#2251FF', yf = v => v >= 1e3 ? f1(v / 1e3) + 'k' : f0(v);
+    /* A: bridge */
+    { const B = wf.bridge, mt = 52, mb = 30, base = h - mb, mx = Math.max(B.ros, B.worked) * 1.08, sy = v => v / mx * (base - mt - 14), bw = Math.min(70, (w - 20) / 4 - 16), gap = (w - 4 * bw) / 4;
+      const X = i => gap / 2 + i * (bw + gap), steps = [['Rostered', 0, B.ros, '#CFD8E3', yf(B.ros), `${nf(Math.round(B.people))} people`], ['Absence', B.ros - B.lost, B.ros, R, '−' + yf(B.lost), f1(B.ap) + '%'],
+        ['Overtime', B.ros - B.lost, B.ros - B.lost + B.ot, N, '+' + yf(B.ot), rs(B.otRs)], ['Worked', 0, B.worked, '#051C2C', yf(B.worked), '']];
+      pA.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`Labour hours, ${+B.from.slice(8)}–${dlab(B.to)}`);
+      const pct = B.worked ? B.ot / B.worked * 100 : 0, rat = B.lost ? B.ot / B.lost : 0;
+      pA.append('rect').attr('x', 0).attr('y', 18).attr('width', Math.min(w, 220)).attr('height', 30).attr('rx', 5).attr('fill', '#EEF3FF');
+      pA.append('text').attr('x', 7).attr('y', 31).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', N).text(`${f0(pct)}% of hours worked are overtime`);
+      pA.append('text').attr('x', 7).attr('y', 44).attr('font-size', 9.5).attr('fill', '#33414B').text(`${f1(rat)} OT hours per hour lost to absence`);
+      pA.append('line').attr('x1', 0).attr('x2', w).attr('y1', base).attr('y2', base).attr('stroke', '#c5ccd4');
+      steps.forEach(([lab, y0, y1, c, top, sub], i) => { const t = base - sy(Math.max(y0, y1)), x = X(i);
+        pA.append('rect').attr('x', x).attr('y', t).attr('width', bw).attr('height', Math.max(1, sy(Math.abs(y1 - y0)))).attr('fill', c)
+          .on('mousemove', ev => tip.show(ev, [lab, top + ' hours', ...(sub ? [sub] : [])])).on('mouseleave', tip.hide);
+        pA.append('text').attr('x', x + bw / 2).attr('y', t - 5).attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700).attr('fill', '#051C2C').text(top);
+        pA.append('text').attr('x', x + bw / 2).attr('y', base + 12).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#33414B').text(lab);
+        if (sub) pA.append('text').attr('x', x + bw / 2).attr('y', base + 24).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(sub);
+        if (i < 3) { const ny = i === 0 ? y1 : i === 1 ? y0 : y1; pA.append('line').attr('x1', x + bw).attr('x2', X(i + 1)).attr('y1', base - sy(ny)).attr('y2', base - sy(ny)).attr('stroke', '#9aa5b1').attr('stroke-dasharray', '2 2'); } }); }
+    /* B: weekly mirror */
+    { const W = wf.W, mt = 30, mb = 34, mid = mt + (h - mt - mb) * 0.55, up = mid - mt - 14, dn = h - mb - mid - 14, mx = d3.max(W, d => d.ot) || 1, ml = d3.max(W, d => d.lost) || 1, s_ = Math.min(up / mx, dn / ml);
+      const bw = Math.min(36, (w - 50) / W.length - 14), X = i => 46 + i * ((w - 50) / W.length);
+      pB.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text('Overtime bought vs hours lost, by week');
+      pB.append('text').attr('x', 0).attr('y', mt + 10).attr('font-size', 9).attr('fill', N).text('▲ OT h'); pB.append('text').attr('x', 0).attr('y', h - mb - 4).attr('font-size', 9).attr('fill', R).text('▼ lost h');
+      pB.append('line').attr('x1', 40).attr('x2', w).attr('y1', mid).attr('y2', mid).attr('stroke', '#051C2C');
+      W.forEach((d, i) => { const x = X(i), op = d.inc ? 0.4 : 1, T = [`Week of ${dlab(d.k)}${d.inc ? ' (sheet not complete)' : ''}`, `Overtime ${nf(Math.round(d.ot))} h · ${rs(d.ot * 42500 / 26 / 8 * 1.5)}`, `Lost to absence ${nf(Math.round(d.lost))} h`, `Absenteeism ${d.ap == null ? '—' : f1(d.ap) + '%'}`];
+        pB.append('rect').attr('x', x).attr('y', mid - d.ot * s_).attr('width', bw).attr('height', d.ot * s_).attr('fill', N).attr('opacity', op);
+        pB.append('text').attr('x', x + bw / 2).attr('y', mid - d.ot * s_ - 3).attr('text-anchor', 'middle').attr('font-size', 9).attr('font-weight', 700).attr('fill', '#051C2C').text(yf(d.ot));
+        pB.append('rect').attr('x', x).attr('y', mid).attr('width', bw).attr('height', d.lost * s_).attr('fill', R).attr('opacity', op);
+        pB.append('text').attr('x', x + bw / 2).attr('y', mid + d.lost * s_ + 10).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', R).text(yf(d.lost));
+        pB.append('text').attr('x', x + bw / 2).attr('y', h - mb + 13).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', d.ap > 13 ? R : d.ap > 10 ? '#9A6B00' : '#1E8C5A').text(d.ap == null ? '' : f1(d.ap) + '%');
+        pB.append('text').attr('x', x + bw / 2).attr('y', h - mb + 25).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(dlab(d.k) + (d.inc ? '*' : ''));
+        pB.append('rect').attr('x', x - 4).attr('y', mt).attr('width', bw + 8).attr('height', h - mt).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T)).on('mouseleave', tip.hide); });
+      if (W.some(d => d.inc)) pB.append('text').attr('x', w).attr('y', 11).attr('text-anchor', 'end').attr('font-size', 8.5).attr('fill', '#5B6770').text('* sheet not complete'); }
+    /* C: quadrant */
+    { const Q = wf.Q, ml = 40, mb = 26, mt = 10, x0 = Math.min(3, d3.min(Q, d => d.ap) || 0), x1 = Math.max(22, (d3.max(Q, d => d.ap) || 0) + 1), y1 = Math.max(100, d3.max(Q, d => d.oh) || 0);
+      const X = d3.scaleLinear().domain([x0, x1]).range([ml, w - 8]), Y = d3.scaleSqrt().domain([0, y1]).range([h - mb, mt]), tY = Math.max(0.1, wf.ohAll);
+      pC.append('rect').attr('x', X(10)).attr('y', mt).attr('width', w - 8 - X(10)).attr('height', Math.max(0, Y(tY) - mt)).attr('fill', '#FDECEC');
+      pC.append('text').attr('x', w - 10).attr('y', mt + 12).attr('text-anchor', 'end').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', R).text('ABSENT + OVERTIME');
+      pC.append('text').attr('x', w - 10).attr('y', mt + 24).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', R).text('fix rostering');
+      [0, 10, 25, 50, 100].filter(v => v <= y1).forEach(v => pC.append('text').attr('x', ml - 4).attr('y', Y(v) + 3).attr('text-anchor', 'end').attr('font-size', 8.5).attr('fill', '#9aa5b1').text(v));
+      pC.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', h - mb).attr('y2', h - mb).attr('stroke', '#c5ccd4'); pC.append('line').attr('x1', ml).attr('x2', ml).attr('y1', mt).attr('y2', h - mb).attr('stroke', '#c5ccd4');
+      pC.append('line').attr('x1', X(10)).attr('x2', X(10)).attr('y1', mt).attr('y2', h - mb).attr('stroke', '#051C2C').attr('stroke-dasharray', '3 3');
+      pC.append('line').attr('x1', ml).attr('x2', w - 8).attr('y1', Y(tY)).attr('y2', Y(tY)).attr('stroke', '#051C2C').attr('stroke-dasharray', '3 3');
+      pC.append('text').attr('x', (ml + w) / 2).attr('y', h - 6).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text(`Absenteeism % → (lines: 10% target, ${f0(wf.ohAll)} OT h/head average)`);
+      pC.append('text').attr('transform', `translate(10,${(mt + h - mb) / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', '#5B6770').text('OT hours per head →');
+      const placed = [];
+      Q.slice().sort((a, b) => b.oh - a.oh).forEach(d => { const cx = X(d.ap), cy = Y(d.oh), c = d.ap > 10 && d.oh > tY ? R : d.ap > 10 || d.oh > tY * 2.5 ? '#E0A100' : N;
+        pC.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 5.5).attr('fill', c).attr('opacity', 0.9).on('mousemove', ev => tip.show(ev, [d.k, `Absenteeism ${f1(d.ap)}%`, `${f1(d.oh)} OT hours per head (${kf(d.ot)} h)`, `${nf(Math.round(d.hc))} people a day`])).on('mouseleave', tip.hide);
+        if (c === N && !(d.ap < 6 || d.oh < tY / 3)) return;   /* ordinary shops: hover only, so labels stay readable */
+        let right = cx < w - 90, ly = cy + 3.5; for (let k = 0; k < 4 && placed.some(p => Math.abs(p.y - ly) < 10 && Math.abs(p.x - cx) < 80); k++) ly += 10;
+        placed.push({ x: cx, y: ly }); pC.append('text').attr('x', right ? cx + 8 : cx - 8).attr('y', ly).attr('text-anchor', right ? 'start' : 'end').attr('font-size', 9.5).attr('fill', '#33414B').text(d.k.replace('Carburetor ', 'Carb ').replace('Aluminium', 'Al').replace(' / Die Cast', '')); }); } }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
@@ -537,7 +593,35 @@
     const byD = d3.rollup(A, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours) }), r => r.date);
     const byS = d3.rollups(A, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours), hc: d3.sum(v.filter(r => r.date === last), r => r.headcount) }), r => r.shop || r.area);
     const ap = pr + ab ? ab / (pr + ab) * 100 : null, la = d3.sum(L, r => r.present) + d3.sum(L, r => r.absent), lap = la ? d3.sum(L, r => r.absent) / la * 100 : null;
-    return { title: `${mon(P.month)} to ${dlab(last)}`, st: band(ap, 5, 8, false),
+    /* 15 Nov 19:19 (Umair): card = 4-step KPI (absenteeism, MoM, overtime hours, overtime Rs); body flips labour-hours bridge -> weekly
+       overtime bought vs hours lost -> shop quadrant (absenteeism vs OT per head); foot names people/shops to act on. Target 10% absent.
+       Overtime costed like the COGM: Rs 42,500 / 26 days / 8 h x 1.5. */
+    const OTR = 42500 / 26 / 8 * 1.5, sh_ = SHf(P);
+    /* the sheet books Carburetor Assembly and Carburetor Machining overtime on 'Carburetor' rows with no headcount: put it back with its people */
+    const fx = r => r.area === 'Carburetor' && /assembly/i.test(r.section || '') ? { ...r, shop: 'Carburetor Assembly' } : r.area === 'Carburetor' && /machining/i.test(r.section || '') ? { ...r, shop: 'Carburetor Machining' } : r;
+    const ALL = D('sp_attendance').map(fx).filter(r => inSh(sh_, r, 'shop')), sun = d => new Date(d + 'T00:00:00Z').getUTCDay() === 0;
+    const AO = ALL.filter(r => r.date >= P.start && r.date <= end), otA = d3.sum(AO, r => r.ot_hours);
+    const pm_ = (() => { const d = new Date(Date.UTC(+P.month.slice(0, 4), +P.month.slice(5, 7) - 2, 1)); return d.toISOString().slice(0, 7); })();
+    const PA = ALL.filter(r => r.date.startsWith(pm_)), pap = d3.sum(PA, r => r.present + r.absent) ? d3.sum(PA, r => r.absent) / d3.sum(PA, r => r.present + r.absent) * 100 : null;
+    const dTot = d3.rollup(ALL.filter(r => !sun(r.date)), v => d3.sum(v, r => r.present + r.absent), r => r.date);
+    const roster = d3.median([...byD].filter(([d]) => !sun(d)).map(([, o]) => o.p + o.a)) || 0, incomplete = [...byD].filter(([d, o]) => !sun(d) && o.p + o.a < roster * 0.9).map(([d]) => d).sort();
+    const wk = d => { const t = new Date(d + 'T00:00:00Z'), k = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - k); return t.toISOString().slice(0, 10); };
+    const wMed = d3.rollup([...dTot], v => d3.median(v, x => x[1]), x => wk(x[0]));
+    const W = d3.rollups(ALL, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours), ds: [...new Set(v.filter(r => !sun(r.date)).map(r => r.date))] }), r => wk(r.date)).sort((a, b) => a[0] < b[0] ? -1 : 1).slice(-6)
+      .map(([k, o]) => ({ k, lost: o.a * 8, ot: o.o, ap: o.p + o.a ? o.a / (o.p + o.a) * 100 : null, inc: o.ds.length < 6 || o.ds.some(d => incomplete.includes(d)) }));
+    const byS2 = d3.rollups(AO, v => ({ a: d3.sum(v, r => r.absent), p: d3.sum(v, r => r.present), o: d3.sum(v, r => r.ot_hours), hc: d3.median([...d3.rollup(v.filter(r => !sun(r.date)), w_ => d3.sum(w_, r => r.present + r.absent), r => r.date).values()]) || 0 }), r => r.shop || r.area);
+    const shQ = byS2.map(([k, o]) => ({ k, ap: o.p + o.a ? o.a / (o.p + o.a) * 100 : 0, oh: o.hc ? o.o / o.hc : 0, ot: o.o, hc: o.hc })).filter(d => d.hc >= 5);
+    const ohAll = roster ? otA / roster : 0;
+    const PP = (D('sp_attendance_people') || []).filter(r => r.month === P.month && inSh(sh_, r, 'shop')), both = PP.filter(r => r.absent_with_ot_days > 0);
+    const tk = [...(both.length ? [`<b>${nf(both.length)} people · ${kf(d3.sum(both, r => +r.ot_in_abs_weeks || 0))} OT h</b>`] : []),
+      ...shQ.filter(d => d.ap > 10 && d.oh > ohAll).sort((a, b) => b.ap - a.ap).map(d => `${esc(d.k)} ${f0(d.ap)}% absent, ${f0(d.oh)} OT h/head`),
+      ...shQ.filter(d => d.ap <= 10 && d.oh > ohAll * 2).map(d => `${esc(d.k)} ${f0(d.oh)} OT h/head`), ...shQ.filter(d => d.ap > 15 && d.oh < ohAll / 3).map(d => `${esc(d.k)} ${f0(d.ap)}% absent, ${f0(d.oh)} OT h/head`),
+      ...(incomplete.length ? [`<span style="color:#9A6B00">sheet incomplete: ${incomplete.slice(-3).map(dlab).join(', ')}</span>`] : [])];
+    const wf = { bridge: { ros: (pr + ab) * 8, lost: ab * 8, ot: otA, worked: pr * 8 + otA, otRs: otA * OTR, people: roster, ap, from: P.start, to: last }, W, Q: shQ, ohAll, tk, both: both.length };
+    const dm = ap != null && pap != null ? ap - pap : null;
+    return { title: `${mon(P.month)} to ${dlab(last)}`, st: band(ap, 10, 13, false), wf,
+      kh: [['Absenteeism', [ap == null ? '—' : f1(ap) + '%', dm == null ? '—' : (dm <= 0 ? '▼' : '▲') + f1(Math.abs(dm)) + ' pts MoM'], `Absent of present + absent, ${mon(P.month)} to ${dlab(last)}${pap != null ? ` · ${mon(pm_)} ${f1(pap)}%` : ''} · target 10%`, ap == null ? null : ap > 13 ? C.bad : ap > 10 ? '#9A6B00' : '#1E8C5A'],
+        ['Overtime', [kf(otA) + ' h', rs(otA * OTR)], `Overtime hours ${mon(P.month)} to ${dlab(last)}, costed at Rs ${f0(OTR)} an hour (Rs 42,500 a month / 26 days / 8 h x 1.5)`, '#2251FF']],
       kpis: [['Headcount', nf(hc), `on ${dlab(last)}`], ['Absenteeism', f1(ap) + '%', 'absent of present + absent, MTD', ap > 8 ? C.bad : ap > 5 ? C.warn : null], ['Absent latest day', lap == null ? '—' : f1(lap) + '%', dlab(last)],
         ['Overtime', kf(ot) + ' h', `${f1(pr ? ot / (pr * 8) * 100 : 0)}% of present hours`], ['OT per day', kf(ot / ds.length) + ' h', `${ds.length} days recorded`]],
       vt: 'Daily absenteeism %', mini: el => lineC(el, ds, [{ name: 'Absenteeism', color: C.bad, values: ds.map(d => { const o = byD.get(d); return o.p + o.a ? Math.round(o.a / (o.p + o.a) * 1000) / 10 : null; }) }], { xFmt: d => +d.slice(8), yFmt: v => v + '%', fmt: v => f1(v) + '%', ml: 30, min: 0 }),
@@ -676,7 +760,7 @@
     if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
     return `<div class="ovbh ${cls} tk" title="${tt}"><b>${lab}</b><div class="tkw"><div class="tkt" style="animation-duration:${Math.max(10, items.length * 4)}s"><span class="tkg">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span><span class="tkg" aria-hidden="true">${it}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div></div></div>`; };
   const okc = v => v < 80 ? C.bad : v < 100 ? '#9A6B00' : '#1E8C5A';
-  if (!window.__ovFL) window.__ovFL = setInterval(() => document.querySelectorAll('#summary svg.ovflp').forEach(v => { if (v.matches(':hover')) return; v.setAttribute('data-on', v.getAttribute('data-on') === 'a' ? 'b' : 'a'); }), 8000);
+  if (!window.__ovFL) window.__ovFL = setInterval(() => document.querySelectorAll('#summary svg.ovflp').forEach(v => { if (v.matches(':hover')) return; const on = v.getAttribute('data-on'); v.setAttribute('data-on', v.dataset.n === '3' ? (on === 'a' ? 'b' : on === 'b' ? 'c' : 'a') : (on === 'a' ? 'b' : 'a')); }), 8000);
   if (!window.__ovWL) window.__ovWL = setInterval(() => document.querySelectorAll('#summary .ovwl').forEach(w => { if (w.dataset.hold || w.matches(':hover')) return; w.dataset.on = w.dataset.on === 'v' ? 'p' : 'v'; }), 7000);
   const vpOvH = () => { const pop = document.getElementById('vpop'); if (pop) { pop.style.display = 'none'; pop.dataset.code = ''; } };
   const vpOv = (ev, cd, part) => { const VP = window.__vendPanel; if (!VP || !cd) return;
@@ -717,6 +801,10 @@
         ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
+    } else if (id === 'workforce' && !o.none && o.wf) {   /* 15 Nov 19:19 (Umair): Manpower - 4-step KPI, 3-face chart, act-on ticker */
+      o.mini = el2 => wfFlip(el2, o.wf);
+      el.innerHTML = hdrF(id, name, o.kh, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${o.wf.tk.length ? tickS(o.wf.both ? 'Absent + OT same week:' : 'Act on:', o.wf.tk.map(t => `<span style="color:${C.bad}">${t}</span>`), '', 'People who did overtime in a week they were also absent, and shops with high absence and overtime') : tickS('On track:', ['absence and overtime within limits'], 'ok', '')}</div>`;
     } else if (id === 'savings' && !o.none && o.sv) {   /* 15 Nov 17:42 (Umair): VA/CR - flipping KPI, landing line / shops, overdue ticker */
       const od = o.sv.od;
       o.mini = el2 => savFlip(el2, o.sv);
