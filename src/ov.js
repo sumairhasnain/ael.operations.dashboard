@@ -620,7 +620,7 @@
     const wf = { bridge: { ros: (pr + ab) * 8, lost: ab * 8, ot: otA, worked: pr * 8 + otA, otRs: otA * OTR, people: roster, ap, from: P.start, to: last }, W, Q: shQ, ohAll, tk, both: both.length };
     const dm = ap != null && pap != null ? ap - pap : null;
     return { title: `${mon(P.month)} to ${dlab(last)}`, st: band(ap, 10, 13, false), wf,
-      kh: [['Absenteeism', [ap == null ? '—' : f1(ap) + '%', dm == null ? '—' : (dm <= 0 ? '▼' : '▲') + f1(Math.abs(dm)) + ' pts MoM'], `Absent of present + absent, ${mon(P.month)} to ${dlab(last)}${pap != null ? ` · ${mon(pm_)} ${f1(pap)}%` : ''} · target 10%`, ap == null ? null : ap > 13 ? C.bad : ap > 10 ? '#9A6B00' : '#1E8C5A'],
+      kh: [['Absenteeism', [ap == null ? '—' : f1(ap) + '%', dm == null ? '—' : (dm <= 0 ? '▼' : '▲') + f1(Math.abs(dm))], `Absent of present + absent, ${mon(P.month)} to ${dlab(last)}${pap != null ? ` · ${mon(pm_)} ${f1(pap)}%` : ''} · target 10%`, ap == null ? null : ap > 13 ? C.bad : ap > 10 ? '#9A6B00' : '#1E8C5A'],
         ['Overtime', [kf(otA) + ' h', rs(otA * OTR)], `Overtime hours ${mon(P.month)} to ${dlab(last)}, costed at Rs ${f0(OTR)} an hour (Rs 42,500 a month / 26 days / 8 h x 1.5)`, '#2251FF']],
       kpis: [['Headcount', nf(hc), `on ${dlab(last)}`], ['Absenteeism', f1(ap) + '%', 'absent of present + absent, MTD', ap > 8 ? C.bad : ap > 5 ? C.warn : null], ['Absent latest day', lap == null ? '—' : f1(lap) + '%', dlab(last)],
         ['Overtime', kf(ot) + ' h', `${f1(pr ? ot / (pr * 8) * 100 : 0)}% of present hours`], ['OT per day', kf(ot / ds.length) + ' h', `${ds.length} days recorded`]],
