@@ -150,6 +150,19 @@
 .ael #summary .ovkh .ovff{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff}
 .ael #summary .ovkh .ovff.bk{transform:rotateX(180deg)}
 @keyframes ovflip{0%,42%{transform:rotateX(0)}50%,92%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
+/* 15 Nov 18:11 (Umair): four-step KPI - label stays, value flips sideways; then the whole KPI flips up to the next label */
+.ael #summary .ovfl.q4 .ovfi{animation:ov4 16s ease-in-out infinite}
+@keyframes ov4{0%,46%{transform:rotateX(0)}50%,96%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
+.ael #summary .ovkh .ovff b.hv{display:block;perspective:500px}
+.ael #summary .ovkh .ovff b.hv>i{display:grid;font-style:normal;transform-style:preserve-3d}
+.ael #summary .ovkh .ovff b.hv>i>i{grid-area:1/1;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;white-space:nowrap}
+.ael #summary .ovkh .ovff b.hv>i>i+i{transform:rotateY(180deg)}
+.ael #summary .ovkh .ovff:not(.bk) b.hv>i{animation:ovhA 16s ease-in-out infinite}
+.ael #summary .ovkh .ovff.bk b.hv>i{animation:ovhB 16s ease-in-out infinite}
+@keyframes ovhA{0%,21%{transform:rotateY(0)}25%,73%{transform:rotateY(180deg)}75%,100%{transform:rotateY(0)}}
+@keyframes ovhB{0%,71%{transform:rotateY(0)}75%,100%{transform:rotateY(180deg)}}
+.ael #summary .ovfl.q4:hover .ovfi,.ael #summary .ovfl.q4:hover b.hv>i{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.ael #summary .ovfl.q4 .ovfi,.ael #summary .ovkh .ovff b.hv>i{animation:none}}
 @media (prefers-reduced-motion:reduce){.ael #summary .ovfl .ovfi{animation:none}}
 .ael #summary .ovwl{flex:1;min-height:0;display:flex;gap:8px;background:linear-gradient(180deg,#F7F9FB,#fff);border-radius:6px;padding:4px 8px 4px 0;margin:0 -10px;overflow:hidden}
 /* 14 Nov 13:08 (Umair): no 'Watch list' heading; Vendors / Parts are thin vertical tabs on the left edge so the list gets the full height */
@@ -639,8 +652,8 @@
     const sv = { FM, cm, planC, doneC, planNow, doneNow, gap, T, od: odL, odV,
       shops: byS.map(([k, o]) => ({ k, c: o.Completed || 0, p: o['In Progress'] || 0, q: (o.Pending || 0) + (o.Proposal || 0) })) };
     return { title: 'Cost reduction ideas', st: band(gp, 5, 15, false), sv,
-      kh: [['Achieved run-rate', `${rs(doneNow)} · ${T ? f0(doneNow / T * 100) : 0}%`, `Annual saving of the ${nf(keys(done))} completed ideas, ${T ? f0(doneNow / T * 100) : 0}% of the ${rs(T)} pipeline${gap != null ? ` · plan to ${mon(cm)}: ${rs(planNow)} (${gap > 0 ? rs(gap) + ' behind' : 'on plan'})` : ''}`, gp == null ? '#1E8C5A' : gp > 15 ? C.bad : gp > 5 ? '#9A6B00' : '#1E8C5A'],
-        ['Overdue', `${rs(odV)} · ${nf(odL.length)} ideas`, 'Ideas not completed whose target month has passed', odL.length ? C.bad : '#1E8C5A']],
+      kh: [['Achieved run-rate', [rs(doneNow), `${T ? f0(doneNow / T * 100) : 0}%`], `Annual saving of the ${nf(keys(done))} completed ideas, ${T ? f0(doneNow / T * 100) : 0}% of the ${rs(T)} pipeline${gap != null ? ` · plan to ${mon(cm)}: ${rs(planNow)} (${gap > 0 ? rs(gap) + ' behind' : 'on plan'})` : ''}`, gp == null ? '#1E8C5A' : gp > 15 ? C.bad : gp > 5 ? '#9A6B00' : '#1E8C5A'],
+        ['Overdue', [rs(odV), `${nf(odL.length)} idea${odL.length === 1 ? '' : 's'}`], 'Ideas not completed whose target month has passed', odL.length ? C.bad : '#1E8C5A']],
       kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Total potential', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
         ['In progress', rs(ann(ip)), `${nf(keys(ip))} ideas`, '#B07D00'], ['Pending + proposals', rs(ann(pend)), `${nf(keys(pend))} ideas`]],
       vt: 'Annual saving by shop and status', mini: el => colC(el, byS.map(d => d[0]), STC.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, fmt: rs, yFmt: kf, rot: 1, ml: 32 }),
@@ -656,8 +669,8 @@
   let last = {};
   let hvBase, hvT, hvLock = '', hvSh = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
   /* 14 Nov 12:11: card header with the flipping KPI (Production, Vendor Supply) */
-  const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl" title="${esc(K.map(([l, v, sb]) => l + ' ' + v + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
-        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span><b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b></div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
+  const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl${K.some(k => Array.isArray(k[1])) ? ' q4' : ''}" title="${esc(K.map(([l, v, sb]) => l + ' ' + [].concat(v).join(' / ') + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
+        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}"><span>${esc(l)}</span>${Array.isArray(v) ? `<b class="hv"${c ? ` style="color:${c}"` : ''}><i><i>${esc(v[0])}</i><i>${esc(v[1])}</i></i></b>` : `<b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b>`}</div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
   /* ticker strip used at the foot of the Production and Vendor Supply cards: still when 2 names or fewer, scrolling right to left above that */
   const tickS = (lab, items, cls, tt) => { if (!items.length) return ''; const it = items.join(' · ');
     if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
