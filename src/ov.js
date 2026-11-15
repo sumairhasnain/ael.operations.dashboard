@@ -296,23 +296,23 @@
       };
       const mx = d3.max(SD, d => d.cons) || 1, top0 = 4, rh = Math.min(40, (h - top0) / SD.length), y0 = top0 + Math.max(0, (h - top0 - rh * SD.length) / 2);
       /* 14 Nov 23:44 (Umair): the bar heading is a vertical navy tab on the left of the bars, like the Vendors / Parts tabs on Supply Watch */
-      const th = Math.max(40, Math.min(h - 6, Math.max(150, rh * SD.length + 30))), ty = (h - th) / 2;
+      const th = Math.max(40, h - 6), ty = (h - th) / 2;
       pA.append('rect').attr('x', tx).attr('y', ty).attr('width', 20).attr('height', th).attr('rx', 6).attr('fill', '#051C2C');
-      pA.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((th >= (o.sideTitle || '').length * 6.6 + 16 ? o.sideTitle : o.sideShort || o.sideTitle || 'Consumption').toUpperCase());
+      pA.append('text').attr('transform', `translate(${tx + 10},${ty + th / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text((o.sideTitle || 'Consumption').toUpperCase()).each(function () { try { if (this.getComputedTextLength() > th - 14) d3.select(this).attr('textLength', th - 14).attr('lengthAdjust', 'spacingAndGlyphs'); } catch (e) {} });   /* always the full title; squeezed to fit when the card is short */
       const dcol = d => d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A', dtx = d => d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`;
       if (SD.length > 3) { /* raw material included: one line per category - name, bar, value · days */
-        const r1 = Math.min(26, (h - 8) / SD.length), yy = (h - r1 * SD.length) / 2, nw = Math.min(74, rw * 0.29), vw = 112, bwm = Math.max(16, rw - nw - vw - 6);
+        const r1 = Math.min(26, (h - 8) / SD.length), yy = (h - r1 * SD.length) / 2, nw = Math.min(74, rw * 0.29), vw = 64, bwm = Math.max(16, rw - nw - vw - 6);
         SD.forEach((d, i) => { const g = pA.append('g').attr('transform', `translate(${lx},${yy + i * r1})`), bw = Math.max(2, bwm * d.cons / mx);
           g.append('text').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 10).attr('fill', '#33414B').text(d.label.length > 9 ? d.label.slice(0, 7) + '…' : d.label).append('title').text(d.label);
           g.append('rect').attr('x', nw).attr('y', r1 / 2 - 5).attr('width', bw).attr('height', 10).attr('rx', 2).attr('fill', d.color);
-          g.append('text').attr('x', rw).attr('text-anchor', 'end').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.cons)).append('tspan').attr('fill', dcol(d)).text(dtx(d));
-          g.append('rect').attr('width', rw).attr('height', r1).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)}`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
+          g.append('text').attr('x', rw).attr('text-anchor', 'end').attr('y', r1 / 2).attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', '#051C2C').text((o.fmt || kf)(d.cons));
+          g.append('rect').attr('width', rw).attr('height', r1).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${(o.gauge && o.gauge.mon) || 'Month'} consumption: ${(o.fmt || kf)(d.cons)}`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
         drawB(); return; }
-      SD.forEach((d, i) => { const g = pA.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 128) * d.cons / mx);
+      SD.forEach((d, i) => { const g = pA.append('g').attr('transform', `translate(${lx},${y0 + i * rh})`), bw = Math.max(2, (rw - 70) * d.cons / mx);
         g.append('text').attr('y', 9).attr('font-size', 11).attr('fill', '#33414B').text(d.label);
         g.append('rect').attr('y', 13).attr('width', bw).attr('height', 11).attr('rx', 2).attr('fill', d.color);
-        g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`).append('tspan').attr('fill', d.dit == null ? '#8A949E' : d.dit > 180 ? C.bad : d.dit > 90 ? '#9A6B00' : '#1E8C5A').text(d.dit == null ? '  · no use' : `  · ${d3.format(',.0f')(d.dit)} d`);   /* 14 Nov 23:37 (Umair): no share %, days of stock right after the value */
-        g.append('rect').attr('y', 11).attr('width', rw).attr('height', 15).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${o.sideTitle}: ${(o.fmt || kf)(d.cons)} (${pc(d.share)} of the total)`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
+        g.append('text').attr('x', bw + 5).attr('y', 22).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', '#051C2C').text(`${(o.fmt || kf)(d.cons)}`);   /* 15 Nov 09:28 (Umair): days are on the gauges, not here */   /* 14 Nov 23:37 (Umair): no share %, days of stock right after the value */
+        g.append('rect').attr('y', 11).attr('width', rw).attr('height', 15).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, [d.label, `${(o.gauge && o.gauge.mon) || 'Month'} consumption: ${(o.fmt || kf)(d.cons)} (${pc(d.share)} of the total)`, `Stock ${(o.fmt || kf)(d.stock)} → ${d.dit == null ? 'no use' : d3.format(',.0f')(d.dit) + ' days of inventory'} at that rate`])).on('mouseleave', tip.hide); });
       drawB(); return; }
     if (o.legend === 'bottom') { /* 12 Nov 06:57 (Umair): legend under the donut, donut as large as the space allows */
       const tot0 = d3.sum(items, d => d.v), lines = items.map(d => `${d.label} · ${pc(d.v / tot0 * 100)}`), cw = d3.max(lines, t => t.length) * 5.7 + 20, per = Math.max(1, Math.floor((w - 8) / cw)), rows = Math.ceil(items.length / per), lgH = rows * 18 + 6;
@@ -439,7 +439,7 @@
         const cm = P.month && P.month < (window.__TODAY || '').slice(0, 7) ? P.month : d3.utcFormat('%Y-%m')(d3.utcMonth.offset(new Date((P.month || (window.__TODAY || '').slice(0, 7)) + '-01T00:00:00Z'), -1));
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
-        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} consumption · days`, sideShort: `${d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z'))} use · days`,
+        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: 'Monthly consumption', sideShort: 'Monthly use',   /* 15 Nov 09:28 (Umair) */
           gauge: (() => { const cons = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0)), d = cons > 0 ? V / (cons / nd) : null, T = 30;   /* 15 Nov: target 30 days, provisional until AEL gives one */
             return { days: d, target: T, stock: V, cons, nd, mon: d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z')), cash: cons > 0 ? Math.max(0, V - T * cons / nd) : 0 }; })(),
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
