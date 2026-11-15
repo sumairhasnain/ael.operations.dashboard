@@ -392,6 +392,52 @@
         if (c === N && !(d.ap < 6 || d.oh < tY / 3)) return;   /* ordinary shops: hover only, so labels stay readable */
         let right = cx < w - 90, ly = cy + 3.5; for (let k = 0; k < 4 && placed.some(p => Math.abs(p.y - ly) < 10 && Math.abs(p.x - cx) < 80); k++) ly += 10;
         placed.push({ x: cx, y: ly }); pC.append('text').attr('x', right ? cx + 8 : cx - 8).attr('y', ly).attr('text-anchor', right ? 'start' : 'end').attr('font-size', 9.5).attr('fill', '#33414B').text(d.k.replace('Carburetor ', 'Carb ').replace('Aluminium', 'Al').replace(' / Die Cast', '')); }); } }
+  /* 15 Nov 22:17 (Umair): Capacity card body - A part bullets, B bottleneck of the most loaded part, C machine fleet */
+  function capFlip(el, cp) { if (!cp) return none(el, 'No data'); const { svg, w, h } = mk(el);
+    svg.classed('ovflp', true).attr('data-on', 'a').attr('data-n', '3'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB'), pC = svg.append('g').attr('class', 'pC');
+    const R = C.bad, A = '#E0A100', G = '#1E8C5A', N = '#051C2C', ucol = u => u > 100 ? R : u > 85 ? A : G;
+    /* A */
+    { const L = cp.PB.slice().sort((a, b) => (b.u ?? -1) - (a.u ?? -1)), lw = Math.min(118, w * 0.33), x0 = lw, x1 = w - 46, rh = (h - 26) / Math.max(1, L.length);
+      const mx = d3.max(L, d => Math.max(d.cap, d.plan, d.pace)) || 1, sx = v => v / mx * (x1 - x0);
+      L.forEach((d, i) => { const y = i * rh, bh = Math.min(14, rh * 0.42), yc = y + rh / 2, T = [d.k, `Capacity ${kf(d.cap)} a month (bottleneck ${d.bn})`, d.plan ? `Nov plan ${kf(d.plan)} = ${pc(d.u)} load` : 'No Nov plan in Atlas', `Made ${kf(d.act)} to ${dlab(cp.end)} · pace ${kf(d.pace)} for the month`];
+        const t = pA.append('text').attr('x', 0).attr('y', yc).attr('dy', '0.35em').attr('font-size', 10.5).attr('fill', '#33414B').text(d.k);
+        try { while (t.node().getComputedTextLength() > lw - 6 && t.text().length > 4) t.text(t.text().slice(0, -2) + '…'); } catch (e) {}
+        pA.append('rect').attr('x', x0).attr('y', yc - bh / 2).attr('width', sx(d.cap)).attr('height', bh).attr('fill', '#E6E9EC');
+        pA.append('rect').attr('x', x0).attr('y', yc - bh / 4).attr('width', sx(Math.min(d.pace, mx))).attr('height', bh / 2).attr('fill', N);
+        if (d.plan) pA.append('line').attr('x1', x0 + sx(d.plan)).attr('x2', x0 + sx(d.plan)).attr('y1', yc - bh / 2 - 3).attr('y2', yc + bh / 2 + 3).attr('stroke', ucol(d.u)).attr('stroke-width', 3);
+        pA.append('text').attr('x', w).attr('y', yc).attr('dy', '0.35em').attr('text-anchor', 'end').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', d.plan ? ucol(d.u) : '#9A6B00').text(d.plan ? pc(d.u) : 'no plan');
+        pA.append('rect').attr('x', 0).attr('y', y).attr('width', w).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T)).on('mouseleave', tip.hide); });
+      const lg = pA.append('g').attr('transform', `translate(0,${h - 4})`); let lx = 0;
+      [['capacity / month', '#E6E9EC', 8], ['output at current pace', N, 4], ['Nov plan', R, 10]].forEach(([k, c, hh]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`);
+        g.append('rect').attr('y', -4 - hh / 2).attr('width', k === 'Nov plan' ? 3 : 12).attr('height', hh).attr('fill', c); const t = g.append('text').attr('x', k === 'Nov plan' ? 7 : 16).attr('font-size', 9).attr('fill', '#33414B').text(k);
+        let tw = 60; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 30; }); }
+    /* B */
+    { const d = cp.top; if (d) { const O = d.ops, mt = 52, mb = 32, base = h - mb, mx = Math.max(d3.max(O, o => o.cap), d.plan || 0) * 1.1, sy = v => v / mx * (base - mt), bw = Math.min(74, (w - 40) / O.length - 24), gap = (w - 30 - O.length * bw) / O.length;
+      pB.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`${d.k}: capacity by operation`);
+      const sh = d.plan ? d.plan - d.cap : 0;
+      pB.append('rect').attr('x', 0).attr('y', 18).attr('width', Math.min(w, 250)).attr('height', 30).attr('rx', 5).attr('fill', sh > 0 ? '#FDECEC' : '#E8F5EE');
+      pB.append('text').attr('x', 7).attr('y', 31).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', sh > 0 ? R : G).text(sh > 0 ? `${d.bn} is the bottleneck: ${kf(sh)} pcs short` : `${d.bn} is the bottleneck, within plan`);
+      pB.append('text').attr('x', 7).attr('y', 44).attr('font-size', 9.5).attr('fill', '#33414B').text(d.sb.length ? `Standby ${d.sb[0]} can run ${d.bn}` : d.sh < 3 ? `${d.bn} runs ${d.sh} shifts: a 3rd adds ${kf(d.cap / d.sh)}` : '');
+      pB.append('line').attr('x1', 20).attr('x2', w).attr('y1', base).attr('y2', base).attr('stroke', '#c5ccd4');
+      O.forEach((o, i) => { const x = 26 + gap / 2 + i * (bw + gap), b = o.op === d.bn, t = base - sy(o.cap);
+        pB.append('rect').attr('x', x).attr('y', t).attr('width', bw).attr('height', sy(o.cap)).attr('fill', b ? R : '#9AA5B1').on('mousemove', ev => tip.show(ev, [`${d.k} · ${o.op}`, `${kf(o.cap)} pcs a month`, `${o.n} machine${o.n > 1 ? 's' : ''} · ${o.ct} s cycle · ${o.sh} shifts`])).on('mouseleave', tip.hide);
+        const clash = d.plan && Math.abs((t - 5) - (base - sy(d.plan))) < 13;   /* label would sit on the plan line: put it inside the bar */
+        pB.append('text').attr('x', x + bw / 2).attr('y', clash ? t + 15 : t - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', clash ? '#fff' : N).text(kf(o.cap));
+        pB.append('text').attr('x', x + bw / 2).attr('y', base + 12).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', N).text(o.op);
+        pB.append('text').attr('x', x + bw / 2).attr('y', base + 24).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(`${o.n} m/c · ${o.ct} s`); });
+      if (d.plan) { pB.append('line').attr('x1', 20).attr('x2', w).attr('y1', base - sy(d.plan)).attr('y2', base - sy(d.plan)).attr('stroke', R).attr('stroke-width', 2).attr('stroke-dasharray', '5 3');
+        pB.append('text').attr('x', w - 2).attr('y', base - sy(d.plan) - 4).attr('text-anchor', 'end').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', R).text(`Nov plan ${kf(d.plan)}`); } } }
+    /* C */
+    { const Lz = cp.lines, lw = Math.min(110, w * 0.3), rh = Math.min(36, (h - 54) / Math.max(1, Lz.length)), mxN = d3.max(Lz, l => l[1].length) || 1, cw = Math.min(22, (w - lw) / mxN), sc = s => ({ Standby: '#7BA7D9', 'Not working': '#9E1C1C', 'No time study': '#D0D5DB' })[s] || '#EEF1F4';
+      pC.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`${cp.n.all} machines by line and state`);
+      Lz.forEach(([l, ms], i) => { const y = 22 + i * rh; pC.append('text').attr('x', 0).attr('y', y + rh / 2).attr('dy', '0.35em').attr('font-size', 10.5).attr('fill', '#33414B').text(l);
+        ms.forEach((m, j) => pC.append('rect').attr('x', lw + j * cw).attr('y', y + (rh - Math.min(22, rh - 6)) / 2).attr('width', cw - 4).attr('height', Math.min(22, rh - 6)).attr('rx', 3).attr('fill', m.u != null ? ucol(m.u) : sc(m.s))
+          .on('mousemove', ev => tip.show(ev, [m.m, `${m.part} · ${m.op}`, m.u != null ? `Running · load ${pc(m.u)} of ${kf(m.cap)} a month` : m.s])).on('mouseleave', tip.hide)); });
+      const lg = pC.append('g').attr('transform', `translate(0,${h - 20})`); let lx = 0;
+      [['<85%', G], ['85–100%', A], ['>100%', R], ['standby', '#7BA7D9'], ['not working', '#9E1C1C'], ['no study', '#D0D5DB']].forEach(([k, c]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`);
+        g.append('rect').attr('y', -8).attr('width', 9).attr('height', 9).attr('rx', 2).attr('fill', c); const t = g.append('text').attr('x', 12).attr('font-size', 9).attr('fill', '#33414B').text(k); let tw = 30; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 20; });
+      if (lx > w) lg.attr('transform', `translate(0,${h - 20}) scale(${w / lx},1)`);
+      pC.append('text').attr('x', 0).attr('y', h - 3).attr('font-size', 9.5).attr('font-weight', 700).attr('fill', cp.n.down ? R : '#5B6770').text(`${cp.n.run} running · ${cp.n.down} not working · ${cp.n.sb} standby · ${cp.n.ns} without a time study`); } }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
@@ -683,7 +729,27 @@
     const util = run.map(r => ({ label: r.machine, line: r.line, part: r.part, op: r.op, v: +r.study_load / +r.cap_month * 100, cap: +r.cap_month, load: +r.study_load })).filter(d => isFinite(d.v)).sort((a, b) => b.v - a.v);
     const over = PL.filter(d => d.u > 100), hi = PL.slice().sort((a, b) => b.u - a.u)[0];
     const st = d3.rollups(MC, v => v.length, r => r.status);
-    return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good',
+    /* 15 Nov 22:17 (Umair): card = 4-step KPI, faces A part bullets (capacity / plan / month-end pace), B bottleneck of the most loaded part,
+       C machine fleet by line and state; foot names the action for each over-loaded part plus machines down and parts with no plan. */
+    const end = P.actEnd || P.month + '-28', nd = new Date(Date.UTC(+P.month.slice(0, 4), +P.month.slice(5, 7), 0)).getUTCDate(), el_ = Math.max(1, Math.min(nd, +end.slice(8, 10)));
+    const act = cs => { const S = new Set(cs); return d3.sum(D('atlas_parts_daily').filter(r => r.date.startsWith(P.month) && r.date <= end && S.has(String(r.code))), r => +r.prod_actual || 0); };
+    const PB = PT.map(p => { const ms = run.filter(r => r.part === p.part); if (!ms.length) return null;
+      const ops = d3.rollups(ms, v => ({ cap: d3.sum(v, r => +r.cap_month), n: v.length, ct: v[0].ct, sh: v[0].shifts }), r => r.op).map(([op, o]) => ({ op, ...o }));
+      const b = ops.reduce((a, c) => c.cap < a.cap ? c : a), plan_ = d3.sum(arr(p.plan_codes), plan), a_ = act(arr(p.actual_codes));
+      const sb = MC.filter(r => r.status === 'Standby' && r.part === p.part && r.op === b.op);
+      return { k: p.part, cap: b.cap, plan: plan_, act: a_, pace: a_ / el_ * nd, u: plan_ ? plan_ / b.cap * 100 : null, bn: b.op, ops, sb: sb.map(r => r.machine), perM: b.cap / b.n, sh: b.sh }; }).filter(Boolean);
+    const OV = PB.filter(d => d.u > 100).sort((a, b) => b.u - a.u), short = d3.sum(OV, d => d.plan - d.cap), top = PB.slice().sort((a, b) => (b.u || 0) - (a.u || 0))[0];
+    const acts = OV.map(d => d.sb.length ? `${esc(d.k.replace(/ (CG125|CD70)$/, ''))}: put standby ${esc(d.sb[0])} on ${esc(d.bn)} (+${kf(d.perM)})`
+      : d.sh && d.sh < 3 ? `${esc(d.k.replace(/ (CG125|CD70)$/, ''))}: 3rd shift on ${esc(d.bn)} (+${kf(d.cap / d.sh)})` : `${esc(d.k)}: ${kf(d.plan - d.cap)} pcs short on ${esc(d.bn)}`);
+    const down = MC.filter(r => r.status === 'Not working'), nostudy = MC.filter(r => r.status === 'No time study'), noplan = PB.filter(d => !d.plan && d.act > 0);
+    const tk = [...acts.map(t => `<b>${t}</b>`), ...(down.length ? [`${down.length} machine${down.length > 1 ? 's' : ''} not working (${down.map(r => esc(r.machine)).join(', ')})`] : []),
+      ...noplan.map(d => `<span style="color:#9A6B00">${esc(d.k)}: ${kf(d.act)} made, no Atlas plan</span>`), ...(nostudy.length ? [`<span style="color:#5B6770">${nostudy.length} machines without a time study</span>`] : [])];
+    const lines = d3.rollups(MC, v => v.map(r => ({ m: r.machine, op: r.op, part: r.part, s: r.status, u: r.status === 'Running' && +r.cap_month ? +r.study_load / +r.cap_month * 100 : null, cap: +r.cap_month || null })), r => r.line);
+    const cp = { PB, top, lines, el: el_, nd, end, n: { run: run.length, all: MC.length, down: down.length, sb: MC.filter(r => r.status === 'Standby').length, ns: nostudy.length }, tk };
+    const shortN = s_ => s_.replace(/ (CG125|CD70)$/, '');
+    return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good', cp,
+      kh: [['Highest load', [top && top.u != null ? pc(top.u) : '—', top ? shortN(top.k) : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
+        ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `${kf(short)} pcs short` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
       kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
         ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
         ['Machines over 85%', nf(util.filter(d => d.v > 85).length), 'time-study load vs capacity']],
@@ -801,6 +867,10 @@
         ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
+    } else if (id === 'capacity' && !o.none && o.cp) {   /* 15 Nov 22:17 (Umair): Capacity - 4-step KPI, 3-face chart, action ticker */
+      o.mini = el2 => capFlip(el2, o.cp);
+      el.innerHTML = hdrF(id, name, o.kh, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${o.cp.tk.length ? tickS('Act:', o.cp.tk.map(t => `<span style="color:${C.bad}">${t}</span>`), '', 'What to do about over-loaded parts, machines down and parts with no plan') : tickS('On track:', ['every part within capacity'], 'ok', '')}</div>`;
     } else if (id === 'workforce' && !o.none && o.wf) {   /* 15 Nov 19:19 (Umair): Manpower - 4-step KPI, 3-face chart, act-on ticker */
       o.mini = el2 => wfFlip(el2, o.wf);
       el.innerHTML = hdrF(id, name, o.kh, o) + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
