@@ -5249,7 +5249,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const shortN = s_ => s_.replace(/ (CG125|CD70)$/, '');
     return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good', cp,
       kh: [['Highest load', [top && top.u != null ? pc(top.u) : '—', top ? shortN(top.k) : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
-        ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `${kf(short)} pcs short` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
+        ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `▼ ${kf(short)} pcs` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
       kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
         ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
         ['Machines over 85%', nf(util.filter(d => d.v > 85).length), 'time-study load vs capacity']],
