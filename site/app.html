@@ -4911,22 +4911,22 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       [['capacity / month', '#E6E9EC', 8], ['output at current pace', N, 4], ['Nov plan', R, 10]].forEach(([k, c, hh]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`);
         g.append('rect').attr('y', -4 - hh / 2).attr('width', k === 'Nov plan' ? 3 : 12).attr('height', hh).attr('fill', c); const t = g.append('text').attr('x', k === 'Nov plan' ? 7 : 16).attr('font-size', 9).attr('fill', '#33414B').text(k);
         let tw = 60; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 30; }); }
-    /* B */
-    { const d = cp.top; if (d) { const O = d.ops, mt = 52, mb = 32, base = h - mb, mx = Math.max(d3.max(O, o => o.cap), d.plan || 0) * 1.1, sy = v => v / mx * (base - mt), bw = Math.min(74, (w - 40) / O.length - 24), gap = (w - 30 - O.length * bw) / O.length;
-      pB.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`${d.k}: capacity by operation`);
-      const sh = d.plan ? d.plan - d.cap : 0;
-      pB.append('rect').attr('x', 0).attr('y', 18).attr('width', Math.min(w, 250)).attr('height', 30).attr('rx', 5).attr('fill', sh > 0 ? '#FDECEC' : '#E8F5EE');
-      pB.append('text').attr('x', 7).attr('y', 31).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', sh > 0 ? R : G).text(sh > 0 ? `${d.bn} is the bottleneck: ${kf(sh)} pcs short` : `${d.bn} is the bottleneck, within plan`);
-      pB.append('text').attr('x', 7).attr('y', 44).attr('font-size', 9.5).attr('fill', '#33414B').text(d.sb.length ? `Standby ${d.sb[0]} can run ${d.bn}` : d.sh < 3 ? `${d.bn} runs ${d.sh} shifts: a 3rd adds ${kf(d.cap / d.sh)}` : '');
-      pB.append('line').attr('x1', 20).attr('x2', w).attr('y1', base).attr('y2', base).attr('stroke', '#c5ccd4');
-      O.forEach((o, i) => { const x = 26 + gap / 2 + i * (bw + gap), b = o.op === d.bn, t = base - sy(o.cap);
-        pB.append('rect').attr('x', x).attr('y', t).attr('width', bw).attr('height', sy(o.cap)).attr('fill', b ? R : '#9AA5B1').on('mousemove', ev => tip.show(ev, [`${d.k} · ${o.op}`, `${kf(o.cap)} pcs a month`, `${o.n} machine${o.n > 1 ? 's' : ''} · ${o.ct} s cycle · ${o.sh} shifts`])).on('mouseleave', tip.hide);
-        const clash = d.plan && Math.abs((t - 5) - (base - sy(d.plan))) < 13;   /* label would sit on the plan line: put it inside the bar */
-        pB.append('text').attr('x', x + bw / 2).attr('y', clash ? t + 15 : t - 5).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', clash ? '#fff' : N).text(kf(o.cap));
-        pB.append('text').attr('x', x + bw / 2).attr('y', base + 12).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', N).text(o.op);
-        pB.append('text').attr('x', x + bw / 2).attr('y', base + 24).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', '#5B6770').text(`${o.n} m/c · ${o.ct} s`); });
-      if (d.plan) { pB.append('line').attr('x1', 20).attr('x2', w).attr('y1', base - sy(d.plan)).attr('y2', base - sy(d.plan)).attr('stroke', R).attr('stroke-width', 2).attr('stroke-dasharray', '5 3');
-        pB.append('text').attr('x', w - 2).attr('y', base - sy(d.plan) - 4).attr('text-anchor', 'end').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', R).text(`Nov plan ${kf(d.plan)}`); } } }
+    /* B: bottleneck of the most loaded part - horizontal bars, one line of title, one line of advice (15 Nov 22:36: cleaner) */
+    { const d = cp.top; if (d) { const O = d.ops.slice().sort((x, y) => x.op < y.op ? -1 : 1), sh = d.plan ? d.plan - d.cap : 0, k1 = v => v >= 1000 ? f1(v / 1000).replace(/\.0$/, '') + 'k' : f0(v);
+      const tip_ = d.sb.length ? `Standby ${d.sb[0]} can run ${d.bn}` : d.sh < 3 ? `A 3rd shift on ${d.bn} adds ${k1(d.cap / d.sh)}` : '';
+      pB.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`${d.k} · by operation`);
+      if (sh > 0) pB.append('text').attr('x', w).attr('y', 11).attr('text-anchor', 'end').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', R).text(`${d.bn} short ${k1(sh)}`);
+      const top = 26, bot = tip_ && h > 120 ? 18 : 4, lw = 92, vw = 38, x0 = lw, x1 = w - vw, rh = Math.min(52, (h - top - bot) / O.length), bh = Math.min(18, rh * 0.5);
+      const mx = Math.max(d3.max(O, o => o.cap), d.plan || 0) * 1.02, sx = v => v / mx * (x1 - x0), pxp = d.plan ? x0 + sx(d.plan) : -99;
+      O.forEach((o, i) => { const y = top + i * rh + rh / 2, b_ = o.op === d.bn;
+        pB.append('text').attr('x', 0).attr('y', y - 1).attr('font-size', 11).attr('font-weight', 700).attr('fill', N).text(o.op);
+        pB.append('text').attr('x', 0).attr('y', y + 10).attr('font-size', 8.5).attr('fill', '#5B6770').text(`${o.n} m/c · ${o.ct} s`);
+        pB.append('rect').attr('x', x0).attr('y', y - bh / 2).attr('width', sx(o.cap)).attr('height', bh).attr('rx', 2).attr('fill', b_ ? R : '#B7C0C9')
+          .on('mousemove', ev => tip.show(ev, [`${d.k} · ${o.op}`, `${kf(o.cap)} pcs a month`, `${o.n} machine${o.n > 1 ? 's' : ''} · ${o.ct} s cycle · ${o.sh} shifts`])).on('mouseleave', tip.hide);
+        pB.append('text').attr('x', (x0 + sx(o.cap) < pxp + 4 && x0 + sx(o.cap) > pxp - 40 ? pxp : x0 + sx(o.cap)) + 5).attr('y', y).attr('dy', '0.35em').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', b_ ? R : N).text(k1(o.cap)); });
+      if (d.plan) { const px = x0 + sx(d.plan); pB.append('line').attr('x1', px).attr('x2', px).attr('y1', top - 4).attr('y2', top + O.length * rh).attr('stroke', N).attr('stroke-width', 1.5).attr('stroke-dasharray', '3 2');
+        pB.append('text').attr('x', px).attr('y', top - 6).attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', N).text(`plan ${k1(d.plan)}`); }
+      if (tip_ && h > 120) pB.append('text').attr('x', 0).attr('y', h - 3).attr('font-size', 9.5).attr('fill', sh > 0 ? R : '#5B6770').text('→ ' + tip_); } }
     /* C */
     { const Lz = cp.lines, lw = Math.min(110, w * 0.3), rh = Math.min(36, (h - 54) / Math.max(1, Lz.length)), mxN = d3.max(Lz, l => l[1].length) || 1, cw = Math.min(22, (w - lw) / mxN), sc = s => ({ Standby: '#7BA7D9', 'Not working': '#9E1C1C', 'No time study': '#D0D5DB' })[s] || '#EEF1F4';
       pC.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`${cp.n.all} machines by line and state`);
@@ -5248,8 +5248,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const cp = { PB, top, lines, el: el_, nd, end, n: { run: run.length, all: MC.length, down: down.length, sb: MC.filter(r => r.status === 'Standby').length, ns: nostudy.length }, tk };
     const shortN = s_ => s_.replace(/ (CG125|CD70)$/, '');
     return { title: 'Clutch area · time studies', st: over.length ? 'bad' : hi && hi.u > 85 ? 'watch' : 'good', cp,
-      kh: [[top ? ['Highest load', top.k] : 'Highest load', [top && top.u != null ? pc(top.u) : '—', top && top.plan > top.cap ? `▼ ${kf(top.plan - top.cap)} pcs` : top ? `${pc(top.u)} of capacity` : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
-        ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `▼ ${kf(short)} pcs` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
+      kh: [[top ? ['Highest load', top.k] : 'Highest load', [top && top.u != null ? pc(top.u) : '—', top && top.plan > top.cap ? `▼ ${f1((top.plan - top.cap) / 1000)}k pcs` : top ? `${pc(top.u)} of capacity` : '—'], top ? `${top.k}: Nov plan ${kf(top.plan)} vs capacity ${kf(top.cap)} a month (bottleneck ${top.bn})` : '', top && top.u > 100 ? C.bad : top && top.u > 85 ? '#9A6B00' : '#1E8C5A'],
+        ['Over capacity', [`${OV.length} part${OV.length === 1 ? '' : 's'}`, OV.length ? `▼ ${f1(short / 1000)}k pcs` : 'none short'], OV.map(d => `${d.k} ${kf(d.plan - d.cap)} short`).join(' · ') || 'Every part within capacity', OV.length ? C.bad : '#1E8C5A']],
       kpis: [['Machines studied', nf(MC.length), `${nf(run.length)} running`], ['Parts / lines', `${nf(PL.length)} / ${nf(new Set(MC.map(r => r.line)).size)}`, 'with a capacity study'],
         ['Highest load', hi ? pc(hi.u) : '—', hi ? hi.label : '', hi && hi.u > 100 ? C.bad : hi && hi.u > 85 ? C.warn : null], ['Parts over capacity', nf(over.length), `${mon(P.month)} Atlas plan vs capacity`, over.length ? C.bad : null],
         ['Machines over 85%', nf(util.filter(d => d.v > 85).length), 'time-study load vs capacity']],
