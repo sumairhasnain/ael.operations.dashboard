@@ -5221,7 +5221,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       const od = o.sv.od;
       o.mini = el2 => savFlip(el2, o.sv);
       el.innerHTML = hdrF(id, name, o.kh, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">VA/CR<br>Activities</h3>') + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
-        ${od.length ? tickS(`Overdue ${od.length} · ${rs(o.sv.odV)}:`, od.map(([k, x]) => `<span style="color:${C.bad}" title="${esc(k)} · ${esc(x.shop)} · due ${mon(x.t)} · ${esc(x.st)}">${esc(x.shop)}: ${esc(x.item)} ${kf(x.a)}</span>`), '', 'Ideas not completed whose target month has passed (annual saving)')
+        ${od.length ? tickS('Overdue:', od.map(([k, x]) => `<span style="color:${C.bad}" title="${esc(k)} · ${esc(x.shop)} · due ${mon(x.t)} · ${esc(x.st)}">${esc(x.shop)}: ${esc(x.item)} ${kf(x.a)}</span>`), '', 'Ideas not completed whose target month has passed (annual saving)')
           : tickS('On time:', ['no idea is past its target month'], 'ok', '')}</div>`;
     } else if (id === 'cost' && !o.none && o.cv) {   /* 15 Nov 11:29 (Umair): Cost of Production - flipping KPI, flipping chart (conversion by month / shop ranking), cost-up ticker */
       const S = o.cv.shops, up = S.filter(d => d.v > 0), dn = S.filter(d => d.v <= 0).sort((a, b) => a.v - b.v);
