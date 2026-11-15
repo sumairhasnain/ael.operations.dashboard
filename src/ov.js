@@ -262,7 +262,7 @@
         .on('mousemove', (ev, d) => tip.show(ev, [d.data.label, `${(o.fmt || kf)(d.data.v)} · ${pc(d.data.v / tot0 * 100)} of stock value`])).on('mouseleave', tip.hide);
       const lab0 = d3.arc().innerRadius((ri + r0) / 2).outerRadius((ri + r0) / 2), fs = Math.max(8.5, Math.min(11, r0 / 6.2));
       const lg = g0.selectAll('g.sl').data(pie0.filter(d => d.endAngle - d.startAngle > 0.42)).join('g').attr('class', 'sl').attr('transform', d => `translate(${lab0.centroid(d)})`).attr('pointer-events', 'none');
-      lg.append('text').attr('text-anchor', 'middle').attr('y', -1).attr('font-size', fs).attr('font-weight', 700).attr('fill', '#fff').text(d => d.data.v >= 1e9 ? d3.format('.1f')(d.data.v / 1e9) + 'B' : d.data.v >= 1e6 ? d3.format(',.0f')(d.data.v / 1e6) + 'M' : (o.fmt || kf)(d.data.v).replace('Rs ', ''));
+      lg.append('text').attr('text-anchor', 'middle').attr('y', -1).attr('font-size', fs).attr('font-weight', 700).attr('fill', '#fff').text(d => d.data.v >= 1e6 ? d3.format(',.0f')(d.data.v / 1e6) + 'M' : (o.fmt || kf)(d.data.v).replace('Rs ', ''));
       lg.append('text').attr('text-anchor', 'middle').attr('y', fs + 1).attr('font-size', fs - 1).attr('fill', '#fff').attr('opacity', .9).text(d => pc(d.data.v / tot0 * 100));
       g0.append('text').attr('text-anchor', 'middle').attr('y', -2).attr('font-size', Math.max(12, Math.min(17, ri / 2.6))).attr('font-weight', 700).attr('fill', '#051C2C').text(o.center ?? (o.fmt || kf)(tot0));
       g0.append('text').attr('text-anchor', 'middle').attr('y', Math.max(12, Math.min(17, ri / 2.6)) - 2).attr('font-size', 9).attr('letter-spacing', '.06em').attr('fill', '#8A949E').text('STOCK');
@@ -436,7 +436,7 @@
         const cm = P.month && P.month < (window.__TODAY || '').slice(0, 7) ? P.month : d3.utcFormat('%Y-%m')(d3.utcMonth.offset(new Date((P.month || (window.__TODAY || '').slice(0, 7)) + '-01T00:00:00Z'), -1));
         const nd = d3.utcDay.count(new Date(cm + '-01T00:00:00Z'), d3.utcMonth.offset(new Date(cm + '-01T00:00:00Z'), 1));
         const cc = d3.rollup((D('sap_cc') || []).filter(r => r.month === cm && inSh(SH, r, 'shop')), v => d3.sum(v, r => +r.value_pkr || 0), r => r.category), ct = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0));
-        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: rs(V).replace('Rs ', ''), legend: 'side', sideTitle: 'Monthly consumption', sideShort: 'Monthly use',   /* 15 Nov 09:28 (Umair) */
+        donutC(el, cat.map(([c, v]) => ({ label: c, v, color: CATC[c] || '#8A949E' })), { fmt: rs, center: V >= 1e6 ? d3.format(',.0f')(V / 1e6) + 'M' : rs(V).replace('Rs ', ''), legend: 'side',   /* 15 Nov 09:56 (Umair): whole millions in the donut */ sideTitle: 'Monthly consumption', sideShort: 'Monthly use',   /* 15 Nov 09:28 (Umair) */
           gauge: (() => { const cons = d3.sum(cat, ([c]) => Math.max(0, cc.get(c) || 0)), d = cons > 0 ? V / (cons / nd) : null, T = 30;   /* 15 Nov 09:35 (Umair): targets Tools 60, Consumables 45, Spares 180 days; others 30 */
             return { days: d, target: T, targets: { Tools: 60, Consumables: 45, Spares: 180 }, stock: V, cons, nd, mon: d3.utcFormat('%b')(new Date(cm + '-01T00:00:00Z')), cash: cons > 0 ? Math.max(0, V - T * cons / nd) : 0 }; })(),
           side: cat.map(([c, v]) => { const u = Math.max(0, cc.get(c) || 0); return { label: c, color: CATC[c] || '#8A949E', cons: u, share: ct ? u / ct * 100 : 0, stock: v, dit: u > 0 ? v / (u / nd) : null }; }) }); },
