@@ -4511,8 +4511,8 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   const mon = m => MN[+m.slice(5, 7) - 1] + '-' + m.slice(2, 4), dlab = d => +d.slice(8) + ' ' + MN[+d.slice(5, 7) - 1];
   const D = id => { const d = window.dash && dash.data(id); return d && d.status === 'ok' ? (Array.isArray(d.data) ? d.data : []) : null; };
   const ST = id => { const d = window.dash && dash.data(id); return d ? d.status : 'loading'; };
-  const CARDS = [['production', 'Production'], ['vendor', 'Vendor Supply'], ['inventory', 'Inventory'], ['workforce', 'Manpower'],
-    ['cost', 'Cost of Production'], ['savings', 'VA/CR Activities'], ['capacity', 'Capacity'], ['projects', 'Projects']];
+  const CARDS = [['production', 'Production'], ['vendor', 'Vendor Supply'], ['inventory', 'Inventory'],
+    ['cost', 'Cost of Production'], ['savings', 'VA/CR Activities'], ['workforce', 'Manpower'], ['capacity', 'Capacity'], ['projects', 'Projects']];
   const ACC = { production: '#051C2C', vendor: '#2251FF', inventory: '#1F9E89', workforce: '#00A9F4', cost: '#8C6BD8', capacity: '#E0A100', projects: '#33414B', savings: '#1E8C5A' };
   const ICON = { production: '<path d="M2 14V7l4 2.5V7l4 2.5V4h4v10z"/>', vendor: '<path d="M1 4h9v7H1zM10 7h3l2 2.5V11h-5M4 13.5a1.3 1.3 0 1 0 0-.1M12 13.5a1.3 1.3 0 1 0 0-.1"/>',
     inventory: '<path d="M2 6l6-3 6 3v7l-6 3-6-3zM2 6l6 3 6-3M8 9v7"/>', workforce: '<path d="M6 7a2.5 2.5 0 1 0 0-.1M1.5 14c.5-2.5 2.3-4 4.5-4s4 1.5 4.5 4M11.5 7.5a2 2 0 1 0 0-.1M11 10c2 0 3.2 1.4 3.5 3.5"/>',
