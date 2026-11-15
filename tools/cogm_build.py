@@ -172,7 +172,10 @@ def main(upkl, mb51, data, out, asof=None):
     cw = {st(c): w for c, w, *_ in (fom.get('codes') or {}).get('tc_cushion', [])}
     # 13 Nov 2026 22:58 (Umair): material follows the product - a casting's raw material issued to the casting shop is moved
     # to the shop whose finished goods use it, by the SAP CS03 BOM (tools/bom_transfer.py). Current month only.
+    # 15 Nov 2026 17:16 (Umair): replaced by the full product cost roll-up (tools/cost_rollup.py, below), which moves the
+    # whole component cost (material + conversion) to the parent shop for every month from July. Kept off here.
     try:
+        if True: raise FileNotFoundError
         import bom_transfer
         _sb = json.load(open(data + '/sap_bom.json'))[0]; _sc = json.load(open(data + '/sap_bom_cost.json'))[0]
         fgu = collections.defaultdict(float)
@@ -291,11 +294,34 @@ def main(upkl, mb51, data, out, asof=None):
         _fm = {r['month'] for r in _fz}
         out_rows = [r for r in out_rows if r.get('month') not in _fm] + _fz
     except FileNotFoundError: pass
+    # ---- product cost roll-up (Umair, 15 Nov 2026 17:16): sub-level component cost flows into the parent shop, July onwards;
+    # work in progress stays in the making shop. Needs the 101 receipts history (r2.pkl / r.pkl next to the u pickle).
+    rollup_summary = None
+    try:
+        import cost_rollup
+        _dir = os.path.dirname(os.path.abspath(upkl)); _r = next((os.path.join(_dir, f) for f in ('r2.pkl', 'r.pkl') if os.path.exists(os.path.join(_dir, f))), None)
+        if _r and os.path.exists(pick('sap_bom.json')):
+            _prod, _cons, _q, _mf = cost_rollup.load_moves(_r, upkl, FROM)
+            _bom = json.load(open(pick('sap_bom.json')))[0]
+            _fz_m = set(locals().get('_fm') or [])
+            def _pm(c): s_ = shop_of.get(c) or ''; return SHOPX.get(s_, s_)
+            try: _rates = json.load(open(pick('sap_bom_cost.json')))[0].get('rates') or {}
+            except Exception: _rates = {}
+            _shop = cost_rollup.maker_fn(_bom, _pm, lambda c: (lambda s_: SHOPX.get(s_, s_))(mshop(c)), {cost_rollup._st(k): v for k, v in _rates.items()})
+            def _units(m):
+                d_ = collections.defaultdict(float)
+                for r in out_rows:
+                    if r['month'] == m and r['element'] == 'Product': d_[st(r.get('code'))] += r.get('units') or 0
+                return d_
+            out_rows = [dict(r) for r in out_rows]
+            rollup_summary = cost_rollup.rollup(out_rows, _prod, _cons, _q, made, _mf, _fz_m, _shop, _bom, _units, {**mdesc, **desc})
+        else: print('cost roll-up skipped: no r pickle or sap_bom.json')
+    except Exception as e: print('cost roll-up failed:', e)
     json.dump(out_rows, open(out, 'w'), separators=(',', ':'))
     tot = collections.defaultdict(float)
     for r in out_rows:
         if r['month'] == cur and r['element'] not in ('Volume', 'Product', 'SPD product'): tot[r['element']] += r['value_pkr']
-    print(json.dumps({'asof': asof, 'months': months, 'rows': len(out_rows), 'inhouse_parts_left_out': len(made),
+    print(json.dumps({'asof': asof, 'months': months, 'rows': len(out_rows), 'rolled_up_pkr_m': rollup_summary, 'inhouse_parts_left_out': len(made),
                       'current_month_pkr_m': {k: round(v / 1e6, 1) for k, v in tot.items() if k != 'Labour detail'}}))
 
 
