@@ -4749,6 +4749,45 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       svg.append('text').attr('x', Math.min(w - 44, x(Math.min(mx * 1.05, Math.max(d.v || 0, d.plan || 0))) + 4)).attr('y', y + bh / 2 + 3.5).attr('font-size', 10.5).attr('font-weight', 600).attr('fill', '#33414B').text(d.lab ?? (o.fmt || kf)(d.v)); });
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
+  /* 15 Nov 11:29 (Umair): Cost of Production card body - pane A conversion cost by month (current month actual + hatched run-rate projection,
+     dashed line at last month's total), pane B conversion cost per part by shop vs last month. Panes flip with the other cards (window.__ovFL). */
+  function costFlip(el, cv) { if (!cv || !cv.M.length) return none(el, 'No data'); const { svg, w, h } = mk(el);
+    svg.classed('ovflp', true).attr('data-on', 'a'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB');
+    const pid = 'cvh' + Math.random().toString(36).slice(2, 7);
+    svg.append('defs').append('pattern').attr('id', pid).attr('width', 6).attr('height', 6).attr('patternUnits', 'userSpaceOnUse').attr('patternTransform', 'rotate(45)')
+      .append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6).attr('stroke', '#8C6BD8').attr('stroke-width', 2);
+    const M = cv.M.slice(-6), ml = 34, mb = 30, mt = 14, top = d => d.m === cv.cur && cv.live ? Math.max(d.tot, cv.proj || 0) : d.tot;
+    const y = d3.scaleLinear().domain([0, (d3.max(M, top) || 1) * 1.08]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(M.map(d => d.m)).range([ml, w - 4]).padding(0.2);
+    const yf = v => v >= 1e6 ? f0(v / 1e6) + 'M' : kf(v); axisY(pA, y, ml, w - 4, yf, 3);
+    M.forEach(d => { let y0 = 0; const isC = d.m === cv.cur && cv.live;
+      const L = [mon(d.m) + (isC ? ` to ${dlab(cv.asof)}` : ''), ...cv.CV.map(([k]) => `${k}: ${rs(d.parts[k])}`), `Conversion: ${rs(d.tot)}${d.units ? ` · Rs ${f1(d.tot / d.units)} per part` : ''}`, `Material: ${rs(d.mat)}`, `COGM: ${rs(d.tot + d.mat)}`, ...(isC ? [`Projected conversion: ${rs(cv.proj)} (run rate x ${cv.nd}/${cv.el} days)`] : []), ...(d.parts.Labour ? [] : ['Labour not in the data for this month'])];
+      cv.CV.forEach(([k, c]) => { const v = Math.max(0, d.parts[k] || 0); if (!v) return; pA.append('rect').attr('x', x(d.m)).attr('y', y(y0 + v)).attr('width', x.bandwidth()).attr('height', Math.max(0, y(y0) - y(y0 + v))).attr('fill', c).on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide); y0 += v; });
+      if (isC && cv.proj > d.tot) { pA.append('rect').attr('x', x(d.m) + 0.5).attr('y', y(cv.proj)).attr('width', x.bandwidth() - 1).attr('height', Math.max(0, y(d.tot) - y(cv.proj))).attr('fill', `url(#${pid})`).attr('stroke', '#8C6BD8').on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide);
+        pA.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', y(cv.proj) - 4).attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700).attr('fill', '#5B3FB0').text(yf(cv.proj) + ' proj.'); }
+      pA.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', h - mb + 11).attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', '#5B6770').text(mon(d.m).slice(0, 3)); });
+    const pv = M.find(d => d.m === cv.prev); if (pv && cv.live) pA.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(pv.tot)).attr('y2', y(pv.tot)).attr('stroke', '#051C2C').attr('stroke-dasharray', '4 3');
+    pA.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#051C2C');
+    const lg = pA.append('g').attr('transform', `translate(${ml},${h - 6})`); let lx = 0;
+    [...cv.CV, ...(cv.live ? [['Projection', null]] : [])].forEach(([k, c]) => { const g = lg.append('g').attr('transform', `translate(${lx},0)`);
+      g.append('rect').attr('y', -7).attr('width', 8).attr('height', 8).attr('fill', c || `url(#${pid})`).attr('stroke', c ? null : '#8C6BD8');
+      const t = g.append('text').attr('x', 11).attr('font-size', 9).attr('fill', '#33414B').text(k); let tw = 40; try { tw = t.node().getComputedTextLength(); } catch (e) {} lx += tw + 20; });
+    if (lx > w - ml) lg.attr('transform', `translate(${ml},${h - 6}) scale(${(w - ml) / lx},1)`);
+    /* pane B: shop ranking */
+    const S = cv.shops, tb = Math.max(40, h - 6);
+    pB.append('rect').attr('x', 0).attr('y', (h - tb) / 2).attr('width', 20).attr('height', tb).attr('rx', 6).attr('fill', '#051C2C');
+    pB.append('text').attr('transform', `translate(10,${h / 2}) rotate(-90)`).attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 9.5).attr('font-weight', 600).attr('letter-spacing', '.08em').attr('fill', '#fff').text(('Cost / part vs ' + (cv.prev ? mon(cv.prev).slice(0, 3) : 'last month')).toUpperCase());
+    if (!S.length) { pB.append('text').attr('x', w / 2).attr('y', h / 2).attr('text-anchor', 'middle').attr('font-size', 12).attr('fill', '#5B6770').text('No earlier month to compare'); return; }
+    const n = Math.min(S.length, Math.max(4, Math.floor((h - 4) / 19))), L = S.length > n ? [...S.slice(0, n - 2), ...S.slice(-2)] : S, rh = (h - 4) / L.length, lw = Math.min(118, (w - 30) * 0.4), x0 = 30 + lw;
+    const cap = 40, mx = Math.min(cap, Math.max(10, d3.max(L, d => Math.abs(d.v)))), half = (w - x0 - 44), sx = v => v / mx * half * (d3.min(L, d => d.v) < 0 ? 0.62 : 1), ax = x0 + (d3.min(L, d => d.v) < 0 ? half * 0.38 : 0);
+    L.forEach((d, i) => { const yy = 2 + i * rh, bh = Math.min(14, rh * 0.62), c = d.v > 5 ? C.bad : d.v > 2 ? '#E0A100' : '#1E8C5A', bw = sx(Math.max(-mx, Math.min(mx, d.v))), cut = Math.abs(d.v) > mx;   /* an outlier is drawn to the scale's end with a break, its true % beside it */
+      const T = [d.k, `Rs ${f1(d.now)} per part in ${mon(cv.cur)}`, `Rs ${f1(d.prev)} in ${mon(cv.prev)}`, `${d.v >= 0 ? '+' : ''}${f1(d.v)}%`];
+      const t = pB.append('text').attr('x', 30).attr('y', yy + rh / 2).attr('dy', '0.35em').attr('font-size', 10.5).attr('fill', '#33414B').text(d.k);
+      try { while (t.node().getComputedTextLength() > lw - 6 && t.text().length > 4) t.text(t.text().slice(0, -2) + '…'); } catch (e) {}
+      pB.append('rect').attr('x', bw >= 0 ? ax : ax + bw).attr('y', yy + (rh - bh) / 2).attr('width', Math.max(2, Math.abs(bw))).attr('height', bh).attr('fill', c);
+      if (cut) { const bx = bw >= 0 ? ax + bw - 12 : ax + bw + 8; pB.append('path').attr('d', `M${bx},${yy + (rh - bh) / 2 - 1}l4,${bh + 2}M${bx + 4},${yy + (rh - bh) / 2 - 1}l4,${bh + 2}`).attr('stroke', '#fff').attr('stroke-width', 2); }
+      pB.append('text').attr('x', bw >= 0 ? ax + bw + 4 : ax + 4).attr('y', yy + rh / 2).attr('dy', '0.35em').attr('font-size', 10).attr('font-weight', 700).attr('fill', '#051C2C').text(`${d.v >= 0 ? '+' : '−'}${f0(Math.abs(d.v))}%`);
+      pB.append('rect').attr('x', 24).attr('y', yy).attr('width', w - 24).attr('height', rh).attr('fill', 'transparent').on('mousemove', ev => tip.show(ev, T)).on('mouseleave', tip.hide); });
+    pB.append('line').attr('x1', ax).attr('x2', ax).attr('y1', 0).attr('y2', h - 2).attr('stroke', '#051C2C'); }
   /* donut: items [{label, v, color}] */
   function donutC(el, items, o = {}) { items = items.filter(d => d.v > 0); if (!items.length) return none(el, 'No data'); const { svg, w, h } = mk(el, o.h);
     if (o.legend === 'side') { /* 14 Nov 23:30 (Umair): donut with value + % inside each slice; on the right, one month's consumption by category (same colours) with its share and days of inventory */
@@ -4969,10 +5008,33 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const V = new Map(R.filter(r => r.month === m && r.element === 'Volume').map(r => [r.shop, r.units]));
     const unit = byS.map(([s]) => { const u = V.get(s); return u ? { label: s, v: d3.sum(cur.filter(r => r.shop === s && !r.spd), r => r.value_pkr) / u, u } : null; }).filter(Boolean).sort((a, b) => b.v - a.v);
     const spd = d3.sum(cur.filter(r => r.spd), r => r.value_pkr), asof = (R.find(r => r.asof) || {}).asof || '';
-    return { title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
+    /* 15 Nov 11:29 (Umair): card leads with conversion cost (labour, tools, consumables, spares + lubricants, utilities) - what the shops control.
+       Cost per part = conversion cost / parts made; material is left out of it because SAP issues material to production orders before the
+       parts are finished, so a month-to-date material cost per part reads far too high mid-month. The current month is projected at its run rate. */
+    const CV = [['Labour', r => r.element === 'Direct labour', '#1E8C5A'], ['Consumables', r => r.element === 'Indirect material' && r.sub === 'Consumables', '#2251FF'],
+      ['Tools', r => r.element === 'Indirect material' && r.sub === 'Tools', '#E0A100'], ['Spares + Lubes', r => r.element === 'Indirect material' && (r.sub === 'Spares' || r.sub === 'Lubricants'), '#8C6BD8'],
+      ['Utilities', r => r.element === 'Utilities', '#00A9F4']];
+    const cvOf = (rows) => d3.sum(rows.filter(r => CV.some(([, f]) => f(r))), r => r.value_pkr);
+    const cvM = months.map(mm => { const rr = R.filter(r => r.month === mm); return { m: mm, parts: Object.fromEntries(CV.map(([k, f]) => [k, d3.sum(rr.filter(f), r => r.value_pkr)])), mat: d3.sum(rr.filter(r => r.element === 'Direct material'), r => r.value_pkr),
+      units: d3.sum(rr.filter(r => r.element === 'Volume'), r => +r.units || 0) }; }).map(d => ({ ...d, tot: d3.sum(CV, ([k]) => d.parts[k]) }));
+    const nd = new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7), 0)).getUTCDate(), live = m === asof.slice(0, 7), el_ = live ? Math.max(1, +asof.slice(8)) : nd, fac = nd / el_;
+    const ci = months.indexOf(m), pm = ci > 0 ? months[ci - 1] : null, cM = cvM[ci], pM = pm ? cvM[ci - 1] : null;
+    const cpp = d => d && d.units ? d.tot / d.units : null, cNow = cpp(cM), cPrev = cpp(pM), chg = cNow != null && cPrev ? (cNow / cPrev - 1) * 100 : null;
+    const proj = cM ? cM.tot * fac : null, pchg = proj != null && pM && pM.tot ? (proj / pM.tot - 1) * 100 : null;
+    const shU = (mm, sh) => d3.sum(R.filter(r => r.month === mm && r.shop === sh && r.element === 'Volume'), r => +r.units || 0);
+    const shC = (mm, sh) => cvOf(R.filter(r => r.month === mm && r.shop === sh));
+    const shops = pm ? [...new Set(R.filter(r => r.month === m).map(r => r.shop))].map(sh => { const u1 = shU(m, sh), u0 = shU(pm, sh), c1 = shC(m, sh), c0 = shC(pm, sh);
+      return u1 >= 500 && u0 >= 500 && c1 > 0 && c0 > 0 ? { k: sh, now: c1 / u1, prev: c0 / u0, v: (c1 / u1 / (c0 / u0) - 1) * 100 } : null; }).filter(Boolean).sort((a, b) => b.v - a.v) : [];
+    const cv = { CV: CV.map(([k, , c]) => [k, c]), M: cvM, cur: m, prev: pm, live, fac, el: el_, nd, cNow, cPrev, chg, proj, pchg, shops, asof };
+    const arw = v => v == null ? '' : (v >= 0 ? ' ▲' : ' ▼') + f1(Math.abs(v)) + '%', scol = v => v == null ? '#051C2C' : v <= 2 ? '#1E8C5A' : v <= 5 ? '#9A6B00' : C.bad;
+    return { cv, st: band(chg, 2, 5, false),
+      kh: [['Conversion / part', cNow == null ? '—' : 'Rs ' + f0(cNow) + arw(chg), `Labour, tools, consumables, spares, lubricants and utilities per part made, ${mon(m)}${live ? ' to ' + dlab(asof) : ''} vs ${pm ? mon(pm) : '—'} (Rs ${cPrev == null ? '—' : f0(cPrev)})`, scol(chg)],
+        [live ? 'Projected ' + mon(m).slice(0, 3) + ' conversion' : mon(m).slice(0, 3) + ' conversion', rs(proj) + arw(pchg), live ? `${rs(cM.tot)} to ${dlab(asof)} at run rate x ${nd}/${el_} days, vs ${pm ? mon(pm) : '—'} ${rs(pM && pM.tot)}` : '', scol(pchg)]],
+      title: `COGM ${mon(m)}${m === asof.slice(0, 7) ? ' to ' + dlab(asof) : ''}`,
       kpis: [['COGM', rs(T), SHf(P) && V.get(SHf(P)) ? `Rs ${f0(d3.sum(cur.filter(r => !r.spd), r => r.value_pkr) / V.get(SHf(P)))} per OEM unit` : `${byS.length} shops`], ...EL.map(([n, c]) => [n, rs(e(n)), pc(T ? e(n) / T * 100 : null) + ' of COGM', null, c]), ['SPD share', rs(spd), 'SPD parts made in-house']].slice(0, 6),
       vt: 'COGM by month', mini: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, cFmt: mon, yFmt: v => v >= 1e9 ? d3.format(',.1f')(v / 1e9) + 'B' : f0(v / 1e6) + 'M', fmt: rs, ml: 38 }),
       detail: [
+        { t: `Conversion cost per part by shop, ${mon(m)} vs ${pm ? mon(pm) : '—'}`, draw: el => hbarC(el, shops.map(d => ({ label: d.k, v: d.now, lab: `Rs ${f1(d.now)} (${d.v >= 0 ? '+' : ''}${f1(d.v)}%)`, color: d.v > 5 ? C.bad : d.v > 2 ? '#E0A100' : '#1E8C5A', tip: [d.k, `Rs ${f1(d.now)} per part in ${mon(m)}`, `Rs ${f1(d.prev)} in ${pm ? mon(pm) : '—'}`, `${d.v >= 0 ? '+' : ''}${f1(d.v)}%`] })), { fmt: v => f1(v), h: 300, lw: 130 }) },
         { t: 'COGM by shop and element', lg: EL, draw: el => colC(el, byS.map(d => d[0]), EL.map(([n, c]) => ({ name: n, color: c })), (s, x) => new Map(byS).get(s)[x.name], { stack: 1, h: 280, rot: 1, fmt: rs }) },
         { t: 'COGM by month', lg: EL, draw: el => colC(el, byM.map(d => d.m), EL.map(([n, c]) => ({ name: n, color: c })), (mm, s) => byM.find(d => d.m === mm)[s.name], { stack: 1, h: 280, cFmt: mon, fmt: rs }) },
         { t: 'OEM cost per unit by shop (Rs / unit)', draw: el => hbarC(el, unit.map(d => ({ ...d, lab: 'Rs ' + f0(d.v), tip: [d.label, `Rs ${f0(d.v)} per OEM unit`, `${nf(d.u)} units`] })), { fmt: v => f0(v), h: 280, lw: 130 }) },
@@ -5095,6 +5157,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         ${pill(o.st)}</div>
         <div class="ovb ovbc"><div class="ovv ovvt"><div class="vc"></div></div>
         <div class="ovhb">${o.health.filter(d => d[1] > 0).map(([l, v, c]) => `<div style="flex:${v} 1 0" title="${esc(l)}: ${rs(v)} · ${pc(HV ? v / HV * 100 : 0)} of stock value"><i style="background:${c}">${HV && v / HV > 0.07 ? pc(v / HV * 100) : ''}</i>${HV && v / HV > 0.12 ? `<span>${esc(l)}</span><em>${rs(v)}</em>` : '<span>&nbsp;</span>'}</div>`).join('')}</div></div>`;
+    } else if (id === 'cost' && !o.none && o.cv) {   /* 15 Nov 11:29 (Umair): Cost of Production - flipping KPI, flipping chart (conversion by month / shop ranking), cost-up ticker */
+      const S = o.cv.shops, up = S.filter(d => d.v > 0), dn = S.filter(d => d.v <= 0).sort((a, b) => a.v - b.v);
+      o.mini = el2 => costFlip(el2, o.cv);
+      el.innerHTML = hdrF(id, name, o.kh, o).replace(`<h3 class="ovh3">${esc(name)}</h3>`, '<h3 class="ovh3 two">Cost of<br>Production</h3>') + `<div class="ovb ovbc"><div class="ovv"><div class="vc"></div></div>
+        ${up.length ? tickS('Cost/part up:', up.map(x => `<span style="color:${x.v > 5 ? C.bad : '#9A6B00'}">${esc(x.k)} +${f0(x.v)}%</span>`), '', `Conversion cost per part, ${mon(o.cv.cur)} vs ${o.cv.prev ? mon(o.cv.prev) : '—'}`)
+          : tickS('Cost/part down:', dn.map(x => `<span style="color:#1E8C5A">${esc(x.k)} ${f0(x.v)}%</span>`), 'ok', `Every shop at or below last month's conversion cost per part`)}</div>`;
     } else if (id === 'vendor' && !o.none && o.watch) { /* 14 Nov 12:11 (Umair): Vendor Supply - flipping KPI, watch list (critical vendors / critical parts, alternating) and an under-80% ticker */
       const W = o.watch, row = wRowH;
       const pane = (k, L, empty) => `<div class="wp" data-p="${k}">${L.length ? L.map(row).join('') : `<div class="we">${empty}</div>`}</div>`;
