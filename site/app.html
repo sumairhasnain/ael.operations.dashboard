@@ -4772,9 +4772,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         tab(pB, 'Inventory days');
         /* 15 Nov 00:32 (Umair): one gauge per category, arc in the category's donut colour; number = days of stock, coloured by status against the target */
         const n = SD.length, cols = 1, rows = Math.ceil(n / cols), cw = rw / cols, chh = (h - 4) / rows;   /* gauges stacked: one row per category, name to the right */
-        const gr = Math.max(12, Math.min(chh * 0.68, cw * 0.205)), lf = n > 3 ? 10 : 11;
+        const gr = Math.max(12, Math.min(chh * 0.68, cw * 0.4)), lf = n > 3 ? 10 : 11;   /* 15 Nov 09:42 (Umair): no category names - the arc colour says it */
         SD.forEach((d, i) => { const tg = (G.targets || {})[d.label] ?? G.target, dd = d.dit, mxd = Math.max(90, Math.ceil(Math.max(dd || 0, tg * 2) / 30) * 30), sc = dd == null ? '#8A949E' : dd <= tg ? '#1E8C5A' : dd <= tg * 2 ? '#9A6B00' : C.bad;
-          const A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd), gx = lx + cw * (i % cols) + gr + 6, gy = 2 + chh * Math.floor(i / cols) + chh / 2 + gr * 0.42;
+          const A = v => -Math.PI / 2 + Math.PI * Math.min(1, v / mxd), gx = lx + cw * (i % cols) + cw / 2 - (gr >= 24 ? 0 : 20), gy = 2 + chh * Math.floor(i / cols) + chh / 2 + gr * 0.42;
           const arc = d3.arc().innerRadius(gr * 0.74).outerRadius(gr).cornerRadius(1.5), g2 = pB.append('g').attr('transform', `translate(${gx},${gy})`);
           g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', '#E9EDF1');
           if (dd != null) g2.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: A(dd) })).attr('fill', d.color);
@@ -4783,9 +4783,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
           g2.append('circle').attr('r', 2.6).attr('fill', '#051C2C');
           const dtxt = dd == null ? '—' : d3.format(',.0f')(dd), big = gr >= 24;
           if (big) g2.append('text').attr('y', -gr * 0.3).attr('text-anchor', 'middle').attr('font-size', Math.max(10, Math.min(16, gr / 2.4))).attr('font-weight', 700).attr('fill', sc).text(dtxt);
-                    const room = Math.max(4, Math.floor((cw - 2 * gr - 18 - (big ? 0 : 52)) / (lf * 0.56))), nm = n <= 3 || d.label.length <= room ? d.label : d.label.slice(0, room - 1) + '…';
-          const tl = g2.append('text').attr('x', gr + 10).attr('y', -gr * 0.42).attr('dy', '0.35em').attr('font-size', lf).attr('fill', '#33414B').text(nm);
-          if (!big) tl.append('tspan').attr('font-weight', 700).attr('fill', sc).text(`  ${dtxt} d`);   /* small gauges: days next to the name */
+                    if (!big) g2.append('text').attr('x', gr + 8).attr('y', -gr * 0.42).attr('dy', '0.35em').attr('font-size', lf).attr('font-weight', 700).attr('fill', sc).text(`${dtxt} d`);   /* small gauges: days beside the dial */
           g2.append('rect').attr('x', -gr).attr('y', -gr - 4).attr('width', cw - 8).attr('height', gr + 8).attr('fill', 'transparent')
             .on('mousemove', ev => tip.show(ev, [d.label, dd == null ? 'No issues in ' + G.mon : `${d3.format(',.0f')(dd)} days of stock (target ${tg})`, `Stock ${(o.fmt || kf)(d.stock)} ÷ ${G.mon} issues ${(o.fmt || kf)(d.cons)} per ${G.nd} days`])).on('mouseleave', tip.hide); });
       };
