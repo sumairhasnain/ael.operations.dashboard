@@ -4843,14 +4843,13 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     svg.classed('ovflp', true).attr('data-on', 'a').attr('data-n', '3'); const pA = svg.append('g').attr('class', 'pA'), pB = svg.append('g').attr('class', 'pB'), pC = svg.append('g').attr('class', 'pC');
     const R = C.bad, N = '#2251FF', yf = v => v >= 1e3 ? f1(v / 1e3) + 'k' : f0(v);
     /* A: bridge */
-    { const B = wf.bridge, mt = 52, mb = 30, base = h - mb, mx = Math.max(B.ros, B.worked) * 1.08, sy = v => v / mx * (base - mt - 14), bw = Math.min(70, (w - 20) / 4 - 16), gap = (w - 4 * bw) / 4;
+    { const B = wf.bridge, mt = 30, mb = 30, base = h - mb, mx = Math.max(B.ros, B.worked) * 1.08, sy = v => v / mx * (base - mt - 14), bw = Math.min(70, (w - 20) / 4 - 16), gap = (w - 4 * bw) / 4;
       const X = i => gap / 2 + i * (bw + gap), steps = [['Rostered', 0, B.ros, '#CFD8E3', yf(B.ros), `${nf(Math.round(B.people))} people`], ['Absence', B.ros - B.lost, B.ros, R, '−' + yf(B.lost), f1(B.ap) + '%'],
         ['Overtime', B.ros - B.lost, B.ros - B.lost + B.ot, N, '+' + yf(B.ot), rs(B.otRs)], ['Worked', 0, B.worked, '#051C2C', yf(B.worked), '']];
-      pA.append('text').attr('x', 0).attr('y', 11).attr('font-size', 11).attr('font-weight', 700).attr('fill', '#33414B').text(`Labour hours, ${+B.from.slice(8)}–${dlab(B.to)}`);
+      /* 16 Nov 10:17 (Umair): title and the 'x% of hours worked are overtime' line removed */
       const pct = B.worked ? B.ot / B.worked * 100 : 0, rat = B.lost ? B.ot / B.lost : 0;
-      pA.append('rect').attr('x', 0).attr('y', 18).attr('width', Math.min(w, 220)).attr('height', 30).attr('rx', 5).attr('fill', '#EEF3FF');
-      pA.append('text').attr('x', 7).attr('y', 31).attr('font-size', 10.5).attr('font-weight', 700).attr('fill', N).text(`${f0(pct)}% of hours worked are overtime`);
-      pA.append('text').attr('x', 7).attr('y', 44).attr('font-size', 9.5).attr('fill', '#33414B').text(`${f1(rat)} OT hours per hour lost to absence`);
+      pA.append('rect').attr('x', 0).attr('y', 0).attr('width', Math.min(w, 220)).attr('height', 18).attr('rx', 5).attr('fill', '#EEF3FF');
+      pA.append('text').attr('x', 7).attr('y', 12.5).attr('font-size', 9.5).attr('fill', '#33414B').text(`${f1(rat)} OT hours per hour lost to absence`);
       pA.append('line').attr('x1', 0).attr('x2', w).attr('y1', base).attr('y2', base).attr('stroke', '#c5ccd4');
       steps.forEach(([lab, y0, y1, c, top, sub], i) => { const t = base - sy(Math.max(y0, y1)), x = X(i);
         pA.append('rect').attr('x', x).attr('y', t).attr('width', bw).attr('height', Math.max(1, sy(Math.abs(y1 - y0)))).attr('fill', c)
