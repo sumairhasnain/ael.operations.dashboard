@@ -5390,7 +5390,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const sv = { FM, cm, planC, doneC, planNow, doneNow, gap, T, od: odL, odV,
       shops: byS.map(([k, o]) => ({ k, c: o.Completed || 0, p: o['In Progress'] || 0, q: (o.Pending || 0) + (o.Proposal || 0) })) };
     return { title: 'Cost reduction ideas', st: band(gp, 5, 15, false), sv,
-      kh: [['Achieved run-rate', [rs(doneNow), `${T ? f0(doneNow / T * 100) : 0}%`], `Annual saving of the ${nf(keys(done))} completed ideas, ${T ? f0(doneNow / T * 100) : 0}% of the ${rs(T)} pipeline${gap != null ? ` · plan to ${mon(cm)}: ${rs(planNow)} (${gap > 0 ? rs(gap) + ' behind' : 'on plan'})` : ''}`, gp == null ? '#1E8C5A' : gp > 15 ? C.bad : gp > 5 ? '#9A6B00' : '#1E8C5A'],
+      kh: [['Achieved', [rs(doneNow), `${T ? f0(doneNow / T * 100) : 0}%`], `Annual saving of the ${nf(keys(done))} completed ideas, ${T ? f0(doneNow / T * 100) : 0}% of the ${rs(T)} pipeline${gap != null ? ` · plan to ${mon(cm)}: ${rs(planNow)} (${gap > 0 ? rs(gap) + ' behind' : 'on plan'})` : ''}`, gp == null ? '#1E8C5A' : gp > 15 ? C.bad : gp > 5 ? '#9A6B00' : '#1E8C5A'],
         ['Overdue', [rs(odV), `${nf(odL.length)} idea${odL.length === 1 ? '' : 's'}`], 'Ideas not completed whose target month has passed', odL.length ? C.bad : '#1E8C5A']],
       kpis: [['Ideas', nf(keys(R)), `${nf(keys(A.filter(r => r.fin_only)))} more on the finance list`], ['Total potential', rs(T), 'run-rate if all are done'], ['Achieved', rs(ann(done)), `${nf(keys(done))} completed · ${rs(mon_(done))}/month`, '#1E8C5A'],
         ['In progress', rs(ann(ip)), `${nf(keys(ip))} ideas`, '#B07D00'], ['Pending + proposals', rs(ann(pend)), `${nf(keys(pend))} ideas`]],
