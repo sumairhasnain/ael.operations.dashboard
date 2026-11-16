@@ -140,6 +140,7 @@
 .ael #summary .ovfl{perspective:600px}
 .ael #summary .hd .ovkh{margin-left:auto;flex:0 0 auto}
 .ael #summary .hd .ovkh + .stsym{margin-left:10px}
+.ael #summary .ovc[data-k="cost"] .hd .ovkh + .stsym{margin-right:14px}   /* 16 Nov 13:58 (Umair): icon a little in from the edge now the KPI is shorter */
 .ael #summary .hd h3.ovh3{flex:0 0 auto;white-space:nowrap;overflow:visible}   /* 14 Nov 11:14 (Umair): title always shown in full; the KPI takes what is left */
 .ael #summary .hd .ovkh .ovff{padding-left:8px}
 .ael #summary .hd h3.ovh3.two{line-height:1.02}
