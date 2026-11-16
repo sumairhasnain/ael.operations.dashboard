@@ -93,10 +93,15 @@ def _merge_unmarked(rows):
         elif r['ot_hours'] > 0: out.append(r)
     return out
 ppl = _merge_unmarked(ppl)
+# 16 Nov 2026 (Umair): officer grades G-12 .. G-18 are left out (attendance, overtime, headcount); of the G grades only G-20 stays.
+def _xg(g):
+    m = re.match(r'^G(\d+)$', re.sub(r'[\s-]', '', str(g or '').upper()))
+    return bool(m) and int(m.group(1)) != 20
+ppl = [r for r in ppl if not _xg(r.get('grade'))]
 if ppl:
     new_m = {r['month'] for r in ppl}
     if os.path.exists('sp_attendance_people_prev.json'):
-        ppl += [r for r in json.load(open('sp_attendance_people_prev.json')) if r['month'] not in new_m]
+        ppl += [r for r in json.load(open('sp_attendance_people_prev.json')) if r['month'] not in new_m and not _xg(r.get('grade'))]
     ppl.sort(key=lambda r: (r['month'], r['area'], r['section'], r['name']))
     json.dump(ppl, open('sp_attendance_people.json', 'w'), separators=(',', ':'))
     summary.update(people=sum(1 for r in ppl if r['month'] == max(new_m)), people_months=sorted({r['month'] for r in ppl}))
