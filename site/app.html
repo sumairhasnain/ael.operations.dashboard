@@ -4604,6 +4604,14 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ovm .fx{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #D0312D;border-radius:4px;background:#D0312D;color:#fff;cursor:pointer}
 .ovm .fx:hover{background:#B02622}
 .ovm .wn.wnh{cursor:help}.ovm .wn.wnh:hover{text-decoration:underline dotted #5B6770;text-underline-offset:3px}
+.ovm .fw{position:relative;display:inline-flex}
+.ovm .ff{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid #D5DBE1;border-radius:50%;background:#fff;color:#051C2C;cursor:pointer}
+.ovm .ff:hover,.ovm .ff[aria-expanded="true"]{background:#EEF3F8}.ovm .ff.on{background:#051C2C;color:#fff;border-color:#051C2C}
+.ovm .fpn{position:absolute;right:0;top:40px;z-index:5;background:#fff;border:1px solid #D5DBE1;border-radius:8px;box-shadow:0 8px 24px rgba(5,28,44,.18);padding:12px;display:grid;gap:10px;width:300px;font-size:12.5px}
+.ovm .fpn[hidden]{display:none}.ovm .fpn label{display:grid;gap:4px;color:#5B6770;font-weight:600;letter-spacing:.02em}
+.ovm .fpn select,.ovm .fpn input{font:inherit;font-weight:400;color:#051C2C;padding:6px 8px;border:1px solid #C9D1D9;border-radius:4px;background:#fff;width:100%;box-sizing:border-box}
+.ovm .fpb{display:flex;justify-content:space-between;gap:8px}.ovm .fpb button{font:inherit;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;border:1px solid #C9D1D9;background:#fff;color:#051C2C}
+.ovm .fpb .fpd{background:#051C2C;color:#fff;border-color:#051C2C}
 .ovm .wr.vpick{cursor:pointer}.ovm .wr.vpick:hover{background:#F2F6FA}
 .ovm .wr.sel{background:#EEF3FF;box-shadow:inset 3px 0 0 #2251FF}
 .ovm .x{border:1px solid #D5DBE1;background:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;color:#051C2C;flex:0 0 auto}
@@ -5130,8 +5138,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 
   /* 16 Nov 17:57 (Umair): the detail window can be filtered to one vendor (click a name in "Vendors · lowest compliance first");
      VF = that vendor's full name. The vendor list itself stays complete so another vendor can be picked. */
-  M.vendor = (P, VF) => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const SH = SHf(P), rowsAll = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop')), rows = VF ? rowsAll.filter(r => r.vendor === VF) : rowsAll;
+  /* 16 Nov 18:18 (Umair): the window's own filter button adds shop, model and part (F = {vf, shop, model, part}); they apply only inside the window */
+  const vModsOf = () => { const fm = new Map((D('atlas_parts') || []).map(r => [String(r.code), String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim()).filter(Boolean)])), m = new Map();
+    (D('atlas_bom') || []).forEach(b => { const st = m.get(String(b.code)) || new Set(); String(b.fg || '').split(/[;,]/).forEach(x => (fm.get(x.split(':')[0]) || []).forEach(v => st.add(v))); m.set(String(b.code), st); }); return m; };
+  M.vendor = (P, F0) => { const F = typeof F0 === 'string' ? { vf: F0 } : (F0 || {}), VF = F.vf || ''; const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
+    const MO = F.model ? vModsOf() : null, okC = cd => (!F.part || String(cd) === String(F.part)) && (!MO || (MO.get(String(cd)) || new Set()).has(F.model));
+    const SH = F.shop || SHf(P), rowsAll = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop') && okC(r.code)), rows = VF ? rowsAll.filter(r => r.vendor === VF) : rowsAll;
     const sc = d3.sum(rows.filter(r => r.date <= pEnd), r => +r.scheduled || 0), rc = d3.sum(rows, r => +r.received || 0);
     if (SH && !sc && !rc) return { title: SH, kpis: [], none: `No vendor schedule or receipts for ${SH} this month` };
     const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
@@ -5145,7 +5157,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     const byVA = VF ? d3.rollups(rowsAll, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0) : byV;
     const vRows = byVA.map(([v, o]) => ({ k: sn(v), full: v, v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
     const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* green (100%+) ones fill in when fewer are behind */   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
-    const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop') && (!VF || r.vendor === VF)), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
+    const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop') && okC(r.code) && (!VF || r.vendor === VF)), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
     /* 14 Nov 13:51 (Umair): parts = run-out (stock runway at this month's plan, as the Production tab's runway hover), not % of SAP safety
        stock, which is not reliable for some parts. Vendor parts of the shop(s) in the filter, soonest run-out first; red = runs out before
        the next expected delivery, amber = under 7 working days, green = covered. */
@@ -5167,7 +5179,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       /* 16 Nov 18:08 (Umair): in the detail window the vendor and runway panels open only over the part name, and sit to its left so they can be read */
       if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { const n = r.querySelector('.wn') || r; n.classList.add('wnh');
         n.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k, n)); n.addEventListener('mouseleave', vpOvH); }); };
-    return { title: `${mon(P.month)} to ${dlab(end)}${VF ? ' · vendor: ' + VF : ''}`, vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
+    return { title: `${mon(P.month)} to ${dlab(end)}${F.shop ? ' · shop: ' + F.shop : ''}${F.model ? ' · model: ' + F.model : ''}${F.part ? ' · part: ' + (F.partName || F.part) : ''}${VF ? ' · vendor: ' + VF : ''}`, vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
@@ -5591,11 +5603,11 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* detail window */
   function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
-  function openD(id, name, VF) { let o = last[id]; if (!o || o.none) return;
-    if (id === 'vendor' && VF) { try { o = M.vendor(window.__P(), VF); } catch (e) { console.error(e); o = last[id]; VF = ''; } }
+  function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; F = typeof F === 'string' ? { vf: F } : (F || {}); const VF = F.vf || '', FON = !!(VF || F.shop || F.model || F.part);
+    if (id === 'vendor' && FON) { try { o = M.vendor(window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
     const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
-    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${VF ? `<button class="fx" type="button" title="Show all vendors again">Clear filter</button>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
+    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${id === 'vendor' ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
       <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
       <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
       <div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div></div>`;
@@ -5606,8 +5618,25 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } });
     if (id === 'vendor') {   /* 16 Nov (Umair): click a vendor to filter the whole window to it; click it again, or Clear filter, for all vendors */
       m.querySelectorAll('.wr[data-v]').forEach(r => { r.classList.add('vpick'); r.title = (r.title ? r.title + ' · ' : '') + (r.dataset.v === VF ? 'Click to show all vendors' : 'Click to show only this vendor');
-        r.addEventListener('click', () => openD(id, name, r.dataset.v === VF ? '' : r.dataset.v)); });
-      const fx = m.querySelector('.fx'); if (fx) { fx.addEventListener('click', () => openD(id, name, '')); }
+        r.addEventListener('click', () => openD(id, name, { ...F, vf: r.dataset.v === VF ? '' : r.dataset.v })); });
+      const fx = m.querySelector('.fx'); if (fx) { fx.addEventListener('click', () => openD(id, name, {})); }
+      /* filter panel: shop, model and part, applied as soon as one is picked */
+      const ff = m.querySelector('.ff'), fp = m.querySelector('.fpn');
+      if (ff && fp) { const P0 = window.__P(), ms0 = P0.start, base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd);
+        const nmP = new Map([...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_stock_critical') || []), ...(D('atlas_bom') || [])].map(r => [String(r.code), r.part]));
+        const shops = [...new Set(base.map(r => r.shop).filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(r => String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim())).filter(Boolean))].sort();
+        const MOx = vModsOf(), partsL = [...new Set(base.filter(r => (!F.shop || r.shop === F.shop) && (!F.model || (MOx.get(String(r.code)) || new Set()).has(F.model))).map(r => String(r.code)))].map(c => [c, nmP.get(c) || c]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+        const opt = (L, v, all) => `<option value="">${all}</option>` + L.map(x => { const [k, t] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(k)}"${String(v || '') === String(k) ? ' selected' : ''}>${esc(t)}</option>`; }).join('');
+        fp.innerHTML = `<label>Shop<select data-f="shop">${opt(shops, F.shop, 'All shops')}</select></label><label>Model<select data-f="model">${opt(models, F.model, 'All models')}</select></label>
+          <label>Part<input data-f="part" list="vfpl" placeholder="All parts (${partsL.length}) · type to search" value="${esc(F.part ? (F.partName || nmP.get(String(F.part)) || F.part) : '')}"><datalist id="vfpl">${partsL.map(([c, t]) => `<option value="${esc(t)}">${esc(c)}</option>`).join('')}</datalist></label>
+          <div class="fpb"><button type="button" class="fpc">Clear these</button><button type="button" class="fpd">Done</button></div>`;
+        const show = v => { fp.hidden = !v; ff.setAttribute('aria-expanded', String(v)); };
+        ff.addEventListener('click', ev => { ev.stopPropagation(); show(fp.hidden); }); fp.addEventListener('click', ev => ev.stopPropagation()); m.addEventListener('click', () => show(false));
+        const go = G => openD(id, name, { ...G, _open: 1 });
+        fp.querySelectorAll('select').forEach(sl => sl.addEventListener('change', () => { const G = { ...F, [sl.dataset.f]: sl.value }; if (sl.dataset.f !== 'part') { G.part = ''; G.partName = ''; } go(G); }));
+        const pi = fp.querySelector('input'); pi.addEventListener('change', () => { const t = pi.value.trim(); if (!t) return go({ ...F, part: '', partName: '' }); const hit = partsL.find(([c, n]) => n === t || c === t) || partsL.find(([c, n]) => String(n).toLowerCase().includes(t.toLowerCase())); if (hit) go({ ...F, part: hit[0], partName: hit[1] }); });
+        fp.querySelector('.fpc').addEventListener('click', () => go({ vf: F.vf })); fp.querySelector('.fpd').addEventListener('click', () => show(false));
+        if (F._open) show(true); }
       if (sy) m.querySelector('.bx').scrollTop = sy; m.querySelectorAll('.pc .ovwd').forEach((x, i) => { if (ly[i] != null && i === 0) x.scrollTop = ly[i]; });
       if (VF) { const sel = m.querySelector('.wr.sel'); if (sel && !ly.length) sel.scrollIntoView({ block: 'nearest' }); } } }
   { const tb = document.getElementById('tabs'); if (tb) tb.addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b && b.dataset.p !== 'summary') { const r_ = document.getElementById('ael'); if (r_) r_.classList.remove('ovfit'); } }, true); }
