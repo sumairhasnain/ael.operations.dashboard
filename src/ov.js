@@ -91,6 +91,11 @@
 .ovm .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
 .ovm h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;margin:0}
 .ovm .bs{font-size:12px;color:#5B6770;margin-top:2px}
+.ovm .br{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.ovm .fx{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #D0312D;border-radius:4px;background:#D0312D;color:#fff;cursor:pointer}
+.ovm .fx:hover{background:#B02622}
+.ovm .wr.vpick{cursor:pointer}.ovm .wr.vpick:hover{background:#F2F6FA}
+.ovm .wr.sel{background:#EEF3FF;box-shadow:inset 3px 0 0 #2251FF}
 .ovm .x{border:1px solid #D5DBE1;background:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;color:#051C2C;flex:0 0 auto}
 .ovm .x:hover{background:#051C2C;color:#fff}
 .ovm .bk{display:flex;flex-wrap:wrap;gap:8px 26px;margin:6px 0 12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4}
@@ -613,8 +618,10 @@
         { t: 'In-house parts compliance by shop', draw: el => hbarC(el, ihShop, { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }],
       foot: 'Atlas plan vs actual. Plan counts to yesterday while the month is running; actuals to the latest Atlas day. Bars are cut at 250%; the label shows the true figure.' }; };
 
-  M.vendor = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const SH = SHf(P), rows = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop'));
+  /* 16 Nov 17:57 (Umair): the detail window can be filtered to one vendor (click a name in "Vendors · lowest compliance first");
+     VF = that vendor's full name. The vendor list itself stays complete so another vendor can be picked. */
+  M.vendor = (P, VF) => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
+    const SH = SHf(P), rowsAll = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop')), rows = VF ? rowsAll.filter(r => r.vendor === VF) : rowsAll;
     const sc = d3.sum(rows.filter(r => r.date <= pEnd), r => +r.scheduled || 0), rc = d3.sum(rows, r => +r.received || 0);
     if (SH && !sc && !rc) return { title: SH, kpis: [], none: `No vendor schedule or receipts for ${SH} this month` };
     const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
@@ -625,9 +632,10 @@
     let cs = 0, cr = 0; const cS = ds.map(d => (cs += d <= pEnd ? (byD.get(d) || {}).s || 0 : 0)), cR = ds.map(d => (cr += (byD.get(d) || {}).r || 0));
     /* 14 Nov 12:11 (Umair): watch list - the 4 weakest vendors against schedule to date, and the 4 critical vendor-supplied parts lowest against safety stock (shop filter applies) */
     const sn = v => String(v).replace(/\s*\((PVT|PRIVATE)\b.*$/i, '').replace(/\s+(\(?PVT\)?|PRIVATE|LIMITED|LIMIT|LTD\.?|LT|CO\.?)\s*$/i, '').replace(/\s+/g, ' ').trim();
-    const vRows = byV.map(([v, o]) => ({ k: sn(v), v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
+    const byVA = VF ? d3.rollups(rowsAll, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0) : byV;
+    const vRows = byVA.map(([v, o]) => ({ k: sn(v), full: v, v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
     const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* green (100%+) ones fill in when fewer are behind */   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
-    const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop')), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
+    const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop') && (!VF || r.vendor === VF)), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
     /* 14 Nov 13:51 (Umair): parts = run-out (stock runway at this month's plan, as the Production tab's runway hover), not % of SAP safety
        stock, which is not reliable for some parts. Vendor parts of the shop(s) in the filter, soonest run-out first; red = runs out before
        the next expected delivery, amber = under 7 working days, green = covered. */
@@ -643,11 +651,11 @@
     /* vendors: fewer than 4 with a schedule -> add the shop's vendors that delivered with nothing scheduled yet */
     if (wVend.length < 4) d3.rollups(rows, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byV.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
       .forEach(([v, q]) => { if (wVend.length < 4) wVend.push({ k: sn(v), v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` }); });
-    const allV = vRows.slice().sort((a, b) => a.v - b.v).concat(d3.rollups(rows, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byV.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
-      .map(([v, q]) => ({ k: sn(v), v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` })));
-    const wlist = (L, parts) => el => { el.innerHTML = L.length ? `<div class="ovwd">${L.map(wRowH).join('')}</div>` : '<div class="em">Nothing to show</div>';
+    const allV = vRows.slice().sort((a, b) => a.v - b.v).concat(d3.rollups(rowsAll, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byVA.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
+      .map(([v, q]) => ({ k: sn(v), full: v, v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` })));
+    const wlist = (L, parts) => el => { el.innerHTML = L.length ? `<div class="ovwd">${L.map(x => wRowH(x, VF)).join('')}</div>` : '<div class="em">Nothing to show</div>';
       if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { r.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k)); r.addEventListener('mouseleave', vpOvH); }); };
-    return { title: `${mon(P.month)} to ${dlab(end)}`, st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
+    return { title: `${mon(P.month)} to ${dlab(end)}${VF ? ' · vendor: ' + VF : ''}`, vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
@@ -924,8 +932,8 @@
       const rh = window.__rwHTML && window.__rwHTML(cd, part); if (rh) { const b = document.createElement('div'); b.className = 'rwpop ovrw'; b.innerHTML = rh; pop.appendChild(b); } }
     pop.style.display = 'flex'; const w = pop.offsetWidth, h = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12;
     if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); pop.style.left = x + 'px'; pop.style.top = y + 'px'; };
-  const wRowH = x => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
-        return `<div class="wr"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
+  const wRowH = (x, vf) => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
+        return `<div class="wr${x.full && vf === x.full ? ' sel' : ''}"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}${x.full ? ` data-v="${esc(x.full)}"` : ''}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
     if (!can || sts.includes('denied')) { el.innerHTML = `<div class="hd"><span class="ic">${ico(id)}</span><h3>${esc(name)}</h3></div><div class="ovl">🔒 You do not have access to this tab</div>`; el.style.cursor = 'default'; el.removeAttribute('role'); return el; }
@@ -1069,9 +1077,11 @@
   /* detail window */
   function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
-  function openD(id, name) { const o = last[id]; if (!o || o.none) return; closeD();
+  function openD(id, name, VF) { let o = last[id]; if (!o || o.none) return;
+    if (id === 'vendor' && VF) { try { o = M.vendor(window.__P(), VF); } catch (e) { console.error(e); o = last[id]; VF = ''; } }
+    const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
-    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><button class="x" type="button" aria-label="Close" title="Close">×</button></div>
+    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${VF ? `<button class="fx" type="button" title="Show all vendors again">Clear filter</button>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
       <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
       <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
       <div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div></div>`;
@@ -1079,7 +1089,13 @@
     m.addEventListener('click', ev => { if (ev.target === m) closeD(); }); m.querySelector('.x').addEventListener('click', closeD);
     m.querySelector('.go').addEventListener('click', () => { closeD(); const t = document.querySelector(`#tabs .tab[data-p="${id}"]`); if (t) t.click(); });
     document.addEventListener('keydown', escK); m.querySelector('.x').focus();
-    m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } }); }
+    m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } });
+    if (id === 'vendor') {   /* 16 Nov (Umair): click a vendor to filter the whole window to it; click it again, or Clear filter, for all vendors */
+      m.querySelectorAll('.wr[data-v]').forEach(r => { r.classList.add('vpick'); r.title = (r.title ? r.title + ' · ' : '') + (r.dataset.v === VF ? 'Click to show all vendors' : 'Click to show only this vendor');
+        r.addEventListener('click', () => openD(id, name, r.dataset.v === VF ? '' : r.dataset.v)); });
+      const fx = m.querySelector('.fx'); if (fx) { fx.addEventListener('click', () => openD(id, name, '')); }
+      if (sy) m.querySelector('.bx').scrollTop = sy; m.querySelectorAll('.pc .ovwd').forEach((x, i) => { if (ly[i] != null && i === 0) x.scrollTop = ly[i]; });
+      if (VF) { const sel = m.querySelector('.wr.sel'); if (sel && !ly.length) sel.scrollIntoView({ block: 'nearest' }); } } }
   { const tb = document.getElementById('tabs'); if (tb) tb.addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (b && b.dataset.p !== 'summary') { const r_ = document.getElementById('ael'); if (r_) r_.classList.remove('ovfit'); } }, true); }
   window.__ovRender = render;
   const d0 = window.__draw; if (d0) window.__draw = (...a) => { const r = d0(...a); if (window.__page !== 'summary') { const rt_ = document.getElementById('ael'); if (rt_) rt_.classList.remove('ovfit'); } if (window.__page === 'summary' && !wasOn) exRM = true; wasOn = window.__page === 'summary'; if (window.__page === 'summary') { try { render(); } catch (e) { console.error(e); } } return r; };
