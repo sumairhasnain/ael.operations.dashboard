@@ -94,6 +94,7 @@
 .ovm .br{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .ovm .fx{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid #D0312D;border-radius:4px;background:#D0312D;color:#fff;cursor:pointer}
 .ovm .fx:hover{background:#B02622}
+.ovm .wn.wnh{cursor:help}.ovm .wn.wnh:hover{text-decoration:underline dotted #5B6770;text-underline-offset:3px}
 .ovm .wr.vpick{cursor:pointer}.ovm .wr.vpick:hover{background:#F2F6FA}
 .ovm .wr.sel{background:#EEF3FF;box-shadow:inset 3px 0 0 #2251FF}
 .ovm .x{border:1px solid #D5DBE1;background:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;color:#051C2C;flex:0 0 auto}
@@ -654,7 +655,9 @@
     const allV = vRows.slice().sort((a, b) => a.v - b.v).concat(d3.rollups(rowsAll, v => d3.sum(v, r => +r.received || 0), r => r.vendor).filter(([v, q]) => q > 0 && !byVA.some(([w]) => w === v)).sort((a, b) => b[1] - a[1])
       .map(([v, q]) => ({ k: sn(v), full: v, v: null, lab: '+' + kf(q), tip: `${v}: ${kf(q)} received, nothing scheduled to date` })));
     const wlist = (L, parts) => el => { el.innerHTML = L.length ? `<div class="ovwd">${L.map(x => wRowH(x, VF)).join('')}</div>` : '<div class="em">Nothing to show</div>';
-      if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { r.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k)); r.addEventListener('mouseleave', vpOvH); }); };
+      /* 16 Nov 18:08 (Umair): in the detail window the vendor and runway panels open only over the part name, and sit to its left so they can be read */
+      if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { const n = r.querySelector('.wn') || r; n.classList.add('wnh');
+        n.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k, n)); n.addEventListener('mouseleave', vpOvH); }); };
     return { title: `${mon(P.month)} to ${dlab(end)}${VF ? ' · vendor: ' + VF : ''}`, vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
@@ -923,7 +926,7 @@
   if (!window.__ovFL) window.__ovFL = setInterval(() => document.querySelectorAll('#summary svg.ovflp').forEach(v => { if (v.matches(':hover')) return; const on = v.getAttribute('data-on'); v.setAttribute('data-on', v.dataset.n === '3' ? (on === 'a' ? 'b' : on === 'b' ? 'c' : 'a') : (on === 'a' ? 'b' : 'a')); }), 8000);
   if (!window.__ovWL) window.__ovWL = setInterval(() => document.querySelectorAll('#summary .ovwl').forEach(w => { if (w.dataset.hold || w.matches(':hover')) return; w.dataset.on = w.dataset.on === 'v' ? 'p' : 'v'; }), 7000);
   const vpOvH = () => { const pop = document.getElementById('vpop'); if (pop) { pop.style.display = 'none'; pop.dataset.code = ''; } };
-  const vpOv = (ev, cd, part) => { const VP = window.__vendPanel; if (!VP || !cd) return;
+  const vpOv = (ev, cd, part, anc) => { const VP = window.__vendPanel; if (!VP || !cd) return;
     let pop = document.getElementById('vpop'); if (!pop) { pop = document.createElement('div'); pop.id = 'vpop'; pop.className = 'vpop'; pop.style.display = 'none'; (document.getElementById('ael') || document.body).appendChild(pop); }
     if (pop.dataset.code !== 'ov' + cd) { pop.dataset.code = 'ov' + cd; pop.replaceChildren(); const p = window.__P(), keys = (window.__VHOV || {})[cd];
       const add = (title, VC, IH) => { const box = document.createElement('div'); box.className = 'vsk'; pop.appendChild(box); VP(box, VC, IH, p, true); const hd = box.querySelector('.vh'); if (hd) hd.textContent = title + ' · MTD vs month plan'; };
@@ -931,7 +934,9 @@
       else { const ih = (D('atlas_parts_daily') || []).some(r => String(r.code) === cd && r.date.startsWith(p.month) && ((+r.prod_plan || 0) + (+r.prod_actual || 0)) > 0); add(part || cd, cd, ih ? { own: cd } : null); }
       const rh = window.__rwHTML && window.__rwHTML(cd, part); if (rh) { const b = document.createElement('div'); b.className = 'rwpop ovrw'; b.innerHTML = rh; pop.appendChild(b); } }
     pop.style.display = 'flex'; const w = pop.offsetWidth, h = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12;
-    if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); pop.style.left = x + 'px'; pop.style.top = y + 'px'; };
+    if (anc) { const a = anc.getBoundingClientRect(); x = a.left - w - 14; y = a.top + a.height / 2 - h / 2; if (x < 8) x = Math.min(innerWidth - w - 8, a.right + 14); y = Math.max(8, Math.min(y, innerHeight - h - 8)); }
+    else { if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); }
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; };
   const wRowH = (x, vf) => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
         return `<div class="wr${x.full && vf === x.full ? ' sel' : ''}"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}${x.full ? ` data-v="${esc(x.full)}"` : ''}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
