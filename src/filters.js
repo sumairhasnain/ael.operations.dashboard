@@ -114,7 +114,11 @@ window.__NAVCOMPACT = true;
 (() => { if (window.__NAVCOMPACT === false) return; const hdr = document.querySelector('.ael .hdr'), tabs = document.getElementById('tabs'), pg = document.getElementById('f-pg'), nav = document.getElementById('f-nav'), nm = document.getElementById('f-pgn');
   if (!hdr || !tabs || !pg || !nav || !nm) return; hdr.classList.add('ncompact'); pg.hidden = false; nav.hidden = false; let over = false;
   const set = v => { hdr.classList.toggle('nopen', v); pg.setAttribute('aria-expanded', String(v)); };
-  const name = () => { const t = tabs.querySelector('.tab[aria-selected="true"]'); nm.textContent = t ? t.textContent.trim() : ''; };
+  /* 16 Nov 17:31 (Umair, option 4): on the Overview page the big page title is the page switcher, so "› Overview" is hidden in the top bar.
+     Set window.__OVTITLEMENU = false to go back. */
+  const name = () => { const t = tabs.querySelector('.tab[aria-selected="true"]'); nm.textContent = t ? t.textContent.trim() : '';
+    pg.hidden = window.__OVTITLEMENU !== false && !!t && t.id === 't-summary'; };
+  let tmr = 0; window.__navMenu = { toggle: () => set(!hdr.classList.contains('nopen')), hold: v => { clearTimeout(tmr); if (v) set(true); else tmr = setTimeout(() => { if (!over) set(false); }, 1500); } };
   [pg, nav].forEach(b => { b.addEventListener('mouseenter', () => set(true)); b.addEventListener('click', () => set(!hdr.classList.contains('nopen'))); });
   hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over) set(false); }, 1500); });   // 16 Nov 16:39 (Umair): page menu stays 1.5 s after the cursor leaves
   tabs.addEventListener('click', ev => { if (ev.target.closest('.tab')) setTimeout(() => { name(); set(false); }, 0); }, true);

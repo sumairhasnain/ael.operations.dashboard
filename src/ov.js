@@ -42,6 +42,9 @@
 .ael #summary .ovg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:14px;height:calc(100vh - 170px);min-height:460px;margin:10px 0 0;width:100%}   /* 11 Nov 23:40 (Umair): full screen width */
 .ael #summary .ovhd{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0;width:100%;border-bottom:2px solid #051C2C;padding-bottom:8px}
 .ael #summary .ovhd h2{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;margin:0;color:#051C2C}
+.ael #summary .ovhd h2.ovpg{cursor:pointer;text-decoration:underline dotted #9AA5B1;text-decoration-thickness:1px;text-underline-offset:6px;border-radius:4px;padding:0 4px;margin-left:-4px}
+.ael #summary .ovhd h2.ovpg:hover,.ael #summary .ovhd h2.ovpg:focus-visible{background:#EEF3F8;outline:none}
+.ael #summary .ovhd h2.ovpg .car{font-size:.55em;color:#5B6770;margin-left:5px;vertical-align:.15em}
 .ael #summary .ovhd .sb{font-size:12px;color:#5B6770;margin-top:2px}
 .ael #summary .ovhd>div:first-child{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .ael #summary .ovst{display:flex;gap:4px;align-items:flex-end;justify-content:center;padding-bottom:4px;height:40px;box-sizing:border-box}
@@ -1044,7 +1047,14 @@
   }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
     let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
-    { const h2 = s.querySelector('.ovhd h2'); h2.textContent = 'Overview'; }   // 14 Nov 00:58 (Umair): no shop-name chip; the strip and its label already show the shop   // 16 Nov 16:46 (Umair): title is just 'Overview'
+    /* 16 Nov 17:31 (Umair, option 4): the page title is the page switcher. "Overview ▾" opens the page list; the top bar then shows only
+       "Operations Dashboard" on this page (filters.js hides "› Overview" there). To undo: set window.__OVTITLEMENU = false in filters.js. */
+    { const h2 = s.querySelector('.ovhd h2');
+      if (window.__OVTITLEMENU === false) h2.textContent = 'Overview';
+      else if (!h2.__menu) { h2.__menu = 1; h2.classList.add('ovpg'); h2.innerHTML = 'Overview<span class="car" aria-hidden="true">▾</span>'; h2.tabIndex = 0; h2.setAttribute('role', 'button');
+        h2.setAttribute('aria-label', 'Overview. Choose another page'); h2.title = 'Choose another page';
+        const N = () => window.__navMenu; h2.addEventListener('click', () => N() && N().hold(true)); h2.addEventListener('mouseenter', () => N() && N().hold(true));
+        h2.addEventListener('mouseleave', () => N() && N().hold(false)); h2.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && N()) { ev.preventDefault(); N().toggle(); } }); } }   // 14 Nov 00:58 (Umair): no shop-name chip; the strip and its label already show the shop   // 16 Nov 16:46 (Umair): title is just 'Overview'
     try { shopStrip(s, P); } catch (e) { console.error('ovstrip', e); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
