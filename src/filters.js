@@ -117,7 +117,7 @@ window.__NAVCOMPACT = true;
   /* 16 Nov 17:31 (Umair, option 4): on the Overview page the big page title is the page switcher, so "› Overview" is hidden in the top bar.
      Set window.__OVTITLEMENU = false to go back. */
   const name = () => { const t = tabs.querySelector('.tab[aria-selected="true"]'); nm.textContent = t ? t.textContent.trim() : '';
-    pg.hidden = window.__OVTITLEMENU !== false && !!t && t.id === 't-summary'; };
+    pg.hidden = !!t && t.id === 't-summary'; };   // 16 Nov 17:34 (Umair, option 2): the Overview page's own title names it, so the top bar drops '› Overview'
   let tmr = 0; window.__navMenu = { toggle: () => set(!hdr.classList.contains('nopen')), hold: v => { clearTimeout(tmr); if (v) set(true); else tmr = setTimeout(() => { if (!over) set(false); }, 1500); } };
   [pg, nav].forEach(b => { b.addEventListener('mouseenter', () => set(true)); b.addEventListener('click', () => set(!hdr.classList.contains('nopen'))); });
   hdr.addEventListener('mouseenter', () => { over = true; }); hdr.addEventListener('mouseleave', () => { over = false; setTimeout(() => { if (!over) set(false); }, 1500); });   // 16 Nov 16:39 (Umair): page menu stays 1.5 s after the cursor leaves

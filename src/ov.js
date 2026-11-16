@@ -1050,7 +1050,8 @@
     /* 16 Nov 17:31 (Umair, option 4): the page title is the page switcher. "Overview ▾" opens the page list; the top bar then shows only
        "Operations Dashboard" on this page (filters.js hides "› Overview" there). To undo: set window.__OVTITLEMENU = false in filters.js. */
     { const h2 = s.querySelector('.ovhd h2');
-      if (window.__OVTITLEMENU === false) h2.textContent = 'Overview';
+      /* 16 Nov 17:34 (Umair): back to option 2 - plain 'Overview' title; the page list opens from the grid button. Set window.__OVTITLEMENU = true for option 4. */
+      if (window.__OVTITLEMENU !== true) h2.textContent = 'Overview';
       else if (!h2.__menu) { h2.__menu = 1; h2.classList.add('ovpg'); h2.innerHTML = 'Overview<span class="car" aria-hidden="true">▾</span>'; h2.tabIndex = 0; h2.setAttribute('role', 'button');
         h2.setAttribute('aria-label', 'Overview. Choose another page'); h2.title = 'Choose another page';
         const N = () => window.__navMenu; h2.addEventListener('click', () => N() && N().hold(true)); h2.addEventListener('mouseenter', () => N() && N().hold(true));
