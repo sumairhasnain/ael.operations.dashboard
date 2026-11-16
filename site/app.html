@@ -807,6 +807,11 @@ window.__NAVCOMPACT = true;
   tabs.addEventListener('click', ev => { if (ev.target.closest('.tab')) setTimeout(() => { name(); set(false); }, 0); }, true);
   new MutationObserver(name).observe(tabs, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-selected'] }); name();
 })();
+/* 16 Nov 16:45 (Umair): clicking the "Operations Dashboard" title opens the Overview page */
+(() => { const h = document.querySelector('.ael .ttlw h1'), t = document.getElementById('t-summary'); if (!h || !t) return;
+  h.style.cursor = 'pointer'; h.title = 'Go to Overview'; h.setAttribute('role', 'link'); h.tabIndex = 0;
+  const go = () => { t.click(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  h.addEventListener('click', go); h.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } }); })();
 
 </script>
 <script>
