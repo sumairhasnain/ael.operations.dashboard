@@ -1043,8 +1043,8 @@
     sm.title = tv == null ? '' : `${sel ? cur : 'All shops'}: finished goods ${kf(ta)} made of ${kf(tp)} planned to date (${d3.format('.1f')(tv)}%)`;
   }
   function render() { const s = sec(); if (!s || window.__page !== 'summary') return; const P = window.__P(); last = {};
-    let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Operations Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
-    { const h2 = s.querySelector('.ovhd h2'); h2.textContent = 'Operations Overview'; }   // 14 Nov 00:58 (Umair): no shop-name chip; the strip and its label already show the shop
+    let g = s.querySelector('.ovg'); if (!g) { s.innerHTML = '<div class="ovhd"><div><h2>Overview</h2></div><div class="lgd"></div></div><div class="ovg"></div><p class="ovn"></p>'; g = s.querySelector('.ovg'); }
+    { const h2 = s.querySelector('.ovhd h2'); h2.textContent = 'Overview'; }   // 14 Nov 00:58 (Umair): no shop-name chip; the strip and its label already show the shop   // 16 Nov 16:46 (Umair): title is just 'Overview'
     try { shopStrip(s, P); } catch (e) { console.error('ovstrip', e); }
     s.querySelector('.ovhd .lgd').innerHTML = ['good', 'watch', 'bad'].map(pill).join(''); s.querySelector('.ovhd .lgd').title = 'Production and Vendor Supply on track at 95%+, watch from 80%. Absenteeism on track up to 5%, watch to 8%. Inventory on track with excess under 10% of value. Projects watch above 5% overdue. VA/CR on track once half the annual saving is achieved.';
     /* 11 Nov 23:43 (Umair): fit the page to the window height so no scroll bar shows */
