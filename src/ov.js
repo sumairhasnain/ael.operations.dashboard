@@ -154,6 +154,8 @@
 .ael #summary .ovfl.q4 .ovfi{animation:ov4 16s ease-in-out infinite}
 @keyframes ov4{0%,46%{transform:rotateX(0)}50%,96%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
 .ael #summary .ovkh .ovff .hv{display:block;perspective:500px}
+/* 16 Nov (Umair, option 2): Cost of Production KPI keeps the % large and 'MoM' small, so the status icon fits */
+.ael #summary .ovkh .ovff .ovmom{font-family:Inter,system-ui,Arial,sans-serif;font-size:.42em;font-weight:600;letter-spacing:.04em;color:#5B6770;margin-left:3px;vertical-align:.12em}
 .ael #summary .ovkh .ovff .hv>i{display:grid;font-style:normal;transform-style:preserve-3d}
 .ael #summary .ovkh .ovff .hv>i>i{grid-area:1/1;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;white-space:nowrap}
 .ael #summary .ovkh .ovff .hv>i>i+i{transform:rotateY(180deg)}
@@ -898,8 +900,9 @@
   let last = {};
   let hvBase, hvT, hvLock = '', hvSh = '';   /* hover preview: shop selected before the hover, the delay timer, and the shop locked by a click */
   /* 14 Nov 12:11: card header with the flipping KPI (Production, Vendor Supply) */
+  const mvF = (id, x) => id === 'cost' ? esc(x).replace(/ MoM$/, '<small class="ovmom">MoM</small>') : esc(x);
   const hdrF = (id, name, K, o) => `<div class="hd"><span class="ic">${ico(id)}</span><h3 class="ovh3">${esc(name)}</h3><div class="ovkh"><div class="ovfl${K.some(k => Array.isArray(k[1])) ? ' q4' : ''}" title="${esc(K.map(([l, v, sb]) => [].concat(l).join(' / ') + ' ' + [].concat(v).join(' / ') + (sb ? ' (' + sb + ')' : '')).join(' · '))}"><div class="ovfi">${K.slice(0, 2).map(([l, v, sb, c], i) =>
-        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}">${Array.isArray(l) ? `<span class="hv"><i><i>${esc(l[0])}</i><i>${esc(l[1])}</i></i></span>` : `<span>${esc(l)}</span>`}${Array.isArray(v) ? `<b class="hv"${c ? ` style="color:${c}"` : ''}><i><i>${esc(v[0])}</i><i>${esc(v[1])}</i></i></b>` : `<b${c ? ` style="color:${c}"` : ''}>${esc(v)}</b>`}</div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
+        `<div class="ovff${i ? ' bk' : ''}" style="border-left-color:${c || '#051C2C'}">${Array.isArray(l) ? `<span class="hv"><i><i>${esc(l[0])}</i><i>${esc(l[1])}</i></i></span>` : `<span>${esc(l)}</span>`}${Array.isArray(v) ? `<b class="hv"${c ? ` style="color:${c}"` : ''}><i><i>${mvF(id, v[0])}</i><i>${mvF(id, v[1])}</i></i></b>` : `<b${c ? ` style="color:${c}"` : ''}>${mvF(id, v)}</b>`}</div>`).join('')}</div></div></div>${pill(o.st)}</div>`;
   /* ticker strip used at the foot of the Production and Vendor Supply cards: still when 2 names or fewer, scrolling right to left above that */
   const tickS = (lab, items, cls, tt) => { if (!items.length) return ''; const it = items.join(' · ');
     if (items.length <= 2) return `<div class="ovbh ${cls}" title="${tt}"><b>${lab}</b> ${it}</div>`;
