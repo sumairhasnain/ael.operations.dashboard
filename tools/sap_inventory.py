@@ -99,10 +99,14 @@ desc = pd.concat([s.drop_duplicates('Material').set_index('Material')['Material 
 desc = desc[~desc.index.duplicated()]
 LUBRX = re.compile(r'\bOILS?\b|GREASE|LUBRICANT|LUBRICATION GREAS')
 NOTLUB = re.compile(r'FILTER|SEAL|PUMP|STONE|GUN|GAUGE|GUAGE|ABSORBENT|SPILL|TRAP|UNIT|LUBRICATOR|KEROSINE|SUCTION')
+# 17 Nov 2026 (Umair): item-by-item category calls that override the code-series rules below
+OVR = {**{c: 'Consumables' for c in ('1010380082', '1010380086', '1510410001', '1510410086', '1510410011', '1510410012', '1510410013', '1510410000', '1513010009', '2000100079', '2510910222', '2509955067', '2510910148', '05402-SB-15L')},
+       **{c: 'Raw Material' for c in ('1510510012', '1510510086')}}
 def cat2(code, g, d):
     """Umair's rule (27 Oct, Raw Material added 28 Oct): codes 10.. and 15.. are Consumables, 20.. Tools, 25.. Spares; lubricants are their own category and never counted
     in the other three. Other codes (30.., 50.., 60.., 65.., 90.., 91..) are production parts."""
     d = str(d or '').upper(); c = str(code)
+    if c in OVR: return OVR[c]   # 17 Nov 2026: Umair's item-by-item calls
     if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d) and c[:2] in ('10', '15', '20', '25')): return 'Lubricants'   # 28 Oct: an 'OIL' word in a production part's name (oil seal, collar oil lock) is not a lubricant
     # 28 Oct: Raw Material is its own category: 10../15.. codes in the SAP raw-material groups, or held as a shop's bought-in
     # input (e.g. brass / steel rods for Carburetor child parts, plastic resin for Polymer) rather than its general stores
@@ -115,6 +119,7 @@ def info(code):
     raw = cat == 'Raw material'; cat = cat2(code, g, d)
     if raw and cat != 'Lubricants': st = st or 'Raw material' 
     if cat == 'Raw Material' and st in ('', 'Shop spares & consumables'): st = 'Raw material'   # 17 Nov 2026: 10.. codes moved to Raw Material
+    if cat == 'Consumables' and st == 'Raw material': st = 'Shop spares & consumables'   # 17 Nov 2026: overrides to Consumables
     return g, d, cat, st, sh, how
 
 today = pd.Timestamp(ASOF_FLOW)
