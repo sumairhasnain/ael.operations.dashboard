@@ -3,8 +3,8 @@
 /* 8 Nov (Umair): Part Compliance - Other Parts - the three dispatch columns sit past the right edge and come into view with the light grey horizontal scroll bar. */
 .ael #c-p-parts2 .tbox{overflow-x:auto;scrollbar-width:thin;scrollbar-color:#CDD3DA #F3F5F8}
 .ael #c-p-parts2 .tbox::-webkit-scrollbar{height:8px;width:8px} .ael #c-p-parts2 .tbox::-webkit-scrollbar-thumb{background:#CDD3DA;border-radius:4px} .ael #c-p-parts2 .tbox::-webkit-scrollbar-track{background:#F3F5F8;border-radius:4px}
-.ael #tb-parts2{table-layout:fixed;width:calc(100% + 330px);min-width:1540px} /* Part column never below ~258px: the longest names fit in 2 lines */
-.ael #tb-parts2 th:nth-child(1){width:122px} .ael #tb-parts2 th:nth-child(3){width:130px} .ael #tb-parts2 th:nth-child(4){width:92px} .ael #tb-parts2 th:nth-child(5){width:52px}
+.ael #tb-parts2{table-layout:fixed;width:calc(100% + 290px);min-width:1500px} /* 17 Nov: Part 3 characters and Shop 2 characters narrower (Umair) */ /* Part column never below ~258px: the longest names fit in 2 lines */
+.ael #tb-parts2 th:nth-child(1){width:122px} .ael #tb-parts2 th:nth-child(3){width:114px} .ael #tb-parts2 th:nth-child(4){width:92px} .ael #tb-parts2 th:nth-child(5){width:52px}
 .ael #tb-parts2 th:nth-child(6){width:88px} .ael #tb-parts2 th:nth-child(7){width:78px} .ael #tb-parts2 th:nth-child(8){width:80px} .ael #tb-parts2 th:nth-child(9){width:84px} .ael #tb-parts2 th:nth-child(10){width:80px} .ael #tb-parts2 th:nth-child(11){width:80px} .ael #tb-parts2 th:nth-child(12){width:66px}
 .ael #tb-parts2 th:nth-child(n+13){width:110px}
 .ael #tb-parts2 td{overflow:hidden;text-overflow:ellipsis} .ael #tb-parts2 td:nth-child(2){white-space:normal;overflow-wrap:anywhere;line-height:1.3}`; (document.head || document.body).appendChild(st); })();
@@ -13,7 +13,7 @@
    left border and slides back out once the cursor leaves the Code column (or the table). */
 (() => { const st = document.createElement('style'); st.textContent = `
 .ael #tb-parts2{transition:width .25s ease,min-width .25s ease}
-.ael #tb-parts2:not(.cdon){width:calc(100% + 208px);min-width:1418px}
+.ael #tb-parts2:not(.cdon){width:calc(100% + 168px);min-width:1378px}
 .ael #tb-parts2 th:nth-child(1),.ael #tb-parts2 td:nth-child(1){transition:width .25s ease,padding .25s ease,opacity .2s ease}
 .ael #tb-parts2:not(.cdon) th:nth-child(1){width:0;padding-left:0;padding-right:0}
 .ael #tb-parts2:not(.cdon) th:nth-child(1),.ael #tb-parts2:not(.cdon) td:nth-child(1){padding-left:0;padding-right:0;opacity:0;white-space:nowrap;overflow:hidden;border-right:0}
