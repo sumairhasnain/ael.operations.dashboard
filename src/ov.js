@@ -602,6 +602,8 @@
   const SHf = P => P.shop && P.shop !== 'All' ? P.shop : '';
   const inSh = (sh, r, ...ks) => !sh || ks.some(k => { const v = r[k]; if (Array.isArray(v)) return v.includes(sh); if (typeof v === 'string' && v.trim().startsWith('[')) { try { return JSON.parse(v).includes(sh); } catch (e) { return false; } } return v === sh; });
   /* 17 Nov 06:51 (Umair): the Production detail window gets the same shop / model / part filter as Vendor Supply (F = {shop, model, part}); it applies only inside the window */
+  /* 17 Nov 10:26 (Umair): which filters each Overview window offers */
+  const FC = { production: ['shop', 'model', 'part'], vendor: ['shop', 'model', 'part'], inventory: ['shop', 'model', 'part'], savings: ['shop', 'model', 'part'], workforce: ['shop'], cost: ['shop'], capacity: ['shop'], projects: ['shop'] };
   const pModsOf = r => String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim()).filter(Boolean);
   M.production = (P, F0) => { const F = F0 || {}; const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
     const SH = F._own ? (F.shop || '') : (F.shop || SHf(P)), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops') && (!F.model || pModsOf(r).includes(F.model)) && (!F.part || String(r.code) === String(F.part))).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
@@ -694,7 +696,7 @@
   const CATC = { 'Raw Material': '#051C2C', 'Production parts': '#2251FF', Lubricants: '#00A9F4', Tools: '#1F9E89', Consumables: '#E0A100', Spares: '#8C6BD8' };
   const EXC = ['Raw Material', 'Production parts', 'Lubricants'];
   let exRM = true, wasOn = false;   /* on by default every time the Overview is opened (Umair, 12 Nov 00:46) */
-  M.inventory = P => { const SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop') && !(exRM && EXC.includes(r.category))), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
+  M.inventory = (P, F0) => { const F = F0 || {}, SH = SHf(P), S = D('sap_stock').filter(r => r.code && inSh(SH, r, 'shop') && !(exRM && EXC.includes(r.category)) && (!F.model || pModsOf({ models: r.models }).includes(F.model)) && (!F.part || String(r.code) === String(F.part))), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
     const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
     const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');
     const cat = d3.rollups(S, v => d3.sum(v, r => +r.value_pkr || 0), r => r.category || '—').sort((a, b) => b[1] - a[1]);
@@ -896,7 +898,7 @@
         { t: 'Overdue activities (longest first)', draw: el => hbarC(el, od.map(r => ({ label: `${r.key} ${r.summary}`, v: (new Date(today) - new Date(r.due)) / 864e5, color: C.bad, lab: Math.round((new Date(today) - new Date(r.due)) / 864e5) + ' days', tip: [r.key + ' · ' + r.summary, `Due ${r.due} · ${r.status}`, r.assignee || 'Unassigned', r.project_name] })).sort((a, b) => b.v - a.v).slice(0, 12), { fmt: v => f0(v) + ' d', h: 280, lw: 210, lc: 34, empty: 'Nothing overdue' }) }],
       foot: 'Jira (read only).' }; };
 
-  M.savings = P => { const A = D('cr_ideas').filter(r => inSh(SHf(P), r, 'dash_shop', 'shop')), R = A.filter(r => !r.fin_only), keys = rs_ => new Set(rs_.map(r => r.key)).size;
+  M.savings = (P, F0) => { const F = F0 || {}, A = D('cr_ideas').filter(r => inSh(SHf(P), r, 'dash_shop', 'shop') && (!F.model || r.model === F.model) && (!F.part || r.part === F.part)), R = A.filter(r => !r.fin_only), keys = rs_ => new Set(rs_.map(r => r.key)).size;
     const ann = rs_ => d3.sum(rs_, r => +r.annual_pkr || 0), mon_ = rs_ => d3.sum(rs_, r => +r.monthly_pkr || 0);
     const done = R.filter(r => r.status === 'Completed'), ip = R.filter(r => r.status === 'In Progress'), pend = R.filter(r => r.status === 'Pending' || r.status === 'Proposal');
     const STC = [['Completed', '#1E8C5A'], ['In Progress', '#E0A100'], ['Pending', '#8E9AA6'], ['Proposal', '#C9D1D9']];
@@ -1097,14 +1099,16 @@
     g.querySelectorAll('.ovc').forEach(el => { const o = last[el.dataset.k], vc = el.querySelector('.vc'); if (o && vc && o.mini) try { o.mini(vc); } catch (e) { console.error(e); } });
     }
   /* detail window */
-  function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
+  function closeD() { const m = document.querySelector('.ovm'); if (m) { const ae = document.activeElement; if (ae && m.contains(ae)) { m.classList.add('closing'); ae.blur(); } if (m.isConnected) m.remove(); } tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
-  function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; const FW = id === 'vendor' || id === 'production';
+  function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; const FCf = FC[id] || [], FW = FCf.length > 0;
     /* 17 Nov 09:51 (Umair): opening a filterable window from its card carries the main Shop / Model / Part filter into it; the window's own Clear filter clears only the window (F._own: the window ignores the main filter from then on) */
-    if (FW && F === undefined) { const P0 = window.__P(), pc = P0.pf ? String(P0.pf) : ''; F = { shop: SHf(P0), model: P0.model && P0.model !== 'All' ? P0.model : '', part: pc };
+    if (FW && F === undefined) { const P0 = window.__P(), pc = P0.pf && FCf.includes('part') && id !== 'savings' ? String(P0.pf) : ''; F = { shop: SHf(P0), model: P0.model && P0.model !== 'All' && FCf.includes('model') ? P0.model : '', part: pc };
       if (pc) { const r = [...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_bom') || [])].find(x => String(x.code) === pc); F.partName = r && r.part ? r.part : pc; } }
     F = typeof F === 'string' ? { vf: F } : (F || {}); if (FW) F._own = 1; const VF = F.vf || '', FON = !!(VF || F.shop || F.model || F.part);
-    if (FW) { try { o = M[id](window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
+    if (FW) { try { const P1 = window.__P(); o = M[id](id === 'production' || id === 'vendor' ? P1 : { ...P1, shop: F.shop || 'All' }, F); } catch (e) { console.error(e); o = last[id]; } }
+    /* 17 Nov 10:26 (Umair): every Overview window drops its date line and footnote; the line under the title only shows an applied window filter */
+    o = { ...o, foot: '', title: `${F.shop ? ' · shop: ' + F.shop : ''}${F.model ? ' · model: ' + F.model : ''}${F.part ? ' · part: ' + (F.partName || F.part) : ''}${F.vf ? ' · vendor: ' + F.vf : ''}`.slice(3) };
     if (o.none) { const msg = o.none; o = { title: o.title, kpis: [], detail: [{ t: 'Nothing to show', draw: el => none(el, msg) }], foot: '' }; }
     const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
@@ -1126,21 +1130,30 @@
       const ff = m.querySelector('.ff'), fp = m.querySelector('.fpn');
       if (ff && fp) { const P0 = window.__P(), ms0 = P0.start;
         const nmP = new Map([...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_stock_critical') || []), ...(D('atlas_bom') || [])].map(r => [String(r.code), r.part]));
-        let base, MOx;   /* rows {code, shop} the lists are built from, and code -> models */
+        let base;   /* rows {code, name, shop, mods} the lists are built from */
+        const mk = (code, name, shop, mods) => ({ code: code == null ? '' : String(code), name: name || (code == null ? '' : String(code)), shop, mods: mods || new Set() });
         if (id === 'production') { const inM = new Set(D('atlas_parts_daily').filter(r => r.date >= ms0 && r.date <= P0.actEnd && (+r.prod_plan || +r.prod_actual || +r.disp_plan || +r.disp_actual)).map(r => String(r.code)));
-          base = (D('atlas_parts') || []).filter(r => inM.has(String(r.code)) && (r.type === 'Finished' || r.type === 'In-house')); MOx = new Map(base.map(r => [String(r.code), new Set(pModsOf(r))])); }
-        else { base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd); MOx = vModsOf(); }
-        const shops = [...new Set([...base.map(r => r.shop), F.shop].filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(pModsOf))].sort();
-        const partsL = [...new Set(base.filter(r => (!F.shop || r.shop === F.shop) && (!F.model || (MOx.get(String(r.code)) || new Set()).has(F.model))).map(r => String(r.code)))].map(c => [c, nmP.get(c) || c]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+          base = (D('atlas_parts') || []).filter(r => inM.has(String(r.code)) && (r.type === 'Finished' || r.type === 'In-house')).map(r => mk(r.code, nmP.get(String(r.code)) || r.part, r.shop, new Set(pModsOf(r)))); }
+        else if (id === 'vendor') { const MOx = vModsOf(); base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd).map(r => mk(r.code, nmP.get(String(r.code)), r.shop, MOx.get(String(r.code)))); }
+        else if (id === 'inventory') base = D('sap_stock').filter(r => r.code).map(r => mk(r.code, r.part, r.shop, new Set(pModsOf({ models: r.models }))));
+        else if (id === 'savings') base = D('cr_ideas').map(r => mk(r.part, r.part, r.dash_shop || r.shop, new Set([r.model].filter(Boolean))));
+        else if (id === 'workforce') base = D('sp_attendance').map(r => mk('', '', r.shop));
+        else if (id === 'cost') base = D('cogm').map(r => mk('', '', r.shop));
+        else if (id === 'capacity') base = [mk('', '', 'Clutch')];
+        else base = (D('atlas_parts') || []).map(r => mk('', '', r.shop));
+        const shops = [...new Set([...base.map(r => r.shop), F.shop].filter(x => x && x !== 'carb' && x !== '—' && x !== '?'))].sort();
+        const models = id === 'production' || id === 'vendor' ? [...new Set((D('atlas_parts') || []).flatMap(pModsOf))].sort() : [...new Set(base.flatMap(r => [...r.mods]))].sort();
+        const pm = new Map(); base.forEach(r => { if (r.code && (!F.shop || r.shop === F.shop) && (!F.model || r.mods.has(F.model)) && !pm.has(r.code)) pm.set(r.code, r.name); });
+        const partsL = [...pm].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
         const opt = (L, v, all) => `<option value="">${all}</option>` + L.map(x => { const [k, t] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(k)}"${String(v || '') === String(k) ? ' selected' : ''}>${esc(t)}</option>`; }).join('');
-        fp.innerHTML = `<label>Shop<select data-f="shop">${opt(shops, F.shop, 'All shops')}</select></label><label>Model<select data-f="model">${opt(models, F.model, 'All models')}</select></label>
-          <label>Part<input data-f="part" list="vfpl" placeholder="All parts (${partsL.length}) · type to search" value="${esc(F.part ? (F.partName || nmP.get(String(F.part)) || F.part) : '')}"><datalist id="vfpl">${partsL.map(([c, t]) => `<option value="${esc(t)}">${esc(c)}</option>`).join('')}</datalist></label>
+        fp.innerHTML = `<label>Shop<select data-f="shop">${opt(shops, F.shop, 'All shops')}</select></label>${FCf.includes('model') ? `<label>Model<select data-f="model">${opt(models, F.model, 'All models')}</select></label>` : ''}
+          ${FCf.includes('part') ? `<label>Part<input data-f="part" list="vfpl" placeholder="All parts (${partsL.length}) · type to search" value="${esc(F.part ? (F.partName || nmP.get(String(F.part)) || F.part) : '')}"><datalist id="vfpl">${partsL.map(([c, t]) => `<option value="${esc(t)}">${c === t ? '' : esc(c)}</option>`).join('')}</datalist></label>` : ''}
           <div class="fpb"><button type="button" class="fpc">Clear these</button><button type="button" class="fpd">Done</button></div>`;
         const show = v => { fp.hidden = !v; ff.setAttribute('aria-expanded', String(v)); };
         ff.addEventListener('click', ev => { ev.stopPropagation(); show(fp.hidden); }); fp.addEventListener('click', ev => ev.stopPropagation()); m.addEventListener('click', () => show(false));
-        const go = G => openD(id, name, { ...G, _open: 1 });
+        const go = G => { if (!m.isConnected || m.classList.contains('closing')) return; openD(id, name, { ...G, _open: 1 }); };   /* ignore a late change event after the window has closed */
         fp.querySelectorAll('select').forEach(sl => sl.addEventListener('change', () => { const G = { ...F, [sl.dataset.f]: sl.value }; if (sl.dataset.f !== 'part') { G.part = ''; G.partName = ''; } go(G); }));
-        const pi = fp.querySelector('input'); pi.addEventListener('change', () => { const t = pi.value.trim(); if (!t) return go({ ...F, part: '', partName: '' }); const hit = partsL.find(([c, n]) => n === t || c === t) || partsL.find(([c, n]) => String(n).toLowerCase().includes(t.toLowerCase())); if (hit) go({ ...F, part: hit[0], partName: hit[1] }); });
+        const pi = fp.querySelector('input'); if (pi) pi.addEventListener('change', () => { const t = pi.value.trim(); if (!t) return go({ ...F, part: '', partName: '' }); const hit = partsL.find(([c, n]) => n === t || c === t) || partsL.find(([c, n]) => String(n).toLowerCase().includes(t.toLowerCase())); if (hit) go({ ...F, part: hit[0], partName: hit[1] }); });
         fp.querySelector('.fpc').addEventListener('click', () => go(id === 'vendor' ? { vf: F.vf } : {})); fp.querySelector('.fpd').addEventListener('click', () => show(false));
         if (F._open) show(true); }
       if (sy) m.querySelector('.bx').scrollTop = sy; m.querySelectorAll('.pc .ovwd').forEach((x, i) => { if (ly[i] != null && i === 0) x.scrollTop = ly[i]; });
