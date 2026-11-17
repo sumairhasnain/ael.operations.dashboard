@@ -5112,7 +5112,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* 17 Nov 06:51 (Umair): the Production detail window gets the same shop / model / part filter as Vendor Supply (F = {shop, model, part}); it applies only inside the window */
   const pModsOf = r => String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim()).filter(Boolean);
   M.production = (P, F0) => { const F = F0 || {}; const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const SH = F.shop || SHf(P), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops') && (!F.model || pModsOf(r).includes(F.model)) && (!F.part || String(r.code) === String(F.part))).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
+    const SH = F._own ? (F.shop || '') : (F.shop || SHf(P)), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops') && (!F.model || pModsOf(r).includes(F.model)) && (!F.part || String(r.code) === String(F.part))).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
     const fin = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'Finished'), ih = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'In-house');
     const sum = (rs, k, to) => d3.sum(rs.filter(r => r.date <= to), r => +r[k] || 0);
     const pp = sum(fin, 'prod_plan', pEnd), pa = sum(fin, 'prod_actual', end), dp = sum(fin, 'disp_plan', pEnd), da = sum(fin, 'disp_actual', end), ip = sum(ih, 'prod_plan', pEnd), ia = sum(ih, 'prod_actual', end);
@@ -5147,7 +5147,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     (D('atlas_bom') || []).forEach(b => { const st = m.get(String(b.code)) || new Set(); String(b.fg || '').split(/[;,]/).forEach(x => (fm.get(x.split(':')[0]) || []).forEach(v => st.add(v))); m.set(String(b.code), st); }); return m; };
   M.vendor = (P, F0) => { const F = typeof F0 === 'string' ? { vf: F0 } : (F0 || {}), VF = F.vf || ''; const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
     const MO = F.model ? vModsOf() : null, okC = cd => (!F.part || String(cd) === String(F.part)) && (!MO || (MO.get(String(cd)) || new Set()).has(F.model));
-    const SH = F.shop || SHf(P), rowsAll = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop') && okC(r.code)), rows = VF ? rowsAll.filter(r => r.vendor === VF) : rowsAll;
+    const SH = F._own ? (F.shop || '') : (F.shop || SHf(P)), rowsAll = D('atlas_vendor_supply').filter(r => r.date >= ms && r.date <= end && inSh(SH, r, 'shop') && okC(r.code)), rows = VF ? rowsAll.filter(r => r.vendor === VF) : rowsAll;
     const sc = d3.sum(rows.filter(r => r.date <= pEnd), r => +r.scheduled || 0), rc = d3.sum(rows, r => +r.received || 0);
     if (SH && !sc && !rc) return { title: SH, kpis: [], none: `No vendor schedule or receipts for ${SH} this month` };
     const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
@@ -5607,9 +5607,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* detail window */
   function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
-  function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; F = typeof F === 'string' ? { vf: F } : (F || {}); const VF = F.vf || '', FON = !!(VF || F.shop || F.model || F.part);
-    const FW = id === 'vendor' || id === 'production';
-    if (FW && FON) { try { o = M[id](window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
+  function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; const FW = id === 'vendor' || id === 'production';
+    /* 17 Nov 09:51 (Umair): opening a filterable window from its card carries the main Shop / Model / Part filter into it; the window's own Clear filter clears only the window (F._own: the window ignores the main filter from then on) */
+    if (FW && F === undefined) { const P0 = window.__P(), pc = P0.pf ? String(P0.pf) : ''; F = { shop: SHf(P0), model: P0.model && P0.model !== 'All' ? P0.model : '', part: pc };
+      if (pc) { const r = [...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_bom') || [])].find(x => String(x.code) === pc); F.partName = r && r.part ? r.part : pc; } }
+    F = typeof F === 'string' ? { vf: F } : (F || {}); if (FW) F._own = 1; const VF = F.vf || '', FON = !!(VF || F.shop || F.model || F.part);
+    if (FW) { try { o = M[id](window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
     if (o.none) { const msg = o.none; o = { title: o.title, kpis: [], detail: [{ t: 'Nothing to show', draw: el => none(el, msg) }], foot: '' }; }
     const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
@@ -5635,7 +5638,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         if (id === 'production') { const inM = new Set(D('atlas_parts_daily').filter(r => r.date >= ms0 && r.date <= P0.actEnd && (+r.prod_plan || +r.prod_actual || +r.disp_plan || +r.disp_actual)).map(r => String(r.code)));
           base = (D('atlas_parts') || []).filter(r => inM.has(String(r.code)) && (r.type === 'Finished' || r.type === 'In-house')); MOx = new Map(base.map(r => [String(r.code), new Set(pModsOf(r))])); }
         else { base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd); MOx = vModsOf(); }
-        const shops = [...new Set(base.map(r => r.shop).filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(pModsOf))].sort();
+        const shops = [...new Set([...base.map(r => r.shop), F.shop].filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(pModsOf))].sort();
         const partsL = [...new Set(base.filter(r => (!F.shop || r.shop === F.shop) && (!F.model || (MOx.get(String(r.code)) || new Set()).has(F.model))).map(r => String(r.code)))].map(c => [c, nmP.get(c) || c]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
         const opt = (L, v, all) => `<option value="">${all}</option>` + L.map(x => { const [k, t] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(k)}"${String(v || '') === String(k) ? ' selected' : ''}>${esc(t)}</option>`; }).join('');
         fp.innerHTML = `<label>Shop<select data-f="shop">${opt(shops, F.shop, 'All shops')}</select></label><label>Model<select data-f="model">${opt(models, F.model, 'All models')}</select></label>
