@@ -195,13 +195,13 @@
       const pc = pp ? Math.round(pa / pp * 100) : null;
       if (a.lv && !pt && !pa && !(stk > 0)) return; /* idle level codes (no schedule, receipts or stock, e.g. OSP 6510213012) stay out */
       const tr = document.createElement('tr'); tr.className = 'altv'; tr.style.background = '#FAFBFC';
-      const cells = [code, a.part, a.shop, a.models, ss, stk, null, pt || null, pp || null, pa, pc, null, null, null]; /* 8 Nov: IH Plan (none) | VEN Plan = vendor schedule */
+      const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null, null, null, null, null]; /* 17 Nov (Umair): same columns as the table now — VEN Plan / VEN MTD = vendor schedule, Received = received from vendors, RCV %; IH Plan, Plan MTD, Produced, Prod % and dispatch stay empty (not made in-house) */
       cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
-        td.textContent = v == null ? '—' : i === 10 ? v + '%' : i >= 4 ? nf(v) : v;
-        if (i === 1) td.title = a.lv ? 'Level part bought from vendors. Plan = vendor schedule, Produced = received from vendors.' : `Vendor-supplied alternate of ${a.of}. Plan = vendor schedule, Produced = received from vendors.`;
+        td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
+        if (i === 1) td.title = a.lv ? 'Level part bought from vendors. VEN Plan / VEN MTD = vendor schedule, Received = received from vendors.' : `Vendor-supplied alternate of ${a.of}. VEN Plan / VEN MTD = vendor schedule, Received = received from vendors.`;
         if (i === 5 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
-        if (i === 10 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
-        if (i === 9) td.title = 'Received from vendors this month to date';
+        if (i === 9 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
+        if (i === 8) { td.title = 'Received from vendors this month to date'; if (pp && pa < pp) td.style.color = C.bad; }
         tr.appendChild(td); });
       const anchor = [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === a.of);
       if (T.querySelector('th[data-k="lv"]')) { const td = document.createElement('td'); td.textContent = a.lv || (anchor && anchor.cells[4] ? anchor.cells[4].textContent : ''); tr.insertBefore(td, tr.cells[4]); } /* 8 Nov: Level column (same level as the part it is an alternate of) */
