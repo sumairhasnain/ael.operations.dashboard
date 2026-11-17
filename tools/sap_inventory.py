@@ -106,6 +106,7 @@ def cat2(code, g, d):
     if g in LUBE or not re.match(r'\d{10}$', c) or (LUBRX.search(d) and not NOTLUB.search(d) and c[:2] in ('10', '15', '20', '25')): return 'Lubricants'   # 28 Oct: an 'OIL' word in a production part's name (oil seal, collar oil lock) is not a lubricant
     # 28 Oct: Raw Material is its own category: 10../15.. codes in the SAP raw-material groups, or held as a shop's bought-in
     # input (e.g. brass / steel rods for Carburetor child parts, plastic resin for Polymer) rather than its general stores
+    if c[:2] == '10': return 'Raw Material'   # 17 Nov 2026 (Umair): every 10.. code is raw material (lubricants above stay lubricants)
     if c[:2] in ('10', '15') and (g in RAW or (any(g.startswith(p) for p, _ in PFX) and not re.search(r'GEN$|-GE$|-G$', g))): return 'Raw Material'
     return {'10': 'Consumables', '15': 'Consumables', '20': 'Tools', '25': 'Spares'}.get(c[:2], 'Production parts')
 def info(code):
@@ -113,6 +114,7 @@ def info(code):
     cat, st = cat_of(g); sh, how = shop_of(code, g, d)
     raw = cat == 'Raw material'; cat = cat2(code, g, d)
     if raw and cat != 'Lubricants': st = st or 'Raw material' 
+    if cat == 'Raw Material' and st in ('', 'Shop spares & consumables'): st = 'Raw material'   # 17 Nov 2026: 10.. codes moved to Raw Material
     return g, d, cat, st, sh, how
 
 today = pd.Timestamp(ASOF_FLOW)

@@ -355,7 +355,7 @@
     table(q('#tb-iv'), Sr, [{ k: 'code' }, { k: 'part' }, { k: 'shop', fmt: v => v || '—' }, { k: 'category', render: (td, v) => { const s = document.createElement('span'); s.className = 'ivcat'; s.style.background = CATC[v] || '#B9C1C9'; s.textContent = v; td.appendChild(s); } },
       { k: 'stage', fmt: v => v || '—' }, { k: 'stock', n: 1, fmt: v => n2(v) }, { k: 'uom' }, { k: 'value_pkr', n: 1, fmt: v => nf(Math.round(v)) },
       { k: 'qi', n: 1, fmt: (v, r) => (r.qi || r.blocked) ? n2(r.qi || 0) + ' / ' + n2(r.blocked || 0) : '—', color: (v, r) => r.qi || r.blocked ? C.warn : null },
-      { k: 'last_rcv', fmt: dmy, color: (v, r) => r.age_days == null || r.age_days > 365 ? C.bad : r.age_days > 180 ? C.warn : null }, { k: 'last_issue', fmt: dmy }, { k: 'use_month', n: 1, fmt: (v, r) => v > 0 ? n2(v) + (r.use_basis !== 'issues' ? ' ' + ({ 'Atlas plan': '(plan)', receipts: '(rcpt)' })[r.use_basis] : '') : '—' },
+      { k: 'last_rcv', fmt: dmy, color: (v, r) => r.age_days == null || r.age_days > 365 ? C.bad : r.age_days > 180 ? C.warn : null }, { k: 'last_issue', fmt: dmy }, { k: 'use_month', n: 1, fmt: (v, r) => v > 0 ? n2(v) + (r.use_basis !== 'issues' ? ' ' + (({ 'Atlas plan': '(plan)', receipts: '(rcpt)' })[r.use_basis] || '') : '')   /* 17 Nov: consumption-based rows showed 'undefined' */ : '—' },
       { k: 'cover_days', n: 1, fmt: (v, r) => r.cover_bucket === 'Out of stock' ? 'Out' : v == null ? '—' : nf(v), color: (v, r) => r.cover_bucket === 'Out of stock' || (v != null && v < 15) ? C.bad : v != null && v > 180 ? C.blue : null }, { k: 'slocs' }], { q: q('#q-iv'), sort: 'value_pkr', dir: -1 });
   };
 })();
