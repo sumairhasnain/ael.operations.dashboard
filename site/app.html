@@ -5109,8 +5109,10 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   /* 12 Nov 00:20 (Umair): every card follows the Shop filter of the top pane */
   const SHf = P => P.shop && P.shop !== 'All' ? P.shop : '';
   const inSh = (sh, r, ...ks) => !sh || ks.some(k => { const v = r[k]; if (Array.isArray(v)) return v.includes(sh); if (typeof v === 'string' && v.trim().startsWith('[')) { try { return JSON.parse(v).includes(sh); } catch (e) { return false; } } return v === sh; });
-  M.production = P => { const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
-    const SH = SHf(P), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops')).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
+  /* 17 Nov 06:51 (Umair): the Production detail window gets the same shop / model / part filter as Vendor Supply (F = {shop, model, part}); it applies only inside the window */
+  const pModsOf = r => String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim()).filter(Boolean);
+  M.production = (P, F0) => { const F = F0 || {}; const ms = P.start, end = P.actEnd, pEnd = window.__planTo ? window.__planTo({ day: 0 }, end) : end;
+    const SH = F.shop || SHf(P), parts = new Map(D('atlas_parts').filter(r => inSh(SH, r, 'shop', 'shops') && (!F.model || pModsOf(r).includes(F.model)) && (!F.part || String(r.code) === String(F.part))).map(r => [String(r.code), r])), rows = D('atlas_parts_daily').filter(r => r.date >= ms && r.date <= end && parts.has(String(r.code)));
     const fin = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'Finished'), ih = rows.filter(r => (parts.get(String(r.code)) || {}).type === 'In-house');
     const sum = (rs, k, to) => d3.sum(rs.filter(r => r.date <= to), r => +r[k] || 0);
     const pp = sum(fin, 'prod_plan', pEnd), pa = sum(fin, 'prod_actual', end), dp = sum(fin, 'disp_plan', pEnd), da = sum(fin, 'disp_actual', end), ip = sum(ih, 'prod_plan', pEnd), ia = sum(ih, 'prod_actual', end);
@@ -5125,7 +5127,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     /* 14 Nov 10:34 (Umair): shops short of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
     const all_ = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100, a: o.a, p: o.p }));
     const bh = all_.filter(x => x.a < x.p).sort((a, b) => a.v - b.v), ah = all_.filter(x => x.a >= x.p).sort((a, b) => b.v - a.v);   /* 14 Nov 10:59 (Umair): behind = even one piece short of plan to date */   /* 14 Nov 10:45: none behind - list everyone as 'Ahead' */
-    return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}`, st: band(pp ? pa / pp * 100 : null, 95, 80), behind: { what: SH ? 'models' : 'shops', list: bh, ahead: ah },
+    const fT = `${F.shop ? ' · shop: ' + F.shop : ''}${F.model ? ' · model: ' + F.model : ''}${F.part ? ' · part: ' + (F.partName || F.part) : ''}`;
+    if (fT && !rows.length) return { title: `${mon(P.month)} to ${dlab(end)}${fT}`, kpis: [], none: 'No Atlas plan or production for this filter this month' };
+    return { title: `Finished goods ${mon(P.month)} to ${dlab(end)}${fT}`, st: band(pp ? pa / pp * 100 : null, 95, 80), behind: { what: SH ? 'models' : 'shops', list: bh, ahead: ah },
       kpis: [['FG production', pc(pp ? pa / pp * 100 : null), `${kf(pa)} of ${kf(pp)} plan`, col(pp ? pa / pp * 100 : null)], ['Dispatch', pc(dp ? da / dp * 100 : null), `${kf(da)} of ${kf(dp)} plan`, col(dp ? da / dp * 100 : null)],
         ['In-house parts', pc(ip ? ia / ip * 100 : null), `${kf(ia)} of ${kf(ip)} plan`, col(ip ? ia / ip * 100 : null)], ['Month plan (FG)', kf(mp), `${pc(mp ? pa / mp * 100 : null)} done so far`], ['Short to plan', kf(Math.max(0, pp - pa)), 'plan less actual']],
       vt: '', /* 14 Nov 06:32 (Umair): no chart title on the Production card */ mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
@@ -5604,10 +5608,12 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
   function closeD() { const m = document.querySelector('.ovm'); if (m) m.remove(); tip.hide(); document.removeEventListener('keydown', escK); }
   const escK = ev => { if (ev.key === 'Escape') closeD(); };
   function openD(id, name, F) { let o = last[id]; if (!o || o.none) return; F = typeof F === 'string' ? { vf: F } : (F || {}); const VF = F.vf || '', FON = !!(VF || F.shop || F.model || F.part);
-    if (id === 'vendor' && FON) { try { o = M.vendor(window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
+    const FW = id === 'vendor' || id === 'production';
+    if (FW && FON) { try { o = M[id](window.__P(), F); } catch (e) { console.error(e); o = last[id]; } }
+    if (o.none) { const msg = o.none; o = { title: o.title, kpis: [], detail: [{ t: 'Nothing to show', draw: el => none(el, msg) }], foot: '' }; }
     const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
-    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${id === 'vendor' ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
+    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${FW ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
       <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
       <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
       <div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div></div>`;
@@ -5618,14 +5624,19 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } });
     if (id === 'vendor') {   /* 16 Nov (Umair): click a vendor to filter the whole window to it; click it again, or Clear filter, for all vendors */
       m.querySelectorAll('.wr[data-v]').forEach(r => { r.classList.add('vpick'); r.title = (r.title ? r.title + ' · ' : '') + (r.dataset.v === VF ? 'Click to show all vendors' : 'Click to show only this vendor');
-        r.addEventListener('click', () => openD(id, name, { ...F, vf: r.dataset.v === VF ? '' : r.dataset.v })); });
+        r.addEventListener('click', () => openD(id, name, { ...F, vf: r.dataset.v === VF ? '' : r.dataset.v })); }); }
+    if (FW) {
       const fx = m.querySelector('.fx'); if (fx) { fx.addEventListener('click', () => openD(id, name, {})); }
       /* filter panel: shop, model and part, applied as soon as one is picked */
       const ff = m.querySelector('.ff'), fp = m.querySelector('.fpn');
-      if (ff && fp) { const P0 = window.__P(), ms0 = P0.start, base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd);
+      if (ff && fp) { const P0 = window.__P(), ms0 = P0.start;
         const nmP = new Map([...(D('atlas_parts') || []), ...(D('atlas_child_stock') || []), ...(D('atlas_stock_critical') || []), ...(D('atlas_bom') || [])].map(r => [String(r.code), r.part]));
-        const shops = [...new Set(base.map(r => r.shop).filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(r => String(r.models || r.model || '').split(/[\/,;]+/).map(x => x.trim())).filter(Boolean))].sort();
-        const MOx = vModsOf(), partsL = [...new Set(base.filter(r => (!F.shop || r.shop === F.shop) && (!F.model || (MOx.get(String(r.code)) || new Set()).has(F.model))).map(r => String(r.code)))].map(c => [c, nmP.get(c) || c]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+        let base, MOx;   /* rows {code, shop} the lists are built from, and code -> models */
+        if (id === 'production') { const inM = new Set(D('atlas_parts_daily').filter(r => r.date >= ms0 && r.date <= P0.actEnd && (+r.prod_plan || +r.prod_actual || +r.disp_plan || +r.disp_actual)).map(r => String(r.code)));
+          base = (D('atlas_parts') || []).filter(r => inM.has(String(r.code)) && (r.type === 'Finished' || r.type === 'In-house')); MOx = new Map(base.map(r => [String(r.code), new Set(pModsOf(r))])); }
+        else { base = D('atlas_vendor_supply').filter(r => r.date >= ms0 && r.date <= P0.actEnd); MOx = vModsOf(); }
+        const shops = [...new Set(base.map(r => r.shop).filter(x => x && x !== 'carb'))].sort(), models = [...new Set((D('atlas_parts') || []).flatMap(pModsOf))].sort();
+        const partsL = [...new Set(base.filter(r => (!F.shop || r.shop === F.shop) && (!F.model || (MOx.get(String(r.code)) || new Set()).has(F.model))).map(r => String(r.code)))].map(c => [c, nmP.get(c) || c]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
         const opt = (L, v, all) => `<option value="">${all}</option>` + L.map(x => { const [k, t] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(k)}"${String(v || '') === String(k) ? ' selected' : ''}>${esc(t)}</option>`; }).join('');
         fp.innerHTML = `<label>Shop<select data-f="shop">${opt(shops, F.shop, 'All shops')}</select></label><label>Model<select data-f="model">${opt(models, F.model, 'All models')}</select></label>
           <label>Part<input data-f="part" list="vfpl" placeholder="All parts (${partsL.length}) · type to search" value="${esc(F.part ? (F.partName || nmP.get(String(F.part)) || F.part) : '')}"><datalist id="vfpl">${partsL.map(([c, t]) => `<option value="${esc(t)}">${esc(c)}</option>`).join('')}</datalist></label>
@@ -5635,7 +5646,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         const go = G => openD(id, name, { ...G, _open: 1 });
         fp.querySelectorAll('select').forEach(sl => sl.addEventListener('change', () => { const G = { ...F, [sl.dataset.f]: sl.value }; if (sl.dataset.f !== 'part') { G.part = ''; G.partName = ''; } go(G); }));
         const pi = fp.querySelector('input'); pi.addEventListener('change', () => { const t = pi.value.trim(); if (!t) return go({ ...F, part: '', partName: '' }); const hit = partsL.find(([c, n]) => n === t || c === t) || partsL.find(([c, n]) => String(n).toLowerCase().includes(t.toLowerCase())); if (hit) go({ ...F, part: hit[0], partName: hit[1] }); });
-        fp.querySelector('.fpc').addEventListener('click', () => go({ vf: F.vf })); fp.querySelector('.fpd').addEventListener('click', () => show(false));
+        fp.querySelector('.fpc').addEventListener('click', () => go(id === 'vendor' ? { vf: F.vf } : {})); fp.querySelector('.fpd').addEventListener('click', () => show(false));
         if (F._open) show(true); }
       if (sy) m.querySelector('.bx').scrollTop = sy; m.querySelectorAll('.pc .ovwd').forEach((x, i) => { if (ly[i] != null && i === 0) x.scrollTop = ly[i]; });
       if (VF) { const sel = m.querySelector('.wr.sel'); if (sel && !ly.length) sel.scrollIntoView({ block: 'nearest' }); } } }
