@@ -67,7 +67,7 @@ def main():
         if not d.startswith(m): continue
         i = int(d[8:10]) - 1; last_day = max(last_day, d)
         if mt in ('101', '102'):
-            s = q if mt == '101' else -q
+            s = q   # 17 Nov 2026 (Umair): MB51 already shows 102 (reversal) quantities as negative, so no sign flip
             if sup: rcv[code][i] += s; rcv_v[(strip(sup), code)] += s; rcv_vd[(d, strip(sup), code)] += s
             else: prod[code][i] += s
         elif mt in ('601', '602'): disp[code][i] += -q
