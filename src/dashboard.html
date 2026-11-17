@@ -144,7 +144,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <button class="tab" role="tab" id="t-bom" data-p="bom">B.O.M</button>
 </nav>
 </div>
-<section class="page" id="summary"><i hidden data-source="atlas_parts_daily atlas_parts atlas_vendor_supply sap_stock sp_attendance cogm cap_machines cap_parts jira_issues cr_ideas"></i></section>
+<section class="page" id="summary"><i hidden data-source="atlas_parts_daily atlas_parts atlas_vendor_supply sap_stock sap_stock_atdmc sp_attendance cogm cap_machines cap_parts jira_issues cr_ideas"></i></section>
 <section class="page" id="overview">
 <div class="grid">
 <div class="card wide" id="c-ov-issues"><h3 id="h-ov-issues">Meeting Minutes - Critical Issues</h3><div class="list" data-source="atlas_issues"></div></div>
@@ -271,7 +271,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-w-list"><h3>By Area &amp; Section</h3><input class="q" id="q-wf" placeholder="Search area or section" aria-label="Search areas"><div class="tbox" data-source="sp_attendance sp_attendance_people"><table class="tb" id="tb-wf"><thead><tr><th data-k="area">Area</th><th data-k="section">Section</th><th class="n" data-k="hc">Headcount</th><th class="n" data-k="avgp">Avg present</th><th class="n" data-k="abs">Absent days</th><th class="n" data-k="absp">Absent %</th><th class="n" data-k="leave">Leave days</th><th class="n" data-k="ot">OT hours</th><th class="n" data-k="otph">OT h / present day</th><th class="n" data-k="upd" title="Last day attendance was marked in the SharePoint sheet for this area (a day counts once at least half the people are marked). Amber: 2 working days behind, red: 3 or more">Last updated</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 </section>
-<section class="page" id="inventory"><i hidden data-source="sap_stock sap_flow sap_cc sap_rcv_sup"></i><div id="inv-sap"></div>
+<section class="page" id="inventory"><i hidden data-source="sap_stock sap_flow sap_cc sap_rcv_sup sap_stock_atdmc sap_flow_atdmc sap_cc_atdmc sap_rcv_sup_atdmc"></i><div id="inv-sap"></div>
 <div class="grid">
 <div class="card" id="c-i-safety"><h3>Below Safety Stock <span class="chip snap" data-asof="atlas_shop_parts">14 Oct</span></h3><div class="chart" data-source="atlas_shop_parts"></div></div>
 <div class="card" id="c-i-vendor"><h3>Vendor Supply <span class="chip snap" data-asof="atlas_vendors">14 Oct</span></h3><div class="chart" data-source="atlas_vendors"></div></div>

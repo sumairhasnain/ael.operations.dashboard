@@ -39,6 +39,10 @@
 .ael #inventory .ivhead span{font-size:12px;color:var(--mut)}
 .ael #inventory .ivhead{align-items:center} .ael #inventory .ivhead .ivage{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .ael #inventory .ivhead select{font:inherit;font-size:12.5px;letter-spacing:0;text-transform:none;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);min-width:150px}
+.ael .ivatd{font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border:1px solid var(--navy,#051C2C);border-radius:16px;background:#fff;color:var(--navy,#051C2C);cursor:pointer;white-space:nowrap}
+.ael .ivatd::before{content:'';display:inline-block;width:22px;height:12px;border-radius:6px;background:#C9D1D9;margin-right:7px;vertical-align:-1px;box-shadow:inset -10px 0 0 2px #fff;transition:all .15s}
+.ael .ivatd.on{background:var(--navy,#051C2C);color:#fff}.ael .ivatd.on::before{background:#2BB673;box-shadow:inset 10px 0 0 2px var(--navy,#051C2C)}
+.ael #inventory .ivhead .ivatd{margin-left:auto}.ael #inventory .ivhead .ivatd + .ivage{margin-left:0}
 .ael #inventory .ivhead select.fon{background:#FFE8A3;border-color:#E0A100;color:#000;font-weight:600}
 .ael #inventory .ivbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;padding:10px 14px;background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);margin-bottom:14px}
 .ael #inventory .ivbar label{display:flex;flex-direction:column;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);gap:3px}
@@ -86,7 +90,7 @@
 `; document.head.appendChild(st); }
 
   { const host = q('#inv-sap'); if (host && !q('#iv-bar')) host.innerHTML = `
-<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Item<span class="ivpwrap"><input id="iv-f-item" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="iv-f-item-list" autocomplete="off" spellcheck="false" placeholder="All items · type code or name"><button type="button" class="ivpx" id="iv-f-item-x" aria-label="Clear item" hidden>×</button><div class="ivsug" id="iv-f-item-list" role="listbox" hidden></div></span></label><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
+<div class="ivhead"><h2>Inventory Report</h2><span id="iv-asof"></span><label class="ivage">Item<span class="ivpwrap"><input id="iv-f-item" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="iv-f-item-list" autocomplete="off" spellcheck="false" placeholder="All items · type code or name"><button type="button" class="ivpx" id="iv-f-item-x" aria-label="Clear item" hidden>×</button><div class="ivsug" id="iv-f-item-list" role="listbox" hidden></div></span></label><button type="button" class="ivatd" id="iv-atd" aria-pressed="false" title="ATDMC die making (SAP plant MDP) stock and consumption are left out. Click to add them to Raw Material, Consumables, Tools and Spares">Include ATDMC Stock</button><label class="ivage">Age since last receipt<select id="iv-f-age" aria-label="Stock age"></select></label></div>
 <div class="ivbar" id="iv-bar"><div class="nt" id="iv-note"></div></div>
 <div class="ivk" id="iv-kpi"></div>
 <div class="grid">
@@ -127,14 +131,19 @@
       list.addEventListener('mousedown', ev => { const d = ev.target.closest('div[data-i]'); if (!d) return; ev.preventDefault(); pick(sg[+d.dataset.i]); });
       inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); }, 150));
       xb.addEventListener('click', () => { inp.value = ''; list.hidden = true; set({ invitem: 0 }); inp.focus(); }); })();
+    { const ab = document.getElementById('iv-atd'); if (ab) ab.addEventListener('click', () => { window.__ATDMC = !window.__ATDMC; window.__syncAtd && window.__syncAtd(); window.__draw && window.__draw(); }); }
+    window.__syncAtd = () => document.querySelectorAll('.ivatd').forEach(b => { b.classList.toggle('on', !!window.__ATDMC); b.setAttribute('aria-pressed', String(!!window.__ATDMC)); b.title = window.__ATDMC ? 'ATDMC die making (SAP plant MDP) stock and consumption are included. Click to leave them out' : 'ATDMC die making (SAP plant MDP) stock and consumption are left out. Click to add them to Raw Material, Consumables, Tools and Spares'; });
     const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invcat: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
   let _c = {};
-  const load = () => { const s = rows('sap_stock'), f = rows('sap_flow'), c = rows('sap_cc'), u = rows('sap_rcv_sup');
-    if (_c.s === s && _c.f === f && _c.c === c && _c.u === u) return _c;
-    _c = { s, f, c, u,
+  /* 17 Nov 2026 (Umair): ATDMC die making (SAP plant MDP) is kept out of the inventory figures unless 'Include ATDMC Stock' is on (off by default, shared with the Overview Inventory window) */
+  const atd = (b, x) => window.__ATDMC && b && x ? b.concat(x) : b;
+  const load = () => { const A = !!window.__ATDMC, s0 = rows('sap_stock'), f0 = rows('sap_flow'), c0 = rows('sap_cc'), u0 = rows('sap_rcv_sup'), sa = rows('sap_stock_atdmc'), fa = rows('sap_flow_atdmc'), ca = rows('sap_cc_atdmc'), ua = rows('sap_rcv_sup_atdmc');
+    if (_c.A === A && _c.s0 === s0 && _c.f0 === f0 && _c.c0 === c0 && _c.u0 === u0 && _c.sa === sa && _c.fa === fa && _c.ca === ca && _c.ua === ua) return _c;
+    const s = atd(s0, sa), f = atd(f0, fa), c = atd(c0, ca), u = atd(u0, ua);
+    _c = { s, f, c, u, A, s0, f0, c0, u0, sa, fa, ca, ua,
       S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr'])) : null,
       F: f ? f.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, CC: c ? c.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, U: u ? u.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null };
     return _c; };

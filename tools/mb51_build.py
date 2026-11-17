@@ -24,6 +24,7 @@ def parse(paths):
             f = l.split('|')
             if len(f) < 8:
                 continue
+            if len(f) > 10 and f[10].strip() == 'MDP': continue   # 17 Nov 2026 (Umair): ATDMC die making (plant MDP) is kept apart from production; tools/atdmc_build.py builds its own datasets
             mat, desc, qty, pd_, amt, cc, sup, mt = f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7]
             uom = f[8] if len(f) > 8 else ''
             sloc = f[9] if len(f) > 9 else ''
