@@ -5138,7 +5138,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         { t: 'Production compliance by shop (finished goods)', draw: el => hbarC(el, byShop.map(([s, o]) => ({ label: s, v: o.p ? o.a / o.p * 100 : 0, lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [s, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) },
         { t: 'Production and dispatch by model, plan vs actual', lg: [['Prod plan', '#C9D1D9'], ['Produced', C.navy], ['Disp plan', '#AAE6F0'], ['Dispatched', C.cyan]], draw: el => colC(el, byModel.map(d => d[0]), [{ name: 'Prod plan', color: '#C9D1D9' }, { name: 'Produced', color: C.navy }, { name: 'Disp plan', color: '#AAE6F0' }, { name: 'Dispatched', color: C.cyan }], (c, s) => { const o = new Map(byModel).get(c); return { 'Prod plan': o.p, Produced: o.a, 'Disp plan': o.dp, Dispatched: o.da }[s.name]; }, { h: 260 }) },
         { t: 'In-house parts compliance by shop', draw: el => hbarC(el, ihShop, { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }],
-      foot: 'Atlas plan vs actual. Plan counts to yesterday while the month is running; actuals to the latest Atlas day. Bars are cut at 250%; the label shows the true figure.' }; };
+      foot: '' /* 17 Nov 10:06 (Umair): footnote removed */ }; };
 
   /* 16 Nov 17:57 (Umair): the detail window can be filtered to one vendor (click a name in "Vendors · lowest compliance first");
      VF = that vendor's full name. The vendor list itself stays complete so another vendor can be picked. */
