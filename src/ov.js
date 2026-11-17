@@ -118,7 +118,8 @@
 .ovm .pn .lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .ovm .pn .em{color:#5B6770;font-size:12px;padding:30px 0;text-align:center}
 .ovm .ft{font-size:11.5px;color:#5B6770;margin-top:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.ovm .ft button{border:1px solid #051C2C;background:#051C2C;color:#fff;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer}
+.ovm .ft button,.ovm .br .go{border:1px solid #051C2C;background:#051C2C;color:#fff;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer}
+.ovm .br .go{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;white-space:nowrap}
 @media (max-width:1000px){.ael #summary .ovg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;aspect-ratio:auto;max-height:none}.ael #summary .ovc{height:300px}.ovm .bg{grid-template-columns:1fr}}
 .ael #summary .ovc{padding:12px 16px 12px}
 .ael #summary .ovc .hd{margin-bottom:10px}
@@ -1107,10 +1108,10 @@
     if (o.none) { const msg = o.none; o = { title: o.title, kpis: [], detail: [{ t: 'Nothing to show', draw: el => none(el, msg) }], foot: '' }; }
     const sy = (document.querySelector('.ovm .bx') || {}).scrollTop || 0, ly = [...document.querySelectorAll('.ovm .pc .ovwd')].map(x => x.scrollTop); closeD();
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
-    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${FW ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
+    m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2><div class="bs">${esc(o.title || '')}</div></div><div class="br">${id === 'production' ? `<button type="button" class="go">${esc(name)} Details</button>` : ''}${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${FW ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
       <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
       <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
-      <div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div></div>`;
+      ${id === 'production' ? (o.foot ? `<div class="ft"><span>${esc(o.foot)}</span></div>` : '') : `<div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div>`}</div>`;   /* 17 Nov 10:11 (Umair): Production's button reads 'Production Details' and sits top right, left of Clear filter */
     (document.getElementById('ael') || document.body).appendChild(m);
     m.addEventListener('click', ev => { if (ev.target === m) closeD(); }); m.querySelector('.x').addEventListener('click', closeD);
     m.querySelector('.go').addEventListener('click', () => { closeD(); const t = document.querySelector(`#tabs .tab[data-p="${id}"]`); if (t) t.click(); });
