@@ -4,7 +4,7 @@
   const TABS = [
     ['summary', 'Overview'], ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
-    ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'],
+    ['capacity', 'Capacity'], ['efficiency', 'Efficiency'], ['workforce', 'Manpower'], ['inventory', 'Inventory'], ['purchasing', 'Purchasing'],
     ['cost', 'Cost of Production'], ['savings', 'VA/CR Activities'], ['issues', 'Issues'], ['projects', 'Projects'], ['bom', 'B.O.M'], ['fom', 'F.O.M'], ['openstock', 'Closing Stock'], ['insights', 'Insights']
   ].map(([id, name]) => ({ id, name }));
   const RESTRICTED = ['cost', 'savings', 'insights']; /* Insights carries cost and CR figures, so it is granted per user (3 Nov) */
