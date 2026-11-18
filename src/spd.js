@@ -41,7 +41,10 @@
     if (typeof M === 'string') { try { M = JSON.parse(M); } catch (e) { M = {}; } }
     const m = M[P.month] ? P.month : null;
     if (!m) { card.hidden = !Object.keys(M).length; sub.textContent = ''; empty(el, 'No SPD plan frozen for this month'); return; }
-    const mo = M[m]; let items = mo.items || [];
+    /* 18 Nov (Umair): the SPD sheet lists 9120113004 Plate, Pressure CG125 under 'CLUTCH HOUSING ASSY'; it is a Pressure Plate and
+       belongs with the other clutch SPD parts in 'Others (Clutch)', GMSC */
+    const GFIX = { '9120113004': { group: 'OTHERS', resp: 'GMSC' } };
+    const mo = M[m]; let items = (mo.items || []).map(i => GFIX[i.code] ? { ...i, ...GFIX[i.code] } : i);
     if (P.shop) { items = items.filter(i => shopOf(i) === P.shop); if (!items.length) { card.hidden = true; return; } }
     card.hidden = false;
     const day = Math.min(+((mo.asof || '').slice(8, 10)) || 0, 31);
