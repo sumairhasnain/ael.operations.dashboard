@@ -1,0 +1,1904 @@
+{
+ "2013710035": {
+  "part": "ALLEN KEY SET (1-12 MM) LONG SIZE",
+  "category": "Tools",
+  "split": [
+   [
+    "Polymer",
+    0.3077
+   ],
+   [
+    "Piston",
+    0.2051
+   ],
+   [
+    "Carburetor",
+    0.1795
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1538
+   ],
+   [
+    "Clutch",
+    0.1282
+   ],
+   [
+    "Hubs",
+    0.0256
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052087": {
+  "part": "ALLEN BOLT M8X35MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.4255
+   ],
+   [
+    "Carburetor",
+    0.4255
+   ],
+   [
+    "Clutch",
+    0.1277
+   ],
+   [
+    "Hubs",
+    0.0213
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200145": {
+  "part": "ALLEN BOLT M4X30 FULLTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.5882
+   ],
+   [
+    "Piston",
+    0.2941
+   ],
+   [
+    "Clutch",
+    0.1176
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010910010": {
+  "part": "CUTTER PLIER (120 MM)",
+  "category": "Tools",
+  "split": [
+   [
+    "Ignition Coil",
+    0.7059
+   ],
+   [
+    "Carburetor",
+    0.2157
+   ],
+   [
+    "Polymer",
+    0.0784
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010910018": {
+  "part": "NOSE PLIER 200MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1667
+   ],
+   [
+    "Hubs",
+    0.0833
+   ],
+   [
+    "Ignition Coil",
+    0.0833
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200144": {
+  "part": "ALLEN BOLT M6X20 FULLTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.7317
+   ],
+   [
+    "Clutch",
+    0.1951
+   ],
+   [
+    "Hubs",
+    0.0732
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200143": {
+  "part": "ALLEN BOLT M5X30 FULLTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    0.2633
+   ],
+   [
+    "Carburetor",
+    0.2532
+   ],
+   [
+    "Clutch",
+    0.2304
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1266
+   ],
+   [
+    "Piston",
+    0.1266
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200148": {
+  "part": "ALLEN BOLT M10X30 FULLTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.4651
+   ],
+   [
+    "Bridge Fork Top",
+    0.2326
+   ],
+   [
+    "Piston",
+    0.2326
+   ],
+   [
+    "Clutch",
+    0.0698
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200142": {
+  "part": "ALLEN BOLT M5X20 FULLTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.3448
+   ],
+   [
+    "Drum Gear",
+    0.3448
+   ],
+   [
+    "Clutch",
+    0.1897
+   ],
+   [
+    "Hubs",
+    0.1207
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100018": {
+  "part": "BABY PENCIL GRINDER",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.7727
+   ],
+   [
+    "Carburetor",
+    0.1364
+   ],
+   [
+    "CIF Machining",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052088": {
+  "part": "ALLEN BOLT M8X45MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.4762
+   ],
+   [
+    "Drum Gear",
+    0.4762
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0476
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200146": {
+  "part": "ALLEN BOLT M6X30 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200158": {
+  "part": "ALLEN BOLT M8X25 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.6897
+   ],
+   [
+    "Clutch",
+    0.2759
+   ],
+   [
+    "Hubs",
+    0.0345
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200139": {
+  "part": "ALLEN BOLT M8X40 HALFTHREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052091": {
+  "part": "ALLEN BOLT M6X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8696
+   ],
+   [
+    "Hubs",
+    0.1304
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052096": {
+  "part": "ALLEN BOLT M5X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.7143
+   ],
+   [
+    "Drum Gear",
+    0.1429
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0714
+   ],
+   [
+    "Hubs",
+    0.0714
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052009": {
+  "part": "TAP DRILL 6X1mm",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    0.8571
+   ],
+   [
+    "Clutch",
+    0.1429
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000500053": {
+  "part": "PCD INSERT (DCMW 11T308)",
+  "category": "Tools",
+  "split": [
+   [
+    "Piston",
+    0.8237
+   ],
+   [
+    "Hubs",
+    0.1647
+   ],
+   [
+    "Clutch",
+    0.0116
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052004": {
+  "part": "TIP (SNMG 120408HS)",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    0.4118
+   ],
+   [
+    "Drum Gear",
+    0.3922
+   ],
+   [
+    "Clutch",
+    0.1961
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000352012": {
+  "part": "DIAL INDICATOR (LC 0.01 MM)",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010410027": {
+  "part": "TORQUE DRIVER (20FTD2-S)",
+  "category": "Tools",
+  "split": [
+   [
+    "Polymer",
+    0.5714
+   ],
+   [
+    "Carburetor",
+    0.4286
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000699004": {
+  "part": "MICRO CUTTER PILER",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8571
+   ],
+   [
+    "Polymer",
+    0.1429
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100067": {
+  "part": "HALF ROUND FILE 6\"",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5079
+   ],
+   [
+    "Piston",
+    0.4762
+   ],
+   [
+    "Carburetor",
+    0.0159
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200108": {
+  "part": "DRILL CHUCK 1/32\" ~ 1/2\"",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8824
+   ],
+   [
+    "CIF Machining",
+    0.1176
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200067": {
+  "part": "WRENCH FT-15",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.4231
+   ],
+   [
+    "Piston",
+    0.3846
+   ],
+   [
+    "Hubs",
+    0.1923
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100001": {
+  "part": "TONGS",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.95
+   ],
+   [
+    "Carburetor",
+    0.05
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200213": {
+  "part": "DIGITAL VERNIER CALIPER - INSIZE 200MM",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000352037": {
+  "part": "ALLEN KEY BOLT",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8
+   ],
+   [
+    "Clutch",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052074": {
+  "part": "ALLEN BOLT M 12X35MM",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.625
+   ],
+   [
+    "Drum Gear",
+    0.25
+   ],
+   [
+    "Hubs",
+    0.125
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010410150": {
+  "part": "WRENCH SPANNER AAEB3636 36MM",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5
+   ],
+   [
+    "Polymer",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200047": {
+  "part": "ALLEN KEY M8",
+  "category": "Tools",
+  "split": [
+   [
+    "Polymer",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052082": {
+  "part": "ALLEN BOLT M10X35MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8
+   ],
+   [
+    "Drum Gear",
+    0.16
+   ],
+   [
+    "Hubs",
+    0.04
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200167": {
+  "part": "ALLEN BOLT M12X30 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.5714
+   ],
+   [
+    "Hubs",
+    0.4286
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200165": {
+  "part": "ALLEN BOLT M6X80 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "Clutch",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200164": {
+  "part": "ALLEN BOLT M6X50 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052086": {
+  "part": "ALLEN BOLT M8X20MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.7692
+   ],
+   [
+    "Drum Gear",
+    0.1538
+   ],
+   [
+    "Clutch",
+    0.0769
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200162": {
+  "part": "ALLEN BOLT M5X50 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    0.8929
+   ],
+   [
+    "Clutch",
+    0.0536
+   ],
+   [
+    "Hubs",
+    0.0536
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200154": {
+  "part": "ALLEN BOLT M8X20 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    0.9091
+   ],
+   [
+    "Clutch",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200156": {
+  "part": "ALLEN BOLT M4X10 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.9524
+   ],
+   [
+    "Hubs",
+    0.0476
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200160": {
+  "part": "ALLEN BOLT M3X20 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052111": {
+  "part": "GRUB SCREW 3X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052098": {
+  "part": "ALLEN BOLT M5X30MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.9091
+   ],
+   [
+    "Clutch",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200157": {
+  "part": "ALLEN BOLT M5X10 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.6667
+   ],
+   [
+    "Hubs",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052093": {
+  "part": "ALLEN BOLT M6X35MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.6
+   ],
+   [
+    "Drum Gear",
+    0.25
+   ],
+   [
+    "Clutch",
+    0.15
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200161": {
+  "part": "ALLEN BOLT M3X30 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200036": {
+  "part": "INSERT TDXU 4MM 0.4R - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200203": {
+  "part": "WNMG 080412 (CASTIRON GRADE)",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.7493
+   ],
+   [
+    "CIF Machining",
+    0.2507
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200035": {
+  "part": "CUTTING TAP M6 x 1 - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000500064": {
+  "part": "INSERT WNMG 060408 - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.7924
+   ],
+   [
+    "Hubs",
+    0.2076
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200028": {
+  "part": "HSS DRILL DIA 6.3 X 150 L",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200225": {
+  "part": "INSERT WNMX 040304",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200255": {
+  "part": "FOUR JAWS CHUCK-MATECH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013210007": {
+  "part": "THREE JAWS THROUGH CHUCK 325",
+  "category": "Tools",
+  "split": [
+   [
+    "Piston",
+    0.625
+   ],
+   [
+    "CIF Machining",
+    0.375
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010410420": {
+  "part": "PS OUT2 HOLE D1.2×45L",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.9745
+   ],
+   [
+    "Piston",
+    0.0255
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052001": {
+  "part": "TRIANGLE TIP TNMG 160408N - UZ AC 300 G",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.7857
+   ],
+   [
+    "Drum Gear",
+    0.2143
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200026": {
+  "part": "DRILL 5.2 MM - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.8397
+   ],
+   [
+    "Hubs",
+    0.1603
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013210008": {
+  "part": "H.S.S. DRILL 1.2 MM X STD. ST/SHANK",
+  "category": "Tools",
+  "split": [
+   [
+    "Piston",
+    0.9785
+   ],
+   [
+    "Carburetor",
+    0.0215
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100098": {
+  "part": "GROOVING INSERT (TDXU 2E-0.3)",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000752002": {
+  "part": "GRINDING WHEEL (Ø510 x Ø254 x 250W)",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100005": {
+  "part": "FILE H/R 8\"",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.7828
+   ],
+   [
+    "Carburetor",
+    0.2172
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610026": {
+  "part": "GROOVING INSERT 2.2MM (3 CORNER)-HUB",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100099": {
+  "part": "WNMX 060408 MT TT7015)",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.9714
+   ],
+   [
+    "Clutch",
+    0.0286
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013010002": {
+  "part": "BLADE BAND SAW 5/8 (SIZE 14â€™.6â€)",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013010007": {
+  "part": "BLADE SAW METAL 1\" (SIZE 12â€™.2â€)",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.9412
+   ],
+   [
+    "Piston",
+    0.0588
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100134": {
+  "part": "HSS DRILL DIA 5.0 X 95 L",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.9743
+   ],
+   [
+    "Clutch",
+    0.0257
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100096": {
+  "part": "GROOVING INSERT 4MM (TDXU 4E-0.8)",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.9894
+   ],
+   [
+    "Hubs",
+    0.0106
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2010610021": {
+  "part": "NECK CALIPER (POINT JAW TYPE - OUTSIDE)",
+  "category": "Tools",
+  "split": [
+   [
+    "Piston",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610040": {
+  "part": "INSERT GY2M0250E020N-MS VP20RT",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.7353
+   ],
+   [
+    "Clutch",
+    0.2647
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200234": {
+  "part": "CNC SOFT JAWS (VHC-08-6)",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.5581
+   ],
+   [
+    "Hubs",
+    0.4419
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2000200022": {
+  "part": "PCD INSERT DCMT11T302SE-KPD001",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.9756
+   ],
+   [
+    "Hubs",
+    0.0244
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200212": {
+  "part": "CNC SOFT JAWS (VHC-06-8)",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000500018": {
+  "part": "INSERT HORIBE CNMG120412",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    0.8125
+   ],
+   [
+    "Piston",
+    0.1875
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200025": {
+  "part": "DRILL 4.2 MM - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.8293
+   ],
+   [
+    "Hubs",
+    0.1707
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200227": {
+  "part": "WRENCH T 7P",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200007": {
+  "part": "MILLING CUTTER",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010310177": {
+  "part": "VERNIER CALIPER MITUTOYO 100MM",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6667
+   ],
+   [
+    "Carburetor",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610014": {
+  "part": "GROOVING INSERT PCD 3.5 MM-0.3 MM RADIUS",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610015": {
+  "part": "GROOVING INSERT PCD 3 MM - 1 MM RADIUS",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.6
+   ],
+   [
+    "Clutch",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200123": {
+  "part": "DWLNR2525M06 - HOLDER 25MM (WNMG)",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200101": {
+  "part": "TWLNR 2525 M0604",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200100": {
+  "part": "TWLNR 2020 K0604",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610016": {
+  "part": "GROOVING INSERT PCD1.5 MM-0.75 MM RADIUS",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.9714
+   ],
+   [
+    "Piston",
+    0.0286
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2010410719": {
+  "part": "DRILL BIT 1.0 MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100068": {
+  "part": "FURNACE MELTING SPOON",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200027": {
+  "part": "DRILL 5.0 MM - CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.5455
+   ],
+   [
+    "Clutch",
+    0.4545
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200121": {
+  "part": "S20Q MWLNR06 - BORING BAR 20 (WNMG)",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.625
+   ],
+   [
+    "Hubs",
+    0.375
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100097": {
+  "part": "GROOVING INSERT (TDXU 3E-0.3)",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.75
+   ],
+   [
+    "Clutch",
+    0.25
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2000200069": {
+  "part": "WRENCH FT-08",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.5833
+   ],
+   [
+    "Hubs",
+    0.4167
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100070": {
+  "part": "ALUMINIUM STRAINER SPOON",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013810006": {
+  "part": "BURRS ROTARY SC1ML 6X6X16X50MM",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200048": {
+  "part": "PNEUMATIC CONNECTOR",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.5616
+   ],
+   [
+    "Bridge Fork Top",
+    0.4384
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000050008": {
+  "part": "LEVEL INDICATOR",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010610036": {
+  "part": "MGEHR2525-3C (HOLDER 3MM)",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.8333
+   ],
+   [
+    "Clutch",
+    0.1667
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2010910009": {
+  "part": "FLAT ROUND NOSE PLIER (120 MM)",
+  "category": "Tools",
+  "split": [
+   [
+    "Ignition Coil",
+    0.9268
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0732
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000352038": {
+  "part": "BEARING",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100065": {
+  "part": "WIRE BRUSH 8''",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.8788
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1212
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200012": {
+  "part": "S20 SDZCR-BAR- (DCGT/DCMT)-CLUTCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.8333
+   ],
+   [
+    "Hubs",
+    0.1667
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2010910023": {
+  "part": "DRILL MACHINE CHUCK (3/8-24 UNF)",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010410180": {
+  "part": "CARBIDE CUTTER 5.5 MM",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013710033": {
+  "part": "BEARING BALL 208",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6
+   ],
+   [
+    "Ignition Coil",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100116": {
+  "part": "FILE FLAT 4\"",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.5217
+   ],
+   [
+    "HPDC / Die Cast",
+    0.4783
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052077": {
+  "part": "ALLEN BOLT M12X65MM",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100256": {
+  "part": "TIMING BELT 352L",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6364
+   ],
+   [
+    "Carburetor",
+    0.3636
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2010910005": {
+  "part": "RING SPANNER SET 8MM-24MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Hubs",
+    0.5
+   ],
+   [
+    "Ignition Coil",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000100012": {
+  "part": "SCRAPER 2\"",
+  "category": "Tools",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5714
+   ],
+   [
+    "Drum Gear",
+    0.4286
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2010410140": {
+  "part": "EJECTOR PINS DIA 6 * 250",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013710040": {
+  "part": "SAFETY HELMET WITH CHARGEABLE TORCH",
+  "category": "Tools",
+  "split": [
+   [
+    "Bridge Fork Top",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200033": {
+  "part": "SPUN 120408",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000400068": {
+  "part": "FEELER GAUGE 100 MICRON",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.8
+   ],
+   [
+    "Drum Gear",
+    0.2
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2000400069": {
+  "part": "FEELER GAUGE 80 MICRON",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    0.8
+   ],
+   [
+    "Drum Gear",
+    0.2
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2002052100": {
+  "part": "ALLEN BOLT M5X55MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.9524
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0476
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052083": {
+  "part": "ALLEN BOLT M10X45MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052115": {
+  "part": "GRUB SCREW 8X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.6
+   ],
+   [
+    "Drum Gear",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052089": {
+  "part": "ALLEN BOLT M8X55MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052081": {
+  "part": "ALLEN BOLT M10X20MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052080": {
+  "part": "ALLEN BOLT M10X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052073": {
+  "part": "ALLEN BOLT M12X20MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052090": {
+  "part": "ALLEN BOLT M8X65MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052095": {
+  "part": "ALLEN BOLT M6X55MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2013310012": {
+  "part": "TAP MACHINE THREADING M 6 X 1.0",
+  "category": "Tools",
+  "split": [
+   [
+    "CIF Machining",
+    0.9259
+   ],
+   [
+    "Carburetor",
+    0.0741
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052094": {
+  "part": "ALLEN BOLT M6X45MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052103": {
+  "part": "ALLEN BOLT M0.5X30MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Drum Gear",
+    0.8
+   ],
+   [
+    "HPDC / Die Cast",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200174": {
+  "part": "NUT FOR M6 ALLEN BOLT",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200198": {
+  "part": "ALLEN BOLT M4x20 FULL THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.9091
+   ],
+   [
+    "Clutch",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200173": {
+  "part": "NUT FOR M5 ALLEN BOLT",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052101": {
+  "part": "ALLEN BOLT M4X40MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200155": {
+  "part": "ALLEN BOLT M10X50 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Ignition Coil",
+    0.7576
+   ],
+   [
+    "Drum Gear",
+    0.2424
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200163": {
+  "part": "ALLEN BOLT M5X80 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    0.8621
+   ],
+   [
+    "Clutch",
+    0.1379
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2002052110": {
+  "part": "GRUB SCREW 4X10MM",
+  "category": "Tools",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2000200149": {
+  "part": "ALLEN BOLT M10X80 HALF THREAD",
+  "category": "Tools",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ }
+}
