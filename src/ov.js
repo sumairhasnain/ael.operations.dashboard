@@ -293,6 +293,8 @@
       svg.append('text').attr('x', Math.min(w - 44, x(Math.min(mx * 1.05, Math.max(d.v || 0, d.plan || 0))) + 4)).attr('y', y + bh / 2 + 3.5).attr('font-size', 10.5).attr('font-weight', 600).attr('fill', '#33414B').text(d.lab ?? (o.fmt || kf)(d.v)); });
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
+  /* 18 Nov 17:25 (Umair): long part lists scroll inside the chart box instead of squeezing the bars */
+  function hbarS(el, items, o = {}) { if (items.length <= 11) return hbarC(el, items, o); const d = document.createElement('div'); d.className = 'ovwd'; d.style.maxHeight = (o.h || 260) + 'px'; el.appendChild(d); return hbarC(d, items, { ...o, h: items.length * 24 + 18 }); }
   /* 15 Nov 11:29 (Umair): Cost of Production card body - pane A conversion cost by month (current month actual + hatched run-rate projection,
      dashed line at last month's total), pane B conversion cost per part by shop vs last month. Panes flip with the other cards (window.__ovFL). */
   function costFlip(el, cv) { if (!cv || !cv.M.length) return none(el, 'No data'); const { svg, w, h } = mk(el);
@@ -621,6 +623,14 @@
     const agg = (rs, key) => d3.rollups(rs, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0), dp: d3.sum(v.filter(r => r.date <= pEnd), r => +r.disp_plan || 0), da: d3.sum(v, r => +r.disp_actual || 0) }), key);
     const byShop = agg(fin, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
     const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
+    /* 18 Nov 17:25 (Umair): with a shop filter on, the shop charts turn into model or part charts (part when a model/part is also picked or the shop has one model) */
+    const pcv = o => o.p ? o.a / o.p * 100 : (o.a ? 999 : 0), nm = c => { const r = parts.get(String(c)) || {}; return r.part || String(c); };
+    const byPart = rs => agg(rs, r => String(r.code)).filter(([, o]) => o.p || o.a).map(([c, o]) => ({ label: nm(c), v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [nm(c), `Code ${c}`, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`].concat(o.dp || o.da ? [`Dispatch ${kf(o.da)} of ${kf(o.dp)}`] : []) })).sort((a, b) => a.v - b.v);
+    const fgMode = !SH ? 'shop' : (F.model || F.part || byModel.filter(([k]) => k !== '—').length <= 1) ? 'part' : 'model';
+    const fgPanel = fgMode === 'shop' ? null : fgMode === 'model'
+      ? { t: 'Production compliance by model (finished goods)', draw: el => hbarS(el, byModel.map(([m, o]) => ({ label: m, v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [m, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }
+      : { t: 'Production compliance by part (finished goods) · lowest first', draw: el => hbarS(el, byPart(fin), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 27, cap: 250, empty: 'No finished goods plan for this filter' }) };
+    const ihPanel = SH ? { t: 'In-house parts compliance by part · lowest first', draw: el => hbarS(el, byPart(ih), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 27, cap: 250, empty: 'No in-house parts plan for this filter' }) } : null;
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
     /* 14 Nov 10:34 (Umair): shops short of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
     const all_ = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100, a: o.a, p: o.p }));
@@ -633,9 +643,9 @@
       vt: '', /* 14 Nov 06:32 (Umair): no chart title on the Production card */ mini: el => lineC(el, ds, [{ name: 'Plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Actual', color: C.navy, values: cA }], { xFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         { t: 'Cumulative production and dispatch (finished goods)', lg: [['Production plan', '#B9C1C9'], ['Production', C.navy], ['Dispatch', C.cyan]], draw: el => lineC(el, ds, [{ name: 'Production plan', color: '#B9C1C9', values: cP, dash: '4 3' }, { name: 'Production', color: C.navy, values: cA }, { name: 'Dispatch', color: C.cyan, values: cD }], { h: 260, xFmt: dlab }) },
-        { t: 'Production compliance by shop (finished goods)', draw: el => hbarC(el, byShop.map(([s, o]) => ({ label: s, v: o.p ? o.a / o.p * 100 : 0, lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [s, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250, sel: F.shop || null, pick: F._own ? sh => window.__ovPick && window.__ovPick('shop', sh) : null }) },
+        fgPanel || { t: 'Production compliance by shop (finished goods)', draw: el => hbarC(el, byShop.map(([s, o]) => ({ label: s, v: o.p ? o.a / o.p * 100 : 0, lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [s, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250, sel: F.shop || null, pick: F._own ? sh => window.__ovPick && window.__ovPick('shop', sh) : null }) },
         { t: 'Production and dispatch by model, plan vs actual', lg: [['Prod plan', '#C9D1D9'], ['Produced', C.navy], ['Disp plan', '#AAE6F0'], ['Dispatched', C.cyan]], draw: el => colC(el, byModel.map(d => d[0]), [{ name: 'Prod plan', color: '#C9D1D9' }, { name: 'Produced', color: C.navy }, { name: 'Disp plan', color: '#AAE6F0' }, { name: 'Dispatched', color: C.cyan }], (c, s) => { const o = new Map(byModel).get(c); return { 'Prod plan': o.p, Produced: o.a, 'Disp plan': o.dp, Dispatched: o.da }[s.name]; }, { h: 260 }) },
-        { t: 'In-house parts compliance by shop', draw: el => hbarC(el, ihShop, { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }],
+        ihPanel || { t: 'In-house parts compliance by shop', draw: el => hbarC(el, ihShop, { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }],
       foot: '' /* 17 Nov 10:06 (Umair): footnote removed */ }; };
 
   /* 16 Nov 17:57 (Umair): the detail window can be filtered to one vendor (click a name in "Vendors · lowest compliance first");
