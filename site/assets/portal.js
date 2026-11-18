@@ -1,6 +1,7 @@
 /* AEL Operations Portal — shared sign-in, guard, idle logout and top bar. */
 (() => {
   const C = window.PORTAL_CONFIG || {};
+  /* 18 Nov (Umair): when a tab is added or removed here, also update the TABS list in supabase/functions/admin-users/index.ts and redeploy it (otherwise user grants for the tab silently don't save), and set the tab on its datasets in data/_access.json. */
   const TABS = [
     ['summary', 'Overview'], ['overview', 'Critical Issues'], ['production', 'Production'], ['product', 'Product Overview'], ['vendor', 'Vendor Supply'],
     ['inhouse', 'In-house'], ['quality', 'Quality'], ['maintenance', 'Maintenance'], ['oee', 'OEE'],
