@@ -1900,5 +1900,2206 @@
    ]
   ],
   "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100004": {
+  "part": "FLUX 108",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100012": {
+  "part": "HAND GLOVES LEATHER",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.9221
+   ],
+   [
+    "Bridge Fork Top",
+    0.0779
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100016": {
+  "part": "EAR PLUG",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6331
+   ],
+   [
+    "Carburetor",
+    0.1493
+   ],
+   [
+    "CIF Machining",
+    0.0746
+   ],
+   [
+    "Bridge Fork Top",
+    0.056
+   ],
+   [
+    "Clutch",
+    0.0498
+   ],
+   [
+    "Drum Gear",
+    0.0373
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100048": {
+  "part": "RUBBER HAND GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "Piston",
+    0.4733
+   ],
+   [
+    "CIF Machining",
+    0.2901
+   ],
+   [
+    "Clutch",
+    0.1422
+   ],
+   [
+    "Drum Gear",
+    0.0546
+   ],
+   [
+    "Hubs",
+    0.0398
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100052": {
+  "part": "POLYTHENE SHEET 18\"X36\" 30 MICRON",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.7539
+   ],
+   [
+    "Ignition Coil",
+    0.1232
+   ],
+   [
+    "Drum Gear",
+    0.0737
+   ],
+   [
+    "Hubs",
+    0.0328
+   ],
+   [
+    "Polymer",
+    0.0164
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100053": {
+  "part": "TROLLEY WHEEL 4\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    0.6667
+   ],
+   [
+    "Clutch",
+    0.3333
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100055": {
+  "part": "DIE CLAMPING STUD BOLT",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.9728
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0272
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100075": {
+  "part": "HYDRAULIC COUPLER (CHP06S-3/4\")",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100084": {
+  "part": "THERMOCOUPLE",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.8
+   ],
+   [
+    "Carburetor",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100088": {
+  "part": "PLUNGER TIP DIA 80MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100090": {
+  "part": "ALUMINIZED GLOVES (HIGH TEMPERATURE)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5161
+   ],
+   [
+    "HPDC / Die Cast",
+    0.4839
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100096": {
+  "part": "PAD LOCK",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.8493
+   ],
+   [
+    "CIF Machining",
+    0.0822
+   ],
+   [
+    "Drum Gear",
+    0.0685
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100127": {
+  "part": "BUFFING DISC",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1500100130": {
+  "part": "ROTARY BUFF 15mm(SHANK=6mm)NO:180(EMERY)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100150": {
+  "part": "GLASS WOOL",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100157": {
+  "part": "EYE BOLT M20",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.8333
+   ],
+   [
+    "Polymer",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100179": {
+  "part": "FACE SHIELD",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5714
+   ],
+   [
+    "Carburetor",
+    0.3393
+   ],
+   [
+    "Bridge Fork Top",
+    0.0893
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100198": {
+  "part": "DIE CLAMP BOLT WITH WASHER & SPACER M22",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.7965
+   ],
+   [
+    "Carburetor",
+    0.2035
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100224": {
+  "part": "BRASS BALL VALVE ½\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6757
+   ],
+   [
+    "Carburetor",
+    0.3243
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100232": {
+  "part": "DIE RELEASE AGENT (RS-3000)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1500100288": {
+  "part": "BEARING 6004ZZ (NTN)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.7143
+   ],
+   [
+    "Carburetor",
+    0.2857
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100291": {
+  "part": "BEARING 6204ZZ (NTN)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5556
+   ],
+   [
+    "Carburetor",
+    0.4444
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100298": {
+  "part": "BRARING 6205Z",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.5
+   ],
+   [
+    "Ignition Coil",
+    0.5
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100334": {
+  "part": "LOTO PADLOCK YELLOW",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    0.8
+   ],
+   [
+    "Clutch",
+    0.2
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100336": {
+  "part": "LOTO PADLOCK BLUE",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    0.8
+   ],
+   [
+    "Clutch",
+    0.2
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100337": {
+  "part": "LOTO TAG",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.5
+   ],
+   [
+    "Drum Gear",
+    0.5
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100343": {
+  "part": "SOLENOID VALVE 1\" 220 VOLT",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5455
+   ],
+   [
+    "HPDC / Die Cast",
+    0.4545
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100347": {
+  "part": "CANVAS BELT SHOT BLAST 5INCHX5MMX20FT",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.5
+   ],
+   [
+    "HPDC / Die Cast",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100349": {
+  "part": "ALLEN BOLT M6*30",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.7937
+   ],
+   [
+    "Clutch",
+    0.1587
+   ],
+   [
+    "Drum Gear",
+    0.0476
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100350": {
+  "part": "ALLEN BOLT M6*50",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.8298
+   ],
+   [
+    "Carburetor",
+    0.1702
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500100352": {
+  "part": "ALLEN BOLT M10*30",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9836
+   ],
+   [
+    "Hubs",
+    0.0164
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100354": {
+  "part": "ALLEN BOLT M16*40",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9779
+   ],
+   [
+    "Hubs",
+    0.0177
+   ],
+   [
+    "Clutch",
+    0.0044
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100370": {
+  "part": "200 WATT LED FLOOD LIGHT",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6122
+   ],
+   [
+    "CIF Machining",
+    0.3469
+   ],
+   [
+    "Bridge Fork Top",
+    0.0408
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100378": {
+  "part": "CUTTING DISC 4\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.7377
+   ],
+   [
+    "HPDC / Die Cast",
+    0.2459
+   ],
+   [
+    "Carburetor",
+    0.0164
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100379": {
+  "part": "GRINDING DISC 4\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.9639
+   ],
+   [
+    "Polymer",
+    0.0361
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100443": {
+  "part": "GI UNION 1 1/2\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100476": {
+  "part": "THERMOCOUPLE K-TYPE L SHAPE",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100493": {
+  "part": "STEEL SHOT S170 (0.5 MM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500100518": {
+  "part": "HYDRALLIC PIPE 38 MPA D 3/4\" L 8 FT",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6
+   ],
+   [
+    "Carburetor",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200001": {
+  "part": "KEROSINE OIL",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.4549
+   ],
+   [
+    "CIF Machining",
+    0.2494
+   ],
+   [
+    "Polymer",
+    0.1911
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0865
+   ],
+   [
+    "Piston",
+    0.0181
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200006": {
+  "part": "COTTON RUGS",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.2508
+   ],
+   [
+    "Piston",
+    0.1893
+   ],
+   [
+    "Clutch",
+    0.1854
+   ],
+   [
+    "Carburetor",
+    0.1001
+   ],
+   [
+    "Drum Gear",
+    0.088
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0795
+   ],
+   [
+    "CIF Machining",
+    0.0578
+   ],
+   [
+    "Ignition Coil",
+    0.0358
+   ],
+   [
+    "Bridge Fork Top",
+    0.0093
+   ],
+   [
+    "Hubs",
+    0.0039
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200007": {
+  "part": "KNITTED HAND GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.3709
+   ],
+   [
+    "HPDC / Die Cast",
+    0.2268
+   ],
+   [
+    "Carburetor",
+    0.1029
+   ],
+   [
+    "Bridge Fork Top",
+    0.063
+   ],
+   [
+    "CIF Machining",
+    0.0609
+   ],
+   [
+    "Piston",
+    0.0524
+   ],
+   [
+    "Drum Gear",
+    0.05
+   ],
+   [
+    "Polymer",
+    0.0285
+   ],
+   [
+    "Ignition Coil",
+    0.0224
+   ],
+   [
+    "Hubs",
+    0.0222
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200008": {
+  "part": "COTTON HAND GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.9838
+   ],
+   [
+    "Bridge Fork Top",
+    0.0151
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0011
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200026": {
+  "part": "CORR.HONY COMB SIZE(13''X4'')(9.5''x4'')",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.8921
+   ],
+   [
+    "Hubs",
+    0.1079
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200036": {
+  "part": "BAILING HOOP",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9646
+   ],
+   [
+    "Carburetor",
+    0.0354
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200037": {
+  "part": "CLIP FOR BAILING HOOP",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200056": {
+  "part": "FIFO TAG CLUTCH ASSY. CD70 (BLUE)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500200060": {
+  "part": "FIFO TAG CLUTCH ASSY. CG125 (BLUE)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1500200082": {
+  "part": "ABSORBENT CUSHION FOR OIL SPILL",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.9
+   ],
+   [
+    "Hubs",
+    0.1
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500200083": {
+  "part": "ABSORBENT PAD FOR OIL SPILL",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.9
+   ],
+   [
+    "Hubs",
+    0.1
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1500300010": {
+  "part": "ALLEN KEY 2MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    0.75
+   ],
+   [
+    "Carburetor",
+    0.25
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300011": {
+  "part": "ALLEN KEY 3MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    0.4194
+   ],
+   [
+    "Hubs",
+    0.3871
+   ],
+   [
+    "Carburetor",
+    0.1935
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300012": {
+  "part": "ALLEN KEY 4MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.3824
+   ],
+   [
+    "Hubs",
+    0.2843
+   ],
+   [
+    "CIF Machining",
+    0.1471
+   ],
+   [
+    "Drum Gear",
+    0.098
+   ],
+   [
+    "Carburetor",
+    0.0686
+   ],
+   [
+    "Polymer",
+    0.0196
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300013": {
+  "part": "ALLEN KEY 6MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.5455
+   ],
+   [
+    "Clutch",
+    0.2273
+   ],
+   [
+    "Drum Gear",
+    0.1061
+   ],
+   [
+    "Carburetor",
+    0.0909
+   ],
+   [
+    "Polymer",
+    0.0303
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300014": {
+  "part": "ALLEN KEY BOLT (M3X24MM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9091
+   ],
+   [
+    "Drum Gear",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300016": {
+  "part": "ALLEN KEY BOLT (M6X22MM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.8611
+   ],
+   [
+    "Drum Gear",
+    0.1389
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300019": {
+  "part": "GRUB SCREW ( M5x8MM )",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.931
+   ],
+   [
+    "Drum Gear",
+    0.069
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300020": {
+  "part": "GRUB SCREW ( M6x10MM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9278
+   ],
+   [
+    "Drum Gear",
+    0.0687
+   ],
+   [
+    "Clutch",
+    0.0034
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300021": {
+  "part": "GRUB SCREW ( M8x24MM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Drum Gear",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300026": {
+  "part": "ALLEN KEY 2.5MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.5405
+   ],
+   [
+    "CIF Machining",
+    0.4054
+   ],
+   [
+    "Drum Gear",
+    0.0541
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300027": {
+  "part": "ALLEN KEY 5MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.5758
+   ],
+   [
+    "Carburetor",
+    0.1818
+   ],
+   [
+    "Drum Gear",
+    0.1818
+   ],
+   [
+    "Hubs",
+    0.0606
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300035": {
+  "part": "FLAT PLIER",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.8
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1333
+   ],
+   [
+    "Hubs",
+    0.0667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300051": {
+  "part": "TEFLON TAPE",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5914
+   ],
+   [
+    "Polymer",
+    0.2688
+   ],
+   [
+    "Carburetor",
+    0.1387
+   ],
+   [
+    "Drum Gear",
+    0.0011
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300056": {
+  "part": "WOODEN PLY 12MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5882
+   ],
+   [
+    "Carburetor",
+    0.4118
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300057": {
+  "part": "WD40 500ML",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.402
+   ],
+   [
+    "Carburetor",
+    0.3333
+   ],
+   [
+    "Drum Gear",
+    0.1275
+   ],
+   [
+    "Bridge Fork Top",
+    0.0588
+   ],
+   [
+    "CIF Machining",
+    0.0588
+   ],
+   [
+    "Polymer",
+    0.0196
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300058": {
+  "part": "CABLE TIE 140MM (IN PACKET)",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.4926
+   ],
+   [
+    "Carburetor",
+    0.4581
+   ],
+   [
+    "Clutch",
+    0.0493
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300059": {
+  "part": "CABLE TIE 200MM (IN PACKET)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5522
+   ],
+   [
+    "HPDC / Die Cast",
+    0.3731
+   ],
+   [
+    "Clutch",
+    0.0746
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500300060": {
+  "part": "CABLE TIE 370MM (IN PACKET)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.4505
+   ],
+   [
+    "HPDC / Die Cast",
+    0.4505
+   ],
+   [
+    "Clutch",
+    0.0991
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500500020": {
+  "part": "PNEUMATIC AIR GUN",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.3947
+   ],
+   [
+    "Piston",
+    0.1974
+   ],
+   [
+    "Hubs",
+    0.1579
+   ],
+   [
+    "Carburetor",
+    0.1316
+   ],
+   [
+    "Drum Gear",
+    0.0921
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0263
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1500723023": {
+  "part": "GOGGLE WHITE",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5767
+   ],
+   [
+    "Clutch",
+    0.1188
+   ],
+   [
+    "CIF Machining",
+    0.0969
+   ],
+   [
+    "Carburetor",
+    0.0807
+   ],
+   [
+    "Bridge Fork Top",
+    0.0692
+   ],
+   [
+    "Drum Gear",
+    0.0323
+   ],
+   [
+    "Piston",
+    0.0138
+   ],
+   [
+    "Hubs",
+    0.0115
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1501199011": {
+  "part": "PNEUMATIC FITTING CONNECTOR (12MM) 1/4''",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.978
+   ],
+   [
+    "Carburetor",
+    0.022
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1501366044": {
+  "part": "MASKING TAP 2\" (PLASTIC BROWN)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.9223
+   ],
+   [
+    "Ignition Coil",
+    0.0299
+   ],
+   [
+    "Hubs",
+    0.0209
+   ],
+   [
+    "CIF Machining",
+    0.0149
+   ],
+   [
+    "Carburetor",
+    0.009
+   ],
+   [
+    "Bridge Fork Top",
+    0.003
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1501399013": {
+  "part": "MASKING TAPE 0.75\" & 1\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Ignition Coil",
+    0.4074
+   ],
+   [
+    "Drum Gear",
+    0.2256
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1978
+   ],
+   [
+    "Carburetor",
+    0.076
+   ],
+   [
+    "Polymer",
+    0.0613
+   ],
+   [
+    "Piston",
+    0.0204
+   ],
+   [
+    "Hubs",
+    0.0074
+   ],
+   [
+    "Bridge Fork Top",
+    0.0041
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1501699006": {
+  "part": "POLYTHENE BAG 14\"X18\" 30 MICRON",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.8929
+   ],
+   [
+    "Carburetor",
+    0.1071
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1509990013": {
+  "part": "TEMPERATURE GUN",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5
+   ],
+   [
+    "HPDC / Die Cast",
+    0.5
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1510310024": {
+  "part": "WHEEL JY-404 BLACK CASTER",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510310041": {
+  "part": "MASKING TAPE 3\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5074
+   ],
+   [
+    "Polymer",
+    0.4926
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510310045": {
+  "part": "PALM DEEP GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "Piston",
+    0.5309
+   ],
+   [
+    "Carburetor",
+    0.4045
+   ],
+   [
+    "Polymer",
+    0.0403
+   ],
+   [
+    "CIF Machining",
+    0.0218
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0025
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510310046": {
+  "part": "SURGICAL HAND GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.968
+   ],
+   [
+    "Polymer",
+    0.032
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410005": {
+  "part": "CORRUGATED SEPARATOR SHEET W=13\" L=20.5\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9864
+   ],
+   [
+    "Polymer",
+    0.0136
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410007": {
+  "part": "CHEMICLEANER 12D",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.8148
+   ],
+   [
+    "CIF Machining",
+    0.1852
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410008": {
+  "part": "SODIUM HYDROXIDE 99%",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9375
+   ],
+   [
+    "CIF Machining",
+    0.0625
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410009": {
+  "part": "NITRIC ACID 1MOL/LIT",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.55
+   ],
+   [
+    "CIF Machining",
+    0.45
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410017": {
+  "part": "COVERALL (CHEMSPLASH COOL)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9677
+   ],
+   [
+    "CIF Machining",
+    0.0323
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410018": {
+  "part": "RESPIRATORY MASK (MSA 200LS)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410024": {
+  "part": "GRAPHACE HC 100",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1510410066": {
+  "part": "DISTILLED WATER",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9503
+   ],
+   [
+    "CIF Machining",
+    0.0497
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410100": {
+  "part": "CHEMICAL RESISTANCE GLOVES - CARB",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1510410102": {
+  "part": "ACRYLIC SHEET",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.7273
+   ],
+   [
+    "Piston",
+    0.1515
+   ],
+   [
+    "CIF Machining",
+    0.0909
+   ],
+   [
+    "Clutch",
+    0.0152
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0152
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510410328": {
+  "part": "ALODINE CHEMICAL",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.8333
+   ],
+   [
+    "Carburetor",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510005": {
+  "part": "POLYTHENE BAG 15\"X18\" 20 MICRON",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510016": {
+  "part": "SHRINK WRAPING ROLL L-20” DIA 4.1” 15 MI",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.8623
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0636
+   ],
+   [
+    "CIF Machining",
+    0.0356
+   ],
+   [
+    "Carburetor",
+    0.0302
+   ],
+   [
+    "Clutch",
+    0.0054
+   ],
+   [
+    "Hubs",
+    0.0012
+   ],
+   [
+    "Drum Gear",
+    0.0009
+   ],
+   [
+    "Piston",
+    0.0008
+   ],
+   [
+    "Bridge Fork Top",
+    0.0001
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510057": {
+  "part": "CABLE TIE 4\" PACKET",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.625
+   ],
+   [
+    "HPDC / Die Cast",
+    0.3125
+   ],
+   [
+    "Clutch",
+    0.0375
+   ],
+   [
+    "CIF Machining",
+    0.0188
+   ],
+   [
+    "Hubs",
+    0.0062
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510069": {
+  "part": "GRIP PLIER 500-250 ELORA",
+  "category": "Consumables",
+  "split": [
+   [
+    "Ignition Coil",
+    0.8333
+   ],
+   [
+    "Carburetor",
+    0.1667
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "1510510079": {
+  "part": "PIPE WRENCH 12\" ELORA",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.6667
+   ],
+   [
+    "Bridge Fork Top",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510095": {
+  "part": "CUT RESISTANT GLOVES",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1510510101": {
+  "part": "MAGIC DEPOXY",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.5455
+   ],
+   [
+    "Clutch",
+    0.3636
+   ],
+   [
+    "HPDC / Die Cast",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510114": {
+  "part": "JUBILEE CLIP",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.5208
+   ],
+   [
+    "Polymer",
+    0.3125
+   ],
+   [
+    "Bridge Fork Top",
+    0.125
+   ],
+   [
+    "Drum Gear",
+    0.0417
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510115": {
+  "part": "DOUBLE SIDED TAPE",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.74
+   ],
+   [
+    "CIF Machining",
+    0.16
+   ],
+   [
+    "Bridge Fork Top",
+    0.1
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510123": {
+  "part": "POLYTHENE BAG 7\"X9\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.9849
+   ],
+   [
+    "Clutch",
+    0.0151
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510510183": {
+  "part": "SSR OMRON G3PA-220B-VD DC24V",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.7719
+   ],
+   [
+    "Carburetor",
+    0.1404
+   ],
+   [
+    "Clutch",
+    0.0877
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610000": {
+  "part": "FIFO TAG HUB FR. M/C CD-70 (RED)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610002": {
+  "part": "FIFO TAG HUB FR. M/C CD-70 (YELLOW)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Hubs",
+    0.75
+   ],
+   [
+    "Clutch",
+    0.25
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610003": {
+  "part": "FIFO TAG HUB FR. M/C CD-70 (BLUE)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610004": {
+  "part": "FIFO TAG HUB REAR. M/C CD-70 (RED)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610008": {
+  "part": "LHL-X100 LUBE CARTRIDGE",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    0.75
+   ],
+   [
+    "Hubs",
+    0.25
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510610018": {
+  "part": "FIFO TAG HUB FR. M/C CG125 (GREEN)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510810352": {
+  "part": "PNEUMATIC PIPE 12MM TRANSPARENT",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.5316
+   ],
+   [
+    "CIF Machining",
+    0.4684
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910010": {
+  "part": "METHYLENE CHLORIDE",
+  "category": "Consumables",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910047": {
+  "part": "ELFY FOR TUBE BONDING (50GM)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1510910059": {
+  "part": "PNEUMATIC ELBOW M5 4MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9602
+   ],
+   [
+    "Ignition Coil",
+    0.0398
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910060": {
+  "part": "SPEED CONTROLLER M5 4MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910061": {
+  "part": "SPEED CONTROLLER 1/8 6MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9619
+   ],
+   [
+    "Ignition Coil",
+    0.0381
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910062": {
+  "part": "SPEED CONTROLLER 1/8 6MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9623
+   ],
+   [
+    "Ignition Coil",
+    0.0377
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1510910063": {
+  "part": "PENUMATIC CONNECTOR 1/8 6MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.9706
+   ],
+   [
+    "Ignition Coil",
+    0.0294
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513010004": {
+  "part": "GLASS BEADS (CLEANER GLASS)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.5385
+   ],
+   [
+    "CIF Machining",
+    0.4615
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513010008": {
+  "part": "COVER FLUX HMC-200",
+  "category": "Consumables",
+  "split": [
+   [
+    "Bridge Fork Top",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513110092": {
+  "part": "BOLT ALLEN 5 X 25 MM",
+  "category": "Consumables",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6689
+   ],
+   [
+    "CIF Machining",
+    0.3311
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513110099": {
+  "part": "ALLEN BOLT 3MM X 25MM LENGTH (FULL THREA",
+  "category": "Consumables",
+  "split": [
+   [
+    "Piston",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513210019": {
+  "part": "ACID NITRIC (LOCAL)",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.6667
+   ],
+   [
+    "Carburetor",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513410601": {
+  "part": "FOOT SWITCH",
+  "category": "Consumables",
+  "split": [
+   [
+    "Carburetor",
+    0.7143
+   ],
+   [
+    "Clutch",
+    0.2857
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513410602": {
+  "part": "FAN BRACKET 24\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Polymer",
+    0.3014
+   ],
+   [
+    "HPDC / Die Cast",
+    0.274
+   ],
+   [
+    "CIF Machining",
+    0.1233
+   ],
+   [
+    "Carburetor",
+    0.0959
+   ],
+   [
+    "Ignition Coil",
+    0.0822
+   ],
+   [
+    "Piston",
+    0.0822
+   ],
+   [
+    "Bridge Fork Top",
+    0.0411
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1513810010": {
+  "part": "FIRE CLAY (THIN)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.7561
+   ],
+   [
+    "CIF Machining",
+    0.2439
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1590910016": {
+  "part": "TAPE SCOTCH SIZE : 4\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "Piston",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026, main shop 99%+ takes all"
+ },
+ "1590910017": {
+  "part": "POLY ETHYLENE ROLL 56\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "1590910019": {
+  "part": "POLY ETHYLENE BAG 09\" X 11\"",
+  "category": "Consumables",
+  "split": [
+   [
+    "CIF Machining",
+    0.9709
+   ],
+   [
+    "Clutch",
+    0.0291
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910148": {
+  "part": "HEATER COVER TAPE (ROLL)",
+  "category": "Consumables",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
  }
 }
