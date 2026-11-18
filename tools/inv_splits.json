@@ -4101,5 +4101,1400 @@
    ]
   ],
   "basis": "12m issues to 17 Nov 2026"
+ },
+ "2500500045": {
+  "part": "SCREW FOR BORING BAR (CS35095)",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.8
+   ],
+   [
+    "Hubs",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2500500062": {
+  "part": "PNEUMATIC FITTING CONNECTOR (8MM) 1/8\"",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.6707
+   ],
+   [
+    "Carburetor",
+    0.3293
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2500500064": {
+  "part": "PNEUMATIC TEE (8 MM)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.7105
+   ],
+   [
+    "Clutch",
+    0.2632
+   ],
+   [
+    "Hubs",
+    0.0263
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2502001001": {
+  "part": "PLC",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001005": {
+  "part": "SPRAY GUN LENGTH 500MM",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.3667
+   ],
+   [
+    "HPDC / Die Cast",
+    0.3333
+   ],
+   [
+    "Bridge Fork Top",
+    0.3
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001019": {
+  "part": "PNEUMATIC HAND VALVE HMVC2-8-4H",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6667
+   ],
+   [
+    "Drum Gear",
+    0.3333
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2503001032": {
+  "part": "HYDRAULIC PUMP",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001051": {
+  "part": "LIMIT SWITCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8571
+   ],
+   [
+    "Drum Gear",
+    0.1429
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001052": {
+  "part": "RESOLVER Y051585 (TS2613N11E1)",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001104": {
+  "part": "CNC LCD",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2503001140": {
+  "part": "FLAME UV SENSOR",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.5
+   ],
+   [
+    "HPDC / Die Cast",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052140": {
+  "part": "LATHE OP-1 PART SPANNER LH025",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052169": {
+  "part": "PLC Battery Mitsubishi (AA 3.6V)",
+  "category": "Spares",
+  "split": [
+   [
+    "Drum Gear",
+    0.8125
+   ],
+   [
+    "Hubs",
+    0.1875
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052218": {
+  "part": "ELECTRIC GRINDER 220V 540V MAKTEC",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.5
+   ],
+   [
+    "CIF Machining",
+    0.25
+   ],
+   [
+    "Carburetor",
+    0.25
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052442": {
+  "part": "SPRING BALANCER FOR IMPACT WRENCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6364
+   ],
+   [
+    "Clutch",
+    0.3636
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052489": {
+  "part": "SCREW TS-50125I (TQHL HOLDER) - CLUTCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052492": {
+  "part": "CENTER PIN - MTFNR BAR (TNMG)-CLUTCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.7368
+   ],
+   [
+    "Clutch",
+    0.2632
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052493": {
+  "part": "CLAMP - MTFNR BAR (TNMG)-CLUTCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.8
+   ],
+   [
+    "Clutch",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052494": {
+  "part": "CLAMP SCREW - MTFNR BAR (TNMG)-CLUTCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.6667
+   ],
+   [
+    "Clutch",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052552": {
+  "part": "REGULATING FITTING VALVE 3/8X8",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052568": {
+  "part": "FUNNER SPRING - TAPPING CG125",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052582": {
+  "part": "BELT 5PK1080",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.1667
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2506052584": {
+  "part": "BELT FM-68",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.9189
+   ],
+   [
+    "Hubs",
+    0.0811
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052586": {
+  "part": "BELT SK-68",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.7692
+   ],
+   [
+    "Ignition Coil",
+    0.2308
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052616": {
+  "part": "BEARING 7204 B",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052768": {
+  "part": "PNEUMATIC REDUCER SOCKET (10MM TO 8MM)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052769": {
+  "part": "PNEUMATIC REDUCER SOCKET (12MM TO 10MM)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052771": {
+  "part": "PNEUMATIC SOCKET (6MM)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2506052777": {
+  "part": "BEARING 628/6-2Z",
+  "category": "Spares",
+  "split": [
+   [
+    "Piston",
+    0.6
+   ],
+   [
+    "Drum Gear",
+    0.4
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509990012": {
+  "part": "2 POLE BREAKER",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990019": {
+  "part": "3 POLE BREAKER",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990114": {
+  "part": "BALL BEARING",
+  "category": "Spares",
+  "split": [
+   [
+    "Drum Gear",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990133": {
+  "part": "BEARING",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990134": {
+  "part": "BEARING 6000ZZ",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.7895
+   ],
+   [
+    "Hubs",
+    0.2105
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990137": {
+  "part": "BEARING 6202ZZ",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990139": {
+  "part": "BEARING 6205",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.2857
+   ],
+   [
+    "HPDC / Die Cast",
+    0.2857
+   ],
+   [
+    "Ignition Coil",
+    0.2857
+   ],
+   [
+    "Drum Gear",
+    0.1429
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509990156": {
+  "part": "BELT",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    0.6757
+   ],
+   [
+    "Carburetor",
+    0.3243
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990233": {
+  "part": "CIRCUIT BREAKER",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9091
+   ],
+   [
+    "Drum Gear",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990358": {
+  "part": "CONTROL RELAY G2R-2-SND DC24V",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990374": {
+  "part": "COUNTER H7EC-NB",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8889
+   ],
+   [
+    "Ignition Coil",
+    0.1111
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990490": {
+  "part": "FOOT PEDAL",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990492": {
+  "part": "FRL UNIT",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8571
+   ],
+   [
+    "Clutch",
+    0.0714
+   ],
+   [
+    "Polymer",
+    0.0714
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990643": {
+  "part": "MAGNETIC CONTACTOR SC-0/AC100V",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8
+   ],
+   [
+    "Drum Gear",
+    0.2
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990817": {
+  "part": "PNEUMATIC CYLINDER",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.6667
+   ],
+   [
+    "Hubs",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509990831": {
+  "part": "POWER SUPPLY",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991038": {
+  "part": "1P POLE BREAKER 10 AMP",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9091
+   ],
+   [
+    "Clutch",
+    0.0909
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991045": {
+  "part": "SOLENOID COIL",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991188": {
+  "part": "V Belt A-28",
+  "category": "Spares",
+  "split": [
+   [
+    "Drum Gear",
+    0.6667
+   ],
+   [
+    "Ignition Coil",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991191": {
+  "part": "V Belt A-31",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991192": {
+  "part": "V Belt A-32",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.7778
+   ],
+   [
+    "Drum Gear",
+    0.2222
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991205": {
+  "part": "V Belt A-45",
+  "category": "Spares",
+  "split": [
+   [
+    "Bridge Fork Top",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991207": {
+  "part": "V Belt A-47",
+  "category": "Spares",
+  "split": [
+   [
+    "Bridge Fork Top",
+    0.7
+   ],
+   [
+    "Carburetor",
+    0.3
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991208": {
+  "part": "V Belt A-48",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991218": {
+  "part": "V Belt A-58",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991291": {
+  "part": "INDICATING LIGHT GREEN XB2BVB3LC",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991292": {
+  "part": "INDICATING LIGHT RED XB2BVB4LC",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9091
+   ],
+   [
+    "Carburetor",
+    0.0909
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991293": {
+  "part": "INDICATING LIGHT WHITE XB2BVB1LC",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.9091
+   ],
+   [
+    "Carburetor",
+    0.0909
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991434": {
+  "part": "PROXIMITY SWITCH E2E-X3D1-N",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6258
+   ],
+   [
+    "HPDC / Die Cast",
+    0.362
+   ],
+   [
+    "Drum Gear",
+    0.0123
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991463": {
+  "part": "REED SWITCH",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991467": {
+  "part": "REGULATOR AR20K-02B",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "Ignition Coil",
+    0.3333
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991497": {
+  "part": "SELECTOR KEY SWITCH HW1K-2C11 1a1b",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.6
+   ],
+   [
+    "Drum Gear",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991604": {
+  "part": "TOGGLE CLAMP",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "Ignition Coil",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991613": {
+  "part": "TOWER LIGHT",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6667
+   ],
+   [
+    "Clutch",
+    0.1667
+   ],
+   [
+    "Hubs",
+    0.1667
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991654": {
+  "part": "GRUB SCREW 3mm",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.5556
+   ],
+   [
+    "Drum Gear",
+    0.4444
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991655": {
+  "part": "GRUB SCREW 4mm",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991656": {
+  "part": "GRUB SCREW 5mm",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991675": {
+  "part": "PNEUMATIC PIPE 8mm",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8417
+   ],
+   [
+    "Hubs",
+    0.1583
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991684": {
+  "part": "ALLEN BOLT M6×20",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.7
+   ],
+   [
+    "Hubs",
+    0.25
+   ],
+   [
+    "Ignition Coil",
+    0.05
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991685": {
+  "part": "GRUB SCREW M5×08",
+  "category": "Spares",
+  "split": [
+   [
+    "Drum Gear",
+    0.6667
+   ],
+   [
+    "Carburetor",
+    0.3333
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991687": {
+  "part": "GRUB SCREW M8×25",
+  "category": "Spares",
+  "split": [
+   [
+    "Drum Gear",
+    0.625
+   ],
+   [
+    "Carburetor",
+    0.375
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2509991688": {
+  "part": "TWO CORE WIRE",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.6667
+   ],
+   [
+    "Carburetor",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991751": {
+  "part": "TIMING BELT 410-H-100",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.5
+   ],
+   [
+    "Carburetor",
+    0.4
+   ],
+   [
+    "Drum Gear",
+    0.1
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2509991801": {
+  "part": "BALL BEARING 6305ZZ",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510310073": {
+  "part": "LIMIT SWITCH OMRON ZC-W255",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.5
+   ],
+   [
+    "Drum Gear",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510410075": {
+  "part": "LIMIT SWITCH OMRON, WLCA2-2",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.6957
+   ],
+   [
+    "Drum Gear",
+    0.3043
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510410082": {
+  "part": "POWER SUPPLY, IN: 220VAC, OUT: 24VDC",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.7619
+   ],
+   [
+    "Drum Gear",
+    0.2381
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510410193": {
+  "part": "PNEUMATIC CYLINDER, SMC, CDM2B32-450",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8095
+   ],
+   [
+    "HPDC / Die Cast",
+    0.1905
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510610003": {
+  "part": "SCREW SO35124I - SDJCR 2525 HOLDER",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.5
+   ],
+   [
+    "Hubs",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510610022": {
+  "part": "MANUAL OIL SUCTION PUMP",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    0.6667
+   ],
+   [
+    "HPDC / Die Cast",
+    0.3333
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510610039": {
+  "part": "ROLLER BEARING 140107-00751 - SPINDLE",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510610053": {
+  "part": "ANGULAR CONTACT BEARING 30TAC62",
+  "category": "Spares",
+  "split": [
+   [
+    "Clutch",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910083": {
+  "part": "SENSOR D-Z73",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910096": {
+  "part": "PROBES CD-70",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910135": {
+  "part": "SOLID STATE RELAY 20A",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910289": {
+  "part": "COUPLING SEAL",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910380": {
+  "part": "BEARING 6005ZZ (NSK)",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910386": {
+  "part": "SOLDERING IRON",
+  "category": "Spares",
+  "split": [
+   [
+    "Polymer",
+    0.8302
+   ],
+   [
+    "Ignition Coil",
+    0.1698
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910388": {
+  "part": "PEELING ROLLERS",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    0.6262
+   ],
+   [
+    "Polymer",
+    0.3738
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910442": {
+  "part": "BEARING 6203 NTN",
+  "category": "Spares",
+  "split": [
+   [
+    "HPDC / Die Cast",
+    0.8333
+   ],
+   [
+    "Drum Gear",
+    0.0833
+   ],
+   [
+    "Ignition Coil",
+    0.0833
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910443": {
+  "part": "BEARING 6206 NTN",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    0.8
+   ],
+   [
+    "Clutch",
+    0.2
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2510910444": {
+  "part": "PNEUMATIC AIR CONTROL VALVE AS (1201F)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.8571
+   ],
+   [
+    "Ignition Coil",
+    0.1429
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910461": {
+  "part": "SENSOR SMC (D-A93VL)",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    0.5
+   ],
+   [
+    "Drum Gear",
+    0.5
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2510910469": {
+  "part": "BEARING 6002 ZZ (NTN)",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    0.75
+   ],
+   [
+    "Clutch",
+    0.25
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910533": {
+  "part": "KEY SWITCH A165K-J2M-2",
+  "category": "Spares",
+  "split": [
+   [
+    "Hubs",
+    0.6
+   ],
+   [
+    "Drum Gear",
+    0.4
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910543": {
+  "part": "SSR OMRON G3PA-220B-VD DC24V",
+  "category": "Spares",
+  "split": [
+   [
+    "Polymer",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910591": {
+  "part": "TEMP CONTROLLER CB100FD08",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    0.5
+   ],
+   [
+    "Ignition Coil",
+    0.5
+   ]
+  ],
+  "basis": "issues Jan 2024 to 17 Nov 2026"
+ },
+ "2510910592": {
+  "part": "AREA SENSOR NA2-N16PN",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2510910607": {
+  "part": "SOLENOID VALVE VACCUM CHAMBER PLANT 1",
+  "category": "Spares",
+  "split": [
+   [
+    "Ignition Coil",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2513710034": {
+  "part": "UNIT FRL AC.4000-04-1/2\"",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    0.5
+   ],
+   [
+    "Carburetor",
+    0.5
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2513710042": {
+  "part": "POWER SUPPLY 24V",
+  "category": "Spares",
+  "split": [
+   [
+    "Carburetor",
+    1.0
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
+ },
+ "2513710153": {
+  "part": "BEARING BALL 6304 ZZ",
+  "category": "Spares",
+  "split": [
+   [
+    "CIF Machining",
+    0.96
+   ],
+   [
+    "Drum Gear",
+    0.04
+   ]
+  ],
+  "basis": "12m issues to 17 Nov 2026"
  }
 }
