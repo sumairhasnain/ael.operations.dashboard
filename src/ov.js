@@ -711,7 +711,13 @@
   const EXC = ['Raw Material', 'Production parts', 'Lubricants'];
   let exRM = true, wasOn = false;   /* on by default every time the Overview is opened (Umair, 12 Nov 00:46) */
   /* 17 Nov 2026 (Umair): ATDMC die making (plant MDP) stock joins only when 'Include ATDMC Stock' is on (window.__ATDMC, shared with the Inventory tab, off by default) */
-  const SST = () => { const b = D('sap_stock') || [], x = window.__ATDMC ? D('sap_stock_atdmc') || [] : []; return x.length ? b.concat(x) : b; };
+  /* 18 Nov 2026 (Umair): a shared tool's stock is split across the shops that use it, by each shop's share of the last 12 months' issues (sap_stock 'split' = [[shop, share], ...]); one row per shop, quantities and values scaled, the name carries the share */
+  if (!window.__invSplit) window.__invSplit = rows => { if (!rows || !rows.some(r => r && r.split && r.split.length > 1)) return rows; const K = ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'rcv_90d', 'issue_90d', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr', 'use_month', 'excess_pkr', 'cover_stock'], out = [];
+    rows.forEach(r => { if (!r || !r.split || r.split.length < 2) { out.push(r); return; } const note = r.split.map(([s, f]) => s + ' ' + Math.round(f * 100) + '%').join(' · ');
+      r.split.forEach(([s, f]) => { const x = { ...r, shop: s, split_share: f, split_note: note, split_total_pkr: r.value_pkr, part: `${r.part || r.code} [${s} ${Math.round(f * 100)}%]` }; K.forEach(k => { if (r[k] != null && r[k] !== '' && !isNaN(+r[k])) x[k] = Math.round(+r[k] * f * 100) / 100; }); out.push(x); }); });
+    return out; };
+  let _sst = [null, null];
+  const SST = () => { const b0 = D('sap_stock') || []; if (_sst[0] !== b0) _sst = [b0, window.__invSplit(b0)]; const b = _sst[1], x = window.__ATDMC ? D('sap_stock_atdmc') || [] : []; return x.length ? b.concat(x) : b; };
   M.inventory = (P, F0) => { const F = F0 || {}, SH = SHf(P), S = SST().filter(r => r.code && inSh(SH, r, 'shop') && !(exRM && EXC.includes(r.category)) && (!F.model || pModsOf({ models: r.models }).includes(F.model)) && (!F.part || String(r.code) === String(F.part))), V = d3.sum(S, r => +r.value_pkr || 0), EX = d3.sum(S, r => +r.excess_pkr || 0);
     const dead = S.filter(r => r.move_bucket === 'No movement since Jan 2024' || r.move_bucket === 'Over 1 year'), DV = d3.sum(dead, r => +r.value_pkr || 0);
     const low = S.filter(r => r.cover_bucket === 'Under 15 days' || r.cover_bucket === 'Out of stock');

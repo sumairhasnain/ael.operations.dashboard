@@ -136,6 +136,12 @@
     const clr = document.getElementById('f-clear'); if (clr) clr.addEventListener('click', () => { const keep = String(P().invoff || '').split('|').filter(c => c === 'Production parts' || c === 'Lubricants' || c === 'Raw Material'); set({ invage: 0, invcov: 0, invcat: 0, invmov: 0, invitem: 0, invoff: keep.length ? keep.join('|') : 0 }); });   /* Clear filters turns Consumables, Tools and Spares back on; Raw Material, Production parts and Lubricants change only when their own button is clicked */ }
 
   const rows = id => { const d = dash.data(id); return d && d.status === 'ok' ? d.data : null; };
+  /* 18 Nov 2026 (Umair): a shared tool's stock is split across the shops that use it, by each shop's share of the last 12 months' issues (sap_stock 'split' = [[shop, share], ...]); one row per shop, quantities and values scaled, the name carries the share */
+  if (!window.__invSplit) window.__invSplit = rows => { if (!rows || !rows.some(r => r && r.split && r.split.length > 1)) return rows; const K = ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'rcv_90d', 'issue_90d', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr', 'use_month', 'excess_pkr', 'cover_stock'], out = [];
+    rows.forEach(r => { if (!r || !r.split || r.split.length < 2) { out.push(r); return; } const note = r.split.map(([s, f]) => s + ' ' + Math.round(f * 100) + '%').join(' · ');
+      r.split.forEach(([s, f]) => { const x = { ...r, shop: s, split_share: f, split_note: note, split_total_pkr: r.value_pkr, part: `${r.part || r.code} [${s} ${Math.round(f * 100)}%]` }; K.forEach(k => { if (r[k] != null && r[k] !== '' && !isNaN(+r[k])) x[k] = Math.round(+r[k] * f * 100) / 100; }); out.push(x); }); });
+    return out; };
+
   const num = (r, ks) => { ks.forEach(k => { if (r[k] != null && r[k] !== '') r[k] = +r[k]; else r[k] = null; }); return r; };
   let _c = {};
   /* 17 Nov 2026 (Umair): ATDMC die making (SAP plant MDP) is kept out of the inventory figures unless 'Include ATDMC Stock' is on (off by default, shared with the Overview Inventory window) */
@@ -144,7 +150,7 @@
     if (_c.A === A && _c.s0 === s0 && _c.f0 === f0 && _c.c0 === c0 && _c.u0 === u0 && _c.sa === sa && _c.fa === fa && _c.ca === ca && _c.ua === ua) return _c;
     const s = atd(s0, sa), f = atd(f0, fa), c = atd(c0, ca), u = atd(u0, ua);
     _c = { s, f, c, u, A, s0, f0, c0, u0, sa, fa, ca, ua,
-      S: s ? s.map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr'])) : null,
+      S: s ? window.__invSplit(s).map(r => num({ ...r }, ['stock', 'qi', 'blocked', 'transit', 'value_pkr', 'unit_pkr', 'rcv_90d', 'issue_90d', 'cover_days', 'age_days', 'use_month', 'use_months', 'cover_stock', 'excess_pkr', 'move_days', 'rcv_12m', 'rcv_12m_pkr', 'rcv_6m', 'rcv_6m_pkr', 'use_6m_pkr'])) : null,
       F: f ? f.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, CC: c ? c.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null, U: u ? u.map(r => num({ ...r }, ['value_pkr', 'lines'])) : null };
     return _c; };
 

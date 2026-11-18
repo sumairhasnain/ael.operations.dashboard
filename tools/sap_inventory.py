@@ -285,6 +285,30 @@ for code in (set(i90.index) | set(r90.index) | {k for k, v in need.items() if v 
     row = row_of(code, cat, st, sh, how, g, d, 0.0, 0.0, 0.0, 0.0, 0.0, uom_of.get(code, ''), '', unit); row['oos'] = 1; STK.append(row); oos += 1
 print('out-of-stock rows added:', oos)
 
+# 18 Nov 2026 (Umair): shared tools (tools/inv_split_codes.json) are split across shops by each shop's share of the last
+# 12 months' issues (201 less 202 to shop cost centres; full history from Jan 2024 when there were none in 12 months).
+# The row stays one per material (other builds look stock up by code); 'shop' becomes the largest user and 'split' lists
+# [shop, share] pairs, which the Inventory views expand into one row per shop.
+try:
+    SPL = set(json.load(open(_os.path.join(DATA, '..', 'tools', 'inv_split_codes.json')))['codes'])
+except Exception as e:
+    SPL = set(); print('inventory split skipped:', e)
+if SPL:
+    cs = c[c['Material'].isin(SPL) & c['cc'].isin(list(CC))].copy(); cs['sh'] = cs['cc'].map(CC)
+    def shares(code, since=None):
+        d = cs[cs['Material'] == code]
+        if since is not None: d = d[d['Posting Date'] >= since]
+        q = d.groupby('sh')['qty'].sum(); q = q[q > 0]; t = q.sum()
+        return sorted(((k, float(v) / t) for k, v in q.items()), key=lambda x: -x[1]) if t > 0 else []
+    nsp = 0
+    for row in STK:
+        if row['code'] not in SPL or row.get('oos'): continue
+        sp = shares(row['code'], d365) or shares(row['code'])
+        if not sp: continue
+        row['shop'] = sp[0][0]; row['shop_by'] = 'Issues 12m' if shares(row['code'], d365) else 'Issues since Jan 2024'
+        if len(sp) > 1: row['split'] = [[k, round(v, 4)] for k, v in sp]; nsp += 1
+    print('inventory split:', nsp, 'items split across shops,', len(SPL), 'listed')
+
 def dump(n, rows):
     json.dump(rows, open(OUT + '/' + n + '.json', 'w'), ensure_ascii=False, separators=(',', ':'))
 dump('sap_stock', STK); dump('sap_flow', FLOW); dump('sap_cc', CCR); dump('sap_rcv_sup', SUP)
