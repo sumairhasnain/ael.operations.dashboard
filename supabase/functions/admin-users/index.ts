@@ -5,7 +5,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const TABS = ["overview", "production", "product", "vendor", "inhouse", "quality", "maintenance", "oee",
-  "capacity", "efficiency", "workforce", "inventory", "cost", "savings", "issues", "projects", "bom", "fom", "openstock", "insights"];
+  "capacity", "efficiency", "workforce", "inventory", "purchasing", "cost", "savings", "issues", "projects", "bom", "fom", "openstock", "insights"];
 // Extra permissions stored alongside tabs (not tabs themselves). Ticked per user on the Users page.
 const PERMS = ["cr_upload"];
 const ROLES = ["admin", "manager", "viewer"];
