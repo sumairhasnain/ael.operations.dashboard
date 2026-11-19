@@ -43,7 +43,7 @@
   const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
   window.__wfMiss = (p, rows, sel) => { p = (dash.params() || {}).wfs ? { ...(p || {}), shop: dash.params().wfs, wfs: dash.params().wfs } : p;
     const ppl = (dash.data('sp_attendance_people') || {}).data || [], att = (dash.data('sp_attendance') || {}).data || [];
-    const inShop = r => p.wfs ? r.shop === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const inShop = r => p.wfs ? window.__wfSheetShop(r) === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     const have = new Set(rows.map(r => r.key)), out = [];
     d3.rollups(ppl.filter(r => r.month === p.month && inShop(r) && (!sel || r.area === sel)), v => ({ n: v.length, shop: v[0].shop }), r => r.area + '|' + r.section)
       .forEach(([k, o]) => { if (!have.has(k)) { const [area, section] = k.split('|'); out.push({ key: k, area, section, shop: o.shop, hc: o.n }); } });
@@ -101,7 +101,7 @@
       card2.className = 'card'; const row = document.createElement('div'); row.className = 'wfrow'; row.append(card3, card2);
       host.after(card, row); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
     const all = (dash.data('sp_attendance_people') || {}).data || [], m = p.month || (window.__TODAY || '').slice(0, 7);
-    const inShop = r => p.wfs ? r.shop === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const inShop = r => p.wfs ? window.__wfSheetShop(r) === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     /* 10 Nov (Umair): 'AVG Absent Day (3 months)' = average absent days a month over the 3 complete months before month m,
        counting only the months the person is on the sheet (Oct only for now; fills in as months pass). */
     const prev3 = [1, 2, 3].map(k => { const d = new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7) - 1 - k, 1)); return d.toISOString().slice(0, 7); }),
@@ -143,7 +143,7 @@
             .on('mousemove', ev => tip.show(ev, [a, `${o.n} of ${o.hc} people did overtime in a week they were absent`, `Swapped hours ${f0(Math.round(o.sw))} · extra pay ${f0(Math.round(o.sw / 2))} h`, sel === a ? 'Click to show all areas' : 'Click to filter the page to this area']))
             .on('mouseleave', tip.hide).on('click', () => { tip.hide(); dash.setParams({ wfa: sel === a ? 0 : a }); }); }); } }
     { const pk2 = r => String(r.emp_id).trim() + '|' + String(r.name || '').trim().toUpperCase(), mon_ = all.filter(r => r.month === m);
-      const dr = d3.rollups(mon_, v => new Set(v.map(pk2)).size, r => r.shop || '—').map(([shop, n]) => ({ shop, n }));
+      const dr = d3.rollups(mon_, v => new Set(v.map(pk2)).size, r => window.__wfSheetShop(r) || '—').map(([shop, n]) => ({ shop, n })); /* 19 Nov: same shop grouping as the click filter */
       table(document.getElementById('tb-wfdist'), dr, [{ k: 'shop' }, { k: 'n', n: 1, fmt: d3.format(',') }], { sort: 'n', dir: -1 });
       document.getElementById('wfdist-t').textContent = d3.format(',')(d3.sum(dr, d => d.n));
       document.querySelectorAll('#tb-wfdist tbody tr').forEach(tr => { const sh = tr.cells[0] ? tr.cells[0].textContent : '', on = p.shop !== 'All' && sh === p.shop; tr.style.fontWeight = on ? 700 : ''; tr.style.background = on ? '#EEF1F4' : '';
@@ -156,7 +156,7 @@
          'top'      = 'Top 10 Absentees': the 10 people with the most absent days, from that same list
          'ot'       = 'Absentees with Overtime': people who did overtime in the same week as an absence (the original list)
        The shop filter uses the shop's own people only, so shared Aluminium Foundry staff don't appear under Piston or Bridge Fork Top. */
-    const vw = { 1: 'top', top: 'top', ot: 'ot' }[dash.params().wfoat] || '', own = rs.filter(r => p.shop === 'All' || r.shop === p.shop);
+    const vw = { 1: 'top', top: 'top', ot: 'ot' }[dash.params().wfoat] || '', own = rs.filter(r => p.shop === 'All' || r.shop === p.shop || (p.wfs && window.__wfSheetShop(r) === p.wfs));
     const rows = vw === 'top' ? own.filter(r => r.absent > 0).sort((a, b) => b.absent - a.absent || (b.sw || 0) - (a.sw || 0)).slice(0, 10) : vw === 'ot' ? fl : own;
     tb.id = vw === 'top' ? 'tb-wfoa10' : vw === 'ot' ? 'tb-wfoa' : 'tb-wfoaall';   /* own sort memory per view */
     table(tb, rows, [{ k: 'name' }, { k: 'emp_id' }, { k: 'area' }, { k: 'section' }, { k: 'absent', n: 1, fmt: nf1 }, { k: 'avg3', n: 1, fmt: v => v == null ? '—' : d3.format('.1f')(v) }, { k: 'abs_in_ot_weeks', n: 1, fmt: nf1 }, { k: 'ot_hours', n: 1, fmt: nf1 }, { k: 'ot_in_abs_weeks', n: 1, fmt: nf1, color: () => '#D0312D' },
@@ -175,6 +175,7 @@
     if (h3) h3.textContent = vw === 'top' ? `Who: Top 10 Absentees${sh}` : vw === 'ot' ? 'Who: Overtime in the Same Week as an Absence' : `Who: All Manpower${sh} (${d3.format(',')(rows.length)})`;
   };
   /* 19 Nov 16:01 (Umair): with a shop picked in the distribution table (param wfs) every Manpower card uses exactly that sheet shop */
+  window.__wfSheetShop = (r => r.area === 'Carburetor' && /assembly/i.test(r.section || '') ? 'Carburetor Assembly' : r.area === 'Carburetor' && /machining/i.test(r.section || '') ? 'Carburetor Machining' : r.shop); /* Carburetor Assembly / Machining overtime is booked on 'Carburetor' rows */
   const wfP = p => { const w = (dash.params() || {}).wfs || ''; return w ? { ...(p || {}), shop: w, wfs: w } : (p || {}); };
   window.__wf = (tbl, p, sel, rf) => { p = wfP(p); P = p; kpis(P, sel, rf); try { oa(P, sel); } catch (e) { console.error(e); }
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];

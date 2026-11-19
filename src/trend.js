@@ -39,10 +39,11 @@
 
   /* ---------- data ---------- */
   const rowsOf = id => { try { const d = window.dash && dash.data(id); return d && d.status === 'ok' ? d.data || [] : []; } catch (e) { return []; } };
-  const wfShops = r => /KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop];
+  const wfShops0 = r => /KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop];
   const work = d => new Date(d + 'T00:00:00Z').getUTCDay() !== 0;
   function model() {
-    const P = (window.__P && window.__P()) || (window.dash && dash.params()) || {}, shop = P.shop || 'All';
+    const P = (window.__P && window.__P()) || (window.dash && dash.params()) || {}, wfs = ((window.dash && dash.params()) || {}).wfs || '', shop = wfs || P.shop || 'All'; /* 19 Nov (Umair): a shop picked in the distribution table filters the trend too */
+    const wfShops = r => wfs ? [window.__wfSheetShop ? window.__wfSheetShop(r) : r.shop] : wfShops0(r);
     const all = rowsOf('sp_attendance').filter(r => shop === 'All' || wfShops(r).includes(shop));
     const key = shop === 'All' ? (r => r.shop) : (r => r.area);
     const months = [...new Set(all.map(r => r.date.slice(0, 7)))].sort();
