@@ -207,15 +207,7 @@ background:#FFFFFF;color:var(--ink);font-family:var(--font-anthropic-sans);paddi
 <div class="card wide" id="c-v-trend"><h3>Monthly Trend</h3><div class="chart" data-source="atlas_vendor_supply atlas_child_stock atlas_bom atlas_parts"></div></div>
 </div>
 </section>
-<section class="page" id="quality">
-<div class="grid">
-<div class="card" id="c-q-month"><h3>Rejection Trend <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
-<div class="card" id="c-q-day"><h3>Daily Rejection <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
-<div class="card" id="c-q-shop"><h3>By Shop <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_quality"></div></div>
-<div class="card" id="c-q-pareto"><h3>Defect Pareto <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_defects"></div></div>
-<div class="card wide" id="c-q-cc"><h3>Customer Complaints <span class="chip smp">Sample</span></h3><div class="tbox"><table class="tb" id="tb-cc" data-source="smp_complaints" data-row-key="ref"><thead><tr><th data-field="ref">Ref</th><th data-field="date">Date</th><th data-field="shop">Shop</th><th data-field="part">Part</th><th data-field="issue">Issue</th><th data-field="status">Status</th></tr></thead><tbody></tbody></table></div></div>
-</div>
-</section>
+<section class="page" id="quality"><i hidden data-source="quality_sap"></i></section>
 <section class="page" id="maintenance">
 <div class="grid">
 <div class="card" id="c-m-pm"><h3>PM Plan vs Done <span class="chip smp">Sample</span></h3><div class="chart" data-source="smp_pm"></div></div>
@@ -1305,19 +1297,8 @@ kb.replaceChildren(); [['Finished parts', fgs.length, 'in this selection'], ['Wi
 table(tb, out, [{ k: 'lvl', color: (x) => x === 'L1' ? C.navy : null }, { k: 'code' }, { k: 'part', color: (x, r) => r.lvl === 'L1' ? C.navy : null }, { k: 'model' }, { k: 'shop' }, { k: 'source' }, { k: 'qpu', n: 1 }, { k: 'link', color: x => x && x !== 'BOM' ? C.warn : null }, { k: 'safety', n: 1 }, { k: 'sched', n: 1 }, { k: 'note', color: x => /No components|Confirm/.test(x || '') ? C.bad : null }], { q: q('#q-bom') });
 },
 quality(p) {
-const el = ch('c-q-month'), ed = ch('c-q-day'), es = ch('c-q-shop');
-if (!status(el, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date <= p.actEnd); const g = d3.rollups(rows, v => d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6, r => r.date.slice(0, 7)).sort((a, b) => d3.ascending(a[0], b[0]));
-vbar(el, g.map(d => d[0]), [{ key: 'v', name: 'Rejection ppm', color: c => c === p.month ? C.navy : '#7C8A97' }], c => Math.round(g.find(d => d[0] === c)[1]), { xFmt: mon, refs: [{ v: 10000, label: 'Limit 10,000' }], noLegend: 1 }); }
-if (!status(ed, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd); const g = d3.rollups(rows, v => Math.round(d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6), r => r.date).sort((a, b) => d3.ascending(a[0], b[0]));
-lines(ed, g.map(d => d[0]), [{ name: 'ppm', color: C.blue, values: g.map(d => d[1]) }], { xFmt: day, refs: [{ v: 10000, label: 'Limit' }], emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
-if (!status(es, 'smp_quality')) { const rows = D('smp_quality').filter(r => inShop(r, p) && r.date >= p.start && r.date <= p.actEnd);
-const g = d3.rollups(rows, v => d3.sum(v, r => r.rejected) / d3.sum(v, r => r.inspected) * 1e6, r => r.shop);
-pvaH(es, g.map(([s, v]) => ({ label: s, plan: 10000, actual: Math.round(v) })).sort((a, b) => b.actual - a.actual), { inv: 1, planName: 'Limit', actName: 'Actual ppm', emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
-const ep = ch('c-q-pareto');
-if (!status(ep, 'smp_defects')) { const g = d3.rollups(D('smp_defects').filter(r => r.month === p.month && inShop(r, p)), v => d3.sum(v, r => r.rejected_qty), r => r.defect).sort((a, b) => b[1] - a[1]).slice(0, 10);
-const tot = d3.sum(g, d => d[1]); let acc = 0; const cum = new Map(g.map(d => [d[0], (acc += d[1]) / tot]));
-vbar(ep, g.map(d => d[0]), [{ key: 'q', name: 'Rejected', color: C.blue }], c => g.find(d => d[0] === c)[1], { rot: 1, h: 270, line: c => cum.get(c), noLegend: 1, emptyMsg: p.future ? 'No actuals yet for this month' : 'No data' }); }
-if (dash.data('smp_complaints').status === 'ok') table(q('#tb-cc'), D('smp_complaints').filter(r => inShop(r, p) && r.date <= p.asof && r.date.slice(0, 7) <= p.month), [{ k: 'ref' }, { k: 'date', fmt: day }, { k: 'shop' }, { k: 'part' }, { k: 'issue' }, { k: 'status', pill: v => v === 'Open' ? 'bad' : 'good' }], { sort: 'date', dir: -1 });
+/* 19 Nov 2026 (Umair): the Quality tab is drawn by src/quality.js from SAP (dataset quality_sap); the sample cards are gone. */
+if (window.__qualityRender) window.__qualityRender(p);
 },
 maintenance(p) {
 const epm = ch('c-m-pm');
@@ -1635,4 +1616,4 @@ window.addEventListener('resize', () => window.__draw());
 <script src="mplan.js"></script><script src="trend.js"></script><script src="cost.js"></script>
 <script src="ov.js"></script>
 <script src="fom.js"></script><script src="purch.js"></script>
-<script src="ins.js"></script>
+<script src="ins.js"></script><script src="quality.js"></script>

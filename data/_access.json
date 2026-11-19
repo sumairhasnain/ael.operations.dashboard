@@ -72,6 +72,9 @@
   "smp_complaints": [
     "quality"
   ],
+  "quality_sap": [
+    "quality"
+  ],
   "smp_defects": [
     "quality"
   ],
