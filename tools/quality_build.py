@@ -284,6 +284,7 @@ def main(args):
     # -------- MB52: what is on hold right now --------
     mh, mrows = read_dump(m52); stock = []
     for r in mrows:
+        if not str(r.get('Material', '')).strip(): continue   # 19 Nov: MB52 subtotal rows have no material; counting them doubled the totals
         pl, sl = r['Plant'], r['Sloc']; qi, bl, unr = num(r['QI']), num(r['Blocked']), num(r['Unr'])
         rej = unr if (pl, sl) in REJ else 0
         if not (qi or bl or rej): continue
@@ -349,6 +350,18 @@ def main(args):
         sl = sloc12.get(c)
         p_['made_at'] = sl.most_common(1)[0][0] if sl else ''
         if not p_.get('src'): p_['src'] = 'In-house' if p_['made'] > 0 and not top else ('Vendor' if top or p_['sup_atlas'] else '')
+    # -------- stock category (same rules as the Inventory tab, tools/sap_inventory.py cat2) where sap_stock has none --------
+    pn = {}
+    for e in out: pn.setdefault(e['code'], e['part'])
+    for x in stock: pn.setdefault(x['code'], x['part'])
+    LUB = re.compile(r'\bOILS?\b|GREASE|LUBRICANT|LUBRICATION GREAS'); NOTL = re.compile(r'FILTER|SEAL|PUMP|STONE|GUN|GAUGE|GUAGE|ABSORBENT|SPILL|TRAP|UNIT|LUBRICATOR|KEROSINE|SUCTION')
+    def cat_fb(c, d):
+        d = (d or '').upper()
+        if not c: return ''
+        if not re.match(r'\d{10}$', c) or (LUB.search(d) and not NOTL.search(d) and c[:2] in ('10', '15', '20', '25')): return 'Lubricants'
+        return {'10': 'Raw Material', '15': 'Consumables', '20': 'Tools', '25': 'Spares'}.get(c[:2], 'Production parts')
+    for c, p_ in parts.items():
+        if not p_.get('cat'): p_['cat'] = cat_fb(c, pn.get(c) or p_.get('name', ''))
     vend = {}
     for v in {e['vendor'] for e in out if e['vendor']} | {x['vendor'] for x in lots} | {v for p_ in parts.values() for v, _ in p_.get('sup', [])}:
         vend[v] = names.get(v, '')
@@ -375,6 +388,7 @@ def main(args):
             for i in keep:
                 c = str(rows[i]['code']); parts.setdefault(c, dict(lvl=rows[i]['lvl'], fg=[fg], shop=fgshop.get(fg, ''), src='', bst=bst.get(c, ''), cat='', crit=c in crit, ss=None, rate=round(rate(c), 2)))
                 parts[c].setdefault('name', rows[i]['part'])
+                if not parts[c].get('cat'): parts[c]['cat'] = cat_fb(c, rows[i]['part'])
                 if 'sup' not in parts[c]:
                     parts[c]['sup_atlas'] = [n for n, q in atl.get(c, collections.Counter()).most_common(3) if n and n != 'null' and q > 0]
                     top = [(v, q) for v, q in sup12.get(c, {}).items() if q > 0]; tot = sum(q for _, q in top) or 1; sl = sloc12.get(c)

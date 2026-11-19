@@ -6598,7 +6598,9 @@ ${ex(X(), `${ac.jira_overdue} of ${ac.jira_open} open Jira activities are past t
   const ppm = (r, b) => b > 0 && r <= b ? r / b * 1e6 : null;   /* no PPM when the rejected stock came from receipts before this month (rejected > received) */
   const TC = { 'Dimensional': '#2251FF', 'Plating / Surface': '#00A9F4', 'Crack / Breakage': '#D0312D', 'Leakage': '#7B4FB8', 'Missing / Assembly': '#C98300', 'Material / Hardness': '#1E8C5A', 'Process allowance': '#8A6D3B', 'Other': '#9AA5B1', 'Unspecified': '#C9CED4' };
   const KIND = { qi_reject: 'Rejected at inspection', reject_transfer: 'Moved to rejection store', rej_store_out: 'Moved out of rejection store', rtv: 'Returned to vendor', scrap: 'Scrapped', block: 'Blocked (hold)', unblock: 'Released from block', rej_count_adj: 'Count adjustment in rejection store', return_rps: 'Return into rejection store (RPS)' };
-  const ST = { origin: 'All', level: 'All', src: 'All', q: '', sel: null, dtype: null, fg: null, view: 'events', psort: 'rej', vsort: 'rej' };
+  /* 19 Nov (Umair): item categories (same as the Inventory tab) as multi-select toggles; Production parts on by default */
+  const CATS = [['Production parts', 'Production Parts'], ['Raw Material', 'Raw Material'], ['Tools', 'Tools'], ['Consumables', 'Consumables'], ['Spares', 'Spares'], ['Lubricants', 'Lubricants']];
+  const ST = { cats: new Set(['Production parts']), origin: 'All', level: 'All', src: 'All', q: '', sel: null, dtype: null, fg: null, view: 'events', psort: 'rej', vsort: 'rej' };
   let D = null, built = false, lastP = null;
   const css = document.createElement('style'); css.textContent = `
 #quality .qbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
@@ -6688,18 +6690,20 @@ ${ex(X(), `${ac.jira_overdue} of ${ac.jira_open} open Jira activities are past t
   const srcTxt = (c, v) => { const i = srcInfo(c, v); return `${i.k ? i.k + ': ' : ''}${i.t}`; };
   /* ---------- filters ---------- */
   const shopOk = (c, P) => !P || !P.shop || P.shop === 'All' || part(c).shop === P.shop || (part(c).fg || []).some(f => (D.fg_shop || {})[f] === P.shop);
+  const catOk = c => ST.cats.size > 0 && ST.cats.has(part(c).cat || '');
   const lvlOk = c => { const l = part(c).lvl; return ST.level === 'All' || (ST.level === 'FG' ? l === 0 : ST.level === 'Sub' ? l > 0 : l == null); };
   const srcOk = c => ST.src === 'All' || srcOf(c) === ST.src;
   const selOk = (code, vendor, e) => { const s = ST.sel; if (!s) return true; if (s.t === 'part') return code === s.v; if (s.t === 'vendor') return vendor === s.v; if (s.t === 'fg') return (part(code).fg || []).includes(s.v) || code === s.v;
     if (s.t === 'defect') return e && e.defect === s.v; if (s.t === 'dtype') return e && e.dtype === s.v; if (s.t === 'day') return e && e.d === s.v; return true; };
   const qOk = (code, vendor, e) => !ST.q || `${code} ${pname(code)} ${vendor || ''} ${vname(vendor)} ${srcTxt(code, vendor)} ${e ? e.defect + ' ' + e.text + ' ' + e.ref : ''}`.toLowerCase().includes(ST.q);
   const oOk = o => ST.origin === 'All' || (ST.origin === 'Vendor' ? o === 'vendor' : o === 'inhouse');
-  const evOk = (e, P) => shopOk(e.code, P) && lvlOk(e.code) && srcOk(e.code) && oOk(e.origin) && selOk(e.code, e.vendor, e) && qOk(e.code, e.vendor, e);
-  const codeOk = (c, v, P, o) => shopOk(c, P) && lvlOk(c) && srcOk(c) && (o == null || oOk(o)) && selOk(c, v, null) && qOk(c, v, null) && !(ST.sel && /defect|dtype|day/.test(ST.sel.t));
+  const evOk = (e, P) => catOk(e.code) && shopOk(e.code, P) && lvlOk(e.code) && srcOk(e.code) && oOk(e.origin) && selOk(e.code, e.vendor, e) && qOk(e.code, e.vendor, e);
+  const codeOk = (c, v, P, o) => catOk(c) && shopOk(c, P) && lvlOk(c) && srcOk(c) && (o == null || oOk(o)) && selOk(c, v, null) && qOk(c, v, null) && !(ST.sel && /defect|dtype|day/.test(ST.sel.t));
   function setSel(t, v, lab) { ST.sel = ST.sel && ST.sel.t === t && ST.sel.v === v ? null : { t, v, lab }; draw(); }
   /* ---------- shell ---------- */
   function shell(sec) {
     sec.innerHTML = `<div class="qbar"><h2>Quality</h2>
+<span class="grp" id="qa-cats"><span>Items</span>${CATS.map(([v, l]) => `<button class="chip" data-cat="${v}" aria-pressed="false">${l}</button>`).join('')}</span>
 <span class="grp"><span>Source</span>${['All', 'Vendor', 'In-house'].map(x => `<button class="chip" data-g="origin" data-v="${x}">${x}</button>`).join('')}</span>
 <span class="grp"><span>BOM level</span>${[['All', 'All'], ['FG', 'Finished goods'], ['Sub', 'Sub-levels'], ['None', 'Not in BOM']].map(([v, l]) => `<button class="chip" data-g="level" data-v="${v}">${l}</button>`).join('')}</span>
 <span class="grp"><span>Part type</span>${['All', 'In-house', 'Vendor', 'Imported'].map(x => `<button class="chip" data-g="src" data-v="${x}">${x}</button>`).join('')}</span>
@@ -6720,7 +6724,7 @@ ${ex(X(), `${ac.jira_overdue} of ${ac.jira_open} open Jira activities are past t
 <div class="row3"><div class="card"><h3>Line rejection by defect</h3><div class="wait" id="qa-line"></div></div>
 <div class="card"><h3>Warranty and market returns</h3><div id="qa-war"></div></div>
 <div class="card cpk"><h3>Process capability (Cp / Cpk)</h3><div id="qa-cpk"></div></div></div>`;
-    sec.querySelector('.qbar').addEventListener('click', e => { const b = e.target.closest('button[data-g]'); if (!b) return; ST[b.dataset.g] = b.dataset.v; draw(); });
+    sec.querySelector('.qbar').addEventListener('click', e => { const c = e.target.closest('button[data-cat]'); if (c) { const k = c.dataset.cat; ST.cats.has(k) ? ST.cats.delete(k) : ST.cats.add(k); draw(); return; } const b = e.target.closest('button[data-g]'); if (!b) return; ST[b.dataset.g] = b.dataset.v; draw(); });
     const qi = sec.querySelector('#qa-q'); let tq; qi.oninput = () => { clearTimeout(tq); tq = setTimeout(() => { ST.q = qi.value.trim().toLowerCase(); draw(); }, 200); };
     sec.querySelector('#qa-clr').onclick = () => { ST.sel = null; ST.dtype = null; draw(); };
     sec.querySelector('#qa-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.view = b.dataset.v; draw(); });
@@ -6739,8 +6743,10 @@ ${ex(X(), `${ac.jira_overdue} of ${ac.jira_open} open Jira activities are past t
   /* ---------- main draw ---------- */
   function draw() {
     const sec = document.getElementById('quality'); if (!sec || !D) return; const P = lastP || (window.__P ? window.__P() : {});
-    sec.querySelectorAll('.qbar .chip').forEach(b => b.classList.toggle('on', ST[b.dataset.g] === b.dataset.v));
-    const shopTxt = P.shop && P.shop !== 'All' ? ` · shop filter <b>${esc(P.shop)}</b> (from the filter bar)` : '';
+    sec.querySelectorAll('.qbar .chip[data-g]').forEach(b => b.classList.toggle('on', ST[b.dataset.g] === b.dataset.v));
+    sec.querySelectorAll('.qbar .chip[data-cat]').forEach(b => { const on = ST.cats.has(b.dataset.cat); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    const catTxt = ST.cats.size ? ` · items: <b>${[...ST.cats].map(esc).join(', ')}</b>` : ' · <b style="color:#B42318">no item category selected: pick one above</b>';
+    const shopTxt = (P.shop && P.shop !== 'All' ? ` · shop filter <b>${esc(P.shop)}</b> (from the filter bar)` : '') + catTxt;
     sec.querySelector('#qa-src').innerHTML = `SAP MB51 quality movements (${esc(D.file)}, to ${dmy(D.asof)}) and MB52 stock (${esc(D.mb52_file)}). Defect names come from the SAP posting text; SAP has no defect codes, inspection lot numbers or batches in these files, so a lot is one goods receipt (part + vendor + date + DC). November only: the SharePoint MB51 folder holds this month's files; trends grow day by day from here.${shopTxt}`;
     const sb = sec.querySelector('#qa-sel'); sb.classList.toggle('on', !!ST.sel); sec.querySelector('#qa-selt').innerHTML = ST.sel ? `Filtered to <b>${esc(ST.sel.lab)}</b>` : '';
     const E = D.events.filter(e => evOk(e, P)), R = E.filter(e => e.rej && e.q > 0);
@@ -6757,7 +6763,7 @@ ${ex(X(), `${ac.jira_overdue} of ${ac.jira_open} open Jira activities are past t
     const rtv = E.filter(e => e.kind === 'rtv' && e.q > 0), scr = E.filter(e => e.kind === 'scrap' && e.q > 0);
     const oldest = d3.max(stock.filter(s => s.qi && s.qi_days != null), s => s.qi_days);
     const vppm = ppm(sum(RV.filter(e => e.kind !== 'rej_store_out'), e => e.q), rcvQI);
-    const critHit = (D.critical || []).filter(c => shopOk(c.code, P) && (R.some(e => e.code === c.code) || stock.some(s => s.code === c.code && (s.qi || s.blocked || s.rej_store))));
+    const critHit = (D.critical || []).filter(c => catOk(c.code) && shopOk(c.code, P) && (R.some(e => e.code === c.code) || stock.some(s => s.code === c.code && (s.qi || s.blocked || s.rej_store))));
     const carry = R.filter(e => e.period && e.period < D.asof.slice(0, 7));
     const K = [
       ['r', 'Rejected this month', qf(sum(R, e => e.q)), `Rs ${rs(sum(R, e => e.val))} · ${R.length} postings · ${new Set(R.map(e => e.code)).size} parts${carry.length ? ` · incl. ${qf(sum(carry, e => e.q))} from ${[...new Set(carry.map(e => e.period))].map(m => MN[+m.slice(5) - 1]).join(', ')} posted now` : ''}`],
@@ -6911,7 +6917,7 @@ ${ev.length ? '<table><tr><th>Date</th><th>What</th><th>Qty</th><th>Defect / tex
   }
   /* ---------- critical parts ---------- */
   function critT(el, P, R, stock) {
-    const rows = (D.critical || []).filter(c => shopOk(c.code, P) && qOk(c.code, '', null)).map(c => {
+    const rows = (D.critical || []).filter(c => catOk(c.code) && shopOk(c.code, P) && qOk(c.code, '', null)).map(c => {
       const st = D.stock.filter(s => s.code === c.code), r = R.filter(e => e.code === c.code);
       const qi = d3.sum(st, s => s.qi), bl = d3.sum(st, s => s.blocked), rj = d3.sum(st, s => s.rej_store), lock = qi + bl;
       const daily = d3.rollup(r, v => d3.sum(v, e => e.q), e => e.d);
@@ -6933,7 +6939,7 @@ ${ev.length ? '<table><tr><th>Date</th><th>What</th><th>Qty</th><th>Defect / tex
     fs.innerHTML = ord.map(([f, v]) => `<option value="${esc(f)}"${f === ST.fg ? ' selected' : ''}>${esc((D.fg_names || {})[f] || f)} · ${esc(f)}${v ? ' · Rs ' + rs(v) : ''}</option>`).join('');
     if (!ST.fg) { el.innerHTML = '<div class="empty">No finished good of this shop has quality activity in its BOM.</div>'; return; }
     const T = D.tree[ST.fg] || [];
-    const rows = [[0, ST.fg, '', 1, (D.fg_names || {})[ST.fg] || ST.fg], ...T].map(t => {
+    const rows = [[0, ST.fg, '', 1, (D.fg_names || {})[ST.fg] || ST.fg], ...T.filter(t => catOk(t[1]))].map(t => {
       const c = t[1], r = R.filter(e => e.code === c), st = stock.filter(s => s.code === c);
       return { lvl: t[0], c, name: t[4], per: t[3], rej: d3.sum(r, e => e.q), val: d3.sum(r, e => e.val), qi: d3.sum(st, s => s.qi), bl: d3.sum(st, s => s.blocked) + d3.sum(st, s => s.rej_store),
         hv: d3.sum(st, s => (s.qi + s.blocked + s.rej_store) * s.rate), top: (d3.rollups(r.filter(e => e.defect), a => d3.sum(a, e => e.q), e => e.defect).sort((a, b) => b[1] - a[1])[0] || [''])[0], src: part(c).src };
