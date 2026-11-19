@@ -13,7 +13,7 @@ DATA = '/home/claude/ael.operations.dashboard/data/'
 TXT = {'Material': str, 'Storage Location': str, 'Cost Center': str, 'Supplier': str, 'Movement Type': str, 'Material Group': str}
 rd = lambda f: pd.read_pickle(f) if f.endswith('.pkl') else pd.read_excel(f, dtype=TXT)   # .pkl: the same export already read once
 r = rd(RCV); c = rd(CONS); s = rd(MB52)
-s = s[s['Material'].notna()].copy()                      # MB52 export carries subtotal rows with no material
+s = s[s['Material'].notna() & (s['Material'].astype(str).str.strip() != '')].copy()   # MB52 export carries subtotal rows with no material (19 Nov: also blank strings from the daily MB52 dump)
 r = r[r['Material'].notna() & (r['Material'].str.strip() != '')].copy()   # service POs have no material: not inventory
 c = c[c['Material'].notna()].copy()
 for d in (r, c): d.rename(columns={'Amt.in Loc.Cur.': 'amt', 'Cost Center': 'cc'}, inplace=True)
