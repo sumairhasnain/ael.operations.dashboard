@@ -3358,6 +3358,13 @@ window.addEventListener('resize', () => window.__draw());
       [...par.keys()].sort((a, b) => depth(a) - depth(b)).forEach(c => { const r = rowOf(c), pr = r && rowOf(par.get(c)); if (!r || !pr) return; let at = pr; while (at.nextElementSibling && par.get(at.nextElementSibling.cells[0].textContent.trim()) === par.get(c) && at.nextElementSibling !== r) at = at.nextElementSibling; at.after(r); }); }
     /* 19 Nov (Umair): Vendor & Imported off = in-house parts only, so the vendor-only rows above go too */
     if (window.__pvend !== true) [...tb.rows].forEach(r => { if (r.__ven) r.remove(); });
+    /* 19 Nov 10:56 (Umair): the extra rows (vendor / imported / sub-level) also get SAP figures where Atlas has none:
+       Received = vendor receipts this month, Produced = in-house receipts this month (sap_stock 'mr' / 'mp') */
+    { const SS0 = dash.data('sap_stock'), R0 = new Map(((SS0 && SS0.status === 'ok' && SS0.data) || []).map(r => [String(r.code), r])), m0 = String(p.start || p.asof || '').slice(0, 7);
+      [...tb.rows].forEach(r => { if (!r.classList.contains('altv') || r.cells.length < 15) return; const sr = R0.get(r.cells[0].textContent.trim()); if (!sr) return;
+        const put = (i, v, tip) => { const td = r.cells[i]; if (td && td.textContent.trim() === '—' && v != null) { td.textContent = nf(Math.round(v)); td.title = tip; } };
+        put(9, sr.mr && sr.mr[m0], 'Received from vendors this month (SAP MB51 101 less 102 with a supplier)');
+        if (!r.classList.contains('vimp') && !r.__ven) put(13, sr.mp && sr.mp[m0], 'Produced in-house this month (SAP MB51 101 less 102 without a supplier)'); }); }
     tree(T, tb, p, q, VS, PS, PD);
   };
   /* 19 Nov (Umair): with a shop picked and Sub-Levels on, the table becomes that shop's SAP BOM tree. Under each L2 part come
@@ -3394,18 +3401,49 @@ window.addEventListener('resize', () => window.__draw());
         if (i === 10 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
         tr.appendChild(td); });
       return tr; };
-    const walk = (parent, L, models, path) => { const m = kids.get(String(parent)); if (!m || L > 6) return;
+    /* 19 Nov 10:56 (Umair): fill every column we can for sub-level and bought-out rows. Produced = SAP in-house receipts this
+       month (101 less 102 without a supplier, sap_stock 'mp'); Received = SAP vendor receipts ('mr') where Atlas has no vendor
+       schedule; IH Plan / Plan MTD (in-house) or VEN Plan / VEN MTD (bought-out) without an Atlas plan = the parent's plan x
+       BOM quantity, starting from the finished good's plan (shown in italics). Prod % / RCV % from these. */
+    const PDD = dash.data('atlas_parts_daily'), fgP = new Map(); ((PDD && PDD.status === 'ok' && PDD.data) || []).forEach(r => { if (r.date < p.start || r.date > p.end) return; const c = String(r.code), o = fgP.get(c) || [0, 0]; o[0] += +r.prod_plan || 0; if (r.date <= p.asof) o[1] += +r.prod_plan || 0; fgP.set(c, o); });
+    const num = td => { if (!td) return null; const x = td.textContent.replace(/[^0-9.\-]/g, ''); return x === '' ? null : +x; };
+    const setN = (td, v, der, tip) => { if (!td || v == null) return; td.textContent = nf(Math.round(v)); if (der) { td.style.fontStyle = 'italic'; td.style.color = '#5A6670'; } if (tip) td.title = tip; };
+    const pctC = (td, a, b) => { if (!td || !b || a == null) return; const pc = Math.round(a / b * 100); td.textContent = pc + '%'; td.style.fontWeight = 600; td.style.fontStyle = ''; td.style.color = pc < 80 ? C.bad : pc < 95 ? C.warn : ''; };
+    const SSR = new Map(((SS && SS.status === 'ok' && SS.data) || []).map(r => [String(r.code), r])), mon = String(p.start || p.asof || '').slice(0, 7);
+    const fill = (row, code, ven, req) => { const c = row.cells, sr = SSR.get(code) || {}, dash_ = x => x && x.textContent.trim() === '—';
+      const tip = req ? `Requirement for this shop = parent plan x SAP BOM quantity, added up over ${req[2]} parent${req[2] > 1 ? 's' : ''} ( ${req[3].slice(0, 4).join(', ')}${req[3].length > 4 ? '…' : ''})` : '';
+      if (ven) { if (dash_(c[7]) && req) { setN(c[7], req[0], 1, tip); setN(c[8], req[1], 1, tip); }
+        if (dash_(c[9]) && sr.mr && sr.mr[mon] != null) setN(c[9], sr.mr[mon], 0, 'Received from vendors this month (SAP MB51 101 less 102 with a supplier)');
+        if (dash_(c[10])) pctC(c[10], num(c[9]), num(c[8])); }
+      else { if (dash_(c[11]) && req) { setN(c[11], req[0], 1, tip); setN(c[12], req[1], 1, tip); }
+        if (dash_(c[13]) && sr.mp && sr.mp[mon] != null) setN(c[13], sr.mp[mon], 0, 'Produced in-house this month (SAP MB51 101 less 102 without a supplier)');
+        if (dash_(c[9]) && sr.mr && sr.mr[mon] != null) setN(c[9], sr.mr[mon], 0, 'Received from vendors this month (SAP MB51 101 less 102 with a supplier)');
+        if (dash_(c[14])) pctC(c[14], num(c[13]), num(c[12])); }
+    };
+    const walk = (parent, L, models, path, plan) => { const m = kids.get(String(parent)); if (!m || L > 6) return;
       [...m.values()].sort((a, b) => (a.status === 'Exploded' ? 0 : 1) - (b.status === 'Exploded' ? 0 : 1) || String(a.part).localeCompare(String(b.part))).forEach(t => {
         const c = String(t.code); if (/^10/.test(c) || path.has(c)) return;
         if (L === 2) { if (seenL2.has(c)) return; seenL2.add(c); }
         let row = have.get(c); const ven = isVen(t, row); if (ven && window.__pvend !== true) return;
-        if (q && !row && ![c, t.part].join(' ').toLowerCase().includes(q)) { walk(c, L + 1, models, new Set([...path, c])); return; }
-        if (row && used.has(row)) { row = row.cloneNode(true); row.classList.add('altv'); }
+        if (q && !row && ![c, t.part].join(' ').toLowerCase().includes(q)) { if (+t.qty > 0) { if (!edges.has(c)) edges.set(c, new Map()); edges.get(c).set(String(parent), +t.qty); } walk(c, L + 1, models, new Set([...path, c]), null); return; }
+        if (row && used.has(row)) { const v0 = row.__ven; row = row.cloneNode(true); row.__ven = v0; row.classList.add('altv'); }
         else if (!row) row = mk(t, L, ven, models);
         used.add(have.get(c) || row); row.classList.add('tree'); row.__L = L;
         if (row.cells[4]) row.cells[4].textContent = 'L' + L;
-        out.push(row); walk(c, L + 1, models, new Set([...path, c])); }); };
-    heads.forEach(f => walk(f.fg, 2, mdl(f.fg, f.part), new Set([String(f.fg)])));
+        const own0 = ven ? [num(row.cells[7]), num(row.cells[8])] : [num(row.cells[11]), num(row.cells[12])];
+        if (own0[0] != null && !ownA.has(c)) ownA.set(c, own0);
+        if (+t.qty > 0) { if (!edges.has(c)) edges.set(c, new Map()); edges.get(c).set(String(parent), +t.qty); }
+        ents.push([row, c, ven]); out.push(row); walk(c, L + 1, models, new Set([...path, c]), null); }); };
+    const ents = [], edges = new Map(), ownA = new Map(), headS = new Set(heads.map(f => String(f.fg)));
+    heads.forEach(f => walk(f.fg, 2, mdl(f.fg, f.part), new Set([String(f.fg)]), null));
+    /* MRP-style requirement: each part = sum over its distinct parents of (parent's plan x SAP BOM quantity); a parent's plan is
+       its Atlas plan when it has one, else its own requirement; finished goods use their Atlas production plan. A part used in
+       several places of this shop's tree is counted once per parent, never twice for the same parent. */
+    const memo = new Map(), ownOf = c => headS.has(c) ? (fgP.get(c) || null) : ownA.get(c) || reqOf(c);
+    const reqOf = (c, seen = new Set()) => { if (memo.has(c)) return memo.get(c); if (seen.has(c)) return null; seen.add(c); const ps = edges.get(c); if (!ps) return null;
+      let a = 0, b = 0, ok = false; ps.forEach((q, P) => { const o = headS.has(P) ? (fgP.get(P) || null) : ownA.get(P) || reqOf(P, seen); if (o && o[0] != null) { a += o[0] * q; b += (o[1] || 0) * q; ok = true; } });
+      const r = ok ? [a, b, ps.size, [...ps.keys()]] : null; memo.set(c, r); return r; };
+    ents.forEach(([row, c, ven]) => fill(row, c, ven, reqOf(c)));
     if (!out.length) return;
     const rest = [...tb.rows].filter(r => !used.has(r) && !(r.__ven && window.__pvend !== true) && r.cells.length > 1); [...tb.rows].forEach(r => { if (r.cells.length <= 1) r.remove(); }); /* the 'No rows' note goes once the tree adds rows */
     out.concat(rest).forEach(r => tb.appendChild(r));

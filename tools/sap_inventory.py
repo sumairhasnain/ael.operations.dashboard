@@ -302,6 +302,24 @@ for row in STK:
     if len(sp) > 1 and not row.get('oos'): row['split'] = sp; nsp += 1
 if SPF: print('inventory split:', nsp, 'items split across shops,', len(SPF), 'frozen')
 
+# 19 Nov 2026 (Umair): monthly in-house production (101 less 102 without a supplier) and vendor receipts (with a supplier)
+# per material for the last 6 months, so the Production tab's part tables can show Produced / Received for BOM sub-level and
+# bought-out parts that Atlas does not plan. 'mp' / 'mr' = {month: qty in the unit of entry}.
+try:
+    _r = r[r['Movement Type'].astype(str).isin(['101', '102'])].copy(); _r['m'] = _r['Posting Date'].dt.strftime('%Y-%m')
+    _ms = sorted(_r['m'].dropna().unique())[-6:]; _r = _r[_r['m'].isin(_ms)]; _r['code'] = _r['Material'].astype(str).str.strip()
+    _r['sup'] = _r['Supplier'].notna() & (_r['Supplier'].astype(str).str.strip() != '')
+    _g = _r.groupby(['code', 'sup', 'm'])['Qty in unit of entry'].sum()
+    MP, MR = {}, {}
+    for (cd, sp, m), q in _g.items():
+        if abs(q) >= 0.5: (MR if sp else MP).setdefault(cd, {})[m] = round(float(q), 2)
+    for row in STK:
+        if row['code'] in MP: row['mp'] = MP[row['code']]
+        if row['code'] in MR: row['mr'] = MR[row['code']]
+    print('part months:', len(MP), 'produced,', len(MR), 'received codes', _ms[0], '..', _ms[-1])
+except Exception as e:
+    print('part months skipped:', e)
+
 def dump(n, rows):
     json.dump(rows, open(OUT + '/' + n + '.json', 'w'), ensure_ascii=False, separators=(',', ':'))
 dump('sap_stock', STK); dump('sap_flow', FLOW); dump('sap_cc', CCR); dump('sap_rcv_sup', SUP)
