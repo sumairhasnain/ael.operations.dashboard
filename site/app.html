@@ -5405,7 +5405,20 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         /* 14 Nov 15:44 (Umair): the card's watch lists in full - 15 rows in view, scroll for the rest */
-        { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV) },
+        { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV),
+          /* 19 Nov 12:20 (Umair): same search as Vendor parts, by vendor. Typing narrows the list with vendor suggestions; picking a
+             suggestion filters the whole window to that vendor (like clicking it); Clear filter clears both. */
+          search: { ph: 'Search vendor', bind: (inp, btn, dl, pc) => {
+            const nmOf = x => x.full || x.k, opts = new Map(allV.map(x => [nmOf(x), x])); dl.innerHTML = [...opts.keys()].sort().map(k => `<option value="${esc(k)}">`).join('');
+            const show = () => { btn.hidden = !(inp.value.trim() || VF); };
+            const run = () => { const v = inp.value.trim(), hit = opts.get(v); F.vvq = v;
+              if (hit) { F.vvq = ''; if (nmOf(hit) !== VF && window.__ovPick) return window.__ovPick('vf', nmOf(hit)); }
+              const q = v.toLowerCase(); let n = 0; pc.querySelectorAll('.wr').forEach(r => { const ok = !q || [r.dataset.v || '', r.textContent].join(' ').toLowerCase().includes(q); r.style.display = ok ? '' : 'none'; if (ok) n++; });
+              let em = pc.querySelector('.psem'); if (!n && q) { if (!em) { em = document.createElement('div'); em.className = 'em psem'; pc.appendChild(em); } em.textContent = 'No vendor matches “' + v + '”'; } else if (em) em.remove();
+              show(); };
+            inp.value = VF || F.vvq || ''; if (!VF && F.vvq) run(); show();
+            inp.addEventListener('input', run);
+            btn.addEventListener('click', () => { F.vvq = ''; inp.value = ''; if (VF && window.__ovPick) return window.__ovPick('vf', VF); run(); inp.focus(); }); } } },
         { t: `Vendor parts · soonest run-out first (${allP.length})`, lg: [['Runs out before next delivery', C.bad], ['Under 7 working days', '#E0A100'], ['Covered', '#1E8C5A']], draw: wlist(allP, true),
           /* 19 Nov 11:58 (Umair): search on the title row. Typing narrows the list (part name, code or vendor) with part suggestions;
              picking a suggestion filters the whole window to that part, like clicking its name. Clear filter clears both. */
