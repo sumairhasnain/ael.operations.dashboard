@@ -1788,6 +1788,7 @@ window.addEventListener('resize', () => window.__draw());
    left border and slides back out once the cursor leaves the Code column (or the table). */
 (() => { const st = document.createElement('style'); st.textContent = `
 .ael #tb-parts2{transition:width .25s ease,min-width .25s ease}
+.ael #c-p-parts2 .chd{flex-wrap:nowrap} .ael #c-p-parts2 .chd .cr{align-items:stretch;margin-left:auto;flex:none} .ael #c-p-parts2 .chd .cr button.ptog{justify-content:flex-start;width:100%} /* 19 Nov (Umair): Sub-Levels / Vendor / Imported toggles in one column, switches lined up, top-right of the table */
 .ael #tb-parts2:not(.cdon){width:calc(100% + 298px);min-width:1426px}
 .ael #tb-parts2 th:nth-child(1),.ael #tb-parts2 td:nth-child(1){transition:width .25s ease,padding .25s ease,opacity .2s ease}
 .ael #tb-parts2:not(.cdon) th:nth-child(1){width:0;padding-left:0;padding-right:0}
