@@ -114,6 +114,11 @@
 .ovm .bk .s{font-size:11px;color:#5B6770}
 .ovm .bg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}
 .ovm .pn h4{margin:0 0 4px;font-size:13px;font-weight:600}
+.ovm .pnh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 4px} .ovm .pnh h4{margin:0}
+.ovm .psr{display:flex;align-items:center;gap:6px;flex:none} .ovm .psr input{width:240px;font:inherit;font-size:12px;padding:5px 9px;border:1px solid #D5DBE1;border-radius:6px;background:#fff;color:#051C2C}
+.ovm .psr input:focus{outline:none;border-color:#2251FF;box-shadow:0 0 0 2px #2251FF22} .ovm .psr .psx{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border:0;border-radius:6px;background:#D0312D;color:#fff;cursor:pointer}
+.ovm .psr .psx[hidden]{display:none}
+.ovm .bg.hs .pn > h4,.ovm .bg.hs .pnh{min-height:28px;display:flex;align-items:center;margin:0 0 4px} .ovm .psr input,.ovm .psr .psx{height:28px;box-sizing:border-box} /* title rows level when one panel has a search box */
 .ovm .pn .lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:#5A6670;margin-bottom:2px}
 .ovm .pn .lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .ovm .pn .em{color:#5B6770;font-size:12px;padding:30px 0;text-align:center}
@@ -708,7 +713,20 @@
       detail: [
         /* 14 Nov 15:44 (Umair): the card's watch lists in full - 15 rows in view, scroll for the rest */
         { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV) },
-        { t: `Vendor parts · soonest run-out first (${allP.length})`, lg: [['Runs out before next delivery', C.bad], ['Under 7 working days', '#E0A100'], ['Covered', '#1E8C5A']], draw: wlist(allP, true) },
+        { t: `Vendor parts · soonest run-out first (${allP.length})`, lg: [['Runs out before next delivery', C.bad], ['Under 7 working days', '#E0A100'], ['Covered', '#1E8C5A']], draw: wlist(allP, true),
+          /* 19 Nov 11:58 (Umair): search on the title row. Typing narrows the list (part name, code or vendor) with part suggestions;
+             picking a suggestion filters the whole window to that part, like clicking its name. Clear filter clears both. */
+          search: { ph: 'Search part name or code', bind: (inp, btn, dl, pc) => {
+            const opts = new Map(allP.map(x => [`${x.k} · ${x.code}`, x])); dl.innerHTML = [...opts.keys()].map(k => `<option value="${esc(k)}">`).join('');
+            const show = () => { btn.hidden = !(inp.value.trim() || F.part); };
+            const run = () => { const v = inp.value.trim(), hit = opts.get(v); F.vq = v;
+              if (hit) { F.vq = ''; if (window.__ovPick && String(F.part || '') !== hit.code) return window.__ovPick('part', hit.code, hit.k); }
+              const q = v.toLowerCase(); let n = 0; pc.querySelectorAll('.wr[data-c]').forEach(r => { const x = allP.find(y => y.code === r.dataset.c) || {}, ok = !q || [x.k, x.code, x.sub].join(' ').toLowerCase().includes(q); r.style.display = ok ? '' : 'none'; if (ok) n++; });
+              let em = pc.querySelector('.psem'); if (!n && q) { if (!em) { em = document.createElement('div'); em.className = 'em psem'; pc.appendChild(em); } em.textContent = 'No part matches “' + v + '”'; } else if (em) em.remove();
+              show(); };
+            inp.value = F.part ? (F.partName || F.part) : (F.vq || ''); if (!F.part && F.vq) run(); show();
+            inp.addEventListener('input', run);
+            btn.addEventListener('click', () => { F.vq = ''; inp.value = ''; if (F.part && window.__ovPick) return window.__ovPick('part', F.part); run(); inp.focus(); }); } } },
         { t: 'Cumulative receipts vs schedule', lg: [['Schedule', '#B9C1C9'], ['Received', C.navy]], draw: el => lineC(el, ds, [{ name: 'Schedule', color: '#B9C1C9', values: cS, dash: '4 3' }, { name: 'Received', color: C.navy, values: cR }], { h: 260, xFmt: dlab }) },
         /* 19 Nov 11:34 (Umair): 'Weakest 12 vendors' and 'Compliance by shop' removed (redundant); Daily receipts now sits beside Cumulative */
         { t: 'Daily receipts vs schedule', lg: [['Schedule', C.plan], ['Received', C.navy], ['80–99% of schedule', C.warn], ['Below 80%', C.bad]], draw: el => colC(el, ds, [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8), vals: 1 }) }], /* 19 Nov (Umair): Daily Production colours and bar labels */
@@ -1144,7 +1162,7 @@
     const m = document.createElement('div'); m.className = 'ovm'; m.style.setProperty('--ac', ACC[id]); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', name + ' details');
     m.innerHTML = `<div class="bx"><div class="bh"><div><h2>${esc(name)}${pill(o.st)}</h2>${o.title ? `<div class="bs">${esc(o.title)}</div>` : ''}</div><div class="br">${id === 'inventory' ? `<button type="button" class="ivatd${window.__ATDMC ? ' on' : ''}" aria-pressed="${!!window.__ATDMC}" title="${window.__ATDMC ? 'ATDMC die making (SAP plant MDP) stock is included. Click to leave it out' : 'ATDMC die making (SAP plant MDP) stock is left out. Click to add it to Raw Material, Consumables, Tools and Spares'}">Include ATDMC Stock</button>` : ''}${FW ? `<button type="button" class="go">${esc(name)} Details</button>` : ''}${FON ? `<button class="fx" type="button" title="Show everything again">Clear filter</button>` : ''}${FW ? `<span class="fw"><button class="ff${F.shop || F.model || F.part ? ' on' : ''}" type="button" aria-label="Filter this window" title="Filter by shop, model or part" aria-expanded="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="fpn" hidden></div></span>` : ''}<button class="x" type="button" aria-label="Close" title="Close">×</button></div></div>
       <div class="bk">${o.kpis.map(([l, v, s, c, b]) => `<div class="k"${b || c ? ` style="border-left-color:${b || c}"` : ''}><div class="l">${esc(l)}</div><div class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>
-      <div class="bg">${o.detail.map((d, i) => `<div class="pn"><h4>${esc(d.t)}</h4>${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
+      <div class="bg${o.detail.some(d => d.search) ? ' hs' : ''}">${o.detail.map((d, i) => `<div class="pn">${d.search ? `<div class="pnh"><h4>${esc(d.t)}</h4><div class="psr"><input type="search" list="psl${i}" placeholder="${esc(d.search.ph || 'Search')}" aria-label="${esc(d.search.ph || 'Search')}"><datalist id="psl${i}"></datalist><button type="button" class="psx" hidden>Clear filter</button></div></div>` : `<h4>${esc(d.t)}</h4>`}${d.lg ? `<div class="lg">${lg(d.lg)}</div>` : ''}<div class="pc" data-i="${i}"></div></div>`).join('')}</div>
       ${FW ? (o.foot ? `<div class="ft"><span>${esc(o.foot)}</span></div>` : '') : `<div class="ft"><span>${esc(o.foot || '')}</span><button type="button" class="go">Open ${esc(name)} tab</button></div>`}</div>`;   /* 17 Nov 10:11 (Umair): Production's button reads 'Production Details' and sits top right, left of Clear filter */
     (document.getElementById('ael') || document.body).appendChild(m);
     m.addEventListener('click', ev => { if (ev.target === m) closeD(); }); m.querySelector('.x').addEventListener('click', closeD);
@@ -1154,6 +1172,8 @@
     /* 18 Nov 17:19 (Umair): a clickable shop in a window chart filters the whole window (part is dropped as it belongs to a shop); the same shop again clears it */
     window.__ovPick = (k, v, lab) => { if (!m.isConnected || m.classList.contains('closing')) return; const G = { ...F }; delete G._open; G[k] = String(G[k] || '') === String(v) ? '' : v; if (k === 'shop') { G.part = ''; G.partName = ''; } if (k === 'part') G.partName = G.part ? (lab || v) : ''; openD(id, name, G); };
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } });
+    /* 19 Nov 11:58 (Umair): a panel can carry a search box (with suggestions) and a red Clear filter button on its title row */
+    m.querySelectorAll('.pn').forEach(pn => { const pc = pn.querySelector('.pc'), d = pc && o.detail[+pc.dataset.i]; if (!d || !d.search) return; try { d.search.bind(pn.querySelector('.psr input'), pn.querySelector('.psr .psx'), pn.querySelector('.psr datalist'), pc); } catch (e) { console.error(e); } });
     if (id === 'vendor') {   /* 16 Nov (Umair): click a vendor to filter the whole window to it; click it again, or Clear filter, for all vendors */
       m.querySelectorAll('.wr[data-v]').forEach(r => { r.classList.add('vpick'); r.title = (r.title ? r.title + ' · ' : '') + (r.dataset.v === VF ? 'Click to show all vendors' : 'Click to show only this vendor');
         r.addEventListener('click', () => openD(id, name, { ...F, vf: r.dataset.v === VF ? '' : r.dataset.v })); }); }
