@@ -696,7 +696,10 @@
     const wlist = (L, parts) => el => { el.innerHTML = L.length ? `<div class="ovwd">${L.map(x => wRowH(x, VF)).join('')}</div>` : '<div class="em">Nothing to show</div>';
       /* 16 Nov 18:08 (Umair): in the detail window the vendor and runway panels open only over the part name, and sit to its left so they can be read */
       if (parts) el.querySelectorAll('.wr[data-c]').forEach(r => { const n = r.querySelector('.wn') || r; n.classList.add('wnh');
-        n.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k, n)); n.addEventListener('mouseleave', vpOvH); }); };
+        n.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k, n)); n.addEventListener('mouseleave', vpOvH);
+        /* 19 Nov 11:40 (Umair): clicking a part name filters this window to that part; clicking it again clears it */
+        if (F.part && String(F.part) === r.dataset.c) r.classList.add('sel');
+        n.style.cursor = 'pointer'; n.addEventListener('click', ev => { ev.stopPropagation(); vpOvH(); if (window.__ovPick) window.__ovPick('part', r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k); }); }); };
     return { title: `${F.shop ? ' · shop: ' + F.shop : ''}${F.model ? ' · model: ' + F.model : ''}${F.part ? ' · part: ' + (F.partName || F.part) : ''}${VF ? ' · vendor: ' + VF : ''}`.slice(3), /* 17 Nov 10:16 (Umair): month/date line removed, only the applied filter shows */ vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Scheduled', kf(sc), 'pieces due to date'], ['Received', kf(rc), 'pieces, month to date'], /* 19 Nov 11:37 (Umair): Scheduled before Received */
@@ -1149,7 +1152,7 @@
     m.querySelector('.go').addEventListener('click', () => { closeD(); const t = document.querySelector(`#tabs .tab[data-p="${id}"]`); if (t) t.click(); });
     document.addEventListener('keydown', escK); m.querySelector('.x').focus();
     /* 18 Nov 17:19 (Umair): a clickable shop in a window chart filters the whole window (part is dropped as it belongs to a shop); the same shop again clears it */
-    window.__ovPick = (k, v) => { if (!m.isConnected || m.classList.contains('closing')) return; const G = { ...F }; delete G._open; G[k] = String(G[k] || '') === String(v) ? '' : v; if (k === 'shop') { G.part = ''; G.partName = ''; } openD(id, name, G); };
+    window.__ovPick = (k, v, lab) => { if (!m.isConnected || m.classList.contains('closing')) return; const G = { ...F }; delete G._open; G[k] = String(G[k] || '') === String(v) ? '' : v; if (k === 'shop') { G.part = ''; G.partName = ''; } if (k === 'part') G.partName = G.part ? (lab || v) : ''; openD(id, name, G); };
     m.querySelectorAll('.pc').forEach(el => { try { o.detail[+el.dataset.i].draw(el); } catch (e) { console.error(e); none(el, 'Could not draw this chart'); } });
     if (id === 'vendor') {   /* 16 Nov (Umair): click a vendor to filter the whole window to it; click it again, or Clear filter, for all vendors */
       m.querySelectorAll('.wr[data-v]').forEach(r => { r.classList.add('vpick'); r.title = (r.title ? r.title + ' · ' : '') + (r.dataset.v === VF ? 'Click to show all vendors' : 'Click to show only this vendor');
