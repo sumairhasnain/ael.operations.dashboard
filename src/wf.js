@@ -41,9 +41,9 @@
   /* rows for the By Area & Section table that have no attendance at all: sections on the sheet's roster with nothing marked
      in the selected dates, and production shops that have no area in the sheet. Rows never marked are shaded red below. */
   const PSH = ['Clutch', 'Drum Gear', 'Ignition Coil', 'Hubs', 'Carb Child Parts', 'Carburetor', 'CIF Machining', 'Bridge Fork Top', 'HPDC / Die Cast', 'Piston', 'Polymer'];
-  window.__wfMiss = (p, rows, sel) => {
+  window.__wfMiss = (p, rows, sel) => { p = (dash.params() || {}).wfs ? { ...(p || {}), shop: dash.params().wfs, wfs: dash.params().wfs } : p;
     const ppl = (dash.data('sp_attendance_people') || {}).data || [], att = (dash.data('sp_attendance') || {}).data || [];
-    const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const inShop = r => p.wfs ? r.shop === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     const have = new Set(rows.map(r => r.key)), out = [];
     d3.rollups(ppl.filter(r => r.month === p.month && inShop(r) && (!sel || r.area === sel)), v => ({ n: v.length, shop: v[0].shop }), r => r.area + '|' + r.section)
       .forEach(([k, o]) => { if (!have.has(k)) { const [area, section] = k.split('|'); out.push({ key: k, area, section, shop: o.shop, hc: o.n }); } });
@@ -101,7 +101,7 @@
       card2.className = 'card'; const row = document.createElement('div'); row.className = 'wfrow'; row.append(card3, card2);
       host.after(card, row); const qi = card2.querySelector('#q-wfoa'); qi.addEventListener('input', () => window.__draw && window.__draw()); }
     const all = (dash.data('sp_attendance_people') || {}).data || [], m = p.month || (window.__TODAY || '').slice(0, 7);
-    const inShop = r => p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
+    const inShop = r => p.wfs ? r.shop === p.wfs : p.shop === 'All' || (/KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop]).includes(p.shop);
     /* 10 Nov (Umair): 'AVG Absent Day (3 months)' = average absent days a month over the 3 complete months before month m,
        counting only the months the person is on the sheet (Oct only for now; fills in as months pass). */
     const prev3 = [1, 2, 3].map(k => { const d = new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7) - 1 - k, 1)); return d.toISOString().slice(0, 7); }),
@@ -146,7 +146,10 @@
       const dr = d3.rollups(mon_, v => new Set(v.map(pk2)).size, r => r.shop || '—').map(([shop, n]) => ({ shop, n }));
       table(document.getElementById('tb-wfdist'), dr, [{ k: 'shop' }, { k: 'n', n: 1, fmt: d3.format(',') }], { sort: 'n', dir: -1 });
       document.getElementById('wfdist-t').textContent = d3.format(',')(d3.sum(dr, d => d.n));
-      document.querySelectorAll('#tb-wfdist tbody tr').forEach(tr => { const on = p.shop !== 'All' && tr.cells[0] && tr.cells[0].textContent === p.shop; tr.style.fontWeight = on ? 700 : ''; tr.style.background = on ? '#EEF1F4' : ''; }); }
+      document.querySelectorAll('#tb-wfdist tbody tr').forEach(tr => { const sh = tr.cells[0] ? tr.cells[0].textContent : '', on = p.shop !== 'All' && sh === p.shop; tr.style.fontWeight = on ? 700 : ''; tr.style.background = on ? '#EEF1F4' : '';
+        /* 19 Nov 16:01 (Umair): click a shop to filter the whole Manpower page to it; click it again to remove the filter */
+        const c0 = tr.cells[0]; if (!c0 || sh === '—') return; c0.style.cursor = 'pointer'; c0.style.textDecoration = 'underline dotted #9AA5B1'; c0.title = on && p.wfs ? 'Click to show all shops' : 'Click to filter the Manpower page to ' + sh;
+        c0.onclick = () => dash.setParams({ wfs: (dash.params() || {}).wfs === sh ? 0 : sh, wfa: 0 }); }); }
     const tb = document.querySelector('#c-w-oal table.tb'), nf1 = v => v ? fx(v) : '—';
     /* 10 Nov (Umair): view buttons beside this table's Clear filters, kept in the wfoat param (only one on at a time; click again = default):
          default    = all manpower in the month, every shop (or the shop chosen in the top filter pane: its own people only)
@@ -171,7 +174,9 @@
     const sh = p.shop !== 'All' ? ' · ' + p.shop : '', h3 = document.querySelector('#c-w-oal h3');
     if (h3) h3.textContent = vw === 'top' ? `Who: Top 10 Absentees${sh}` : vw === 'ot' ? 'Who: Overtime in the Same Week as an Absence' : `Who: All Manpower${sh} (${d3.format(',')(rows.length)})`;
   };
-  window.__wf = (tbl, p, sel, rf) => { P = p || {}; kpis(P, sel, rf); try { oa(P, sel); } catch (e) { console.error(e); }
+  /* 19 Nov 16:01 (Umair): with a shop picked in the distribution table (param wfs) every Manpower card uses exactly that sheet shop */
+  const wfP = p => { const w = (dash.params() || {}).wfs || ''; return w ? { ...(p || {}), shop: w, wfs: w } : (p || {}); };
+  window.__wf = (tbl, p, sel, rf) => { p = wfP(p); P = p; kpis(P, sel, rf); try { oa(P, sel); } catch (e) { console.error(e); }
     tbl.querySelectorAll('tbody tr').forEach(tr => { const c = tr.children; if (c.length < 3) return; const last = c[c.length - 1];
       if (c[1].textContent === '—') { last.textContent = 'Not in sheet'; last.title = 'This shop has no area in the SharePoint attendance sheet'; }
       else if (c[2].textContent === '0') { last.textContent = 'Overtime only'; last.style.color = '#5A6670'; last.style.fontWeight = ''; last.title = 'Only the Overtime sheet uses this section; these people\'s attendance sits under their own sections'; }

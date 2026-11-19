@@ -57,7 +57,7 @@ sShift.addEventListener('change', () => dash.setParams({ shift: sShift.value }))
 document.getElementById('f-clear').addEventListener('click', () => {
 document.querySelectorAll('#ael input.q').forEach(i => { i.value = ''; });
 const bv = document.getElementById('s-bomv'); if (bv) bv.value = 'all';
-dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0, ihb: 0, wfa: 0 });
+dash.setParams({ shop: 'All', model: 'All', shift: 'All', sf: 0, mf: 0, pf: 0, product: 0, ihpart: 0, cp: 0, dpart: 0, vend: 0, vpart: 0, day: 0, ihb: 0, wfa: 0, wfs: 0 });
 window.__draw && window.__draw(); });
 sMonth.addEventListener('change', () => { const m = sMonth.value; const e = mEnd(m); dash.setParams({ month: m, asof: (window.__TODAY >= m + '-01' && window.__TODAY <= e) ? window.__TODAY : e }); });
 iDate.addEventListener('change', () => { const v = iDate.value; if (v && iDate.validity.valid && v >= '2026-06-01' && v <= '2026-12-31') dash.setParams({ month: v.slice(0, 7), asof: v }); });

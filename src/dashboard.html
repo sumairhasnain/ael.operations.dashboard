@@ -1468,7 +1468,8 @@ const ids = ['c-w-abs', 'c-w-ot', 'c-w-dabs', 'c-w-dot'].map(ch); const tbl = q(
 if (ids.map(e => status(e, 'sp_attendance')).some(Boolean)) return;
 const [eabs, eot, edabs, edot] = ids;
 const wfShops = r => /KEIHIN|ZINC/i.test(r.area) ? ['Carburetor'] : r.shop === 'Aluminium Foundry' ? ['Piston', 'Bridge Fork Top'] : [r.shop];
-const all = D('sp_attendance').filter(r => p.shop === 'All' || wfShops(r).includes(p.shop));
+const wfS = (dash.params() || {}).wfs || ''; /* 19 Nov 16:01 (Umair): a shop clicked in 'Manpower Distribution - By Shop' filters the whole Manpower page to exactly that sheet shop */
+const all = D('sp_attendance').filter(r => wfS ? r.shop === wfS : p.shop === 'All' || wfShops(r).includes(p.shop));
 const rs = all.filter(r => r.date >= p.start && r.date <= p.actEnd);
 const nod = p.future ? 'No attendance yet for this month' : (all.some(r => r.date.slice(0, 7) === p.month) ? 'No data for this selection' : 'The attendance file covers ' + [...new Set(D('sp_attendance').map(r => mon(r.date) + ' ' + r.date.slice(0, 4)))].join(', ') + ' only');
 if (!rs.length) { ids.forEach(e => empty(e, nod)); table(tbl, window.__wfMiss ? window.__wfMiss(p, [], null) : [], [{ k: 'area' }, { k: 'section' }, { k: 'hc', n: 1 }]); window.__wf && window.__wf(tbl, p, null); return; }
