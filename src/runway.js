@@ -162,6 +162,10 @@
 /* Part Compliance - Other Parts (31 Oct, Umair): vendor-supplied alternate codes are not Atlas production parts, so the table
    never listed them. Each one now shows directly under the in-house code it replaces: Month plan / Plan MTD = vendor schedule,
    Produced = received from vendors (atlas_vendor_supply), stock and safety level from SAP. Add more pairs to ALT as needed. */
+/* 19 Nov 11:00 (Umair): separate Vendor and Imported toggles on Part Compliance - Other Parts. Imported = SAP codes 30xxxxxxxx
+   (CKD) and 50xxxxxxxx (foreign suppliers); everything else bought-out is Vendor. */
+window.__ptype = c => /^(30|50)/.test(String(c || '').trim()) ? 'Imported' : 'Vendor';
+window.__pshow = c => window.__ptype(c) === 'Imported' ? window.__pimp === true : window.__pvend === true;
 (() => {
   const ALT = { '6010213013': { of: '6510213011', part: 'DRIVE PLATE CD70 SEMI MACH (VEN)', shop: 'Clutch', models: 'CD70' } };
   const AK = window.AK, d0 = window.__draw; if (!AK || !d0) return;
@@ -214,8 +218,10 @@
        when Atlas has none; Level 3 and below only while Sub-Levels is on; VEN Plan / VEN MTD / Received from the Atlas vendor schedule where the part has one. */
     const vb = document.getElementById('t-parts2v'); if (vb) { vb.setAttribute('aria-pressed', String(window.__pvend === true));
       if (!vb.__b) { vb.__b = 1; vb.onclick = () => { window.__pvend = window.__pvend !== true; window.__draw(); }; } }
+    const ib = document.getElementById('t-parts2i'); if (ib) { ib.setAttribute('aria-pressed', String(window.__pimp === true));
+      if (!ib.__b) { ib.__b = 1; ib.onclick = () => { window.__pimp = window.__pimp !== true; window.__draw(); }; } }
     const SB = dash.data('sap_bom'), SS = dash.data('sap_stock');
-    if (window.__pvend === true && SB && SB.status === 'ok' && SB.data && SB.data[0]) {
+    if ((window.__pvend === true || window.__pimp === true) && SB && SB.status === 'ok' && SB.data && SB.data[0]) {
       const sb = SB.data[0], fgI = new Map((sb.fgs || []).map(f => [String(f.fg), f])), pdI = new Map(((PD && PD.data) || []).map(r => [String(r.code), r]));
       const stI = new Map(); ((SS && SS.status === 'ok' && SS.data) || []).forEach(r => { const c = String(r.code); stI.set(c, (stI.get(c) || 0) + (+r.stock || 0)); });
       const psI = new Map(((PS && PS.status === 'ok' && PS.data) || []).map(r => [String(r.code), r])), CS = dash.data('atlas_child_stock'), csI = new Map(((CS && CS.status === 'ok' && CS.data) || []).map(r => [String(r.code), r]));
@@ -227,6 +233,7 @@
       const rows = [];
       V.forEach((v, code) => { const shop = [...v.shops].sort().join(' / '), models = [...v.models].sort().join('/');
         if (v.lv >= 3 && window.__psub !== true) return; /* Level 3 and below follow the Sub-Levels toggle, like the rest of the table */
+        if (!window.__pshow(code)) return; /* 19 Nov: Vendor / Imported each by their own toggle */
         if (p.shop && p.shop !== 'All' && !v.shops.has(p.shop)) return; if (p.model && p.model !== 'All' && !v.models.has(p.model)) return;
         if (q && ![code, v.part, shop, models, v.type].join(' ').toLowerCase().includes(q)) return;
         let pt = 0, pp = 0, pa = 0, has = false; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; has = true; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
@@ -251,13 +258,15 @@
       const depth = c => { let d = 0, x = c; while (par.has(x) && d < 6) { x = par.get(x); d++; } return d; };
       [...par.keys()].sort((a, b) => depth(a) - depth(b)).forEach(c => { const r = rowOf(c), pr = r && rowOf(par.get(c)); if (!r || !pr) return; let at = pr; while (at.nextElementSibling && par.get(at.nextElementSibling.cells[0].textContent.trim()) === par.get(c) && at.nextElementSibling !== r) at = at.nextElementSibling; at.after(r); }); }
     /* 19 Nov (Umair): Vendor & Imported off = in-house parts only, so the vendor-only rows above go too */
-    if (window.__pvend !== true) [...tb.rows].forEach(r => { if (r.__ven) r.remove(); });
+    [...tb.rows].forEach(r => { if (r.__ven && r.cells[0] && !window.__pshow(r.cells[0].textContent)) r.remove(); });
     /* 19 Nov 10:56 (Umair): the extra rows (vendor / imported / sub-level) also get SAP figures where Atlas has none:
        Received = vendor receipts this month, Produced = in-house receipts this month (sap_stock 'mr' / 'mp') */
     { const SS0 = dash.data('sap_stock'), R0 = new Map(((SS0 && SS0.status === 'ok' && SS0.data) || []).map(r => [String(r.code), r])), m0 = String(p.start || p.asof || '').slice(0, 7);
       [...tb.rows].forEach(r => { if (!r.classList.contains('altv') || r.cells.length < 15) return; const sr = R0.get(r.cells[0].textContent.trim()); if (!sr) return;
         const put = (i, v, tip) => { const td = r.cells[i]; if (td && td.textContent.trim() === '—' && v != null) { td.textContent = nf(Math.round(v)); td.title = tip; } };
         put(9, sr.mr && sr.mr[m0], 'Received from vendors this month (SAP MB51 101 less 102 with a supplier)');
+        { const td = r.cells[9], sv = sr.mr && sr.mr[m0] != null ? Math.round(sr.mr[m0]) : 0, av = td ? +td.textContent.replace(/[^0-9.\-]/g, '') : NaN; /* 19 Nov: Atlas and SAP differ (unscheduled supplier, CKD route) — say so on hover */
+          if (td && td.textContent.trim() !== '—' && !isNaN(av) && Math.abs(av - sv) > 1 && !/SAP MB51/.test(td.title)) td.title = `Atlas vendor schedule receipts: ${nf(av)}. SAP MB51 vendor receipts this month: ${nf(sv)}` + (sv > av ? ' (includes suppliers outside the Atlas schedule)' : ' (not posted as 101 with a supplier in MB51)'); }
         if (!r.classList.contains('vimp') && !r.__ven) put(13, sr.mp && sr.mp[m0], 'Produced in-house this month (SAP MB51 101 less 102 without a supplier)'); }); }
     tree(T, tb, p, q, VS, PS, PD);
   };
@@ -318,7 +327,7 @@
       [...m.values()].sort((a, b) => (a.status === 'Exploded' ? 0 : 1) - (b.status === 'Exploded' ? 0 : 1) || String(a.part).localeCompare(String(b.part))).forEach(t => {
         const c = String(t.code); if (/^10/.test(c) || path.has(c)) return;
         if (L === 2) { if (seenL2.has(c)) return; seenL2.add(c); }
-        let row = have.get(c); const ven = isVen(t, row); if (ven && window.__pvend !== true) return;
+        let row = have.get(c); const ven = isVen(t, row); if (ven && !window.__pshow(c)) return;
         if (q && !row && ![c, t.part].join(' ').toLowerCase().includes(q)) { if (+t.qty > 0) { if (!edges.has(c)) edges.set(c, new Map()); edges.get(c).set(String(parent), +t.qty); } walk(c, L + 1, models, new Set([...path, c]), null); return; }
         if (row && used.has(row)) { const v0 = row.__ven; row = row.cloneNode(true); row.__ven = v0; row.classList.add('altv'); }
         else if (!row) row = mk(t, L, ven, models);
@@ -339,11 +348,11 @@
       const r = ok ? [a, b, ps.size, [...ps.keys()]] : null; memo.set(c, r); return r; };
     ents.forEach(([row, c, ven]) => fill(row, c, ven, reqOf(c)));
     if (!out.length) return;
-    const rest = [...tb.rows].filter(r => !used.has(r) && !(r.__ven && window.__pvend !== true) && r.cells.length > 1); [...tb.rows].forEach(r => { if (r.cells.length <= 1) r.remove(); }); /* the 'No rows' note goes once the tree adds rows */
+    const rest = [...tb.rows].filter(r => !used.has(r) && !(r.__ven && r.cells[0] && !window.__pshow(r.cells[0].textContent)) && r.cells.length > 1); [...tb.rows].forEach(r => { if (r.cells.length <= 1) r.remove(); }); /* the 'No rows' note goes once the tree adds rows */
     out.concat(rest).forEach(r => tb.appendChild(r));
     [...tb.rows].forEach(r => { const L = r.__L || +((r.cells[4] && r.cells[4].textContent.match(/L(\d)/)) || [0, 2])[1], td = r.cells[1]; if (!td) return;
       td.style.paddingLeft = (10 + Math.max(0, L - 2) * 16) + 'px';
-      if (r.__ven && !r.classList.contains('vimp') && !td.querySelector('.vtg')) { const tg = document.createElement('span'); tg.className = 'vtg'; tg.textContent = 'Vendor'; tg.style.cssText = 'margin-left:6px;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:8px;white-space:nowrap;background:#EEF2F0;color:#1E6B4A'; td.appendChild(tg); }
+      if (r.__ven && !r.classList.contains('vimp') && !td.querySelector('.vtg')) { const tg = document.createElement('span'); tg.className = 'vtg'; tg.textContent = window.__ptype(r.cells[0].textContent); tg.style.cssText = 'margin-left:6px;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:8px;white-space:nowrap;' + (tg.textContent === 'Imported' ? 'background:#EAF0FF;color:#2251FF' : 'background:#EEF2F0;color:#1E6B4A'); td.appendChild(tg); }
       if (L >= 3 && !td.querySelector('.tlv')) { const k = document.createElement('span'); k.className = 'tlv'; k.textContent = '└ '; k.style.color = '#9AA5B1'; td.insertBefore(k, td.firstChild); } });
   }
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };

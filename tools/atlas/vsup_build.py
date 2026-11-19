@@ -193,10 +193,26 @@ if _cur and not any(str(r.get('date', '')).startswith(_cur) and r.get('received'
 if os.path.exists('prev_atlas_vendor_supply.json'):
     try:
         _prev = json.load(open('prev_atlas_vendor_supply.json')); _sum = lambda rs, mo: sum(x.get('received') or 0 for x in rs if str(x.get('date', '')).startswith(mo))
+        # 19 Nov (Umair): per date / part / vendor instead of whole months. Replacing a whole month with the dashboard's rows
+        # whenever its total was higher (it carries the Atlas feed's extra receipts) froze the month and dropped new SAP receipts.
+        # Now each date + part + vendor keeps the higher of the two; only the shortfall is added back from the dashboard's rows.
+        _curm = max((str(x.get('date', ''))[:7] for x in sup if x.get('received')), default='')
         for _mo in sorted({str(x.get('date', ''))[:7] for x in _prev}):
-            if _sum(_prev, _mo) > _sum(sup, _mo):
+            if _mo < _curm and _sum(_prev, _mo) > _sum(sup, _mo):  # past months: whole month as before (they are closed)
                 sup = [x for x in sup if not str(x.get('date', '')).startswith(_mo)] + [x for x in _prev if str(x.get('date', '')).startswith(_mo)]
                 print('kept dashboard rows for', _mo)
+        _prev = [x for x in _prev if str(x.get('date', '')).startswith(_curm)] if _curm else []
+        from collections import defaultdict as _dd
+        _a, _p = _dd(float), _dd(float)
+        for x in sup: _a[(str(x.get('date', '')), str(x.get('code')), x.get('vendor'))] += x.get('received') or 0
+        for x in _prev: _p[(str(x.get('date', '')), str(x.get('code')), x.get('vendor'))] += x.get('received') or 0
+        _first = {}
+        for x in _prev: _first.setdefault((str(x.get('date', '')), str(x.get('code')), x.get('vendor')), x)
+        _add = 0; _n = 0
+        for k, v in _p.items():
+            if v > _a.get(k, 0) + 0.5:
+                y = dict(_first[k]); y['received'] = v - _a.get(k, 0); y['scheduled'] = 0; sup.append(y); _add += y['received']; _n += 1
+        if _n: print('kept dashboard receipts:', _n, 'date/part/vendor rows,', round(_add), 'units')
     except Exception as e: print('prev merge skipped', e)
 json.dump(sup, open('atlas_vendor_supply.json', 'w'), separators=(',', ':'))
 json.dump(sch, open('atlas_vendor_sched.json', 'w'), separators=(',', ':'))
