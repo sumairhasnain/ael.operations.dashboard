@@ -5392,7 +5392,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
         n.addEventListener('mousemove', ev => vpOv(ev, r.dataset.c, (L.find(x => x.code === r.dataset.c) || {}).k, n)); n.addEventListener('mouseleave', vpOvH); }); };
     return { title: `${F.shop ? ' · shop: ' + F.shop : ''}${F.model ? ' · model: ' + F.model : ''}${F.part ? ' · part: ' + (F.partName || F.part) : ''}${VF ? ' · vendor: ' + VF : ''}`.slice(3), /* 17 Nov 10:16 (Umair): month/date line removed, only the applied filter shows */ vf: VF || '', st: band(c, 95, 80), watch: { vendors: wVend, parts: wPart },
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
-      kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
+      kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Scheduled', kf(sc), 'pieces due to date'], ['Received', kf(rc), 'pieces, month to date'], /* 19 Nov 11:37 (Umair): Scheduled before Received */
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
