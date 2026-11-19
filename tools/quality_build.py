@@ -1,6 +1,6 @@
 """Quality tab dataset from SAP (19 Nov 2026, Umair).
 
-Usage: python3 quality_build.py <mb51q dump.txt> [<wide mb51q dump.txt>] <mb52 dump.txt> <data dir> <out quality_sap.json>
+Usage: python3 quality_build.py <mb51q dump.txt> [<wide mb51q dump.txt>] <mb52 dump.txt> <data dir> <out quality_sap.json> [<r.pkl 101 history>] [<plan_dump.txt>]
 
 Inputs
   mb51q dump   tools/mb51q_extract.js on the newest MB51 file (quality movement types with Text / Reference / entry time)
@@ -83,10 +83,23 @@ def vendor_in_text(text, names):
     return ''
 
 def main(args):
+    rp = None; osp = {}; vn_ = {}
+    for a_ in list(args):   # optional extras, any order at the end: r.pkl (101 history) and the Atlas plan dump (OSP vendor per part)
+        if a_.endswith('.pkl'): rp = a_; args.remove(a_)
+        elif os.path.basename(a_).startswith('plan_dump'):
+            f_ = False
+            for l in open(a_, encoding='utf-8'):
+                l = l.rstrip('\n')
+                if l.startswith('##'): f_ = l[2:]; continue
+                if f_ == 'OSP' and '|' in l: c_, v_ = l.split('|')[:2]; osp[c_] = v_
+                if f_ == 'V' and '|' in l: c_, v_ = l.split('|', 1); vn_[c_] = v_
+            args.remove(a_)
     if len(args) == 5: qn, qw, m52, ddir, outp = args
     else: qn, m52, ddir, outp = args; qw = None
     J = lambda f: json.load(open(os.path.join(ddir, f)))
     names = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sap_vendor_names.json')))
+    for c_, v_ in vn_.items(): names.setdefault(c_, v_)
+    names['RPS'] = 'RPS (gate pass, no SAP supplier code)'
     head, R = read_dump(qn)
     # -------- enrich from the wide export (Material Document, vendor name, PO, user) --------
     W = {}
@@ -95,18 +108,18 @@ def main(args):
         for r in RW:
             k = (r['Material'], r['Movement Type'], r['Plant'], r['Storage Location'], r['Posting Date'], r['Time of Entry'], r['Qty in unit of entry'])
             W.setdefault(k, r)
-            if r.get('Supplier') and r.get('Name 1'): names.setdefault(strip(r['Supplier']), r['Name 1'])
+            if r.get('Supplier') and len(r.get('Name 1', '').split()) > 1: names.setdefault(strip(r['Supplier']), r['Name 1'])   # 'Name 1' is sometimes only a city
     # -------- part master: BOM level, FG, shop, source, critical --------
     bom = J('sap_bom.json')[0]; ap = {str(x['code']): x for x in J('atlas_parts.json')}
     ab = {str(x['code']): x for x in J('atlas_bom.json')}
     crit = {str(x['code']): x for x in J('atlas_stock_critical.json')}
     fgshop = {f['fg']: f['shop'] for f in bom['fgs']}; fgname = {f['fg']: f['part'] for f in bom['fgs']}
-    lvl = {}; fgs = collections.defaultdict(set); parent = {}
+    lvl = {}; fgs = collections.defaultdict(set); parent = {}; bst = {}
     for f in bom['fgs']: lvl[f['fg']] = 0; fgs[f['fg']].add(f['fg'])
     for t in bom['tree']:
         c = str(t['code']); l = int(t['lvl'])
         if c not in lvl or l < lvl[c]: lvl[c] = l; parent[c] = str(t['parent'])
-        fgs[c].add(t['fg'])
+        fgs[c].add(t['fg']); bst.setdefault(c, t.get('status') or '')
     for c, x in ap.items():
         if x.get('type') == 'Finished': lvl.setdefault(c, 0); fgs[c].add(c)
     rates = J('sap_bom_cost.json')[0].get('rates', {}); sst = {}
@@ -293,12 +306,51 @@ def main(args):
         shop = a.get('shop') or b.get('shop') or (fgshop.get(f[0]) if f else '') or (sst.get(c) or {}).get('shop') or ''
         src = b.get('source') or ('In-house' if (a.get('type') or '').startswith(('Finished', 'In')) else '')
         if not src: src = 'Imported' if c[:2] in ('30', '50') and len(c) == 10 else ''
-        parts[c] = dict(lvl=lvl.get(c), fg=f[:6], shop=shop, src=src, cat=(sst.get(c) or {}).get('category', ''), crit=c in crit, ss=(crit.get(c) or {}).get('safety_stock'), rate=round(rate(c), 2))
+        parts[c] = dict(lvl=lvl.get(c), fg=f[:6], shop=shop, src=src, bst=bst.get(c, ''), cat=(sst.get(c) or {}).get('category', ''), crit=c in crit, ss=(crit.get(c) or {}).get('safety_stock'), rate=round(rate(c), 2))
     for e in out:
         p = parts.get(e['code'], {})
         if not p.get('src'): p['src'] = 'Vendor' if e['origin'] == 'vendor' else 'In-house'
+    # -------- who supplies / makes each part: SAP 101 receipts of the last 12 months (r.pkl history) + this month --------
+    supold = collections.defaultdict(collections.Counter); lastold = {}
+    sup12 = collections.defaultdict(collections.Counter); made12 = collections.Counter(); sloc12 = collections.defaultdict(collections.Counter)
+    if rp and os.path.exists(rp):
+        import pandas as pd
+        h = pd.read_pickle(rp); h = h[h['Movement Type'].astype(str).isin(['101', '102'])]
+        lim = (dt.date.fromisoformat(asof) - dt.timedelta(days=365)).isoformat() if asof else '0'
+        old = h[h['Posting Date'].astype(str).str[:10] < lim]
+        for m, sp, q, d_ in zip(old['Material'].astype(str), old['Supplier'], pd.to_numeric(old['Qty in unit of entry'], errors='coerce').fillna(0), old['Posting Date'].astype(str)):
+            if isinstance(sp, str) and re.fullmatch(r'\s*\d+\s*', sp): supold[strip(m)][strip(sp)] += q; lastold[strip(m)] = max(lastold.get(strip(m), ''), d_[:10])
+        h = h[h['Posting Date'].astype(str).str[:10] >= lim]
+        rps = (h['Text'].astype(str) + ' ' + h['Reference'].astype(str)).str.contains('RPS', case=False)
+        for m, sp, q, sl, pl, rp_ in zip(h['Material'].astype(str), h['Supplier'], pd.to_numeric(h['Qty in unit of entry'], errors='coerce').fillna(0), h['Storage Location'].astype(str), h['Plant'].astype(str), rps):
+            c = strip(m); sp = strip(sp) if isinstance(sp, str) and re.fullmatch(r'\s*\d+\s*', sp) else ''
+            if not sp and rp_: sp = 'RPS'   # 19 Nov: cushion internals come in on RPS gate passes into KHI 0012 with no SAP supplier
+            if sp: sup12[c][sp] += q
+            elif (pl, sl) not in REJ: made12[c] += q; sloc12[c][pl + ' ' + sl] += q
+    for (c, v), q in recv.items(): sup12[c][v] += 0 if rp else q
+    for c, v in osp.items():
+        if not sup12.get(c): sup12[c][v] += 1
+    for c, q in prod.items():
+        if not rp: made12[c] += q
+    atl = collections.defaultdict(collections.Counter)
+    try:
+        for x in J('atlas_vendor_supply.json'):
+            if str(x.get('date', ''))[:7] >= (asof[:4] + '-01' if asof else ''): atl[str(x['code'])][x.get('vendor') or ''] += (x.get('received') or 0) + (x.get('scheduled') or 0)
+    except Exception: pass
+    for c, p_ in parts.items():
+        p_['sup_atlas'] = [n for n, q in atl.get(c, collections.Counter()).most_common(3) if n and n != 'null' and q > 0]
+        top = [(v, q) for v, q in sup12.get(c, {}).items() if q > 0]; tot = sum(q for _, q in top) or 1
+        p_['sup'] = [[v, round(q / tot, 3)] for v, q in sorted(top, key=lambda x: -x[1])[:4]]
+        p_['made'] = round(made12.get(c, 0), 1)
+        if not top and supold.get(c):
+            o_ = [(v, q) for v, q in supold[c].items() if q > 0]; t_ = sum(q for _, q in o_) or 1
+            p_['sup'] = [[v, round(q / t_, 3)] for v, q in sorted(o_, key=lambda x: -x[1])[:4]]; p_['sup_last'] = lastold.get(c, '')
+            for v, _ in p_['sup']: names.get(v) and None
+        sl = sloc12.get(c)
+        p_['made_at'] = sl.most_common(1)[0][0] if sl else ''
+        if not p_.get('src'): p_['src'] = 'In-house' if p_['made'] > 0 and not top else ('Vendor' if top or p_['sup_atlas'] else '')
     vend = {}
-    for v in {e['vendor'] for e in out if e['vendor']} | {x['vendor'] for x in lots}:
+    for v in {e['vendor'] for e in out if e['vendor']} | {x['vendor'] for x in lots} | {v for p_ in parts.values() for v, _ in p_.get('sup', [])}:
         vend[v] = names.get(v, '')
     rcv = [dict(code=c, vendor=v, qty=round(q, 3)) for (c, v), q in recv.items() if q]
     # -------- BOM drill: each FG's tree, kept only along branches that lead to a part with quality data --------
@@ -321,8 +373,14 @@ def main(args):
         if keep or fg in qc:
             tree[fg] = [[rows[i]['lvl'], str(rows[i]['code']), str(rows[i]['parent']), rows[i].get('qty_fg') or rows[i].get('qty'), rows[i]['part'][:48]] for i in sorted(keep)]
             for i in keep:
-                c = str(rows[i]['code']); parts.setdefault(c, dict(lvl=rows[i]['lvl'], fg=[fg], shop=fgshop.get(fg, ''), src='', cat='', crit=c in crit, ss=None, rate=round(rate(c), 2)))
+                c = str(rows[i]['code']); parts.setdefault(c, dict(lvl=rows[i]['lvl'], fg=[fg], shop=fgshop.get(fg, ''), src='', bst=bst.get(c, ''), cat='', crit=c in crit, ss=None, rate=round(rate(c), 2)))
                 parts[c].setdefault('name', rows[i]['part'])
+                if 'sup' not in parts[c]:
+                    parts[c]['sup_atlas'] = [n for n, q in atl.get(c, collections.Counter()).most_common(3) if n and n != 'null' and q > 0]
+                    top = [(v, q) for v, q in sup12.get(c, {}).items() if q > 0]; tot = sum(q for _, q in top) or 1; sl = sloc12.get(c)
+                    parts[c].update(sup=[[v, round(q / tot, 3)] for v, q in sorted(top, key=lambda x: -x[1])[:4]], made=round(made12.get(c, 0), 1), made_at=sl.most_common(1)[0][0] if sl else '')
+                    if not parts[c].get('src'): parts[c]['src'] = 'In-house' if parts[c]['made'] > 0 and not top else ('Vendor' if top else '')
+                    for v, _ in parts[c]['sup']: vend.setdefault(v, names.get(v, ''))
     res = dict(asof=asof, month=asof[:7], file=head.get('file', ''), mtime=head.get('mtime', ''), mb52_file=mh.get('file', ''), mb52_mtime=mh.get('mtime', ''),
                rej_slocs=sorted('%s %s' % x for x in REJ),
                note='Built from SAP MB51 quality movements and MB52. Defect names come from SAP posting text; SAP holds no defect codes, Cp/Cpk or warranty data.',
