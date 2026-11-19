@@ -265,13 +265,18 @@
   /* vertical columns: cats, series [{name,color}], get(cat, s) ; o.stack */
   function colC(el, cats, S, get, o = {}) { if (!cats.length) return none(el, o.empty || 'No data'); const { svg, w, h } = mk(el, o.h); const ml = o.ml ?? 38, mb = o.rot ? 46 : 16, mt = 6;
     const tot = c => o.stack ? d3.sum(S, s => Math.max(0, get(c, s) || 0)) : d3.max(S, s => get(c, s) || 0);
-    const y = d3.scaleLinear().domain([0, (d3.max(cats, tot) || 1) * 1.06]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(d3.range(cats.length)).range([ml, w - 4]).padding(cats.length > 12 ? 0.18 : 0.14);
+    const y = d3.scaleLinear().domain([0, (d3.max(cats, tot) || 1) * (o.vals ? 1.22 : 1.06)]).nice().range([h - mb, mt]), x = d3.scaleBand().domain(d3.range(cats.length)).range([ml, w - 4]).padding(cats.length > 12 ? 0.18 : 0.14);
     const x1 = d3.scaleBand().domain(S.map(s => s.name)).range([0, x.bandwidth()]).padding(0.05);
     axisY(svg, y, ml, w - 4, o.yFmt || kf, o.h && o.h > 200 ? 5 : 3);
     cats.forEach((c, i) => { let y0 = 0; const L = [o.cFmt ? o.cFmt(c) : c, ...S.map(s => `${s.name}: ${(o.fmt || kf)(get(c, s) || 0)}`)];
       S.forEach(s => { const v = Math.max(0, get(c, s) || 0); const bx = o.stack ? x(i) : x(i) + x1(s.name), bw = o.stack ? x.bandwidth() : x1.bandwidth();
-        svg.append('rect').attr('x', bx).attr('y', y(y0 + v)).attr('width', bw).attr('height', Math.max(0, y(y0) - y(y0 + v))).attr('fill', s.color)
-          .on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide); if (o.stack) y0 += v; });
+        const fill = typeof s.color === 'function' ? s.color(c) : s.color; /* 19 Nov (Umair): colour can follow the day, as in Daily Production */
+        svg.append('rect').attr('x', bx).attr('y', y(y0 + v)).attr('width', bw).attr('height', Math.max(0, y(y0) - y(y0 + v))).attr('fill', fill)
+          .on('mousemove', ev => tip.show(ev, L)).on('mouseleave', tip.hide);
+        /* 19 Nov (Umair): value labels like the Production tab's Daily Production chart (rotated, inside the bar when it fits) */
+        if (o.vals && !o.stack && v > 0 && bw >= 6) { const t = v >= 1e6 ? d3.format('.2f')(v / 1e6) + 'M' : v >= 1000 ? d3.format('.1f')(v / 1000) + 'k' : d3.format(',.0f')(v), tl = t.length * 5.6 + 4, bh = y(0) - y(v), cx = bx + bw / 2, inside = bh >= tl + 4, ty = inside ? y(v) + 4 : y(v) - 3, dark = fill !== C.plan && fill !== '#DCE3EA' && fill !== '#C9D1D9';
+          svg.append('text').attr('transform', `translate(${cx + (bw >= 9 ? 3.2 : 2.6)},${ty}) rotate(-90)`).attr('text-anchor', inside ? 'end' : 'start').style('font-size', bw >= 12 ? '9.5px' : bw >= 9 ? '8.5px' : '7.5px').style('font-weight', 600).style('pointer-events', 'none').style('fill', inside && dark ? '#fff' : C.navy).text(t); }
+        if (o.stack) y0 += v; });
       const lb = o.cFmt ? o.cFmt(c) : c, step = Math.max(1, Math.ceil(cats.length / (w / (o.rot ? 18 : 40))));
       if (i % step === 0 || i === cats.length - 1) { const t = svg.append('text').attr('font-size', 9).attr('fill', '#5B6770');
         if (o.rot) t.attr('transform', `translate(${x(i) + x.bandwidth() / 2 + 3},${h - mb + 6}) rotate(-45)`).attr('text-anchor', 'end').text(String(lb).length > 14 ? String(lb).slice(0, 13) + '…' : lb);
@@ -661,6 +666,7 @@
     const byV = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0);
     const low = byV.filter(([, o]) => o.r / o.s < 0.8), short = d3.sum(rows.filter(r => r.date <= pEnd), r => 0) + d3.sum(byV, ([, o]) => Math.max(0, o.s - o.r));
     const ds = days(ms, end), byD = d3.rollup(rows, v => ({ s: d3.sum(v, r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.date);
+    const rcC = d => { const o = byD.get(d) || {}; return !o.s || o.r >= o.s ? C.navy : o.r / o.s >= 0.8 ? C.warn : C.bad; }; /* 19 Nov (Umair): received bar colour as in Daily Production */
     const byS = d3.rollups(rows, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0) }), r => r.shop || '—').filter(([, o]) => o.s > 0);
     const c = sc ? rc / sc * 100 : null, col = v => v < 70 ? C.bad : v < 85 ? C.warn : C.navy;
     let cs = 0, cr = 0; const cS = ds.map(d => (cs += d <= pEnd ? (byD.get(d) || {}).s || 0 : 0)), cR = ds.map(d => (cr += (byD.get(d) || {}).r || 0));
@@ -695,7 +701,7 @@
       tick: { bad: vRows.filter(x => x.v < 80).sort((a, b) => a.v - b.v), all: vRows.slice().sort((a, b) => b.v - a.v) },
       kpis: [['Supply compliance', pc(c), 'received vs schedule', c != null && c < 80 ? C.bad : c < 95 ? C.warn : null], ['Received', kf(rc), 'pieces, month to date'], ['Scheduled', kf(sc), 'pieces due to date'],
         ['Vendors scheduled', nf(byV.length), `${nf(new Set(rows.filter(r => +r.scheduled > 0).map(r => r.code)).size)} parts`], ['Vendors under 80%', nf(low.length), `${pc(byV.length ? low.length / byV.length * 100 : null)} of vendors`, low.length ? C.bad : null]],
-      vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
+      vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         /* 14 Nov 15:44 (Umair): the card's watch lists in full - 15 rows in view, scroll for the rest */
         { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV) },
@@ -703,7 +709,7 @@
         { t: 'Cumulative receipts vs schedule', lg: [['Schedule', '#B9C1C9'], ['Received', C.navy]], draw: el => lineC(el, ds, [{ name: 'Schedule', color: '#B9C1C9', values: cS, dash: '4 3' }, { name: 'Received', color: C.navy, values: cR }], { h: 260, xFmt: dlab }) },
         { t: 'Weakest 12 vendors (compliance, month to date)', draw: el => hbarC(el, byV.map(([v, o]) => ({ label: v, v: o.r / o.s * 100 })).sort((a, b) => a.v - b.v).slice(0, 12).map(d => { const o = new Map(byV).get(d.label); return { ...d, lab: pc(d.v), color: col(d.v), tip: [d.label, `Compliance ${pc(d.v)}`, `${kf(o.r)} received of ${kf(o.s)} scheduled`, `${o.n} parts`] }; }), { fmt: pc, ref: 100, h: 270, lw: 170, lc: 26 }) },
         { t: 'Compliance by shop', draw: el => hbarC(el, byS.map(([s, o]) => ({ label: s, v: o.r / o.s * 100, lab: pc(o.r / o.s * 100), color: col(o.r / o.s * 100), tip: [s, `${kf(o.r)} received of ${kf(o.s)} scheduled`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130 }) },
-        { t: 'Daily receipts vs schedule', lg: [['Schedule', '#C9D1D9'], ['Received', C.navy]], draw: el => colC(el, ds, [{ name: 'Schedule', color: '#C9D1D9' }, { name: 'Received', color: C.navy }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8) }) }],
+        { t: 'Daily receipts vs schedule', lg: [['Schedule', C.plan], ['Received', C.navy], ['80–99% of schedule', C.warn], ['Below 80%', C.bad]], draw: el => colC(el, ds, [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { h: 260, cFmt: d => +d.slice(8), vals: 1 }) }], /* 19 Nov (Umair): Daily Production colours and bar labels */
       foot: '' /* 17 Nov 10:16 (Umair): footnote removed */ }; };
 
   /* 12 Nov 00:34 (Umair): 'Exclude Raw Material' toggle leaves out Raw Material, Production parts and Lubricants */
