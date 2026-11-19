@@ -104,7 +104,7 @@
 .ovm .fpb{display:flex;justify-content:space-between;gap:8px}.ovm .fpb button{font:inherit;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;border:1px solid #C9D1D9;background:#fff;color:#051C2C}
 .ovm .fpb .fpd{background:#051C2C;color:#fff;border-color:#051C2C}
 .ovm .wr.vpick{cursor:pointer}.ovm .wr.vpick:hover{background:#F2F6FA}
-.ovm .wr.sel{background:#EEF3FF;box-shadow:inset 3px 0 0 #2251FF}
+.ovm .wr.sel{background:#EEF3FF;box-shadow:inset 3px 0 0 #2251FF} .ovm .wr.sel .wn{padding-left:1ch} /* 19 Nov 15:58 (Umair): the filtered vendor / part name steps in one character */
 .ovm .x{border:1px solid #D5DBE1;background:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;color:#051C2C;flex:0 0 auto}
 .ovm .x:hover{background:#051C2C;color:#fff}
 .ovm .bk{display:flex;flex-wrap:wrap;gap:8px 26px;margin:6px 0 12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4}
