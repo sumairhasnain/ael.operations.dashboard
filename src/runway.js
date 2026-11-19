@@ -181,7 +181,7 @@
       one.forEach((b, c) => { if (have.has(c) || fgA.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
         const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
         const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
-        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level }]); }); }
+        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level, src: b.source }]); }); }
     const bLv = c => { const b = ((BM && BM.data) || []).find(x => String(x.code) === c && x.level); return b ? +b.level : 0; };
     L.forEach(([code, a]) => {
       if (!a.lv && bLv(code)) { a = { ...a, lv: 'L' + bLv(code) }; } /* ALT rows take their BOM level when set (6010213013 L3, 8 Nov) */
@@ -195,6 +195,7 @@
       const pc = pp ? Math.round(pa / pp * 100) : null;
       if (a.lv && !pt && !pa && !(stk > 0)) return; /* idle level codes (no schedule, receipts or stock, e.g. OSP 6510213012) stay out */
       const tr = document.createElement('tr'); tr.className = 'altv'; tr.style.background = '#FAFBFC';
+      tr.__ven = !a.lv || a.src === 'Vendor' || /\((VEN|OSP)\b|\bOSP\b/i.test(a.part || ''); /* 19 Nov (Umair): vendor-only rows (ALT codes, Atlas BOM 'Vendor' parts) show only with Vendor & Imported on */
       const cells = [code, a.part, a.shop, a.models, ss, stk, pt || null, pp || null, pa, pc, null, null, null, null, null, null, null]; /* 17 Nov (Umair): same columns as the table now — VEN Plan / VEN MTD = vendor schedule, Received = received from vendors, RCV %; IH Plan, Plan MTD, Produced, Prod % and dispatch stay empty (not made in-house) */
       cells.forEach((v, i) => { const td = document.createElement('td'); if (i >= 4) td.className = 'n';
         td.textContent = v == null ? '—' : i === 9 ? v + '%' : i >= 4 ? nf(v) : v;
@@ -249,7 +250,64 @@
     if (T.querySelector('th[data-k="lv"]') && BM && BM.status === 'ok') { const par = new Map((BM.data || []).filter(b => b.parent).map(b => [String(b.code), String(b.parent)])), rowOf = c => [...tb.rows].find(r => r.cells[0] && r.cells[0].textContent.trim() === c);
       const depth = c => { let d = 0, x = c; while (par.has(x) && d < 6) { x = par.get(x); d++; } return d; };
       [...par.keys()].sort((a, b) => depth(a) - depth(b)).forEach(c => { const r = rowOf(c), pr = r && rowOf(par.get(c)); if (!r || !pr) return; let at = pr; while (at.nextElementSibling && par.get(at.nextElementSibling.cells[0].textContent.trim()) === par.get(c) && at.nextElementSibling !== r) at = at.nextElementSibling; at.after(r); }); }
+    /* 19 Nov (Umair): Vendor & Imported off = in-house parts only, so the vendor-only rows above go too */
+    if (window.__pvend !== true) [...tb.rows].forEach(r => { if (r.__ven) r.remove(); });
+    tree(T, tb, p, q, VS, PS, PD);
   };
+  /* 19 Nov (Umair): with a shop picked and Sub-Levels on, the table becomes that shop's SAP BOM tree. Under each L2 part come
+     its L3 to L6 parts (SAP BOM level + 1, the finished good is L1), indented by level. In-house = parts with their own SAP BOM
+     ('Exploded'), not marked VEN/OSP and not a vendor part in Atlas; bought-out parts (raw materials 10xxxxxxxx left out)
+     come in only with Vendor & Imported on. Rows the table already has keep their figures and move into place; the rest are
+     added with SAP stock and any Atlas vendor schedule. Works for every shop from its finished goods' SAP BOMs. */
+  function tree(T, tb, p, q, VS, PS, PD) {
+    const SB = dash.data('sap_bom'); if (!p.shop || p.shop === 'All' || window.__psub !== true || !SB || SB.status !== 'ok' || !SB.data || !SB.data[0]) return;
+    const sb = SB.data[0], pdI = new Map(((PD && PD.data) || []).map(r => [String(r.code), r])), BM = dash.data('atlas_bom');
+    const src = new Map(((BM && BM.status === 'ok' && BM.data) || []).map(b => [String(b.code), b.source]));
+    const mdl = (fg, part) => { const r = pdI.get(String(fg)) || {}; return (r.models || r.model || ((String(part || '').match(/\b(CD\s?-?70|CG\s?-?125S?|CG\s?-?150|CB\s?-?150F?|CD\s?-?100|PRIDOR)\b/i) || [])[0] || '')).toUpperCase().replace(/[\s-]/g, ''); };
+    const heads = (sb.fgs || []).filter(f => f.shop === p.shop && (!p.model || p.model === 'All' || mdl(f.fg, f.part).split(/[\/,]\s*/).includes(p.model)));
+    if (!heads.length) return;
+    const kids = new Map(); (sb.tree || []).forEach(t => { const k = String(t.parent); if (!kids.has(k)) kids.set(k, new Map()); const m = kids.get(k), c = String(t.code); if (!m.has(c)) m.set(c, t); });
+    const SS = dash.data('sap_stock'), stI = new Map(); ((SS && SS.status === 'ok' && SS.data) || []).forEach(r => { const c = String(r.code); stI.set(c, (stI.get(c) || 0) + (+r.stock || 0)); });
+    const psI = new Map(((PS && PS.status === 'ok' && PS.data) || []).map(r => [String(r.code), r])), CS = dash.data('atlas_child_stock'), csI = new Map(((CS && CS.status === 'ok' && CS.data) || []).map(r => [String(r.code), r]));
+    const have = new Map(); [...tb.rows].forEach(r => { const c = r.cells[0] ? r.cells[0].textContent.trim() : ''; if (c && !have.has(c)) have.set(c, r); });
+    const ihRow = r => r && !r.classList.contains('altv') && r.cells[11] && r.cells[11].textContent.trim() !== '—'; /* has an in-house plan */
+    const isVen = (t, row) => { const c = String(t.code); if (ihRow(row)) return false; if (row && row.__ven) return true;
+      return t.status === 'Raw / bought-out' || src.get(c) === 'Vendor' || /\((VEN|OSP)\b|\bOSP\b/i.test(t.part || ''); };
+    const nf = AK.nf, C = AK.C, out = [], used = new Set(), seenL2 = new Set();
+    const mk = (t, L, ven, models) => { const code = String(t.code), type = /^(30|50)/.test(code) ? 'Imported' : 'Vendor';
+      let pt = 0, pp = 0, pa = 0, has = false; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; has = true; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
+      const ps = psI.get(code), cs = csI.get(code), stk = ps && ps.stock != null ? +ps.stock : cs && cs.stock != null ? +cs.stock : stI.has(code) ? Math.round(stI.get(code)) : null;
+      const ss = ps && +ps.safety > 0 ? +ps.safety : cs && +cs.safety_stock > 0 ? +cs.safety_stock : null, pc = pp ? Math.round(pa / pp * 100) : null;
+      const cells = [code, t.part, p.shop, models, 'L' + L, ss, stk, pt || null, pp || null, has ? pa : null, pc, null, null, null, null, null, null, null];
+      const tr = document.createElement('tr'); tr.className = 'altv tree' + (ven ? ' vimp' : ''); tr.style.background = ven ? '#FBFAF6' : '#FAFBFC';
+      cells.forEach((x, i) => { const td = document.createElement('td'); if (i >= 5) td.className = 'n';
+        if (i === 1) { td.textContent = x; if (ven) { const tg = document.createElement('span'); tg.textContent = type; tg.style.cssText = 'margin-left:6px;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:8px;white-space:nowrap;' + (type === 'Imported' ? 'background:#EAF0FF;color:#2251FF' : 'background:#EEF2F0;color:#1E6B4A'); td.appendChild(tg); }
+          td.title = (ven ? type + ' part' : 'In-house part') + ` in the SAP BOM (${t.uom || ''} ${t.qty != null ? '× ' + t.qty : ''} per ${t.parent}). Stock from SAP MB52.`; }
+        else td.textContent = x == null ? '—' : i === 10 ? x + '%' : i >= 5 ? nf(x) : x;
+        if (i === 6 && stk != null && ss && stk < ss) { td.style.color = C.bad; td.style.fontWeight = 600; }
+        if (i === 10 && pc != null && pc < 95) { td.style.color = pc < 80 ? C.bad : C.warn; td.style.fontWeight = 600; }
+        tr.appendChild(td); });
+      return tr; };
+    const walk = (parent, L, models, path) => { const m = kids.get(String(parent)); if (!m || L > 6) return;
+      [...m.values()].sort((a, b) => (a.status === 'Exploded' ? 0 : 1) - (b.status === 'Exploded' ? 0 : 1) || String(a.part).localeCompare(String(b.part))).forEach(t => {
+        const c = String(t.code); if (/^10/.test(c) || path.has(c)) return;
+        if (L === 2) { if (seenL2.has(c)) return; seenL2.add(c); }
+        let row = have.get(c); const ven = isVen(t, row); if (ven && window.__pvend !== true) return;
+        if (q && !row && ![c, t.part].join(' ').toLowerCase().includes(q)) { walk(c, L + 1, models, new Set([...path, c])); return; }
+        if (row && used.has(row)) { row = row.cloneNode(true); row.classList.add('altv'); }
+        else if (!row) row = mk(t, L, ven, models);
+        used.add(have.get(c) || row); row.classList.add('tree'); row.__L = L;
+        if (row.cells[4]) row.cells[4].textContent = 'L' + L;
+        out.push(row); walk(c, L + 1, models, new Set([...path, c])); }); };
+    heads.forEach(f => walk(f.fg, 2, mdl(f.fg, f.part), new Set([String(f.fg)])));
+    if (!out.length) return;
+    const rest = [...tb.rows].filter(r => !used.has(r) && !(r.__ven && window.__pvend !== true) && r.cells.length > 1); [...tb.rows].forEach(r => { if (r.cells.length <= 1) r.remove(); }); /* the 'No rows' note goes once the tree adds rows */
+    out.concat(rest).forEach(r => tb.appendChild(r));
+    [...tb.rows].forEach(r => { const L = r.__L || +((r.cells[4] && r.cells[4].textContent.match(/L(\d)/)) || [0, 2])[1], td = r.cells[1]; if (!td) return;
+      td.style.paddingLeft = (10 + Math.max(0, L - 2) * 16) + 'px';
+      if (r.__ven && !r.classList.contains('vimp') && !td.querySelector('.vtg')) { const tg = document.createElement('span'); tg.className = 'vtg'; tg.textContent = 'Vendor'; tg.style.cssText = 'margin-left:6px;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:8px;white-space:nowrap;background:#EEF2F0;color:#1E6B4A'; td.appendChild(tg); }
+      if (L >= 3 && !td.querySelector('.tlv')) { const k = document.createElement('span'); k.className = 'tlv'; k.textContent = '└ '; k.style.color = '#9AA5B1'; td.insertBefore(k, td.firstChild); } });
+  }
   window.__draw = (...a) => { const r = d0(...a); try { add(); } catch (e) { console.warn('altv', e); } return r; };
   const qi = document.getElementById('q-parts2'); if (qi) qi.addEventListener('input', () => setTimeout(add, 0));
 })();
