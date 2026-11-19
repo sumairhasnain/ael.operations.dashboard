@@ -65,7 +65,9 @@ def main():
         except ValueError: continue
         code, d, sup, mt = strip(f[0]), f[3], f[6].strip(), f[7]
         if not d.startswith(m): continue
-        i = int(d[8:10]) - 1; last_day = max(last_day, d)
+        i = int(d[8:10]) - 1
+        # 19 Nov 2026: 313 store transfers can carry the next day's date in the evening file; only 101/102/601/602 move asof
+        if mt in ('101', '102', '601', '602'): last_day = max(last_day, d)
         if mt in ('101', '102'):
             s = q   # 17 Nov 2026 (Umair): MB51 already shows 102 (reversal) quantities as negative, so no sign flip
             if sup: rcv[code][i] += s; rcv_v[(strip(sup), code)] += s; rcv_vd[(d, strip(sup), code)] += s

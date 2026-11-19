@@ -56,7 +56,8 @@ F.setdefault('months', {})[m] = v
 F.setdefault('source', {})[m] = 'mb51'
 F.setdefault('flags', {})[m] = flags
 F.setdefault('mb51', {})[m] = {'file': file_name, 'plants': sorted(plants)}
-days = sorted({ln.split('|')[3] for ln in raw.split('\n') if ln.count('|') >= 7 and ln.split('|')[3].startswith(m)})
+# 19 Nov 2026: 313 store transfers can carry the next day's date in the evening file; asof follows 101/102/601/602 only
+days = sorted({ln.split('|')[3] for ln in raw.split('\n') if ln.count('|') >= 7 and ln.split('|')[3].startswith(m) and ln.split('|')[7] in ('101', '102', '601', '602')})
 if days: F['asof'] = max(days)
 json.dump([F] if one else F, open(out_p, 'w'), separators=(',', ':'))
 print(json.dumps({'month': m, 'file': file_name, 'plants': sorted(plants), 'to': days[-1] if days else None, 'lines': len(v), 'khi_only': [k for k, x in flags.items() if x == 'khi'], 'skp_only': [k for k, x in flags.items() if x == 'skp']}))
