@@ -73,7 +73,7 @@
       note: 'Combined stock: ' + its.map(r => r.c + ' ' + nf(r.stock)).join(' + ') + ' = ' + nf(stock) + '.' };
   };
   const COL = { bad: '#D0312D', warn: '#E0A100', ok: '#1E8C5A' };
-  const build = (code, part) => {
+  const build = (code, part, o = {}) => {   /* 20 Nov 13:06 (Umair): o.noStock leaves the part's own stock out (the Overview vendor-parts row shows it) */
     const M = model(), c = String(code || ''), set = new Set([c]);
     (M.kids.get(c) || []).forEach(k => set.add(k));
     /* 8 Nov (Umair): a finished part's list shows each pooled group (e.g. Drive Plate CD70: 6510213002 + 6510213011 + 6010213013) as one line, run-out on the combined stock */
@@ -89,7 +89,7 @@
     rows.forEach((r, i) => {
       const y = H0 + i * RH, by = y + 8, nm = r.part.length > 30 ? r.part.slice(0, 29) + '…' : r.part, col = COL[r.lvl];
       g += `<text x="0" y="${y + 14}" font-size="11.5" font-weight="${r.c === c ? 700 : 500}" fill="#051C2C">${esc(nm)}</text>`
-        + `<text x="0" y="${y + 28}" font-size="10" fill="#5B6770">${r.src} · stock ${nf(r.stock)}${r.vstock ? ' (+' + nf(r.vstock) + ' at vendor)' : ''} · ${r.need > 0 ? nf(r.need) + '/day' : 'no plan'}</text>`
+        + `<text x="0" y="${y + 28}" font-size="10" fill="#5B6770">${r.src}${o.noStock && r.c === c ? '' : ` · stock ${nf(r.stock)}${r.vstock ? ' (+' + nf(r.vstock) + ' at vendor)' : ''}`} · ${r.need > 0 ? nf(r.need) + '/day' : 'no plan'}</text>`
         + `<rect x="${X(0)}" y="${by}" width="${Math.max(2, X(r.days) - X(0))}" height="14" rx="2" fill="${col}"/>`;
       if (r.days > 30) g += `<text x="${X(30) + 3}" y="${by + 11}" font-size="11" fill="${col}">›</text>`;
       if (r.nxd != null) { const cx = X(r.nxd); if (r.lvl === 'bad' && r.nxd > r.days) g += `<line x1="${X(r.days)}" y1="${by + 7}" x2="${cx - 6}" y2="${by + 7}" stroke="#D0312D" stroke-dasharray="3 3"/>`;

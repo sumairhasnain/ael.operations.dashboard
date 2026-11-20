@@ -217,7 +217,7 @@
 .ovm .ovwd .wb em{position:absolute;left:66.7%;top:-4px;bottom:-4px;width:1.5px;background:#051C2C}
 .ovm .ovwd .wr b{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .ovm .ovwd .wr.wq{grid-template-columns:minmax(0,1fr) minmax(160px,2.2fr) 58px;height:42px}
-.ovm .ovwd:has(.wq){padding-bottom:6px}
+.ovm .ovwd:has(.wq){padding-bottom:12px}
 .ovm .ovwd .wq .wb{height:18px;border-radius:4px;margin-bottom:10px}
 .ovm .ovwd .wq .wb>span{border-radius:4px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
 .ovm .ovwd .wq .wb u{text-decoration:none;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;padding:0 6px;font-variant-numeric:tabular-nums}
@@ -703,7 +703,7 @@
     const RWC = { bad: C.bad, warn: '#E0A100', ok: '#1E8C5A' }, ddf = d3.utcFormat('%-d %b');
     const wPart = window.__rwItem ? [...vOf.keys()].map(cd => { const it = window.__rwItem(cd); if (!it || !(it.need > 0)) return null;
         const dd = it.days, lab = dd >= 30 ? '30+ d' : (dd < 10 ? d3.format('.1f')(dd) : d3.format('.0f')(dd)) + ' d';
-        return { code: cd, k: nm_.get(cd) || it.part || cd, sub: sn(vOf.get(cd) || ''), days: dd, col: RWC[it.lvl] || RWC.ok, w: Math.min(100, dd / 30 * 100), mk: it.nxd != null ? Math.min(100, it.nxd / 30 * 100) : null, lab,
+        return { code: cd, k: nm_.get(cd) || it.part || cd, sub: `${sn(vOf.get(cd) || '')} - stock: ${nf(it.stock)}${it.vstock ? ` (+${nf(it.vstock)} at vendor)` : ''}`,   /* 20 Nov 13:06 (Umair): stock after the vendor name */ days: dd, col: RWC[it.lvl] || RWC.ok, w: Math.min(100, dd / 30 * 100), mk: it.nxd != null ? Math.min(100, it.nxd / 30 * 100) : null, lab,
           tip: `${nm_.get(cd) || it.part} (${cd}): stock ${nf(it.stock)}${it.vstock ? ` + ${nf(it.vstock)} at vendor` : ''}, need ${nf(it.need)} a day -> ${dd >= 30 ? 'lasts 30+ working days' : 'runs out ' + (it.out ? ddf(new Date(it.out + 'T00:00:00Z')) : '')}${it.nx ? ` · next delivery ${ddf(new Date(it.nx + 'T00:00:00Z'))} (${it.how})` : ' · no delivery expected'} · vendor ${vOf.get(cd)}` }; })
       .filter(Boolean).sort((a, b) => a.days - b.days || a.k.localeCompare(b.k)) : [];
     const allP = wPart.slice();   /* 14 Nov 15:44: full lists for the detail window */
@@ -1027,7 +1027,7 @@
       const add = (title, VC, IH) => { const box = document.createElement('div'); box.className = 'vsk'; pop.appendChild(box); VP(box, VC, IH, p, true); const hd = box.querySelector('.vh'); if (hd) hd.textContent = title + ' · MTD vs month plan'; };
       if (keys) keys.forEach(k => { const [t, VC, IH] = window.__VPAN[k]; add(t, VC, IH); });
       else { const ih = (D('atlas_parts_daily') || []).some(r => String(r.code) === cd && r.date.startsWith(p.month) && ((+r.prod_plan || 0) + (+r.prod_actual || 0)) > 0); add(part || cd, cd, ih ? { own: cd } : null); }
-      const rh = window.__rwHTML && window.__rwHTML(cd, part); if (rh) { const b = document.createElement('div'); b.className = 'rwpop ovrw'; b.innerHTML = rh; pop.appendChild(b); } }
+      const rh = window.__rwHTML && window.__rwHTML(cd, part, { noStock: true }); if (rh) { const b = document.createElement('div'); b.className = 'rwpop ovrw'; b.innerHTML = rh; pop.appendChild(b); } }
     pop.style.display = 'flex'; const w = pop.offsetWidth, h = pop.offsetHeight; let x = ev.clientX + 16, y = ev.clientY + 12;
     if (anc) { const a = anc.getBoundingClientRect(); x = a.left - w - 14; y = a.top + a.height / 2 - h / 2; if (x < 8) x = Math.min(innerWidth - w - 8, a.right + 14); y = Math.max(8, Math.min(y, innerHeight - h - 8)); }
     else { if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); }
