@@ -276,11 +276,13 @@ window.__pshow = c => window.__ptype(c) === 'Imported' ? window.__pimp === true 
      come in only with Vendor & Imported on. Rows the table already has keep their figures and move into place; the rest are
      added with SAP stock and any Atlas vendor schedule. Works for every shop from its finished goods' SAP BOMs. */
   function tree(T, tb, p, q, VS, PS, PD) {
+    /* 20 Nov 14:34 (Umair): a picked part (shop filter left at All) also gets the tree, for the part's shop - as the table itself does */
+    if ((!p.shop || p.shop === 'All') && p.pf) { const PA = dash.data('atlas_parts'), r0 = ((PA && PA.data) || []).find(r => String(r.code) === String(p.pf)); if (r0 && r0.shop) p = { ...p, shop: r0.shop }; }
     const SB = dash.data('sap_bom'); if (!p.shop || p.shop === 'All' || window.__psub !== true || !SB || SB.status !== 'ok' || !SB.data || !SB.data[0]) return;
     const sb = SB.data[0], pdI = new Map(((PD && PD.data) || []).map(r => [String(r.code), r])), BM = dash.data('atlas_bom');
     const src = new Map(((BM && BM.status === 'ok' && BM.data) || []).map(b => [String(b.code), b.source]));
     const mdl = (fg, part) => { const r = pdI.get(String(fg)) || {}; return (r.models || r.model || ((String(part || '').match(/\b(CD\s?-?70|CG\s?-?125S?|CG\s?-?150|CB\s?-?150F?|CD\s?-?100|PRIDOR)\b/i) || [])[0] || '')).toUpperCase().replace(/[\s-]/g, ''); };
-    const heads = (sb.fgs || []).filter(f => f.shop === p.shop && (!p.model || p.model === 'All' || mdl(f.fg, f.part).split(/[\/,]\s*/).includes(p.model)));
+    const heads = (sb.fgs || []).filter(f => f.shop === p.shop && (!p.model || p.model === 'All' || mdl(f.fg, f.part).split(/[\/,]\s*/).includes(String(p.model).toUpperCase().replace(/[\s-]/g, ''))));   /* 20 Nov: 'PRIDOR' in SAP vs 'Pridor' in the filter */
     if (!heads.length) return;
     const kids = new Map(); (sb.tree || []).forEach(t => { const k = String(t.parent); if (!kids.has(k)) kids.set(k, new Map()); const m = kids.get(k), c = String(t.code); if (!m.has(c)) m.set(c, t); });
     const SS = dash.data('sap_stock'), stI = new Map(); ((SS && SS.status === 'ok' && SS.data) || []).forEach(r => { const c = String(r.code); stI.set(c, (stI.get(c) || 0) + (+r.stock || 0)); });
