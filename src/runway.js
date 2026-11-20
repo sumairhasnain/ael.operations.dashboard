@@ -179,15 +179,20 @@ window.__pshow = c => window.__ptype(c) === 'Imported' ? window.__pimp === true 
        Clutch Outer CD70 Casted L3) are added the same way, under the next level up of the same finished part. L3 and below
        only while the table's Sub-Levels toggle is on. */
     const L = Object.entries(ALT), BM = dash.data('atlas_bom'), PD = dash.data('atlas_parts');
+    /* 20 Nov 18:02 (Umair): a part picked from the charts keeps only its own BOM here too (rows built into the same finished part) */
+    const pfS = p.pf ? String(p.pf) : '', pfR = pfS && ((PD && PD.data) || []).find(r => String(r.code) === pfS), pfB = pfS && ((BM && BM.data) || []).find(b => String(b.code) === pfS),
+      pk = !pfS ? '' : pfR && pfR.type === 'Finished' ? pfS : pfB ? String(pfB.fg || '').split(/[;:]/)[0] : '', pkOk = (code, fgs, of, haveT) => !pk || code === pfS || code === pk || (fgs ? fgs.includes(pk) : !!(of && haveT.has(of)));
     if (BM && BM.status === 'ok') { const have = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : '')), one = new Map(), lvR = (BM.data || []).filter(b => b.level);
       lvR.forEach(b => { if (!one.has(String(b.code))) one.set(String(b.code), b); });
       const fgA = new Set(((PD && PD.data) || []).map(r => String(r.code)).filter(x => x.startsWith('90'))); /* 8 Nov: finished-goods codes already sit in the Finished Goods table */
       one.forEach((b, c) => { if (have.has(c) || fgA.has(c) || ALT[c] || (b.level >= 3 && window.__psub !== true)) return;
         const fg = String(b.fg || '').split(';').map(t => t.split(':')[0]), f = ((PD && PD.data) || []).find(r => fg.includes(String(r.code))) || {};
         const up = lvR.filter(x => x.level < b.level && String(x.fg || '').split(';').some(t => fg.includes(t.split(':')[0])) && have.has(String(x.code))).sort((x, y) => y.level - x.level)[0];
-        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level, src: b.source }]); }); }
+        L.push([c, { of: b.parent && have.has(String(b.parent)) ? String(b.parent) : up ? String(up.code) : '', part: b.part, shop: (window.__SHOPX || {})[c] || b.shop, models: f.models || f.model || '', lv: 'L' + b.level, src: b.source, fgs: fg }]); }); }
     const bLv = c => { const b = ((BM && BM.data) || []).find(x => String(x.code) === c && x.level); return b ? +b.level : 0; };
+    const haveT = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : ''));
     L.forEach(([code, a]) => {
+      if (!pkOk(code, a.fgs, a.of, haveT)) return;
       if (!a.lv && bLv(code)) { a = { ...a, lv: 'L' + bLv(code) }; } /* ALT rows take their BOM level when set (6010213013 L3, 8 Nov) */
       if (/^L[3-9]/.test(a.lv || '') && window.__psub !== true) return;
       if (p.shop && p.shop !== 'All' && p.shop !== a.shop) return; if (p.model && p.model !== 'All' && !a.models.split(/[\/,]\s*/).includes(p.model)) return;
@@ -228,12 +233,13 @@ window.__pshow = c => window.__ptype(c) === 'Imported' ? window.__pimp === true 
       const have = new Set([...tb.rows].map(r => r.cells[0] ? r.cells[0].textContent.trim() : '')), V = new Map();
       (sb.tree || []).forEach(t => { const c = String(t.code); if (t.status !== 'Raw / bought-out' || /^10/.test(c) || have.has(c)) return;
         const f = fgI.get(String(t.fg)) || {}, pr = pdI.get(String(t.fg)) || {}, mdl = pr.models || pr.model || (((String(f.part || '') + ' ' + String(t.part || '')).match(/\b(CD\s?-?70|CG\s?-?125S?|CG\s?-?150|CB\s?-?150F?|CD\s?-?100|PRIDOR)\b/i) || [])[0] || '').toUpperCase().replace(/[\s-]/g, '');
-        const v = V.get(c) || { part: t.part, lv: 9, shops: new Set(), models: new Set(), par: new Set(), type: /^(30|50)/.test(c) ? 'Imported' : 'Vendor' };
-        v.lv = Math.min(v.lv, (+t.lvl || 1) + 1); if (f.shop) v.shops.add(f.shop); if (mdl) mdl.split(/[\/,]\s*/).forEach(m => m && v.models.add(m)); v.par.add(String(t.parent)); V.set(c, v); });
+        const v = V.get(c) || { part: t.part, lv: 9, shops: new Set(), models: new Set(), par: new Set(), fgs: new Set(), type: /^(30|50)/.test(c) ? 'Imported' : 'Vendor' };
+        v.lv = Math.min(v.lv, (+t.lvl || 1) + 1); if (f.shop) v.shops.add(f.shop); if (mdl) mdl.split(/[\/,]\s*/).forEach(m => m && v.models.add(m)); v.par.add(String(t.parent)); v.fgs.add(String(t.fg)); V.set(c, v); });
       const rows = [];
       V.forEach((v, code) => { const shop = [...v.shops].sort().join(' / '), models = [...v.models].sort().join('/');
         if (v.lv >= 3 && window.__psub !== true) return; /* Level 3 and below follow the Sub-Levels toggle, like the rest of the table */
         if (!window.__pshow(code)) return; /* 19 Nov: Vendor / Imported each by their own toggle */
+        if (pk && !v.fgs.has(pk)) return;   /* 20 Nov: picked part's own BOM only */
         if (p.shop && p.shop !== 'All' && !v.shops.has(p.shop)) return; if (p.model && p.model !== 'All' && !v.models.has(p.model)) return;
         if (q && ![code, v.part, shop, models, v.type].join(' ').toLowerCase().includes(q)) return;
         let pt = 0, pp = 0, pa = 0, has = false; (VS.data || []).forEach(r => { if (String(r.code) !== code || r.date < p.start || r.date > p.end) return; has = true; pt += +r.scheduled || 0; if (r.date <= p.asof) { pp += +r.scheduled || 0; pa += +r.received || 0; } });
@@ -283,6 +289,9 @@ window.__pshow = c => window.__ptype(c) === 'Imported' ? window.__pimp === true 
     const src = new Map(((BM && BM.status === 'ok' && BM.data) || []).map(b => [String(b.code), b.source]));
     const mdl = (fg, part) => { const r = pdI.get(String(fg)) || {}; return (r.models || r.model || ((String(part || '').match(/\b(CD\s?-?70|CG\s?-?125S?|CG\s?-?150|CB\s?-?150F?|CD\s?-?100|PRIDOR)\b/i) || [])[0] || '')).toUpperCase().replace(/[\s-]/g, ''); };
     const heads = (sb.fgs || []).filter(f => f.shop === p.shop && (!p.model || p.model === 'All' || mdl(f.fg, f.part).split(/[\/,]\s*/).includes(String(p.model).toUpperCase().replace(/[\s-]/g, ''))));   /* 20 Nov: 'PRIDOR' in SAP vs 'Pridor' in the filter */
+    /* 20 Nov 18:02 (Umair): a part picked from the charts limits the tree to that part's own BOM (its FG, or the FG it is built into) */
+    if (p.pf) { const pf = String(p.pf), BM0 = dash.data('atlas_bom'), b0 = ((BM0 && BM0.data) || []).find(b => String(b.code) === pf), fgPick = heads.some(f => String(f.fg) === pf) ? pf : b0 ? String(b0.fg || '').split(/[;:]/)[0] : '';
+      if (fgPick) { const h1 = heads.filter(f => String(f.fg) === fgPick); heads.length = 0; heads.push(...h1); } }
     if (!heads.length) return;
     const kids = new Map(); (sb.tree || []).forEach(t => { const k = String(t.parent); if (!kids.has(k)) kids.set(k, new Map()); const m = kids.get(k), c = String(t.code); if (!m.has(c)) m.set(c, t); });
     const SS = dash.data('sap_stock'), stI = new Map(); ((SS && SS.status === 'ok' && SS.data) || []).forEach(r => { const c = String(r.code); stI.set(c, (stI.get(c) || 0) + (+r.stock || 0)); });
