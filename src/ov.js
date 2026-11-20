@@ -262,7 +262,7 @@
   /* ---------- small chart helpers (sized to their box) ---------- */
   /* 20 Nov 12:06 (Umair): detail-window charts shrink to the screen height so the window needs no vertical scroll bar */
   const fitH = h => Math.min(h, Math.max(150, Math.floor((innerHeight * 0.94 - 150) / 2 - 46)));
-  const mk = (el, h) => { el.replaceChildren(); const w = Math.max(160, el.clientWidth || 300); if (h >= 180 && el.closest && el.closest('.ovm')) h = fitH(h); h = h || Math.max(90, el.clientHeight || 160);
+  const mk = (el, h, keep) => { el.replaceChildren(); const w = Math.max(160, el.clientWidth || 300); if (!keep && h >= 180 && el.closest && el.closest('.ovm')) h = fitH(h); h = h || Math.max(90, el.clientHeight || 160);
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', h).attr('viewBox', `0 0 ${w} ${h}`); return { svg, w, h }; };
   const none = (el, msg) => { el.innerHTML = `<div class="em" style="color:#5B6770;font-size:12px;text-align:center;padding:20px 0">${esc(msg)}</div>`; };
   const axisY = (svg, y, x0, x1, fmt, n = 4) => { svg.append('g').selectAll('line').data(y.ticks(n)).join('line').attr('x1', x0).attr('x2', x1).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', '#EEF1F4');
@@ -299,7 +299,7 @@
         else t.attr('x', x(i) + x.bandwidth() / 2).attr('y', h - 3).attr('text-anchor', 'middle').text(lb); } });
     svg.append('line').attr('x1', ml).attr('x2', w - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#051C2C'); }
   /* horizontal bars: items [{label, v, plan?, color?, tip?}] ; o.pct shows v as % with 100 line */
-  function hbarC(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rh = o.rh || 20, lw = o.lw || 120, h = o.h || Math.max(items.length * rh + 18, Math.min(el.clientHeight || 0, items.length * 44 + 18)); const { svg, w } = mk(el, h);
+  function hbarC(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rh = o.rh || 20, lw = o.lw || 120, h0 = o.h || Math.max(items.length * rh + 18, Math.min(el.clientHeight || 0, items.length * 44 + 18)); const { svg, w, h } = mk(el, h0, o.keep);   /* 20 Nov 14:04: lay out for the height actually drawn */
     const mx = Math.min(o.cap || Infinity, o.max || d3.max(items, d => Math.max(d.v || 0, d.plan || 0, o.ref || 0)) || 1), x = d3.scaleLinear().domain([0, mx * 1.05]).range([lw, w - 62]);
     const rh2 = (h - 18) / items.length;
     items.forEach((d, i) => { const y = 4 + i * rh2, bh = Math.max(8, Math.min(26, rh2 * 0.7));
@@ -315,7 +315,9 @@
     if (o.ref != null) svg.append('line').attr('x1', x(o.ref)).attr('x2', x(o.ref)).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#8A949E').attr('stroke-dasharray', '3 3');
     svg.append('line').attr('x1', lw).attr('x2', lw).attr('y1', 0).attr('y2', h - 14).attr('stroke', '#051C2C'); }
   /* 18 Nov 17:25 (Umair): long part lists scroll inside the chart box instead of squeezing the bars */
-  function hbarS(el, items, o = {}) { if (items.length <= 11) return hbarC(el, items, o); const d = document.createElement('div'); d.className = 'ovwd'; d.style.maxHeight = (o.h || 260) + 'px'; el.appendChild(d); return hbarC(d, items, { ...o, h: items.length * 24 + 18 }); }
+  /* 20 Nov 14:04 (Umair): compact rows (no big gaps); when they need more room than the panel has, a thin grey scroll bar on the right */
+  function hbarS(el, items, o = {}) { if (!items.length) return none(el, o.empty || 'No data'); const rowH = 28, need = items.length * rowH + 18, avail = el.closest && el.closest('.ovm') ? fitH(o.h || 260) : (o.h || 260);
+    if (need <= avail) return hbarC(el, items, { ...o, h: need, keep: true }); const d = document.createElement('div'); d.className = 'ovwd'; d.style.maxHeight = avail + 'px'; el.replaceChildren(d); return hbarC(d, items, { ...o, h: need, keep: true }); }
   /* 15 Nov 11:29 (Umair): Cost of Production card body - pane A conversion cost by month (current month actual + hatched run-rate projection,
      dashed line at last month's total), pane B conversion cost per part by shop vs last month. Panes flip with the other cards (window.__ovFL). */
   function costFlip(el, cv) { if (!cv || !cv.M.length) return none(el, 'No data'); const { svg, w, h } = mk(el);
@@ -650,8 +652,8 @@
     const fgMode = !SH ? 'shop' : (F.model || F.part || byModel.filter(([k]) => k !== '—').length <= 1) ? 'part' : 'model';
     const fgPanel = fgMode === 'shop' ? null : fgMode === 'model'
       ? { t: 'Production compliance by model (finished goods)', draw: el => hbarS(el, byModel.map(([m, o]) => ({ label: m, v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [m, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }
-      : { t: 'Production compliance by part (finished goods) · lowest first', draw: el => hbarS(el, byPart(fin), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 27, cap: 250, empty: 'No finished goods plan for this filter' }) };
-    const ihPanel = SH ? { t: 'In-house parts compliance by part · lowest first', draw: el => hbarS(el, byPart(ih), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 27, cap: 250, empty: 'No in-house parts plan for this filter' }) } : null;
+      : { t: 'Production compliance by part (finished goods) · lowest first', draw: el => hbarS(el, byPart(fin), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 25, cap: 250, empty: 'No finished goods plan for this filter' }) };
+    const ihPanel = SH ? { t: 'In-house parts compliance by part · lowest first', draw: el => hbarS(el, byPart(ih), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 25, cap: 250, empty: 'No in-house parts plan for this filter' }) } : null;
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
     /* 14 Nov 10:34 (Umair): shops short of plan to date, named at the foot of the card (filtered to one shop: its models instead) */
     const all_ = (SH ? byModel : byShop).filter(([k, o]) => o.p > 0 && k !== '?' && k !== '—').map(([k, o]) => ({ k, v: o.a / o.p * 100, a: o.a, p: o.p }));
