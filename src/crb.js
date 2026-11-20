@@ -57,7 +57,7 @@
   function pipeline() {
     const r = dash.data('cr_ideas'); const out = {}; MODS.forEach(m => { out[m] = Array(12).fill(0); });
     if (!r || r.status !== 'ok') return out;
-    const g = window.__P ? window.__P() : {}, p = dash.params() || {}, src = x => /VA\/CR sheet/.test(x.source) ? 'VA/CR sheets' : 'Shop CR plans';
+    const g = window.__P ? window.__P() : {}, p = dash.params() || {}, src = x => /^CC deck rev7/.test(x.source || '') ? 'CC deck rev7 (17 Nov)' : /VA\/CR sheet/.test(x.source) ? 'VA/CR sheets' : 'Earlier shop CR plans';
     r.data.filter(x => (x.status === 'In Progress' || x.status === 'Pending') && (!g.shop || g.shop === 'All' || x.dash_shop === g.shop) && (!p.crcat || x.category === p.crcat) && (!p.crshop || x.shop === p.crshop)
       && (!p.crst || x.status === p.crst) && (!p.crq || x.quarter === p.crq) && (!p.crsrc || src(x) === p.crsrc)).forEach(x => {
       const [y, mo] = String(x.target || '').split('-').map(Number); if (!y) return; let i = (y - 2026) * 12 + mo - 7; if (i < 0 || i > 11) return; if (i <= LAST) i = LAST + 1; if (i > 11) return;

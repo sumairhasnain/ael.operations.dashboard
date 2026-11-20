@@ -1878,7 +1878,8 @@ window.addEventListener('resize', () => window.__draw());
   const rowsFin = () => { const d = dash.data('cr_ideas'); return d && d.status === 'ok' ? d.data.filter(r => r.fin_only).map(r => ({ ...r, monthly_pkr: 0, annual_pkr: 0, cr_unit: null, investment_pkr: null, fin_unit: r.fin_unit == null || r.fin_unit === '' ? null : +r.fin_unit })) : []; };
   const rowsAll = () => { const d = dash.data('cr_ideas'); return d && d.status === 'ok' ? d.data.filter(r => !r.fin_only).map(r => ({ ...r, monthly_pkr: +r.monthly_pkr || 0, annual_pkr: +r.annual_pkr || 0, cr_unit: r.cr_unit == null || r.cr_unit === '' ? null : +r.cr_unit, investment_pkr: r.investment_pkr == null || r.investment_pkr === '' ? null : +r.investment_pkr, fin_unit: r.fin_unit == null || r.fin_unit === '' ? null : +r.fin_unit })) : null; };
   const modelOf = r => MODS.includes(r.model) ? r.model : 'Non-motorcycle';
-  const srcOf = r => /VA\/CR sheet/.test(r.source) ? 'VA/CR sheets' : 'Shop CR plans';
+  /* 20 Nov (Umair): ideas refreshed from the CC deck rev7 (17 Nov) are their own source */
+  const srcOf = r => /^CC deck rev7/.test(r.source || '') ? 'CC deck rev7 (17 Nov)' : /VA\/CR sheet/.test(r.source) ? 'VA/CR sheets' : 'Earlier shop CR plans';
   const pass = (r, p, g, skip) => (g.shop === 'All' || r.dash_shop === g.shop) && (g.model === 'All' || r.model === g.model || r.model === 'All models')
     && (skip === 'cat' || !p.crcat || r.category === p.crcat) && (skip === 'shop' || !p.crshop || r.shop === p.crshop) && (skip === 'model' || !p.crmodel || modelOf(r) === p.crmodel)
     && (!p.crst || r.status === p.crst) && (!p.crq || r.quarter === p.crq) && (!p.crsrc || srcOf(r) === p.crsrc) && (skip === 'kpi' || !KPI[p.crkpi] || KPI[p.crkpi][1](r));
@@ -1953,7 +1954,7 @@ window.addEventListener('resize', () => window.__draw());
     const sub = document.createElement('div'); sub.className = 'crsub'; sub.textContent = `${r0.shop} · ${r0.part} · ${[...new Set(lines.map(r => r.model_label || r.model))].join(', ')} · target ${mon(r0.target)} (${QL[r0.quarter] || r0.quarter})`;
     const tags = document.createElement('div'); const cp = document.createElement('span'); catPill(cp, r0.category); const sp = document.createElement('span'); sp.style.marginLeft = '10px'; stPill(sp, r0.status); tags.append(cp, sp);
     const dg = document.createElement('div'); dg.className = 'dg'; const cr = d3.max(lines, r => r.cr_unit);
-    [['Saving per unit', cr == null ? '—' : fU(cr) + (r0.cr_unit_plan != null && r0.cr_unit_plan !== cr ? ` (plan ${fU(r0.cr_unit_plan)})` : '')], ['Monthly saving', fRs(d3.sum(lines, r => r.monthly_pkr))], ['Annual saving (run-rate)', fRs(d3.sum(lines, r => r.annual_pkr))], ['Investment', r0.investment_pkr ? fRs(r0.investment_pkr) + (r0.payback ? ` · payback ${r0.payback}` : '') : '—']]
+    [['Saving per unit', cr == null ? '—' : fU(cr) + (r0.cr_unit_plan != null && r0.cr_unit_plan !== cr ? ` (plan ${fU(r0.cr_unit_plan)})` : '') + (/^CC deck rev7/.test(r0.source || '') ? (d3.max(lines, r => r.cr_unit_act) != null ? ` · actual ${fU(d3.max(lines, r => r.cr_unit_act))}` : ' · actual: not booked yet') : '')], ['Monthly saving', fRs(d3.sum(lines, r => r.monthly_pkr))], ['Annual saving (run-rate)', fRs(d3.sum(lines, r => r.annual_pkr))], ['Investment', r0.investment_pkr ? fRs(r0.investment_pkr) + (r0.payback ? ` · payback ${r0.payback}` : '') : '—']]
       .forEach(([a, b]) => { const d = document.createElement('div'); const s = document.createElement('span'); s.textContent = a; const v = document.createElement('b'); v.textContent = b; d.append(s, v); dg.appendChild(d); });
     const how = document.createElement('div'); how.style.fontSize = '13px'; how.textContent = r0.how;
     const ba = document.createElement('div'); ba.className = 'ba'; [['Before', r0.before], ['After', r0.after]].forEach(([a, b]) => { const d = document.createElement('div'); const s = document.createElement('span'); s.textContent = a; d.append(s, document.createTextNode(b || '—')); ba.appendChild(d); });
@@ -1976,13 +1977,13 @@ window.addEventListener('resize', () => window.__draw());
     const sec = q('#savings'); if (!sec) return;
     const all = rowsAll(), st = dash.data('cr_ideas').status;
     /* the ideas / decks / FY line shows as a tooltip on the page title; the line itself only appears while loading or on an error */
-    { const txt = st === 'ok' ? `${new Set((all || []).map(r => r.key)).size} ideas from ${new Set((all || []).map(r => r.source)).size} decks · FY 2026-27` : st === 'error' ? 'Failed to load' : 'Loading…', hd = q('#cr-asof'), h2 = q('#savings .crhead h2');
+    { const txt = st === 'ok' ? `${new Set((all || []).map(r => r.key)).size} ideas from ${new Set((all || []).map(r => r.source)).size} decks · FY 2026-27 · latest: CC deck rev7 (17 Nov 2026), ${(all || []).filter(r => /^CC deck rev7/.test(r.source || '')).length} lines updated` : st === 'error' ? 'Failed to load' : 'Loading…', hd = q('#cr-asof'), h2 = q('#savings .crhead h2');
       if (hd) { hd.textContent = txt; hd.hidden = st === 'ok'; }
       if (h2) { h2._tt = txt; if (!h2._t) { h2._t = 1; h2.style.cursor = 'help'; h2.addEventListener('mousemove', ev => tip.show(ev, [h2.textContent, h2._tt])); h2.addEventListener('mouseleave', () => tip.hide()); } } }
     if (!all) { ['#cr-kpi', '#cr-d-cat', '#cr-d-shop', '#cr-d-mod', '#cr-q', '#cr-mx', '#cr-det'].forEach(s => { const e = q(s); if (e) e.replaceChildren(); }); return; }
     const p = P();
     selBox('cr-f-cat', 'All categories', CATS, 'crcat'); selBox('cr-f-st', 'All statuses', STS, 'crst');
-    selBox('cr-f-q', 'All quarters', QS.map(x => [x, QL[x]]), 'crq'); selBox('cr-f-src', 'All sources', ['Shop CR plans', 'VA/CR sheets'], 'crsrc');
+    selBox('cr-f-q', 'All quarters', QS.map(x => [x, QL[x]]), 'crq'); selBox('cr-f-src', 'All sources', ['CC deck rev7 (17 Nov)', 'Earlier shop CR plans', 'VA/CR sheets'], 'crsrc');
     /* tab-wide measure: off by default; one button on at a time, the others locked until it is switched off again */
     document.querySelectorAll('#cr-metric button').forEach(b => { const on = b.dataset.m === window.__vacrMetric; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.disabled = !!window.__vacrMetric && !on;
       b.title = on ? 'Applied to the whole tab. Click again to switch it off' : window.__vacrMetric ? 'Switch off the active measure first' : 'Apply this measure to the whole tab'; });
@@ -3581,7 +3582,7 @@ window.__ptr = (sel, ds, end) => { const rs = ((window.dash && dash.data('atlas_
   function pipeline() {
     const r = dash.data('cr_ideas'); const out = {}; MODS.forEach(m => { out[m] = Array(12).fill(0); });
     if (!r || r.status !== 'ok') return out;
-    const g = window.__P ? window.__P() : {}, p = dash.params() || {}, src = x => /VA\/CR sheet/.test(x.source) ? 'VA/CR sheets' : 'Shop CR plans';
+    const g = window.__P ? window.__P() : {}, p = dash.params() || {}, src = x => /^CC deck rev7/.test(x.source || '') ? 'CC deck rev7 (17 Nov)' : /VA\/CR sheet/.test(x.source) ? 'VA/CR sheets' : 'Earlier shop CR plans';
     r.data.filter(x => (x.status === 'In Progress' || x.status === 'Pending') && (!g.shop || g.shop === 'All' || x.dash_shop === g.shop) && (!p.crcat || x.category === p.crcat) && (!p.crshop || x.shop === p.crshop)
       && (!p.crst || x.status === p.crst) && (!p.crq || x.quarter === p.crq) && (!p.crsrc || src(x) === p.crsrc)).forEach(x => {
       const [y, mo] = String(x.target || '').split('-').map(Number); if (!y) return; let i = (y - 2026) * 12 + mo - 7; if (i < 0 || i > 11) return; if (i <= LAST) i = LAST + 1; if (i > 11) return;
