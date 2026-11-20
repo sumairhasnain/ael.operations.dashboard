@@ -481,7 +481,7 @@ svg.selectAll(null).data(months).join('rect').attr('x', d => x(d) - x.step() * x
 function hrank(el, rows, o = {}) {
 if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
 const rh = o.rh || 40, m = { t: 6, r: 64, b: 6, l: 0 }, h = rows.length * rh + m.t + m.b; const tmp = box(el, 10);
-const lw = Math.min(d3.max(rows, r => Math.max(textW(tmp.svg, r.label), r.sub ? textW(tmp.svg, r.sub) * .9 : 0)) + 14, (el.clientWidth || 600) * .42);
+const lw = Math.min(d3.max(rows, r => Math.max(textW(tmp.svg, r.label), r.sub ? textW(tmp.svg, r.sub) * .9 : 0)) + 14, (el.clientWidth || 600) * (o.lwf || .42));
 const { svg, w } = box(el, h); const x = d3.scaleLinear([0, d3.max(rows, r => r.value) || 1], [lw, w - m.r]);
 rows.forEach((r, i) => { const y0 = m.t + i * rh, g = svg.append('g');
 g.append('text').attr('x', 0).attr('y', y0 + (r.sub ? rh / 2 - 2 : rh / 2 + 4)).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(r.label);
