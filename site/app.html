@@ -4904,6 +4904,15 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
 .ovm .ovwd .wb span{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
 .ovm .ovwd .wb em{position:absolute;left:66.7%;top:-4px;bottom:-4px;width:1.5px;background:#051C2C}
 .ovm .ovwd .wr b{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.ovm .ovwd .wr.wq{grid-template-columns:minmax(0,1fr) minmax(160px,2.2fr) 58px;height:50px}
+.ovm .ovwd:has(.wq){padding-bottom:8px}
+.ovm .ovwd .wq .wb{height:18px;border-radius:4px;margin-bottom:10px}
+.ovm .ovwd .wq .wb>span{border-radius:4px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.ovm .ovwd .wq .wb u{text-decoration:none;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;padding:0 6px;font-variant-numeric:tabular-nums}
+.ovm .ovwd .wq .wb u.out{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding:0}
+.ovm .ovwd .wq .wb em{top:-3px;bottom:-12px;width:2px}
+.ovm .ovwd .wq .wb em s{position:absolute;top:100%;left:50%;transform:translateX(-50%);text-decoration:none;font-size:10px;font-weight:700;color:#051C2C;white-space:nowrap;line-height:1;margin-top:1px;font-variant-numeric:tabular-nums}
+.ovm .ovwd .wq b.mp{color:#5B6770;font-size:12px;font-weight:600;text-align:left;margin-bottom:10px}
 #vpop{z-index:260}
 #vpop .ovrw{display:block;position:static;width:440px;box-shadow:0 6px 20px rgba(5,28,44,.18)}
 .ael #summary .ovwl .wr[data-c]{cursor:help}
@@ -5366,7 +5375,11 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     /* 14 Nov 12:11 (Umair): watch list - the 4 weakest vendors against schedule to date, and the 4 critical vendor-supplied parts lowest against safety stock (shop filter applies) */
     const sn = v => String(v).replace(/\s*\((PVT|PRIVATE)\b.*$/i, '').replace(/\s+(\(?PVT\)?|PRIVATE|LIMITED|LIMIT|LTD\.?|LT|CO\.?)\s*$/i, '').replace(/\s+/g, ' ').trim();
     const byVA = VF ? d3.rollups(rowsAll, v => ({ s: d3.sum(v.filter(r => r.date <= pEnd), r => +r.scheduled || 0), r: d3.sum(v, r => +r.received || 0), n: new Set(v.map(r => r.code)).size }), r => r.vendor).filter(([, o]) => o.s > 0) : byV;
-    const vRows = byVA.map(([v, o]) => ({ k: sn(v), full: v, v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts` }));
+    /* 20 Nov 11:51 (Umair): with a part picked, each vendor bar shows that part's pieces: received inside the bar with the %, the
+       MTD plan mark with its number, and the whole month's plan at the end of the bar (the bar's full length = month plan). */
+    const mPlan = F.part ? d3.rollup(D('atlas_vendor_supply').filter(r => r.date.startsWith(P.month) && inSh(SH, r, 'shop') && okC(r.code)), v => d3.sum(v, r => +r.scheduled || 0), r => r.vendor) : null;
+    const vRows = byVA.map(([v, o]) => ({ k: sn(v), full: v, v: o.r / o.s * 100, tip: `${v}: ${kf(o.r)} received of ${kf(o.s)} scheduled to date · ${o.n} parts`,
+      ...(mPlan ? { qr: o.r, qs: o.s, qm: mPlan.get(v) || o.s, tip: `${v}: ${nf(o.r)} received of ${nf(o.s)} scheduled to date (MTD plan) · month plan ${nf(mPlan.get(v) || o.s)}` } : {}) }));
     const wVend = vRows.slice().sort((a, b) => a.v - b.v).slice(0, 4);   /* green (100%+) ones fill in when fewer are behind */   /* 14 Nov 13:08 (Umair): always 4, lowest first and upwards */
     const vOf = d3.rollup(D('atlas_vendor_supply').filter(r => r.date >= ms && inSh(SH, r, 'shop') && okC(r.code) && (!VF || r.vendor === VF)), v => d3.greatest(d3.rollups(v, w => d3.sum(w, r => (+r.received || 0) + (+r.scheduled || 0)), r => r.vendor), x => x[1])?.[0], r => String(r.code));
     /* 14 Nov 13:51 (Umair): parts = run-out (stock runway at this month's plan, as the Production tab's runway hover), not % of SAP safety
@@ -5400,7 +5413,7 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
       vt: 'Daily receipts vs schedule', mini: el => colC(el, ds.filter(d => (byD.get(d) || {}).s || (byD.get(d) || {}).r), [{ name: 'Schedule', color: C.plan }, { name: 'Received', color: rcC }], (d, s) => (byD.get(d) || {})[s.name === 'Schedule' ? 's' : 'r'], { cFmt: d => +d.slice(8), ml: 34 }),
       detail: [
         /* 14 Nov 15:44 (Umair): the card's watch lists in full - 15 rows in view, scroll for the rest */
-        { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV),
+        { t: `Vendors · lowest compliance first (${allV.length})`, draw: wlist(allV), ...(mPlan ? { lg: [['Received · % of MTD plan', C.navy], ['MTD plan mark', '#051C2C'], ['Month plan (end of bar)', '#E9EDF1']] } : {}),
           /* 19 Nov 12:20 (Umair): same search as Vendor parts, by vendor. Typing narrows the list with vendor suggestions; picking a
              suggestion filters the whole window to that vendor (like clicking it); Clear filter clears both. */
           search: { ph: 'Search vendor', bind: (inp, btn, dl, pc) => {
@@ -5705,7 +5718,9 @@ window.__SHOPMAP = { 'Fuel Cock': 'Carburetor' };
     if (anc) { const a = anc.getBoundingClientRect(); x = a.left - w - 14; y = a.top + a.height / 2 - h / 2; if (x < 8) x = Math.min(innerWidth - w - 8, a.right + 14); y = Math.max(8, Math.min(y, innerHeight - h - 8)); }
     else { if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - 16); if (y + h > innerHeight - 8) y = Math.max(8, innerHeight - h - 8); }
     pop.style.left = x + 'px'; pop.style.top = y + 'px'; };
-  const wRowH = (x, vf) => { const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
+  const wRowQ = (x, vf) => { const c = okc(x.v), sc = Math.max(x.qm, x.qr, x.qs, 1), w = Math.min(100, x.qr / sc * 100), mk = x.qs / sc * 100, inTx = `${nf(x.qr)} · ${pc(x.v)}`, inside = w >= 34;
+    return `<div class="wr wq${x.full && vf === x.full ? ' sel' : ''}" title="${esc(x.tip)}" data-v="${esc(x.full)}"><span class="wn">${esc(x.k)}</span><span class="wb"><span style="width:${Math.max(w, 1.5)}%;background:${c}">${inside ? `<u>${inTx}</u>` : ''}</span>${inside ? '' : `<u class="out" style="left:calc(${Math.max(w, 1.5)}% + 6px);color:${c}">${inTx}</u>`}<em style="left:${mk}%"><s>MTD ${nf(x.qs)}</s></em></span><b class="mp">${nf(x.qm)}</b></div>`; };
+  const wRowH = (x, vf) => { if (x.qm != null) return wRowQ(x, vf); const c = x.col || (x.v == null ? '#1E8C5A' : okc(x.v)), w = x.w != null ? x.w : x.v == null ? 100 : Math.min(100, x.v / 1.5), mk = x.days != null ? x.mk : 66.7;
         return `<div class="wr${x.full && vf === x.full ? ' sel' : ''}"${x.days != null ? ` data-c="${esc(x.code)}"` : ` title="${esc(x.tip)}"`}${x.full ? ` data-v="${esc(x.full)}"` : ''}><span class="wn">${esc(x.k)}${x.sub ? `<i>${esc(x.sub)}</i>` : ''}</span><span class="wb"><span style="width:${Math.max(w, 2)}%;background:${c}"></span>${mk != null ? `<em style="left:${mk}%"></em>` : ''}</span><b style="color:${c}">${x.v == null || x.days != null ? esc(x.lab || '✓') : pc(x.v)}</b></div>`; };
   function card(id, name, P) { const el = document.createElement('div'); el.className = 'ovc'; el.style.setProperty('--ac', ACC[id]); el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.k = id;
     const can = !window.__PORTAL || window.__PORTAL.canTab(id), sts = NEED[id].map(ST);
