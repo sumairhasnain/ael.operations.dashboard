@@ -498,7 +498,7 @@ svg.selectAll(null).data(months).join('rect').attr('x', d => x(d) - x.step() * x
 function hrank(el, rows, o = {}) {
 if (!rows.length) return empty(el, o.emptyMsg || 'No data for this selection');
 const rh = o.rh || 40, m = { t: 6, r: 64, b: 6, l: 0 }, h = rows.length * rh + m.t + m.b; const tmp = box(el, 10);
-const lw = Math.min(d3.max(rows, r => Math.max(textW(tmp.svg, r.label), r.sub ? textW(tmp.svg, r.sub) * .9 : 0)) + 14, (el.clientWidth || 600) * (o.lwf || .42));
+const lw = Math.min(d3.max(rows, r => Math.max(textW(tmp.svg, r.label), r.sub ? textW(tmp.svg, r.sub) * .95 : 0)) + 14, (el.clientWidth || 600) * (o.lwf || .42));
 const { svg, w } = box(el, h); const x = d3.scaleLinear([0, d3.max(rows, r => r.value) || 1], [lw, w - m.r]);
 rows.forEach((r, i) => { const y0 = m.t + i * rh, g = svg.append('g');
 g.append('text').attr('x', 0).attr('y', y0 + (r.sub ? rh / 2 - 2 : rh / 2 + 4)).attr('font-size', 12).style('fill', C.navy).style('font-weight', 600).text(r.label);
@@ -2780,16 +2780,16 @@ window.addEventListener('resize', () => window.__draw());
       vbar(q('#iv-mov'), MOVK, CATS.filter(c => Sm.some(r => r.category === c)).map(c => ({ key: c, name: c, color: CATC[c] })), (a, c) => d3.sum(Sm.filter(r => r.move_bucket === a && r.category === c), r => r.value_pkr),
         { stack: 1, h: 250, xFmt: a => ({ 'Moved in last 90 days': 'Within 90 days', 'No movement since Jan 2024': 'None since Jan 24' })[a] || a, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: mov || null, onClick: a => set({ invmov: mov === a ? 0 : a }), emptyMsg: 'No stock for this selection' });
       const nm = Sm.filter(r => (r.move_bucket === 'Over 1 year' || r.move_bucket === 'No movement since Jan 2024') && r.value_pkr > 0).sort((a, b) => b.value_pkr - a.value_pkr);   /* all of them; the chart scrolls */
-      hrank(q('#iv-nm'), nm.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.move_days == null ? 'no movement since Jan 2024' : 'last moved ' + nf(r.move_days) + ' days ago'}${r.shop ? ' · ' + r.shop : ''}`, value: r.value_pkr,
-        tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue since Jan 2024', r.last_rcv ? 'Last received ' + dmy(r.last_rcv) : 'No receipt since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No non-moving stock for this selection' }); const sv = q('#iv-nm svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
+      hrank(q('#iv-nm'), nm.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.shop || 'No shop'} · ${nf(Math.round(r.stock))} ${r.uom || ''} · ${r.move_days == null ? 'no movement since Jan 2024' : 'last moved ' + nf(r.move_days) + ' days ago'}`   /* 20 Nov 13:54 (Umair): shop and stock qty instead of the code */, value: r.value_pkr,
+        tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue since Jan 2024', r.last_rcv ? 'Last received ' + dmy(r.last_rcv) : 'No receipt since Jan 2024'] })), { fmt: fM, rh: 34, emptyMsg: 'No non-moving stock for this selection', lwf: .6 }); const sv = q('#iv-nm svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
 
     /* ageing */
     const Sa = base.filter(r => pass(r, 'age'));
     vbar(q('#iv-age'), AGES, CATS.filter(c => Sa.some(r => r.category === c)).map(c => ({ key: c, name: c, color: CATC[c] })), (a, c) => d3.sum(Sa.filter(r => r.age_bucket === a && r.category === c), r => r.value_pkr),
       { stack: 1, h: 250, rot: 1, yFmt: v => fM(v).replace(' ', ''), fmt: fRs, focus: age || null, onClick: a => set({ invage: age === a ? 0 : a }), emptyMsg: 'No stock for this selection' });
     const slow = S.filter(r => (r.age_days == null || r.age_days > 180) && r.value_pkr > 0).sort((a, b) => b.value_pkr - a.value_pkr);   /* all of them; the chart scrolls */
-    hrank(q('#iv-slow'), slow.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.code} · ${r.last_rcv ? 'last in ' + dmy(r.last_rcv) : 'no receipt since Jan 2024'}${r.shop ? ' · ' + r.shop : ''}`, value: r.value_pkr,
-      tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_rcv ? 'Last received ' + dmy(r.last_rcv) + ` (${r.age_days} days)` : 'No receipt since Jan 2024', r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue on record'] })), { fmt: fM, rh: 34, emptyMsg: 'No aged stock for this selection' }); { const sv = q('#iv-slow svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
+    hrank(q('#iv-slow'), slow.map(r => ({ label: (r.part || r.code).length > 34 ? (r.part || r.code).slice(0, 33) + '…' : (r.part || r.code), sub: `${r.shop || 'No shop'} · ${nf(Math.round(r.stock))} ${r.uom || ''} · ${r.last_rcv ? 'last in ' + dmy(r.last_rcv) : 'no receipt since Jan 2024'}`   /* 20 Nov 13:54 (Umair): shop and stock qty instead of the code */, value: r.value_pkr,
+      tip: [r.part, r.code + ' · ' + r.category, `${n2(r.stock)} ${r.uom} on hand · ${fRs(r.value_pkr)}`, r.last_rcv ? 'Last received ' + dmy(r.last_rcv) + ` (${r.age_days} days)` : 'No receipt since Jan 2024', r.last_issue ? 'Last issued ' + dmy(r.last_issue) : 'No cost-centre issue on record'] })), { fmt: fM, rh: 34, emptyMsg: 'No aged stock for this selection', lwf: .56 }); { const sv = q('#iv-slow svg'); if (sv) sv.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
 
     /* register */
     const Sr = baseAll.filter(r => pass(r) && (!cov || r.cover_bucket === cov) && (!mov || r.move_bucket === mov) && (!r.oos || cov === 'Out of stock'));
