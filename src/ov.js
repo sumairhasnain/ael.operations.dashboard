@@ -261,6 +261,7 @@
 
   /* ---------- small chart helpers (sized to their box) ---------- */
   /* 20 Nov 12:06 (Umair): detail-window charts shrink to the screen height so the window needs no vertical scroll bar */
+  const MORD = ['CD70', 'CDDREAM', 'CG125', 'CG125S', 'PRIDOR'], mRank = m => { const i = MORD.indexOf(String(m || '').toUpperCase().replace(/[\s-]/g, '')); return i < 0 ? 99 : i; };
   const fitH = h => Math.min(h, Math.max(150, Math.floor((innerHeight * 0.94 - 150) / 2 - 46)));
   const mk = (el, h, keep) => { el.replaceChildren(); const w = Math.max(160, el.clientWidth || 300); if (!keep && h >= 180 && el.closest && el.closest('.ovm')) h = fitH(h); h = h || Math.max(90, el.clientHeight || 160);
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', h).attr('viewBox', `0 0 ${w} ${h}`); return { svg, w, h }; };
@@ -645,13 +646,13 @@
     const col = v => v != null && v < 80 ? C.bad : v != null && v < 95 ? C.warn : null;
     const agg = (rs, key) => d3.rollups(rs, v => ({ p: d3.sum(v.filter(r => r.date <= pEnd), r => +r.prod_plan || 0), a: d3.sum(v, r => +r.prod_actual || 0), dp: d3.sum(v.filter(r => r.date <= pEnd), r => +r.disp_plan || 0), da: d3.sum(v, r => +r.disp_actual || 0) }), key);
     const byShop = agg(fin, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
-    const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => b[1].p - a[1].p);
+    const byModel = agg(fin, r => (parts.get(String(r.code)) || {}).model || '—').filter(([, o]) => o.p || o.a).sort((a, b) => mRank(a[0]) - mRank(b[0]) || b[1].p - a[1].p);   /* 20 Nov 18:57 (Umair): models always CD70, CG125, CG125S, Pridor, then the rest */
     /* 18 Nov 17:25 (Umair): with a shop filter on, the shop charts turn into model or part charts (part when a model/part is also picked or the shop has one model) */
     const pcv = o => o.p ? o.a / o.p * 100 : (o.a ? 999 : 0), nm = c => { const r = parts.get(String(c)) || {}; return r.part || String(c); };
     const byPart = rs => agg(rs, r => String(r.code)).filter(([, o]) => o.p || o.a).map(([c, o]) => ({ label: nm(c), v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [nm(c), `Code ${c}`, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`].concat(o.dp || o.da ? [`Dispatch ${kf(o.da)} of ${kf(o.dp)}`] : []) })).sort((a, b) => a.v - b.v);
     const fgMode = !SH ? 'shop' : (F.model || F.part || byModel.filter(([k]) => k !== '—').length <= 1) ? 'part' : 'model';
     const fgPanel = fgMode === 'shop' ? null : fgMode === 'model'
-      ? { t: 'Production compliance by model (finished goods)', draw: el => hbarS(el, byModel.map(([m, o]) => ({ label: m, v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [m, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })).sort((a, b) => a.v - b.v), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }
+      ? { t: 'Production compliance by model (finished goods)', draw: el => hbarS(el, byModel.map(([m, o]) => ({ label: m, v: pcv(o), lab: pc(o.p ? o.a / o.p * 100 : null), color: col(o.p ? o.a / o.p * 100 : null) || C.navy, tip: [m, `Production ${pc(o.p ? o.a / o.p * 100 : null)}`, `${kf(o.a)} of ${kf(o.p)} plan`, `Dispatch ${kf(o.da)} of ${kf(o.dp)}`] })), { fmt: pc, ref: 100, h: 260, lw: 130, cap: 250 }) }
       : { t: 'Production compliance by part (finished goods) · lowest first', draw: el => hbarS(el, byPart(fin), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 25, cap: 250, empty: 'No finished goods plan for this filter' }) };
     const ihPanel = SH ? { t: 'In-house parts compliance by part · lowest first', draw: el => hbarS(el, byPart(ih), { fmt: pc, ref: 100, h: 260, lw: 190, lc: 25, cap: 250, empty: 'No in-house parts plan for this filter' }) } : null;
     const ihShop = agg(ih, r => (parts.get(String(r.code)) || {}).shop || '?').filter(([, o]) => o.p).map(([s, o]) => ({ label: s, v: o.a / o.p * 100, tip: [s, `In-house parts ${pc(o.a / o.p * 100)}`, `${kf(o.a)} of ${kf(o.p)} plan`], color: col(o.a / o.p * 100) || C.navy })).sort((a, b) => a.v - b.v);
