@@ -13,6 +13,11 @@ for (const m of months) {
   let rItems = F.feeds.rcv.items || [];
   if (m === cur) { try { const u = ((S.rcvCfg || {}).url || 'https://api.aipportals.com/PowerBI_API/BI_API_Vendor_Sch_Rec').trim(); const td = new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10).split('-').join('');
     const x = await bapiFetch(u + '?FDate=' + m.split('-').join('') + '01&TDate=' + td + '&Company=AEL'); const li = (x && x.Items) ? x.Items : (Array.isArray(x) ? x : []); if (li.length >= rItems.length * 0.9) { rItems = li; window.__VS_LIVE = li.length; } } catch (e) { window.__VS_LIVE = 'err ' + e; } }
+  /* 21 Nov (Umair): the direct SAP read above now answers HTTP 403, and the saved feed lags a day. Atlas's own BAPI refresh (bapi_refresh.js) fills
+     rcvData on the page with the latest receipts, so for the current month take the page's rows for any date where they hold more than the feed. */
+  if (m === cur && typeof rcvData !== 'undefined' && (rcvData || []).length) { const tot = a => { const o = {}; a.forEach(x => { if (String(x.Date || '').startsWith(m)) o[x.Date] = (o[x.Date] || 0) + (+x.Receipt || 0); }); return o; };
+    const tf = tot(rItems), tp = tot(rcvData), use = new Set(Object.keys(tp).filter(d => (tp[d] || 0) > (tf[d] || 0)));
+    if (use.size) { rItems = rItems.filter(x => !use.has(x.Date)).concat(rcvData.filter(x => use.has(x.Date))); window.__VS_PAGE = [...use].sort().join(','); } }
   rItems.forEach(x => { const v = strip(x.VendorCode); if (x.VendorName) vn[v] = vn[v] || clean(x.VendorName);
     const r = Math.round(+x.Receipt || 0), s = Math.round(+x.Schedule || 0); if (r || s) R.push([x.Date, v, strip(x.Material), r, s].join('|')); });
   if (m === cur) { stockItems = F.feeds.stock.items || []; stockAsOf = String((F.feeds.stock.info || {}).asOf || '');
