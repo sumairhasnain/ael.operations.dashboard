@@ -8,9 +8,11 @@ if (window.__BAPI_STOCK && window.__BAPI_STOCK.length) { F.feeds.stock.items = w
 const st = {}; (F.feeds.stock.items || []).forEach(x => { st[strip(x.Material)] = x; });
 const clean = s => String(s || '').replace(/[|\n]/g, '/');
 const P = S.parts.map(p => { const x = st[p.code] || {}; return [p.code, p.shop || '', p.cls || '', Math.round(+x.SafetyStock || +p.safety || 0), Math.round(+x.Qty || 0), Math.round(+x.VendorStock || 0), clean(p.desc)].join('|'); });
-const vn = {}; (F.feeds.rcv.items || []).forEach(x => { vn[strip(x.VendorCode)] = clean(x.VendorName); });
+const vn = {}; (F.feeds.rcv.items || []).forEach(x => { vn[strip(x.VendorCode)] = clean(x.VendorName); }); (S.vendors || []).forEach(v => { const k = strip(v.code); if (!vn[k] && v.sapName) vn[k] = clean(v.sapName); });   /* 21 Nov: names for OSP vendors with no receipt line */
 const g = {}; const add = (vc, mc) => { vc = strip(vc); const k = vc + '|' + mc; return g[k] = g[k] || { n: vn[vc] || vc, s: 0, r: 0 }; };
-((S.schedule[m] || {}).rows || []).forEach(r => { add(r.vendor, strip(r.part)).s += +r.qty || 0; });
+/* 21 Nov (Umair): OSP vendors (Alsons, Faraz, Rubatech, MBI, Adamjee) keep their schedule in Atlas's OSP Schedule store, as in vsup_dump.js */
+const isOsp = c => { c = strip(c); return !!((S.ospAhlCodes && S.ospAhlCodes[c]) || (S.ospVendors && S.ospVendors[c])); };
+(reg => { const has = new Set(reg.map(r => strip(r.part))); return [...reg, ...(((S.ospSchedule || {})[m] || {}).rows || []).filter(r => isOsp(r.part) && !has.has(strip(r.part)))]; })((S.schedule[m] || {}).rows || []).forEach(r => { add(r.vendor, strip(r.part)).s += +r.qty || 0; });
 const RM = aggRcvMap(); Object.entries(RM).forEach(([code, byV]) => Object.entries(byV).forEach(([vc, bd]) => { let t = 0; Object.entries(bd).forEach(([d, q]) => { if (d.startsWith(m)) t += +q || 0; }); if (t) add(vc, strip(code)).r += t; }));
 const V = Object.entries(g).map(([k, o]) => [k, o.n, Math.round(o.s), Math.round(o.r)].join('|'));
 const rdates = (F.feeds.rcv.items || []).map(x => x.Date).sort();

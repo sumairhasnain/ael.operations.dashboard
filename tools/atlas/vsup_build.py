@@ -219,3 +219,43 @@ json.dump(sch, open('atlas_vendor_sched.json', 'w'), separators=(',', ':'))
 json.dump(stock, open('atlas_child_stock.json', 'w'), separators=(',', ':'))
 print(json.dumps(dict(vendor_supply=len(sup), vendor_sched=len(sch), child_stock=len(stock), months=head.get('months'), stock_asof=asof,
                       rcv_to=max((r['date'] for r in sup if r['received']), default=''))))
+
+# 21 Nov 2026 (Umair): OSP vendors (Alsons, Faraz, Rubatech, MBI, Adamjee) are scheduled in Atlas's OSP store and receive through
+# SAP 501 / Atlas's rejection feed, which the stock dump's receiving map does not see. When stock_build's outputs sit next to this
+# file, take the vendor scorecard's receipts and the shops' supply figures from the vendor supply just built, which carries them.
+def _patch_from_supply(sup):
+    import collections as _C
+    if not os.path.exists('atlas_vendors.json') and not os.path.exists('atlas_shop_parts.json'): return
+    _m = max((str(x.get('date', ''))[:7] for x in sup if x.get('received') or x.get('scheduled')), default='')
+    _rows = [x for x in sup if str(x.get('date', '')).startswith(_m)]
+    _asof = max((x['date'] for x in _rows if x.get('received')), default=_m + '-01')
+    vs = _C.defaultdict(lambda: {'s': 0, 'std': 0, 'r': 0, 'c': set()}); pc = _C.defaultdict(lambda: {'s': 0, 'std': 0, 'r': 0, 'shop': ''})
+    for x in _rows:
+        for o in (vs[str(x.get('vendor', '')).strip()], pc[str(x['code'])]):
+            o['s'] += x.get('scheduled') or 0; o['r'] += x.get('received') or 0
+            if x['date'] <= _asof: o['std'] += x.get('scheduled') or 0
+        vs[str(x.get('vendor', '')).strip()]['c'].add(str(x['code'])); pc[str(x['code'])]['shop'] = x.get('shop') or ''
+    msg = []
+    if os.path.exists('atlas_vendors.json'):
+        V = json.load(open('atlas_vendors.json')); by = _C.defaultdict(list)
+        for r in V: by[str(r.get('vendor', '')).strip()].append(r)
+        out = []
+        for n, rs in by.items():
+            o = vs.get(n); rr = sum(r.get('received_mtd') or 0 for r in rs)
+            if o and (len(rs) > 1 or o['r'] > rr * 1.001):
+                r0 = dict(rs[0]); r0.update(parts=len(o['c']), month_schedule=round(o['s']), received_mtd=round(o['r']), compliance_pct=round(o['r'] / o['std'] * 100) if o['std'] else None)
+                out.append(r0); msg.append(n)
+            else: out.extend(rs)
+        json.dump(out, open('atlas_vendors.json', 'w'), separators=(',', ':'))
+    if os.path.exists('atlas_shop_parts.json'):
+        SP = json.load(open('atlas_shop_parts.json')); st = _C.defaultdict(list)
+        for c, o in pc.items():
+            if o['s'] > 0 and o['std'] > 0: st[o['shop']].append(100 * o['r'] / o['std'])
+        for r in SP:
+            p = st.get(r['shop'])
+            if p and len(p) > (r.get('supply_tracked') or 0):
+                r.update(supply_tracked=len(p), supply_on_track=sum(1 for v in p if v >= 95), supply_behind=sum(1 for v in p if v < 80), avg_supply_mtd_pct=round(sum(min(v, 200) for v in p) / len(p)))
+        json.dump(SP, open('atlas_shop_parts.json', 'w'), separators=(',', ':'))
+    print('osp patch: vendors merged ' + str(len(msg)))
+try: _patch_from_supply(sup)
+except Exception as _e: print('osp patch skipped: ' + str(_e))
